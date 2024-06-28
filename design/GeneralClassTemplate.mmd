@@ -5,105 +5,115 @@ sequenceDiagram
     participant Routes
     participant Controller
     participant UserModel
-    participant Model 
+    participant othersModel 
     participant Database
 
+    Note over Client,Routes: with body {JWT token, ...}
     Client->>Routes: HTTP Request
     Routes->>Routes: verify method
     alt method not allow
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes-->>Client: 405 Method Not Allowed
-    else correct method
+    else allow method
         Routes->>Controller: some_function(args, ...)
     end
-    Controller->>Controller: set current user to this.currentUser
 
-    alt Missing Parameters
-        Controller->>Controller: verifying if parameters and body were exist?
-        Controller-->>Routes: Indicate missing parameters or body
+    alt verify Parameters
+        Controller->>Controller: verifying if parameters and body were exist?<br>very_body_param(...args)
+        Controller-->>Routes: throw missing parameters or body
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: 400 Bad Request
-    else Unauthorized
-        Routes->>Controller: Check authorization
+        Routes-->>Client: 400 insufficieint arguments
+    else authorization
         Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
         Controller->>UserModel: verify_client(token)
-        UserModel->>UserModel: getOne(userId)
+        UserModel->>UserModel: decode_token(token)
+        UserModel->>UserModel: get_user(userId)
         UserModel->>Database: Perform database operation
-        Database-->>UserModel: empty object
-        UserModel-->>Controller: user not found
-        Controller-->>Routes: Client unauthorized
-        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: 401 Unauthorized
+        Database-->>UserModel: user object or empty
+        alt Successful
+            UserModel-->>Controller: return true
+        else not found
+            UserModel-->>Controller: return false
+            Controller-->>Routes: throw Client unauthorized
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes-->>Client: 401 Unauthorized
+        end
     else Forbidden
         Note over UserModel: right_verify(user)<br/>to check if a user was allow to do a RUD operation<br/>eg. to modify/read a data, you need to be an owner
-        Controller->>Model: right_verify(user)
-        Model->>Model: verify if requested user is owner of accessing data
-        Model-->>Controller: User doesn't have right to access/modify
-        Controller-->>Routes: Indicate forbidden access
-        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: 403 Forbidden
+        Controller->>othersModel: right_verify(user)
+        othersModel->>othersModel: verify if requested user is owner of accessing data
+        alt successful
+            othersModel-->>Controller: return true
+        else User doesn't have right to access/modify
+            othersModel-->>Controller: return false
+            Controller-->>Routes: Indicate forbidden access
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes-->>Client: 403 Forbidden
+        end
     else Successful Operation
-        Controller->>Model: some_method(args, ...)
-        Note over Model: CRUD Operation design individually for each entity
+        Controller->>UserModel: some_method(args, ...)
+        Note over UserModel,othersModel: TRY Block
+        Note over UserModel,othersModel: CRUD Operation design individually for each entity
         opt Create
-            Model->>Model: verify data is not null
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful 
-            Model-->>Controller: RESULT: str = object created Id
+            UserModel->>UserModel: verify data is not null
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful 
+            UserModel-->>Controller: RESULT: str = object created Id
         end
         opt Read one
-            Model->>Model: verify id is not null
-            Note over Model: function general_query_function(findOneorMany, query, sort)<br/>query: object<br/>sort: enum(asc, desc)
-            Model->>Model: general_query_function(One, query, sort)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
-            Model-->>Controller: RESULT: obj = read data object {...}
+            UserModel->>UserModel: verify id is not null
+            Note over UserModel: function general_query_function(findOneorMany, query, sort)<br/>query: object<br/>sort: enum(asc, desc)
+            UserModel->>UserModel: general_query_function(One, query, sort)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
+            UserModel-->>Controller: RESULT: obj = read data object {...}
         end
         opt Read all
-            Model->>Model: general_query_function(Many, query, sort)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
-            Model-->>Controller: RESULT: arr = read array of object data [{...}, {...}, {...}, ...]
+            UserModel->>UserModel: general_query_function(Many, query, sort)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
+            UserModel-->>Controller: RESULT: arr = read array of object data [{...}, {...}, {...}, ...]
         end
         opt Update
-            Model->>Model: verify id, dataToUpdate is not null 
+            UserModel->>UserModel: verify id, dataToUpdate is not null 
 
-            Note over Model:get a updating document to include the empty field<br/>in the incoming updating data object
-            Model->>Model: general_query_function(One, id, None)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
+            Note over UserModel:get a updating document to include the empty field<br/>in the incoming updating data object
+            UserModel->>UserModel: general_query_function(One, id, None)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
 
-            Model->>Model: include data into incoming updated data 
+            UserModel->>UserModel: include data into incoming updated data 
 
-            Note over Model: do an updating operation
-            Model->>Model: update_one(id)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
+            Note over UserModel: do an updating operation
+            UserModel->>UserModel: update_one(id)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
 
-            Note over Model: get the updated document
-            Model->>Model: general_query_function(One, id, None)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
+            Note over UserModel: get the updated document
+            UserModel->>UserModel: general_query_function(One, id, None)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
 
-            Model-->>Controller: RESULT: obj = updated object {...}
+            UserModel-->>Controller: RESULT: obj = updated object {...}
         end
         opt delete
-            Model->>Model: verify id is not null
-            Note over Model: do an deleting operation
-            Model->>Model: delete_one(id)
-            Model->>Database: Perform database operation
-            Database-->>Model: operation successful
-            Model-->>Controller: RESULT: bool = true
+            UserModel->>UserModel: verify id is not null
+            Note over UserModel: do an deleting operation
+            UserModel->>UserModel: delete_one(id)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: operation successful
+            UserModel-->>Controller: RESULT: bool = true
         end
         
         Controller-->>Routes: return message("<action> success") and data(if any) from model
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes-->>Client: 200 OK with JSON response
-    else Model Operation Failed
-        Controller->>Model: Request data (CRUD)
-        Model->>Database: Perform database operation
-        Database-->>Model: Operation fails
-        Model-->>Controller: Return false and error reason
+    Note over Controller: CATCH Block
+    else othersModel Operation Failed
+        Controller->>othersModel: Request data (CRUD)
+        othersModel->>Database: Perform database operation
+        Database-->>othersModel: Operation fails
+        othersModel-->>Controller: throw the error message.
         Controller-->>Routes: Pass error information
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes-->>Client: Appropriate error code (e.g., 500 Internal Server Error)
