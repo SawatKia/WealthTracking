@@ -1,0 +1,192 @@
+[
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-011-0001-0001",
+      "bankAccountTransactionUniqueId": "011-1F8A41",
+      "transactionDatetime": "2023-01-01T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 100.00,
+      "note": "Deposit from Toss"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-011-0001-0001",
+      "bankAccountTransactionUniqueId": "011-8D76D6",
+      "transactionDatetime": "2023-01-02T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 50.00,
+      "note": "Withdraw for daily expenses"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-012-0001-0001",
+      "bankAccountTransactionUniqueId": "011-7B19E8",
+      "transactionDatetime": "2023-01-03T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 100.00,
+      "note": "Deposit from Lottery"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-012-0001-0001",
+      "bankAccountTransactionUniqueId": "011-18AAB4",
+      "transactionDatetime": "2023-01-04T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 50.00,
+      "note": "Withdraw for travelling"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-012-0001-0001",
+      "bankAccountTransactionUniqueId": "011-F9DCE5",
+      "transactionDatetime": "2023-01-05T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 80.00,
+      "note": "Deposit for savings"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000001",
+      "transactionDatetime": "2023-01-06T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 200.00,
+      "note": "Initial deposit"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000002",
+      "transactionDatetime": "2023-01-07T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 50.00,
+      "note": "Withdraw for groceries"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000003",
+      "transactionDatetime": "2023-01-08T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 100.00,
+      "note": "Deposit from bonus"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000004",
+      "transactionDatetime": "2023-01-09T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 75.00,
+      "note": "Withdraw for bills"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000005",
+      "transactionDatetime": "2023-01-10T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 150.00,
+      "note": "Deposit from investment"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000006",
+      "transactionDatetime": "2023-01-11T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 30.00,
+      "note": "Withdraw for dinner"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000007",
+      "transactionDatetime": "2023-01-12T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 120.00,
+      "note": "Deposit from rental"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000008",
+      "transactionDatetime": "2023-01-13T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 40.00,
+      "note": "Withdraw for movie tickets"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-000009",
+      "transactionDatetime": "2023-01-14T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 80.00,
+      "note": "Deposit from side job"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-025-0001-0001",
+      "bankAccountTransactionUniqueId": "011-00000A",
+      "transactionDatetime": "2023-01-15T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 60.00,
+      "note": "Withdraw for shopping"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-5C68AE",
+      "transactionDatetime": "2023-01-16T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 200.00,
+      "note": "Deposit from salary"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-1FA0BD",
+      "transactionDatetime": "2023-01-17T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 50.00,
+      "note": "Withdraw for groceries"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-4D5E9F",
+      "transactionDatetime": "2023-01-18T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 100.00,
+      "note": "Deposit from bonus"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-A2B1C7",
+      "transactionDatetime": "2023-01-19T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 75.00,
+      "note": "Withdraw for bills"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-9763DF",
+      "transactionDatetime": "2023-01-20T08:00:00.000Z",
+      "transactionType": "Deposit",
+      "amount": 150.00,
+      "note": "Deposit from investment"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "bankAccountId": "01-028-0001-0001",
+      "bankAccountTransactionUniqueId": "011-E96D2C",
+      "transactionDatetime": "2023-01-21T08:00:00.000Z",
+      "transactionType": "Withdraw",
+      "amount": 30.00,
+      "note": "Withdraw for dinner"
+    }
+  ]
+  

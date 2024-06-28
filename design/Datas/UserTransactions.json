@@ -1,0 +1,93 @@
+[
+    {
+      "userUniqueId": "2A7F5B",
+      "transactionUniqueId": "05-1A2B3C",
+      "userTransactionDateCreated": "2023-01-12T09:00:00.000Z",
+      "category": "รายรับ",
+      "tagging": "เงินเดือนประจำ",
+      "type": "เงินเดือน",
+      "sender": {
+        "BankName": null,
+        "BankAccountId": null
+      },
+      "reciever": {
+        "BankName": "ธนาคารกรุงเทพ (TH-BBL)",
+        "BankAccountId": "222-0002-0002"
+      },
+      "amount": 25000.00,
+      "note": "Monthly salary"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "transactionUniqueId": "05-4D5E6F",
+      "userTransactionDateCreated": "2023-01-15T13:00:00.000Z",
+      "category": "รายจ่าย",
+      "tagging": "ค่าใช้จ่ายคงที่",
+      "type": "Bill Payment",
+      "sender": {
+        "BankName": "ธนาคารไทยพาณิชย์ (TH-SCB)",
+        "BankAccountId": "333-0003-0003"
+      },
+      "reciever": {
+        "BankName": null,
+        "BankAccountId": null
+      },
+      "amount": 1500.00,
+      "note": "Electricity bill"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "transactionUniqueId": "05-7A8B9C",
+      "userTransactionDateCreated": "2023-01-18T16:00:00.000Z",
+      "category": "ย้ายเงิน",
+      "tagging": "Transfer to Savings",
+      "type": "Internal Transfer",
+      "sender": {
+        "BankName": "ธนาคารกสิกรไทย (TH-KBANK)",
+        "BankAccountId": "01-111-0001-0001"
+      },
+      "reciever": {
+        "BankName": "ธนาคารกรุงไทย (TH-KTB)",
+        "BankAccountId": "444-0004-0004"
+      },
+      "amount": 5000.00,
+      "note": "Monthly savings"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "transactionUniqueId": "05-0A1B2C",
+      "userTransactionDateCreated": "2023-01-20T10:00:00.000Z",
+      "category": "รายรับ",
+      "tagging": "Freelance",
+      "type": "Payment",
+      "sender": {
+        "BankName": null,
+        "BankAccountId": null
+      },
+      "reciever": {
+        "BankName": "ธนาคารออมสิน (TH-GSB)",
+        "BankAccountId": "555-0005-0005"
+      },
+      "amount": 8000.00,
+      "note": "Freelance project payment"
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "transactionUniqueId": "05-3D4E5F",
+      "userTransactionDateCreated": "2023-01-22T14:00:00.000Z",
+      "category": "รายจ่าย",
+      "tagging": "Shopping",
+      "type": "POS Purchase",
+      "sender": {
+        "BankName": "ธนาคารไทยพาณิชย์ (TH-SCB)",
+        "BankAccountId": "333-0003-0003"
+      },
+      "reciever": {
+        "BankName": null,
+        "BankAccountId": null
+      },
+      "amount": 4200.00,
+      "note": "New laptop purchase"
+    }
+  ]
+  

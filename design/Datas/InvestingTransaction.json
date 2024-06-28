@@ -1,0 +1,63 @@
+[
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-1A2B3C",
+      "investingTransactionDatetime": "2023-01-21T08:00:00.000Z",
+      "transactionCategory": "ซื้อ",
+      "assetType": "หุ้น",
+      "assetName": "XYZ Company",
+      "amount": 50,
+      "unitPrice": 75.50
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-4D5E6F",
+      "investingTransactionDatetime": "2023-01-22T08:00:00.000Z",
+      "transactionCategory": "ขาย",
+      "assetType": "ทองคำ",
+      "assetName": "Gold Bullion",
+      "amount": 3.75,
+      "unitPrice": 1850.25
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-4865DC",
+      "investingTransactionDatetime": "2023-01-23T08:00:00.000Z",
+      "transactionCategory": "ซื้อ",
+      "assetType": "หุ้น",
+      "assetName": "MNO Corporation",
+      "amount": 30,
+      "unitPrice": 100.75
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-E758AC",
+      "investingTransactionDatetime": "2023-01-24T08:00:00.000Z",
+      "transactionCategory": "ขาย",
+      "assetType": "สลากออมสิน",
+      "assetName": "National Savings Bond",
+      "amount": 10,
+      "unitPrice": 105.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-78CB2F",
+      "investingTransactionDatetime": "2023-01-25T08:00:00.000Z",
+      "transactionCategory": "ซื้อ",
+      "assetType": "หุ้น",
+      "assetName": "PQR Corporation",
+      "amount": 20,
+      "unitPrice": 80.25
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "investingTransactionUniqueId": "03-67A7C8",
+      "investingTransactionDatetime": "2023-01-26T08:00:00.000Z",
+      "transactionCategory": "ขาย",
+      "assetType": "ทองคำ",
+      "assetName": "Gold Bullion",
+      "amount": 2,
+      "unitPrice": 1900.75
+    }
+  ]
+  

@@ -1,0 +1,28 @@
+sequenceDiagram
+    title User Class
+    participant C as Client
+    participant R as Routes
+    participant Cont as Controller
+    participant User as UserModel
+    
+
+    opt create a new user
+        Note over R: with body of {username, email,<br/>hashedPassword, memberSince}
+        C->>R: POST /user/create
+        R->>Cont: create_user(usrename, email, hashedPassword)
+        Cont->>Cont: parameters is not null
+        Cont->>Cont: create user object from parameters
+        Cont->>Cont: add member_since field object
+    end
+    opt read a user
+        Note over R: with body of {Id}
+        C->>R: POST /user/read
+    end
+    opt update auser
+        Note over R: with body of {Id,dataObject}
+        C->>R: PUT /user
+    end
+    opt delete a user
+        Note over R: with body of {Id}
+        C->>R: DELETE /user
+    end

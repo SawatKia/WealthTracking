@@ -1,0 +1,67 @@
+[
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-3A7B9E",
+      "debtPaymentUniqueId": "041-A7F3E2",
+      "paidDate": "2021-02-01T14:39:54.981Z",
+      "paidAmount": 350.00,
+      "loanBalanceLeft": 4850.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-3A7B9E",
+      "debtPaymentUniqueId": "041-B8C4D1",
+      "paidDate": "2021-03-01T14:39:54.981Z",
+      "paidAmount": 450.00,
+      "loanBalanceLeft": 4400.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-3A7B9E",
+      "debtPaymentUniqueId": "041-C9D5E0",
+      "paidDate": "2021-04-01T14:39:54.981Z",
+      "paidAmount": 450.00,
+      "loanBalanceLeft": 3950.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-3A7B9E",
+      "debtPaymentUniqueId": "041-D6E7F9",
+      "paidDate": "2021-05-01T14:39:54.981Z",
+      "paidAmount": 450.00,
+      "loanBalanceLeft": 3500.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-2C6D9A",
+      "debtPaymentUniqueId": "041-A1F4C3",
+      "paidDate": "2021-02-03T10:00:00.000Z",
+      "paidAmount": 150.00,
+      "loanBalanceLeft": 1050.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-2C6D9A",
+      "debtPaymentUniqueId": "041-B5C3D7",
+      "paidDate": "2021-03-03T10:00:00.000Z",
+      "paidAmount": 200.00,
+      "loanBalanceLeft": 850.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-2C6D9A",
+      "debtPaymentUniqueId": "041-C8E4F9",
+      "paidDate": "2021-04-02T10:00:00.000Z",
+      "paidAmount": 250.00,
+      "loanBalanceLeft": 600.00
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-2C6D9A",
+      "debtPaymentUniqueId": "041-D7F2A8",
+      "paidDate": "2021-05-02T10:00:00.000Z",
+      "paidAmount": 300.00,
+      "loanBalanceLeft": 300.00
+    }
+  ]
+  

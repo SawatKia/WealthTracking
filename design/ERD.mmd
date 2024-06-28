@@ -1,0 +1,112 @@
+erDiagram
+    USERS {
+      string userUniqueId PK
+      string userName
+      string email
+      string hashedPassword
+      datetime memberSince
+    }
+
+    BANKACCOUNTS {
+      string userUniqueId FK
+      string bankAccountId PK
+      string bankAccountDisplayName
+      boolean Favourite
+      string bankAccountName
+      string bankName
+      float currentBalance
+    }
+
+    BANKACCOUNTTRANSACTIONS {
+      string userUniqueId FK
+      string bankAccountId FK
+      string bankAccountTransactionUniqueId PK
+      datetime transactionDatetime
+      string transactionType
+      float amount
+      string note
+    }
+
+    ASSETS {
+      string userUniqueId FK
+      string assetUniqueId PK
+      datetime dateFirstPurchased
+      string assetType
+      string assetName
+      float amount
+      float unitPrice
+    }
+
+    INVESTINGTRANSACTIONS {
+      string userUniqueId FK
+      string investingTransactionUniqueId PK
+      datetime investingTransactionDatetime
+      string transactionCategory
+      string assetType
+      string assetName
+      float amount
+      float unitPrice
+    }
+
+    DEBTS {
+      string userUniqueId FK
+      string debtUniqueId PK
+      datetime debtCreatedDate
+      string debtDisplayName
+      string lender
+      string debtType
+      string dateOfBill
+      int numberOfInstallment
+      float loanAmount
+      float loanBalance
+      float interestRate
+      float installmentAmount
+    }
+
+    DEBTPAYMENTS {
+      string userUniqueId FK
+      string debtUniqueId FK
+      string debtPaymentUniqueId PK
+      datetime paidDate
+      float paidAmount
+      float loanBalanceLeft
+    }
+
+    USERTRANSACTIONS {
+      string userUniqueId FK
+      string transactionUniqueId PK
+      datetime userTransactionDateCreated
+      string category
+      string tagging
+      string type
+      json sender
+      json receiver
+      float amount
+      string note
+    }
+
+    NOTIFICATIONS {
+      string userUniqueId FK
+      string notificationUniqueId PK
+      datetime notificationDatetime
+      string notificationType
+      string notificationTitle
+      string notificationDescription
+    }
+
+    NOTIFICATIONSETTING {
+      string userUniqueId FK
+      json notificationSetting
+    }
+
+    USERS ||--o{ BANKACCOUNTS : has
+    USERS ||--o{ BANKACCOUNTTRANSACTIONS : has
+    USERS ||--o{ ASSETS : has
+    USERS ||--o{ INVESTINGTRANSACTIONS : has
+    USERS ||--o{ DEBTS : has
+    USERS ||--o{ DEBTPAYMENTS : has
+    USERS ||--o{ USERTRANSACTIONS : has
+    USERS ||--o{ NOTIFICATIONS : got
+    USERS ||--|| NOTIFICATIONSETTING : set
+    BANKACCOUNTS ||--o{ BANKACCOUNTTRANSACTIONS : has
+    DEBTS ||--o{ DEBTPAYMENTS : has

@@ -1,0 +1,24 @@
+{
+    "userUniqueId": "2A7F5B",
+    "notificationSetting": {
+      "userTransactionRecording": {
+        "isnotification": true,
+        "frequency": {
+          "frequencyType": "daily",
+          "dayOfMonth": null,
+          "dayOfWeek": null,
+          "time": "20:00"
+        }
+      },
+      "debtPaymentsNotifying": {
+        "isnotification": true,
+        "frequency": {
+          "frequencyType": "monthly",
+          "dayOfMonth": 15,
+          "dayOfWeek": null,
+          "time": "20:00"
+        }
+      }
+    }
+  }
+  

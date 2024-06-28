@@ -1,0 +1,110 @@
+sequenceDiagram
+    autonumber
+    title genral Class Diagram
+    Actor Client
+    participant Routes
+    participant Controller
+    participant UserModel
+    participant Model 
+    participant Database
+
+    Client->>Routes: HTTP Request
+    Routes->>Routes: verify method
+    alt method not allow
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: 405 Method Not Allowed
+    else correct method
+        Routes->>Controller: some_function(args, ...)
+    end
+    Controller->>Controller: set current user to this.currentUser
+
+    alt Missing Parameters
+        Controller->>Controller: verifying if parameters and body were exist?
+        Controller-->>Routes: Indicate missing parameters or body
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: 400 Bad Request
+    else Unauthorized
+        Routes->>Controller: Check authorization
+        Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
+        Controller->>UserModel: verify_client(token)
+        UserModel->>UserModel: getOne(userId)
+        UserModel->>Database: Perform database operation
+        Database-->>UserModel: empty object
+        UserModel-->>Controller: user not found
+        Controller-->>Routes: Client unauthorized
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: 401 Unauthorized
+    else Forbidden
+        Note over UserModel: right_verify(user)<br/>to check if a user was allow to do a RUD operation<br/>eg. to modify/read a data, you need to be an owner
+        Controller->>Model: right_verify(user)
+        Model->>Model: verify if requested user is owner of accessing data
+        Model-->>Controller: User doesn't have right to access/modify
+        Controller-->>Routes: Indicate forbidden access
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: 403 Forbidden
+    else Successful Operation
+        Controller->>Model: some_method(args, ...)
+        Note over Model: CRUD Operation design individually for each entity
+        opt Create
+            Model->>Model: verify data is not null
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful 
+            Model-->>Controller: RESULT: str = object created Id
+        end
+        opt Read one
+            Model->>Model: verify id is not null
+            Note over Model: function general_query_function(findOneorMany, query, sort)<br/>query: object<br/>sort: enum(asc, desc)
+            Model->>Model: general_query_function(One, query, sort)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+            Model-->>Controller: RESULT: obj = read data object {...}
+        end
+        opt Read all
+            Model->>Model: general_query_function(Many, query, sort)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+            Model-->>Controller: RESULT: arr = read array of object data [{...}, {...}, {...}, ...]
+        end
+        opt Update
+            Model->>Model: verify id, dataToUpdate is not null 
+
+            Note over Model:get a updating document to include the empty field<br/>in the incoming updating data object
+            Model->>Model: general_query_function(One, id, None)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+
+            Model->>Model: include data into incoming updated data 
+
+            Note over Model: do an updating operation
+            Model->>Model: update_one(id)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+
+            Note over Model: get the updated document
+            Model->>Model: general_query_function(One, id, None)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+
+            Model-->>Controller: RESULT: obj = updated object {...}
+        end
+        opt delete
+            Model->>Model: verify id is not null
+            Note over Model: do an deleting operation
+            Model->>Model: delete_one(id)
+            Model->>Database: Perform database operation
+            Database-->>Model: operation successful
+            Model-->>Controller: RESULT: bool = true
+        end
+        
+        Controller-->>Routes: return message("<action> success") and data(if any) from model
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: 200 OK with JSON response
+    else Model Operation Failed
+        Controller->>Model: Request data (CRUD)
+        Model->>Database: Perform database operation
+        Database-->>Model: Operation fails
+        Model-->>Controller: Return false and error reason
+        Controller-->>Routes: Pass error information
+        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+        Routes-->>Client: Appropriate error code (e.g., 500 Internal Server Error)
+    end

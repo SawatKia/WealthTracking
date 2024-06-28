@@ -1,0 +1,31 @@
+[
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-3A7B9E",
+      "debtCreatedDate": "2021-01-01T14:39:54.981Z",
+      "debtDisplayName": "Sample Debt1 Display Name",
+      "lender": "John Doe",
+      "debtType": "Personal Loan",
+      "dateOfBill": "15",
+      "numberOfInstallment": 12,
+      "loanAmount": 5200.00,
+      "loanBalance": 3500.00,
+      "interestRate(%)": 6.00,
+      "installmentAmount": 450
+    },
+    {
+      "userUniqueId": "2A7F5B",
+      "debtUniqueId": "04-2C6D9A",
+      "debtCreatedDate": "2021-02-02T14:39:54.981Z",
+      "debtDisplayName": "Sample Debt2 Display Name",
+      "lender": "Jane Smith",
+      "debtType": "Credit Card",
+      "dateOfBill": "1",
+      "numberOfInstallment": 3,
+      "loanAmount": 1200.00,
+      "loanBalance": 300.00,
+      "interestRate(%)": 8.00,
+      "installmentAmount": null
+    }
+  ]
+  
