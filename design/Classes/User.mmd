@@ -1,28 +1,53 @@
 sequenceDiagram
     title User Class
-    participant C as Client
-    participant R as Routes
-    participant Cont as Controller
-    participant User as UserModel
+    participant Client
+    participant Routes
+    participant Controller
+    participant UserModel
+    participant Security
     
 
     opt create a new user
-        Note over R: with body of {username, email,<br/>hashedPassword, memberSince}
-        C->>R: POST /user/create
-        R->>Cont: create_user(usrename, email, hashedPassword)
-        Cont->>Cont: parameters is not null
-        Cont->>Cont: create user object from parameters
-        Cont->>Cont: add member_since field object
+        Note over Routes: with body of {username, email,<br/>Password, confirmPass}
+        Client->>Routes: POST /user/create
+        Routes->>Routes: extract body by body parser to parameters
+        Routes->>Controller: register(username, email,<br>Password, confirmPass)
+        Controller->>Controller: this.very_body_param(...params)
+        Controller->>Controller: this.authorization()
+        Controller->>Controller: this.right_verify()
+        Controller->>Controller: verify password matched
+        Controller-->>Routes: throw password don't match
+        Note over Routes,Client: <status> <message>
+        Routes-->>Client: 400 password don't match 
+        Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
+        UserModel->>UserModel: verifying username and email<br> if match any user
+        UserModel-->>Controller: return user object {...}
+        Controller-->>Routes: throw user duplicated
+        Routes-->>Client: 409 Conflict found
+        Controller->>Controller: hashing the password
+        Controller->>Controller: normalize an email, username to lowercase
+        Controller->>Controller: create user object from parameters
+        Controller->>Controller: add member_since,and role fields to object
+        Controller->>UserModel: create(user: New_User)
+        UserModel->>UserModel: insertOne
+        UserModel->>Controller: user created id: str
+        Controller-->>Routes: return user created id: str
+        Routes-->>Client: 201 user created
+    end
+    opt logging in
+        Note over Routes: with body of {username, email,<br/>Password, confirmPass}
+        Client->>Routes: /user/login
+        Routes->>Controller: login
     end
     opt read a user
-        Note over R: with body of {Id}
-        C->>R: POST /user/read
+        Note over Routes: with body of {Id}
+        Client->>Routes: POST /user/read
     end
     opt update auser
-        Note over R: with body of {Id,dataObject}
-        C->>R: PUT /user
+        Note over Routes: with body of {Id,dataObject}
+        Client->>Routes: PUT /user
     end
     opt delete a user
-        Note over R: with body of {Id}
-        C->>R: DELETE /user
+        Note over Routes: with body of {Id}
+        Client->>Routes: DELETE /user
     end
