@@ -1,7 +1,7 @@
 # Implementing
 
 ## frontend
-- remove the frontend directory 
+- remove the frontend directory(if the directory is exist) 
 - create your own frontend directory by React, Vue, Angular, etc. anything you want.
 ## backend
 - Lorem ipsum dolor sit amet, consectetur adipiscing elit.
