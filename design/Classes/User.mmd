@@ -12,27 +12,41 @@ sequenceDiagram
         Client->>Routes: POST /user/create
         Routes->>Routes: extract body by body parser to parameters
         Routes->>Controller: register(username, email,<br>Password, confirmPass)
-        Controller->>Controller: this.very_body_param(...params)
-        Controller->>Controller: this.authorization()
-        Controller->>Controller: this.right_verify()
+        Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
         Controller->>Controller: verify password matched
-        Controller-->>Routes: throw password don't match
+        Controller-->>Routes: throw error password don't match
         Note over Routes,Client: <status> <message>
         Routes-->>Client: 400 password don't match 
         Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
-        UserModel->>UserModel: verifying username and email<br> if match any user
-        UserModel-->>Controller: return user object {...}
-        Controller-->>Routes: throw user duplicated
-        Routes-->>Client: 409 Conflict found
-        Controller->>Controller: hashing the password
-        Controller->>Controller: normalize an email, username to lowercase
-        Controller->>Controller: create user object from parameters
-        Controller->>Controller: add member_since,and role fields to object
-        Controller->>UserModel: create(user: New_User)
-        UserModel->>UserModel: insertOne
-        UserModel->>Controller: user created id: str
-        Controller-->>Routes: return user created id: str
-        Routes-->>Client: 201 user created
+        Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
+        UserModel->>UserModel: verifying username and email<br> if match any user<br>this.find("username", "username", True, "asc")<br>this.find("email, "email", True, "asc")
+        alt found user with the same email or username
+            UserModel-->>Controller: return user object {...}
+            Controller-->>Routes: throw user duplicated
+            Routes-->>Client: 409 Conflict found
+        else successful
+            Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
+            Controller->>Controller: normalize an email and username to lowercase<br>this.normalize_email(email)
+            Controller->>Controller: create user object from parameters
+            Controller->>Controller: add member_since,and role fields to object
+            Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
+            Controller->>UserModel: create(newUser: New_User)
+            UserModel->>UserModel: db.collection(User).insertOne(newUser)
+            alt Failed
+                UserModel-->>Controller: throw the error
+                Controller-->>Routes: throw "the error occured when creating a user"
+                Routes-->>Client: 500, "the error occured when creating a user"
+            else successful
+                UserModel->>Controller: user created id: str
+                Controller->>Routes: return user created id: str
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes->>Client: 201, "user created", {id: userCreatedId}
+            end
+            opt any error
+            Controller-->>Routes: throw "internal server error"
+            Routes-->>Client: 500, "internal server error"
+            end
+        end
     end
     opt logging in
         Note over Routes: with body of {username, email,<br/>Password, confirmPass}
