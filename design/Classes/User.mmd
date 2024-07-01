@@ -105,8 +105,14 @@ sequenceDiagram
         end
     else read a user
         rect rgb(142,172,252)
-            Note over Routes: with body of {Id}
+            Note over Routes: with body of {request}
             Client->>Routes: POST /user/read
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: get_current_user(request)
+            Controller->>Controller: extract token from cookie in request
+            opt cookie not found
+                Controller-->>Routes:k
+            end
         end
     else update auser
         rect rgb(252,182,142)
