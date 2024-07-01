@@ -59,6 +59,24 @@ sequenceDiagram
         end
     
     else log out
+        rect rgb(247,155,155)
+            Client->>Routes: POST /user/logout
+            Routes->>Controller: logout()
+            Controller->>Controller: delete token in the cookie
+            opt
+                Controller-->>Routes: throw the error "error occured during logging out"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured when logging out"
+            end
+            opt any error
+                Controller-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            Controller->>Routes: return True
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes-->>Client: 200, "logout success"
+        end
 
     end 
     
