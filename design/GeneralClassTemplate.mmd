@@ -12,53 +12,56 @@ sequenceDiagram
     %% opt จะทำหรือไม่ทำก็ได้
     Note over Client,Routes: with body {JWT token, ...}
     Client->>Routes: HTTP Request
-    Routes->>Routes: verify method
-    rect rgb(239, 157, 157)
-    Note right of Client: method not allow
-        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: 405 Method Not Allowed
-    end
-        Routes->>Controller: some_function(request)
-    rect rgb(191, 223, 255)
-    Note right of Client: verify request body
-        Controller->>Controller: verifying if a Cookies token was attached with the body?<br>verify_cookie(token: str)
-        
-        opt Cookie not found
-            Controller-->>Routes: throw error missing token in the body
+    rect rgb(185,185,185)
+    Note over Client, Database: these processes are Middleware that was process before any tasks
+        Routes->>Routes: verify method
+        rect rgb(239, 157, 157)
+        Note right of Client: method not allow
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 400 insufficient arguments
+            Routes-->>Client: 405 Method Not Allowed
         end
-        Note over Controller: successful, do nothing. and goto next verification
-    end
-    rect rgb(238, 203, 157)
-    Note right of Client: authorization
-        Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
-        Controller->>UserModel: verify_client(token)
-        UserModel->>UserModel: decode_token(token)
-        UserModel->>UserModel: get_user(userId)
-        UserModel->>Database: Perform database operation
-        Database-->>UserModel: user object or empty
-        opt not found
-            UserModel-->>Controller: return false
-            Controller-->>Routes: throw Client unauthorized
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 401 Unauthorized
+            Routes->>Controller: some_function(request)
+        rect rgb(191, 223, 255)
+        Note right of Client: verify request body
+            Controller->>Controller: verifying if a Cookies token was attached with the body?<br>verify_cookie(token: str)
+            
+            opt Cookie not found
+                Controller-->>Routes: throw error missing token in the body
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400 insufficient arguments
+            end
+            Note over Controller: successful, do nothing. and goto next verification
         end
-        UserModel->>Controller: return true
-        Note over UserModel, Controller: and goto next verification
-    end
-    rect rgb(192, 157, 239)
-    Note right of Client: Forbidden
-        Note over Controller, UserModel: right_verify(currentUser)<br/>to check if a user was allow to do a RUD operation to TargetModel<br/>eg. to modify/read a data, you need to be an owner
-        Controller->>TargetModel: right_verify(currentUser)
-        TargetModel->>TargetModel: TargetModel.get_owner(objectId)
-        alt successful
-            TargetModel->>Controller: return true
-        else User doesn't have right to access/modify
-            TargetModel-->>Controller: return false
-            Controller-->>Routes: Indicate forbidden access
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 403 Forbidden
+        rect rgb(238, 203, 157)
+        Note right of Client: authorization
+            Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
+            Controller->>UserModel: verify_client(token)
+            UserModel->>UserModel: decode_token(token)
+            UserModel->>UserModel: get_user(userId)
+            UserModel->>Database: Perform database operation
+            Database-->>UserModel: user object or empty
+            opt not found
+                UserModel-->>Controller: return false
+                Controller-->>Routes: throw Client unauthorized
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401 Unauthorized
+            end
+            UserModel->>Controller: return true
+            Note over UserModel, Controller: and goto next verification
+        end
+        rect rgb(192, 157, 239)
+        Note right of Client: Forbidden
+            Note over Controller, UserModel: right_verify(currentUser)<br/>to check if a user was allow to do a RUD operation to TargetModel<br/>eg. to modify/read a data, you need to be an owner
+            Controller->>TargetModel: right_verify(currentUser)
+            TargetModel->>TargetModel: TargetModel.get_owner(objectId)
+            alt successful
+                TargetModel->>Controller: return true
+            else User doesn't have right to access/modify
+                TargetModel-->>Controller: return false
+                Controller-->>Routes: Indicate forbidden access
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 403 Forbidden
+            end
         end
     end
     rect rgb(157, 239, 190)
