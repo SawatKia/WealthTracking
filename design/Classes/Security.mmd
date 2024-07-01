@@ -1,0 +1,64 @@
+sequenceDiagram
+    title Security Class
+    participant Client
+    participant Routes
+    participant Controller
+    participant UserModel
+    participant Security
+    
+
+    alt logging in
+        rect rgb(97,175,254)
+            Note over Routes, Controller: the log in endpoint can receive either email or username
+            Note over Routes, Client: with body of {username, email,Password, confirmPass}
+            Client->>Routes: POST /user/login
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: login (username, password)
+            Controller->>Controller: verify all pameters is not null 
+            opt some parameter is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "username and password are required"
+            end
+            Controller->>UserModel: User.check_password(db, userName.lower(), password)
+            UserModel->>UserModel: this.find("username", userName, True, "asc")
+            opt not found the username
+                UserModel->>UserModel: this.find("email", eMail, True, "asc")
+            end
+            opt not found the email
+                UserModel-->>Controller: return empty object
+                Controller-->>Routes: throw the error "user not found"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401, unauthorized
+            end
+            UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
+            opt password check Failed
+                UserModel-->>Controller: return False
+                Controller-->>Routes: throw the error "password invalid"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401, unauthorized
+            end
+            UserModel->>Controller: return True
+            Controller->>Security: Security.create_token(user)
+            opt cannot create token
+                Security-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured when logging in"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured when logging in"
+            end
+            Security->>Controller: return token
+            opt any error
+                Controller-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            Controller->>Routes:retun token
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Note right of Routes: the token might be send in<br> Header with "Barear " prefix
+            Routes->>Client: 200, login successful, {token: token}
+        end
+    
+    else log out
+
+    end 
+    

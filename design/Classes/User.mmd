@@ -1,5 +1,5 @@
 sequenceDiagram
-    title User Class
+   title User Class
     participant Client
     participant Routes
     participant Controller
@@ -13,11 +13,11 @@ sequenceDiagram
             Client->>Routes: POST /user/create
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>Controller: register(username, email,<br>Password, confirmPass)
-            Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
+            Controller->>Controller: verify all pameters is not null 
             opt some parameter is null or empty
                 Controller-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "parameters is required"
+                Routes-->>Client: 400, "username, email,<br> Password, and confirmPass are required"
             end
             Controller->>Controller: verify password matched
             opt password and confirm password doesn't match
@@ -42,7 +42,7 @@ sequenceDiagram
             end
             UserModel->>Controller: return user empty object
             Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
-            Controller->>Controller: normalize an email and username to lowercase<br>this.normalize_email(email)
+            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
             Controller->>Controller: create user object from parameters
             Controller->>Controller: add member_since,and role fields to object
             Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
@@ -54,61 +54,15 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured when creating a user"
             end
-                UserModel->>Controller: user created id: str
-                Controller->>Routes: return user created id: str
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes->>Client: 201, "user created", {id: userCreatedId}
+            UserModel->>Controller: user created id: str
             opt any error
-            Controller-->>Routes: throw the error "internal server error"
+                Controller-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            Controller->>Routes: return user created id: str
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 500, "internal server error"
-            end
-        end
-    else logging in
-        rect rgb(97,175,254)
-            Note over Routes, Controller: the log in endpoint can receive either email or username
-            Note over Routes, Client: with body of {username, email,Password, confirmPass}
-            Client->>Routes: POST /user/login
-            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: login (username, password)
-            Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
-            opt some parameter is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "parameters is required"
-            end
-            Controller->>UserModel: User.check_password(db, userName.lower(), password)
-            UserModel->>UserModel: this.find("username", userName, True, "asc")
-            opt not found the username
-                UserModel->>UserModel: this.find("email", eMail, True, "asc")
-            end
-            opt not found the email
-                UserModel-->>Controller: return empty object
-                Controller-->>Routes: throw the error "user not found"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 401, unauthorized
-            end
-            UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
-            opt password check Failed
-                UserModel-->>Controller: return False
-                Controller-->>Routes: throw the error "password invalid"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 401, unauthorized
-            end
-            UserModel->>Controller: return True
-            Controller->>Security: Security.create_token(user)
-            opt cannot create token
-                Security-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured when logging in"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "error occured when logging in"
-            end
-            Security->>Controller: return token
-            Controller->>Routes:retun token
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Note right of Routes: the token might be send in<br> Header with "Barear " prefix
-            Routes->>Client: 200, login successful, {token: token}
-
+            Routes->>Client: 201, "user created", {id: userCreatedId}
         end
     else read current user
         rect rgb(142,172,252)
@@ -128,13 +82,17 @@ sequenceDiagram
                 Controller-->>Routes: throw the error "error occured when getting a current user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured when getting a current user"
-
             end
             Security->>Controller: return isExpired, user object {...}
             opt token is expired or user object is empty
                 Controller-->>Routes: throw the error "Invalid token"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                  Routes-->>Client: 401, "Invalid token"
+            end
+            opt any error
+                Controller-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
             end
             Controller->>Routes: return user object {...}
             Routes->>Client: 200, "get current user success",{user: user}
@@ -145,14 +103,47 @@ sequenceDiagram
             Note over Routes: with body of {searchCriteria, searchValue, findOne, sorting}
             Client->>Routes:POST /users/    
     end
-    else update auser
+    else update current user
         rect rgb(252,182,142)
             Note over Routes: with body of {Id,dataObject}
             Client->>Routes: PUT /user
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: update_current_user(request, updatedUserData)
+            Controller->>Controller: verify updatedUserData is not null
+            opt updatedUserData is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "updatedUserData is required"
+            end
+            Note right of  Controller: as the get_current_user was defined in "read current user"
+            Controller->>Controller: this.get_current_user(request)
+            Controller->>Controller: include current user data that doesn't exist in the updatedUserData<br>into updatedUserData
+            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
+            Controller->>UserModel: update(db, userId, updatedUserData)
+            opt
+                UserModel-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured during update user"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured during update user"
+            end
+            UserModel->>Controller: return True
+            Controller->>Routes: return True
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "user updated"
         end
     else delete a user
-        rect rgb(249,62,62)
+        rect rgb(247,155,155)
             Note over Routes: with body of {Id}
             Client->>Routes: DELETE /user
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: delete_user(userId)
+            Controller->>Controller: verify userId is not null
+            opt userId is null or empty
+                Controller-->>Routes: throw the error "parameter is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "userId is required"
+            end
         end
-    end
+
+    end 
+    
