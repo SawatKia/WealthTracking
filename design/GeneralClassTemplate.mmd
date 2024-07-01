@@ -8,42 +8,47 @@ sequenceDiagram
     participant TargetModel 
     participant Database
 
+    %% alt เลือกทำอย่างใดอย่างหนึ่ง
+    %% opt จะทำหรือไม่ทำก็ได้
     Note over Client,Routes: with body {JWT token, ...}
     Client->>Routes: HTTP Request
     Routes->>Routes: verify method
-    alt method not allow
+    rect rgb(239, 157, 157)
+    Note right of Client: method not allow
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes-->>Client: 405 Method Not Allowed
-    else allow method
-        Routes->>Controller: some_function(request)
     end
-
-    alt verify request body
+        Routes->>Controller: some_function(request)
+    rect rgb(191, 223, 255)
+    Note right of Client: verify request body
         Controller->>Controller: verifying if a Cookies token was attached with the body?<br>verify_cookie(token: str)
-        alt Successful
-            Note over Controller: successful, do nothing. and goto next verification
-        else Cookie not found
+        
+        opt Cookie not found
             Controller-->>Routes: throw error missing token in the body
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 400 insufficient arguments
         end
-    else authorization
+        Note over Controller: successful, do nothing. and goto next verification
+    end
+    rect rgb(238, 203, 157)
+    Note right of Client: authorization
         Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
         Controller->>UserModel: verify_client(token)
         UserModel->>UserModel: decode_token(token)
         UserModel->>UserModel: get_user(userId)
         UserModel->>Database: Perform database operation
         Database-->>UserModel: user object or empty
-        alt Successful
-            UserModel->>Controller: return true
-            Note over UserModel, Controller: and goto next verification
-        else not found
+        opt not found
             UserModel-->>Controller: return false
             Controller-->>Routes: throw Client unauthorized
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 401 Unauthorized
         end
-    else Forbidden
+        UserModel->>Controller: return true
+        Note over UserModel, Controller: and goto next verification
+    end
+    rect rgb(192, 157, 239)
+    Note right of Client: Forbidden
         Note over Controller, UserModel: right_verify(currentUser)<br/>to check if a user was allow to do a RUD operation to TargetModel<br/>eg. to modify/read a data, you need to be an owner
         Controller->>TargetModel: right_verify(currentUser)
         TargetModel->>TargetModel: TargetModel.get_owner(objectId)
@@ -55,31 +60,30 @@ sequenceDiagram
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 403 Forbidden
         end
-    else Successful Operation
+    end
+    rect rgb(157, 239, 190)
+    Note right of Client: Successful Operation
         Controller->>TargetModel: some_method(args...)
         Note over TargetModel: TRY Block
         Note over TargetModel: CRUD Operation design individually for each entity
-        opt Create
+        alt Create
             TargetModel->>TargetModel: verify data is not null
             TargetModel->>Database: Perform database operation
             Database->>TargetModel: operation successful 
             TargetModel->>Controller: RESULT: str = object created Id
-        end
-        opt Read one
+        else Read one
             TargetModel->>TargetModel: verify id is not null
             Note over TargetModel: function general_query_function(findOneorMany, query, sort)<br/>query: object<br/>sort: enum(asc, desc)
             TargetModel->>TargetModel: general_query_function(One, query, sort)
             TargetModel->>Database: Perform database operation
             Database->>TargetModel: operation successful
             TargetModel->>Controller: RESULT: obj = read data object {...}
-        end
-        opt Read all
+        else Read all
             TargetModel->>TargetModel: general_query_function(Many, query, sort)
             TargetModel->>Database: Perform database operation
             Database->>TargetModel: operation successful
             TargetModel->>Controller: RESULT: arr = read array of object data [{...}, {...}, {...}, ...]
-        end
-        opt Update
+        else Update
             TargetModel->>TargetModel: verify id, dataToUpdate is not null 
 
             Note over TargetModel:get a updating document to include the empty field<br/>in the incoming updating data object
@@ -100,8 +104,7 @@ sequenceDiagram
             Database->>TargetModel: operation successful
 
             TargetModel->>Controller: RESULT: obj = updated object {...}
-        end
-        opt delete
+        else delete
             TargetModel->>TargetModel: verify id is not null
             Note over TargetModel: do an deleting operation
             TargetModel->>TargetModel: delete_one(id)
@@ -113,13 +116,17 @@ sequenceDiagram
         Controller->>Routes: return message("<action> success") and data(if any) from model
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes->>Client: 200 OK with JSON response
+    end
     Note over Controller: CATCH Block
-    else TargetModel Operation Failed
-        Controller->>TargetModel: Request data (CRUD)
-        TargetModel->>Database: Perform database operation
+    rect rgb(255, 255, 153)
+    Note right of Client: TargetModel Operation Failed
+    opt Operation Failed
         Database-->>TargetModel: Operation fails
         TargetModel-->>Controller: throw the error message.
         Controller-->>Routes: Pass error information
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
         Routes-->>Client: Appropriate error code (e.g., 500 Internal Server Error)
     end
+    end
+
+
