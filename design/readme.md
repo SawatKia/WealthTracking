@@ -1,6 +1,6 @@
 # What is this?
 this is the system design before implementing.
-the design consist sequence-diagram-designing of each entity and api how it handle the request and returning the error by using Mermaid.js
+the design consist sequence-diagram designing of each entity and api how it handle the request and returning the error by using Mermaid.js
 
 # to modify the diagram?
 <ol>
@@ -10,6 +10,7 @@ the design consist sequence-diagram-designing of each entity and api how it hand
 <li>Mermaid Editor</li>
 <li>Mermaid Markdown Syntax Highlighting</li>
 </ol>
+<li>that's it. you can edit this diagrams.</li>
 </ol>
 
 - [Mermaid Editor](https://marketplace.visualstudio.com/items?itemName=tomoyukim.vscode-mermaid-editor) - to show the diagram in the editor
