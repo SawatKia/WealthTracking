@@ -125,7 +125,7 @@ sequenceDiagram
         TargetModel-->>Controller: throw the error message.
         Controller-->>Routes: Pass error information
         Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: Appropriate error code (e.g., 500 Internal Server Error)
+        Routes-->>Client: Appropriate error code (e.g. 500, Internal Server Error)
     end
     end
 
