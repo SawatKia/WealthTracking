@@ -7,24 +7,40 @@ sequenceDiagram
     participant Security
     
 
-    opt create a new user
-        Note over Routes: with body of {username, email,<br/>Password, confirmPass}
-        Client->>Routes: POST /user/create
-        Routes->>Routes: extract body by body parser to parameters
-        Routes->>Controller: register(username, email,<br>Password, confirmPass)
-        Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
-        Controller->>Controller: verify password matched
-        Controller-->>Routes: throw error password don't match
-        Note over Routes,Client: <status> <message>
-        Routes-->>Client: 400 password don't match 
-        Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
-        Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
-        UserModel->>UserModel: verifying username and email<br> if match any user<br>this.find("username", "username", True, "asc")<br>this.find("email, "email", True, "asc")
-        alt found user with the same email or username
-            UserModel-->>Controller: return user object {...}
-            Controller-->>Routes: throw user duplicated
-            Routes-->>Client: 409 Conflict found
-        else successful
+    alt create a new user
+        rect rgb(73,204,144)
+            Note over Routes: with body of {username, email,<br/>Password, confirmPass}
+            Client->>Routes: POST /user/create
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: register(username, email,<br>Password, confirmPass)
+            Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
+            opt some parameter is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 400, parameters is required 
+            end
+            Controller->>Controller: verify password matched
+            opt password and confirm password doesn't match
+                Controller-->>Routes: throw the error "password don't match"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 400, password don't match 
+            end
+            Controller->>Controller: verify email format
+            opt invalid email format 
+                Controller-->>Routes: throw the error "invalid email"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 400, invalid email
+            end
+            Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
+            Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
+            UserModel->>UserModel: verifying userName and eMail<br> if match any user<br>this.find("username", userName, True, "asc")<br>this.find("email, eMail, True, "asc")
+            opt found user with the same email and username
+                UserModel-->>Controller: return user object {...}
+                Controller-->>Routes: throw the error "user duplicated"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 409, Conflict found
+            end
+            UserModel->>Controller: return user empty object
             Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
             Controller->>Controller: normalize an email and username to lowercase<br>this.normalize_email(email)
             Controller->>Controller: create user object from parameters
@@ -32,36 +48,74 @@ sequenceDiagram
             Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
             Controller->>UserModel: create(newUser: New_User)
             UserModel->>UserModel: db.collection(User).insertOne(newUser)
-            alt Failed
-                UserModel-->>Controller: throw the error
-                Controller-->>Routes: throw "the error occured when creating a user"
-                Routes-->>Client: 500, "the error occured when creating a user"
-            else successful
+            opt Created user Failed
+                UserModel-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured when creating a user"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 500, "error occured when creating a user"
+            end
                 UserModel->>Controller: user created id: str
                 Controller->>Routes: return user created id: str
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes->>Client: 201, "user created", {id: userCreatedId}
-            end
             opt any error
-            Controller-->>Routes: throw "internal server error"
+            Controller-->>Routes: throw the error "internal server error"
+            Note over Routes,Client: <status> <message>
             Routes-->>Client: 500, "internal server error"
             end
         end
-    end
-    opt logging in
-        Note over Routes: with body of {username, email,<br/>Password, confirmPass}
-        Client->>Routes: /user/login
-        Routes->>Controller: login
-    end
-    opt read a user
-        Note over Routes: with body of {Id}
-        Client->>Routes: POST /user/read
-    end
-    opt update auser
-        Note over Routes: with body of {Id,dataObject}
-        Client->>Routes: PUT /user
-    end
-    opt delete a user
-        Note over Routes: with body of {Id}
-        Client->>Routes: DELETE /user
+    else logging in
+        rect rgb(97,175,254)
+            Note over Routes, Controller: the log in endpoint can receive either email or username
+            Note over Routes, Client: with body of {username, email,Password, confirmPass}
+            Client->>Routes: POST /user/login
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: login (username, password)
+            Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
+            opt some parameter is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 400, parameters is required 
+            end
+            Controller->>UserModel: User.check_password(db, userName.lower(), password)
+            UserModel->>UserModel: this.find("username", userName, True, "asc")
+            opt not found the username
+                UserModel->>UserModel: this.find("email", eMail, True, "asc")
+            end
+            opt not found the email
+                UserModel-->>Controller: return empty object
+                Controller-->>Routes: throw the error "user not found"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 401, unauthorized
+            end
+            UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
+            opt password check Failed
+                UserModel-->>Controller: return False
+                Controller-->>Routes: throw the error "invalid password"
+                Note over Routes,Client: <status> <message>
+                Routes-->>Client: 401, unauthorized
+            end
+            UserModel-->>Controller: return True
+            Controller->>Controller: this.create_token(user)
+            Controller->>Routes:retun token
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Note right of Routes: the token might be send in<br> Header with "Barear " prefix
+            Routes->>Client: 200, login successful, {token: token}
+
+        end
+    else read a user
+        rect rgb(142,172,252)
+            Note over Routes: with body of {Id}
+            Client->>Routes: POST /user/read
+        end
+    else update auser
+        rect rgb(252,182,142)
+            Note over Routes: with body of {Id,dataObject}
+            Client->>Routes: PUT /user
+        end
+    else delete a user
+        rect rgb(249,62,62)
+            Note over Routes: with body of {Id}
+            Client->>Routes: DELETE /user
+        end
     end
