@@ -62,7 +62,8 @@ sequenceDiagram
         rect rgb(247,155,155)
             Client->>Routes: POST /user/logout
             Routes->>Controller: logout()
-            Controller->>Controller: delete token in the cookie
+            %% delete token in the cookie is when for not enable cors but this Application enable cors, examine this condition
+            Controller->>Controller: delete token in the cookie <br>or blank the token in the cookie
             opt
                 Controller-->>Routes: throw the error "error occured during logging out"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
