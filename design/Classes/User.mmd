@@ -106,7 +106,7 @@ sequenceDiagram
     else read a user
         rect rgb(142,172,252)
             Note over Routes: with body of {request}
-            Client->>Routes: POST /user/read
+            Client->>Routes: POST /user/current
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>Controller: get_current_user(request)
             Controller->>Controller: extract token from cookie in request
@@ -114,6 +114,12 @@ sequenceDiagram
                 Controller-->>Routes:k
             end
         end
+    else read users
+        rect rgb(253,164,255)
+            Note right of Client: Adnim only
+            Note over Routes: with body of {searchCriteria, searchValue, findOne, sorting}
+            Client->>Routes:POST /users/    
+    end
     else update auser
         rect rgb(252,182,142)
             Note over Routes: with body of {Id,dataObject}
