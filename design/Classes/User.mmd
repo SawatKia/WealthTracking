@@ -16,20 +16,20 @@ sequenceDiagram
             Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
             opt some parameter is null or empty
                 Controller-->>Routes: throw the error "parameters is required"
-                Note over Routes,Client: <status> <message>
-                Routes-->>Client: 400, parameters is required 
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "parameters is required"
             end
             Controller->>Controller: verify password matched
             opt password and confirm password doesn't match
                 Controller-->>Routes: throw the error "password don't match"
-                Note over Routes,Client: <status> <message>
-                Routes-->>Client: 400, password don't match 
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "password and its confirm don't match"
             end
             Controller->>Controller: verify email format
             opt invalid email format 
                 Controller-->>Routes: throw the error "invalid email"
-                Note over Routes,Client: <status> <message>
-                Routes-->>Client: 400, invalid email
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "invalid email"
             end
             Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
             Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
@@ -37,8 +37,8 @@ sequenceDiagram
             opt found user with the same email and username
                 UserModel-->>Controller: return user object {...}
                 Controller-->>Routes: throw the error "user duplicated"
-                Note over Routes,Client: <status> <message>
-                Routes-->>Client: 409, Conflict found
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 409, "Conflict found"
             end
             UserModel->>Controller: return user empty object
             Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
@@ -51,7 +51,7 @@ sequenceDiagram
             opt Created user Failed
                 UserModel-->>Controller: throw any error
                 Controller-->>Routes: throw the error "error occured when creating a user"
-                Note over Routes,Client: <status> <message>
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured when creating a user"
             end
                 UserModel->>Controller: user created id: str
@@ -60,7 +60,7 @@ sequenceDiagram
                 Routes->>Client: 201, "user created", {id: userCreatedId}
             opt any error
             Controller-->>Routes: throw the error "internal server error"
-            Note over Routes,Client: <status> <message>
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 500, "internal server error"
             end
         end
@@ -74,8 +74,8 @@ sequenceDiagram
             Controller->>Controller: verify all pameters is not null<br>this.is_params_not_null(...params)
             opt some parameter is null or empty
                 Controller-->>Routes: throw the error "parameters is required"
-                Note over Routes,Client: <status> <message>
-                Routes-->>Client: 400, parameters is required 
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "parameters is required"
             end
             Controller->>UserModel: User.check_password(db, userName.lower(), password)
             UserModel->>UserModel: this.find("username", userName, True, "asc")
@@ -85,34 +85,59 @@ sequenceDiagram
             opt not found the email
                 UserModel-->>Controller: return empty object
                 Controller-->>Routes: throw the error "user not found"
-                Note over Routes,Client: <status> <message>
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
             UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
             opt password check Failed
                 UserModel-->>Controller: return False
-                Controller-->>Routes: throw the error "invalid password"
-                Note over Routes,Client: <status> <message>
+                Controller-->>Routes: throw the error "password invalid"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
-            UserModel-->>Controller: return True
-            Controller->>Controller: this.create_token(user)
+            UserModel->>Controller: return True
+            Controller->>Security: Security.create_token(user)
+            opt cannot create token
+                Security-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured when logging in"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured when logging in"
+            end
+            Security->>Controller: return token
             Controller->>Routes:retun token
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Note right of Routes: the token might be send in<br> Header with "Barear " prefix
             Routes->>Client: 200, login successful, {token: token}
 
         end
-    else read a user
+    else read current user
         rect rgb(142,172,252)
             Note over Routes: with body of {request}
             Client->>Routes: POST /user/current
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>Controller: get_current_user(request)
-            Controller->>Controller: extract token from cookie in request
+            Controller->>Controller: extract the token from cookie<br>in the request
             opt cookie not found
-                Controller-->>Routes:k
+                Controller-->>Routes: throw the error "mising token"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401, "mising token"
             end
+            Controller->>Security: Security.decode_token(token)
+            opt cannot decode token
+                Security-->>Controller: throw the error "token decode error"
+                Controller-->>Routes: throw the error "error occured when getting a current user"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured when getting a current user"
+
+            end
+            Security->>Controller: return isExpired, user object {...}
+            opt token is expired or user object is empty
+                Controller-->>Routes: throw the error "Invalid token"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                 Routes-->>Client: 401, "Invalid token"
+            end
+            Controller->>Routes: return user object {...}
+            Routes->>Client: 200, "get current user success",{user: user}
         end
     else read users
         rect rgb(253,164,255)
