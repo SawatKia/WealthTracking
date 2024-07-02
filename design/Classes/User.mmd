@@ -97,11 +97,20 @@ sequenceDiagram
             Controller->>Routes: return user object {...}
             Routes->>Client: 200, "get current user success",{user: user}
         end
-    else read users
+    else search users
         rect rgb(253,164,255)
             Note right of Client: Adnim only
             Note over Routes: with body of {searchCriteria, searchValue, findOne, sorting}
-            Client->>Routes:POST /user/search    
+            Client->>Routes:POST /user/search
+            Routes->>Controller: search_user(criteria, value, isFindOne, sorting)
+            Controller->>Controller: verify all parameters is not null
+            opt some parameter is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
+            end
+            Note over Controller, UserModel: search(searchCriteria: str, searchValue: str,<br>isFindOne: bool, sorting: {"asc","desc"}<Sort>
+            Controller->>UserModel: search_user()    
     end
     else update current user
         rect rgb(252,182,142)
@@ -143,6 +152,7 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "userId is required"
             end
+            Controller->>UserModel:delete(userId)
         end
 
     end 
