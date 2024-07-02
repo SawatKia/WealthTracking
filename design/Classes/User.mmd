@@ -31,6 +31,7 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "invalid email"
             end
+            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
             Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
             Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
             UserModel->>UserModel: verifying userName and eMail<br> if match any user<br>this.find("username", userName, True, "asc")<br>this.find("email, eMail, True, "asc")
@@ -42,7 +43,6 @@ sequenceDiagram
             end
             UserModel->>Controller: return user empty object
             Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
-            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
             Controller->>Controller: create user object from parameters
             Controller->>Controller: add member_since,and role fields to object
             Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
@@ -56,9 +56,9 @@ sequenceDiagram
             end
             UserModel->>Controller: user created id: str
             opt any error
-                Controller-->>Routes: throw the error "internal server error"
+                Controller-->>Routes: throw any error
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "internal server error"
+                Routes-->>Client: 500, "something went wrong"
             end
             Controller->>Routes: return user created id: str
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
