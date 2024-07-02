@@ -50,9 +50,9 @@ sequenceDiagram
             UserModel->>UserModel: db.collection(User).insertOne(newUser)
             opt Created user Failed
                 UserModel-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured when creating a user"
+                Controller-->>Routes: throw the error "error occured during create a user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "error occured when creating a user"
+                Routes-->>Client: 500, "error occured during create a user"
             end
             UserModel->>Controller: user created id: str
             opt any error
@@ -79,9 +79,9 @@ sequenceDiagram
             Controller->>Security: Security.decode_token(token)
             opt cannot decode token
                 Security-->>Controller: throw the error "token decode error"
-                Controller-->>Routes: throw the error "error occured when getting a current user"
+                Controller-->>Routes: throw the error "error occured during get a current user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "error occured when getting a current user"
+                Routes-->>Client: 500, "error occured during get a current user"
             end
             Security->>Controller: return isExpired, user object {...}
             opt token is expired or user object is empty
@@ -110,14 +110,22 @@ sequenceDiagram
                 Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
             end
             Note over Controller, UserModel: search(searchCriteria: str, searchValue: str,<br>isFindOne: bool, sorting: {"asc","desc"}<Sort>
-            Controller->>UserModel: search_user()    
+            Controller->>UserModel: search(criteria, value, isFindOne, sortType)
+            opt search user Failed
+                UserModel-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured during search a user"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "the error occured during search a user"
+            end
+            UserModel->>Controller: return array of user object [{...}, {...}, ...]
+            Controller->>Routes: return array of user object [{...}, {...}, ...]
     end
     else update current user
         rect rgb(252,182,142)
             Note over Routes: with body of {Id,dataObject}
             Client->>Routes: PUT /user
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: update_current_user(request, updatedUserData)
+            Routes->>Controller: update_current_user(request, updatedUserData, password)
             Controller->>Controller: verify updatedUserData is not null
             opt updatedUserData is null or empty
                 Controller-->>Routes: throw the error "parameters is required"
@@ -126,9 +134,20 @@ sequenceDiagram
             end
             Note right of  Controller: as the get_current_user was defined in "read current user"
             Controller->>Controller: this.get_current_user(request)
+            Note right of  Controller: as the check_password was defined in Security
+            Controller->>UserModel: check_password(db, username, password)
+            opt invalid password
+                UserModel-->>Controller: return False
+                Controller-->>Routes: throw the error "password invalid"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401, unauthorized
+            end
+            %%check new password and confirm nnew password
+            Controller->>Controller: this.get_current_user(request)
             Controller->>Controller: include current user data that doesn't exist in the updatedUserData<br>into updatedUserData
             Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
             Controller->>UserModel: update(db, userId, updatedUserData)
+            Note right of  Controller: as the check_password was defined in Security
             opt
                 UserModel-->>Controller: throw any error
                 Controller-->>Routes: throw the error "error occured during update user"
