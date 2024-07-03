@@ -3,26 +3,50 @@ sequenceDiagram
     participant Client
     participant Routes
     participant Controller
-    participant Bank as BankAccounk
+    participant Bank as BankAccount
 
     alt create a new bank account
         rect rgb(73,204,144)
             Client->>Routes: POST /bank/create
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>Controller: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName. initialBalance) 
+            opt some parameter is null or empty
+                Controller-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "bank Account Name and bank Name are required"
+            end
+            Controller->>Controller: create new bank account object from pameters
+            Controller->>Bank: create(newBankAccount: NewBankAccount)
+            opt create Failed
+                Bank-->>Controller: throw any error
+                Controller-->>Routes: throw the error "error occured during create a new account"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured during create a new account"                
+            end
+            Bank-->>Controller: return bank account created id
+            Controller-->>Routes: return bank account created id
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes-->>Client: 200, "cretae a new bank account successful", {id: id}
         end
     else read a bank account
         rect rgb(142,172,252)
-            Client->>Routes: POST /bank/id
+            Note right of Client: search by id,fav,etc...
+            Client->>Routes: POST /bank/search
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
         end
     else read all bank aacounts
         rect rgb(152, 142, 232)
             Client->>Routes: POST /bank/all
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
         end
     else update bank aacount
         rect rgb(252,182,142)
             Client->>Routes: PUT  /bank/update
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
         end
     else delete bank account
         rect rgb(247,155,155)
             Client->>Routes: DELETE /bank/delete
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
         end
     end
