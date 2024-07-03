@@ -1,0 +1,28 @@
+sequenceDiagram
+    title Bank Accounts
+    participant Client
+    participant Routes
+    participant Controller
+    participant Bank as BankAccounk
+
+    alt create a new bank account
+        rect rgb(73,204,144)
+            Client->>Routes: POST /bank/create
+        end
+    else read a bank account
+        rect rgb(142,172,252)
+            Client->>Routes: POST /bank/id
+        end
+    else read all bank aacounts
+        rect rgb(152, 142, 232)
+            Client->>Routes: POST /bank/all
+        end
+    else update bank aacount
+        rect rgb(252,182,142)
+            Client->>Routes: PUT  /bank/update
+        end
+    else delete bank account
+        rect rgb(247,155,155)
+            Client->>Routes: DELETE /bank/delete
+        end
+    end
