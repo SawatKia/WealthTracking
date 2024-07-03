@@ -53,7 +53,7 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during create a user"
             end
-            UserModel->>Controller: user created id: str
+            UserModel->>Controller: return user created id: str
             opt any error
                 Controller-->>Routes: throw any error
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
@@ -120,7 +120,7 @@ sequenceDiagram
             Controller->>Routes: return array of user object [{...}, {...}, ...]
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "seach user email successful" , {users: [{...},{...},{...},...]}
-    end
+        end
     else update current user
         rect rgb(252,182,142)
             Note over Routes: with body of {Id,dataObject}
@@ -191,8 +191,8 @@ sequenceDiagram
                 Routes-->>Client: 400, "userId is required"
             end
             Controller->>UserModel: delete(userId)
-            UserModel->>Controller: True
-            Controller->>Routes: True
+            UserModel->>Controller: return True
+            Controller->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "delete successful"
         end
