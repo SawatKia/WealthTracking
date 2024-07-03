@@ -14,16 +14,18 @@ sequenceDiagram
     Client->>Routes: HTTP Request
     rect rgb(185,185,185)
     Note over Client, Database: these processes are Middleware that was process before any tasks
-        Routes->>Routes: verify method
-        rect rgb(239, 157, 157)
-        Note right of Client: method not allow
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 405 Method Not Allowed
+        opt verify method
+            Routes->>Routes: verify method
+            rect rgb(239, 157, 157)
+            Note right of Client: method not allow
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 405 Method Not Allowed
+            end
         end
             Routes->>Controller: some_function(request)
         rect rgb(191, 223, 255)
         Note right of Client: verify request body
-            Controller->>Controller: verifying if a Cookies token was attached with the body?<br>verify_cookie(token: str)
+            Controller->>Controller: verifying if a Cookies token was attached with reqyest in the body?<br>isCookie(token: str)
             
             opt Cookie not found
                 Controller-->>Routes: throw error missing token in the body
@@ -36,8 +38,8 @@ sequenceDiagram
         Note right of Client: authorization
             Note over Controller, UserModel: verify_client(token)<br/>to check if cilent was a user or not
             Controller->>UserModel: verify_client(token)
-            UserModel->>UserModel: decode_token(token)
-            UserModel->>UserModel: get_user(userId)
+            UserModel->>UserModel: this.decode_token(token)
+            UserModel->>UserModel: this.get_user_by_id(userId)
             UserModel->>Database: Perform database operation
             Database-->>UserModel: user object or empty
             opt not found
@@ -53,7 +55,7 @@ sequenceDiagram
         Note right of Client: Forbidden
             Note over Controller, UserModel: right_verify(currentUser)<br/>to check if a user was allow to do a RUD operation to TargetModel<br/>eg. to modify/read a data, you need to be an owner
             Controller->>TargetModel: right_verify(currentUser)
-            TargetModel->>TargetModel: TargetModel.get_owner(objectId)
+            TargetModel->>TargetModel: TargetModel.get_owner_by_id(objectId)
             alt successful
                 TargetModel->>Controller: return true
             else User doesn't have right to access/modify

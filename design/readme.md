@@ -18,3 +18,14 @@ the design consist sequence-diagram designing of each entity and api how it hand
 
 # to examine the diagram?
 each diagram have it own image in png file. you can examine it.
+
+# Diagrams status
+| Diagram Name               | finish | verify |
+|----------------------------|--------|--------|
+| GeneralClassTemplate.md    |  [x]   |  [x]   |
+**Classes**
+| Security.md                |  [x]   |  [x]   |
+| User.md                    |  [x]   |  [x]   |
+
+
+

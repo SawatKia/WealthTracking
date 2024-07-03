@@ -20,18 +20,8 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "username and password are required"
             end
+            Note right of  Controller: as the check_password was defined in UserModel
             Controller->>UserModel: User.check_password(db, userName.lower(), password)
-            UserModel->>UserModel: this.find("username", userName, True, "asc")
-            opt not found the username
-                UserModel->>UserModel: this.find("email", eMail, True, "asc")
-            end
-            opt not found the email
-                UserModel-->>Controller: return empty object
-                Controller-->>Routes: throw the error "user not found"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 401, unauthorized
-            end
-            UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
             opt password check Failed
                 UserModel-->>Controller: return False
                 Controller-->>Routes: throw the error "password invalid"

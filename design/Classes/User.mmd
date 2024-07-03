@@ -32,9 +32,9 @@ sequenceDiagram
                 Routes-->>Client: 400, "invalid email"
             end
             Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
-            Controller->>UserModel: duplicate user verifying<br>get_user(username, email)
-            Note over UserModel: this.find(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
-            UserModel->>UserModel: verifying userName and eMail<br> if match any user<br>this.find("username", userName, True, "asc")<br>this.find("email, eMail, True, "asc")
+            Controller->>UserModel: duplicate user verifying<br>verify_duplicate_user(username, email)
+            Note over Controller, Security: this.search_user(searchCriteria: str, searchValue: str, one: <True, False>bool, sorting: <"asc", "desc">Sort)
+            UserModel->>UserModel: verifying userName and eMail<br> if match any user<br>this.search_user("username", userName, True, "asc")<br>this.search_user("email, eMail, True, "asc")
             opt found user with the same email and username
                 UserModel-->>Controller: return user object {...}
                 Controller-->>Routes: throw the error "user duplicated"
@@ -47,7 +47,6 @@ sequenceDiagram
             Controller->>Controller: add member_since,and role fields to object
             Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
             Controller->>UserModel: create(newUser: New_User)
-            UserModel->>UserModel: db.collection(User).insertOne(newUser)
             opt Created user Failed
                 UserModel-->>Controller: throw any error
                 Controller-->>Routes: throw the error "error occured during create a user"
@@ -109,8 +108,8 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
             end
-            Note over Controller, UserModel: search(searchCriteria: str, searchValue: str,<br>isFindOne: bool, sorting: {"asc","desc"}<Sort>
-            Controller->>UserModel: search(criteria, value, isFindOne, sortType)
+            Note over Controller, UserModel: search_user(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
+            Controller->>UserModel: search_user("email", email, false, "asc")
             opt search user Failed
                 UserModel-->>Controller: throw any error
                 Controller-->>Routes: throw the error "error occured during search a user"
@@ -119,6 +118,8 @@ sequenceDiagram
             end
             UserModel->>Controller: return array of user object [{...}, {...}, ...]
             Controller->>Routes: return array of user object [{...}, {...}, ...]
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "seach user email successful" , {users: [{...},{...},{...},...]}
     end
     else update current user
         rect rgb(252,182,142)
@@ -130,24 +131,34 @@ sequenceDiagram
             opt updatedUserData is null or empty
                 Controller-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "updatedUserData is required"
+                Routes-->>Client: 400, "updatedUserData and password is required"
             end
             Note right of  Controller: as the get_current_user was defined in "read current user"
             Controller->>Controller: this.get_current_user(request)
-            Note right of  Controller: as the check_password was defined in Security
-            Controller->>UserModel: check_password(db, username, password)
+            Controller->>UserModel: check_password(db, username.lower(), password)
+            UserModel->>UserModel: this.search_user("username", userName, True, "asc")
+            opt not found the username
+                UserModel->>UserModel: this.search_user("email", userName, True, "asc")
+            end
+            opt not found the email
+                UserModel-->>Controller: return empty object
+                Controller-->>Routes: throw the error "user not found"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 401, unauthorized
+            end
+            UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
             opt invalid password
                 UserModel-->>Controller: return False
                 Controller-->>Routes: throw the error "password invalid"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
+            UserModel->>Controller: return True
             %%check new password and confirm nnew password
             Controller->>Controller: this.get_current_user(request)
             Controller->>Controller: include current user data that doesn't exist in the updatedUserData<br>into updatedUserData
             Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
             Controller->>UserModel: update(db, userId, updatedUserData)
-            Note right of  Controller: as the check_password was defined in Security
             opt
                 UserModel-->>Controller: throw any error
                 Controller-->>Routes: throw the error "error occured during update user"
@@ -171,7 +182,19 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "userId is required"
             end
-            Controller->>UserModel:delete(userId)
+            Controller->>UserModel:get_user_by_id(userId)
+            UserModel->>UserModel: verify userId is not null
+            opt userId is null or empty
+                UserModel-->>Controller: throw the error "parameter is required"
+                Controller-->>Routes: throw the error "parameter is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "userId is required"
+            end
+            Controller->>UserModel: delete(userId)
+            UserModel->>Controller: True
+            Controller->>Routes: True
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "delete successful"
         end
 
     end 
