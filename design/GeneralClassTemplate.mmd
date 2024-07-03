@@ -41,13 +41,14 @@ sequenceDiagram
             UserModel->>UserModel: this.decode_token(token)
             UserModel->>UserModel: this.get_user_by_id(userId)
             UserModel->>Database: Perform database operation
-            Database-->>UserModel: user object or empty
             opt not found
+            Database-->>UserModel: return empty object
                 UserModel-->>Controller: return false
                 Controller-->>Routes: throw Client unauthorized
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401 Unauthorized
             end
+            Database->>UserModel: return user object
             UserModel->>Controller: return true
             Note over UserModel, Controller: and goto next verification
         end
