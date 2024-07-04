@@ -6,18 +6,19 @@ the design consist sequence-diagram designing of each entity and api how it hand
 <ol>
 <li>clone this project to your local repository.</li>
 <ol>
-<h2>install these extensions</h2>
+<h2>install extensions below</h2>
 <li>Mermaid Editor</li>
 <li>Mermaid Markdown Syntax Highlighting</li>
 </ol>
-<li>that's it. you can edit this diagrams.</li>
+<li>that's it. you can modify these diagrams.</li>
 </ol>
 
-- [Mermaid Editor](https://marketplace.visualstudio.com/items?itemName=tomoyukim.vscode-mermaid-editor) - to show the diagram in the editor
-- [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting) *(optional)* - to highlight the syntax if you want to edit the diagram.
+### extension links
+- [Mermaid Editor](https://marketplace.visualstudio.com/items?itemName=tomoyukim.vscode-mermaid-editor) - to preview the diagram in the editor
+- [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting) *(optional)* - to highlight the syntax if you want to modify the diagram.
 
 # to examine the diagram?
-each diagram have it own image in png file. you can examine it.
+each diagram have it own image in svg file. you can examine it.
 
 # Diagrams status
 | Diagram Name               | finish | verify |
