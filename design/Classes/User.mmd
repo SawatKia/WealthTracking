@@ -2,7 +2,7 @@ sequenceDiagram
    title User Class
     participant Client
     participant Routes
-    participant Controller
+    participant UserController
     participant UserModel
     participant Security
     
@@ -12,54 +12,55 @@ sequenceDiagram
             Note over Routes: with body of {username, email,<br/>Password, confirmPass}
             Client->>Routes: POST /user/create
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: register(username, email,<br>Password, confirmPass)
-            Controller->>Controller: verify all pameters is not null 
+            Routes->>UserController: register(username, email,<br>Password, confirmPass)
+            UserController->>UserController: verify all pameters is not null 
             opt some parameter is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
+                UserController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "username, email,<br> Password, and confirmPass are required"
             end
-            Controller->>Controller: verify password matched
+            UserController->>UserController: verify password matched
             opt password and confirm password doesn't match
-                Controller-->>Routes: throw the error "password don't match"
+                UserController-->>Routes: throw the error "password don't match"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "password and its confirm don't match"
             end
-            Controller->>Controller: verify email format
+            UserController->>UserController: verify email format
             opt invalid email format 
-                Controller-->>Routes: throw the error "invalid email"
+                UserController-->>Routes: throw the error "invalid email"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "invalid email"
             end
-            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
-            Controller->>UserModel: duplicate user verifying<br>verify_duplicate_user(username, email)
-            Note over Controller, Security: this.search_user(searchCriteria: str, searchValue: str, one: <True, False>bool, sorting: <"asc", "desc">Sort)
+            UserController->>UserController: normalize an email and username to lowercase<br> this.normalize(email, username)
+            UserController->>UserModel: duplicate user verifying<br>verify_duplicate_user(username, email)
+            Note over UserController, Security: this.search_user(searchCriteria: str, searchValue: str, one: <True, False>bool, sorting: <"asc", "desc">Sort)
             UserModel->>UserModel: verifying userName and eMail<br> if match any user<br>this.search_user("username", userName, True, "asc")<br>this.search_user("email, eMail, True, "asc")
             opt found user with the same email and username
-                UserModel-->>Controller: return user object {...}
-                Controller-->>Routes: throw the error "user duplicated"
+                Note left of UserModel: return only non-sensitive data (user data: userUniqueId, memberSince, userName, email))
+                UserModel-->>UserController: return user object {...}
+                UserController-->>Routes: throw the error "user duplicated"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 409, "Conflict found"
             end
-            UserModel->>Controller: return user empty object
-            Controller->>Controller: hashing the password<br>bcrypt.hashpw(password, salt?)
-            Controller->>Controller: create user object from parameters
-            Controller->>Controller: add member_since,and role fields to object
-            Note over Controller, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
-            Controller->>UserModel: create(newUser: New_User)
+            UserModel->>UserController: return user empty object
+            UserController->>UserController: hashing the password<br>bcrypt.hashpw(password, salt?)
+            UserController->>UserController: create user object from parameters
+            UserController->>UserController: add member_since,and role fields to object
+            Note over UserController, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
+            UserController->>UserModel: create(newUser: New_User)
             opt Created user Failed
-                UserModel-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured during create a user"
+                UserModel-->>UserController: throw any error
+                UserController-->>Routes: throw the error "error occured during create a user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during create a user"
             end
-            UserModel->>Controller: return user created id: str
+            UserModel->>UserController: return user created id: str
             opt any error
-                Controller-->>Routes: throw any error
+                UserController-->>Routes: throw any error
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "something went wrong"
             end
-            Controller->>Routes: return user created id: str
+            UserController->>Routes: return user created id: str
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 201, "user created", {id: userCreatedId}
         end
@@ -68,111 +69,120 @@ sequenceDiagram
             Note over Routes: with body of {request}
             Client->>Routes: POST /user/current
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: get_current_user(request)
-            Controller->>Controller: extract the token from cookie<br>in the request
+            Routes->>UserController: get_current_user(request)
+            UserController->>UserController: extract the token from cookie<br>in the request
             opt cookie not found
-                Controller-->>Routes: throw the error "mising token"
+                UserController-->>Routes: throw the error "mising token"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, "mising token"
             end
-            Controller->>Security: Security.decode_token(token)
+            UserController->>Security: Security.decode_token(token)
             opt cannot decode token
-                Security-->>Controller: throw the error "token decode error"
-                Controller-->>Routes: throw the error "error occured during get a current user"
+                Security-->>UserController: throw the error "token decode error"
+                UserController-->>Routes: throw the error "error occured during get a current user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during get a current user"
             end
-            Security->>Controller: return isExpired, user object {...}
+            Security->>UserController: return isExpired, user object {...}
             opt token is expired or user object is empty
-                Controller-->>Routes: throw the error "Invalid token"
+                UserController-->>Routes: throw the error "Invalid token"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                  Routes-->>Client: 401, "Invalid token"
             end
             opt any error
-                Controller-->>Routes: throw the error "internal server error"
+                UserController-->>Routes: throw the error "internal server error"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "internal server error"
             end
-            Controller->>Routes: return user object {...}
+            UserController->>Routes: return user object {...}
             Routes->>Client: 200, "get current user success",{user: user}
         end
     else search users
         rect rgb(253,164,255)
             Note right of Client: Adnim only
-            Note over Routes: with body of {searchCriteria, searchValue, findOne, sorting}
+            Note over Routes: with body of {searchCriteria, searchValue, isFindOne, sorting}
             Client->>Routes:POST /user/search
-            Routes->>Controller: search_user(criteria, value, isFindOne, sorting)
-            Controller->>Controller: verify all parameters is not null
+            Routes->>UserController: search_user(searchCriteria, searchValue, isFindOne, sorting)
+            UserController->>UserController: verify all parameters is not null
             opt some parameter is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
+                UserController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
             end
-            Controller->>Controller: convert searchCriteria from parameter<br> by pre-defined criteria using if-else statement<br>for only permit to search with id, username, email,and memberSince
+            UserController->>UserController: convert searchCriteria from parameter<br>to pre-defined criteria using if-else statement<br>for only permit to search with id, username, email,and memberSince
             opt searchCriteria not in this list id, username, email,and memberSince
-                Controller-->>Routes: throw the error "the specified searchCriteria not permit"
+                UserController-->>Routes: throw the error "the specified searchCriteria not permit"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 403, "specified searchCriteria not permit"
             end
-            Note over Controller, UserModel: search_user(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
-            Controller->>UserModel: search_user("email", email, false, "asc")
-            opt search user Failed
-                UserModel-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured during search a user"
+            Note over UserController, UserModel: search_user(searchCriteria: str, searchValue: str,<br>isFindOne: <True, False>bool, sorting: <"asc", "desc">Sort)
+            UserController->>UserModel: search("email", email, false, "asc")
+            opt search Failed
+                UserModel-->>UserController: throw any error
+                UserController-->>Routes: throw the error "error occured during search a user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "the error occured during search a user"
             end
-            UserModel->>Controller: return array of user object [{...}, {...}, ...]
-            Controller->>Routes: return array of user object [{...}, {...}, ...]
+            Note left of UserModel: return only non-sensitive data (user data: userUniqueId,<br>memberSince, userName, email))
+            UserModel->>UserController: return array of user object [{...}, {...}, ...] or<br>return user object{...}
+            UserController->>Routes: return array of user object [{...}, {...}, ...] or<br>return user object{...}
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes->>Client: 200, "seach user email successful" , {users: [{...},{...},{...},...]}
+            Routes->>Client: 200, "seach user email successful", {users: [{...},{...},{...},...]} or<br>200, "seach user email successful", {user: {...}}
         end
     else update current user
         rect rgb(252,182,142)
             Note over Routes: with body of {Id,dataObject}
             Client->>Routes: PUT /user
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: update_current_user(request, updatedUserData, password)
-            Controller->>Controller: verify updatedUserData is not null
+            Routes->>UserController: update_current_user(request, updatedUserData, password)
+            UserController->>UserController: verify updatedUserData is not null
             opt updatedUserData is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
+                UserController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "updatedUserData and password is required"
             end
-            Note right of  Controller: as the get_current_user was defined in "read current user"
-            Controller->>Controller: this.get_current_user(request)
-            Controller->>UserModel: check_password(db, username.lower(), password)
+            Note right of  UserController: as the get_current_user was defined in "read current user"
+            UserController->>UserController: this.get_current_user(request)
+            UserController->>UserModel: check_password(db, username.lower(), password)
             UserModel->>UserModel: this.search_user("username", userName, True, "asc")
             opt not found the username
                 UserModel->>UserModel: this.search_user("email", userName, True, "asc")
             end
             opt not found the email
-                UserModel-->>Controller: return empty object
-                Controller-->>Routes: throw the error "user not found"
+                UserModel-->>UserController: return empty object
+                UserController-->>Routes: throw the error "user not found"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
             UserModel->>UserModel:bcrypt.checkpw(password, user['hashedPassword'])
             opt invalid password
-                UserModel-->>Controller: return False
-                Controller-->>Routes: throw the error "password invalid"
+                UserModel-->>UserController: return False
+                UserController-->>Routes: throw the error "password invalid"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
-            UserModel->>Controller: return True
-            %%check new password and confirm nnew password
-            Controller->>Controller: this.get_current_user(request)
-            Controller->>Controller: include current user data that doesn't exist in the updatedUserData<br>into updatedUserData
-            Controller->>Controller: normalize an email and username to lowercase<br> this.normalize(email, username)
-            Controller->>UserModel: update(db, userId, updatedUserData)
+            UserModel->>UserController: return True
+            opt if newPassword exist
+                UserController->>UserController: verify if newPassword == confirmNewPassword
+                opt new password and its confirmation don't match
+                    UserController-->>Routes: throw the error "new password confirm don't match"
+                    Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                    Routes-->>Client: 400, "new password confirm don't match"
+                end
+                UserController->>UserController: bcrypt.hashpw(newPassword, salt?)
+            end
+            UserController->>UserController: this.get_current_user(request)
+            UserController->>UserController: include current user data that doesn't exist in the updatedUserData<br>into updatedUserData
+            UserController->>UserController: normalize an email and username to lowercase<br> this.normalize(email, username)
+            UserController->>UserModel: update(db, userId, updatedUserData)
             opt
-                UserModel-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured during update user"
+                UserModel-->>UserController: throw any error
+                UserController-->>Routes: throw the error "error occured during update user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during update user"
             end
-            UserModel->>Controller: return True
-            Controller->>Routes: return True
+            UserModel->>UserController: return True
+            UserController->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "user updated"
         end
@@ -181,24 +191,24 @@ sequenceDiagram
             Note over Routes: with body of {Id}
             Client->>Routes: DELETE /user
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: delete_user(userId)
-            Controller->>Controller: verify userId is not null
+            Routes->>UserController: delete_user(userId)
+            UserController->>UserController: verify userId is not null
             opt userId is null or empty
-                Controller-->>Routes: throw the error "parameter is required"
+                UserController-->>Routes: throw the error "parameter is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "userId is required"
             end
-            Controller->>UserModel:get_user_by_id(userId)
+            UserController->>UserModel:get_user_by_id(userId)
             UserModel->>UserModel: verify userId is not null
             opt userId is null or empty
-                UserModel-->>Controller: throw the error "parameter is required"
-                Controller-->>Routes: throw the error "parameter is required"
+                UserModel-->>UserController: throw the error "parameter is required"
+                UserController-->>Routes: throw the error "parameter is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "userId is required"
             end
-            Controller->>UserModel: delete(userId)
-            UserModel->>Controller: return True
-            Controller->>Routes: return True
+            UserController->>UserModel: delete(userId)
+            UserModel->>UserController: return True
+            UserController->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "delete successful"
         end
