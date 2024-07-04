@@ -2,47 +2,47 @@ sequenceDiagram
     title Security Class
     participant Client
     participant Routes
-    participant Controller
+    participant SecurityController
     participant UserModel
     participant Security
     
 
     alt logging in
         rect rgb(97,175,254)
-            Note over Routes, Controller: the log in endpoint can receive either email or username
+            Note over Routes, SecurityController: the log in endpoint can receive either email or username
             Note over Routes, Client: with body of {username, email,Password, confirmPass}
             Client->>Routes: POST /user/login
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: login (username, password)
-            Controller->>Controller: verify all pameters is not null 
+            Routes->>SecurityController: login (username, password)
+            SecurityController->>SecurityController: verify all pameters is not null 
             opt some parameter is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
+                SecurityController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "username and password are required"
             end
-            Note right of  Controller: as the check_password was defined in UserModel
-            Controller->>UserModel: User.check_password(db, userName.lower(), password)
+            Note right of  SecurityController: as the check_password was defined in UserModel
+            SecurityController->>UserModel: User.check_password(db, userName.lower(), password)
             opt password check Failed
-                UserModel-->>Controller: return False
-                Controller-->>Routes: throw the error "password invalid"
+                UserModel-->>SecurityController: return False
+                SecurityController-->>Routes: throw the error "password invalid"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 401, unauthorized
             end
-            UserModel->>Controller: return True
-            Controller->>Security: Security.create_token(user)
+            UserModel->>SecurityController: return True
+            SecurityController->>Security: Security.create_token(user)
             opt cannot create token
-                Security-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured when logging in"
+                Security-->>SecurityController: throw any error
+                SecurityController-->>Routes: throw the error "error occured when logging in"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured when logging in"
             end
-            Security->>Controller: return token
+            Security->>SecurityController: return token
             opt any error
-                Controller-->>Routes: throw the error "internal server error"
+                SecurityController-->>Routes: throw the error "internal server error"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "internal server error"
             end
-            Controller->>Routes:retun token
+            SecurityController->>Routes:retun token
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Note right of Routes: the token might be send in<br> Header with "Barear " prefix
             Routes->>Client: 200, login successful, {token: token}
@@ -51,20 +51,20 @@ sequenceDiagram
     else log out
         rect rgb(247,155,155)
             Client->>Routes: POST /user/logout
-            Routes->>Controller: logout()
+            Routes->>SecurityController: logout()
             %% delete token in the cookie is when for not enable cors but this Application enable cors, examine this condition
-            Controller->>Controller: delete token in the cookie <br>or blank the token in the cookie
+            SecurityController->>SecurityController: delete token in the cookie <br>or blank the token in the cookie
             opt
-                Controller-->>Routes: throw the error "error occured during logging out"
+                SecurityController-->>Routes: throw the error "error occured during logging out"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured when logging out"
             end
             opt any error
-                Controller-->>Routes: throw the error "internal server error"
+                SecurityController-->>Routes: throw the error "internal server error"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "internal server error"
             end
-            Controller->>Routes: return True
+            SecurityController->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 200, "logout success"
         end
