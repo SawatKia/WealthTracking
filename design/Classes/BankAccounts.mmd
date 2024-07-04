@@ -2,39 +2,63 @@ sequenceDiagram
     title Bank Accounts
     participant Client
     participant Routes
-    participant Controller
+    participant BankCont as BankCont
     participant Bank as BankAccount
 
     alt create a new bank account
         rect rgb(73,204,144)
             Client->>Routes: POST /bank/create
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>Controller: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName. initialBalance) 
+            Routes->>BankCont: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName. initialBalance) 
             opt some parameter is null or empty
-                Controller-->>Routes: throw the error "parameters is required"
+                BankCont-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, "bank Account Name and bank Name are required"
             end
-            Controller->>Controller: create new bank account object from pameters
-            Controller->>Bank: create(newBankAccount: NewBankAccount)
+            BankCont->>BankCont: create new bank account object from pameters
+            BankCont->>Bank: create(newBankAccount: NewBankAccount)
             opt create Failed
-                Bank-->>Controller: throw any error
-                Controller-->>Routes: throw the error "error occured during create a new account"
+                Bank-->>BankCont: throw any error
+                BankCont-->>Routes: throw the error "error occured during create a new account"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during create a new account"                
             end
-            Bank-->>Controller: return bank account created id
-            Controller-->>Routes: return bank account created id
+            Bank-->>BankCont: return bank account created id
+            BankCont-->>Routes: return bank account created id
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 200, "cretae a new bank account successful", {id: id}
         end
     else read a bank account
         rect rgb(142,172,252)
-            Note right of Client: search by id,fav,etc...
+            Note right of Client: search by id, fav, and userUniqueId
             Client->>Routes: POST /bank/search
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>BankCont: search_bank_account(searchCriteria, searchValue, isFindOne, sorting)
+            BankCont->>BankCont: verify all parameters is not null
+            opt some parameter is null or empty
+                BankCont-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
+            end 
+            BankCont->>BankCont: convert searchCriteria from parameter<br>to pre-defined criteria using if-else statement<br>for only permit to search with<br>bankAccountUniqueId, bankName, and userUniqueId
+            opt searchCriteria not in this list bankAccountUniqueId, bankName, and userUniqueId
+                BankCont-->>Routes: throw the error "the specified searchCriteria not permit"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 403, "specified searchCriteria not permit"
+            end
+            BankCont->>Bank: search("userUniqueId", userUniqueId, False, "asc")
+            opt search Failed
+                UserModel-->>BankCont: throw any error
+                BankCont-->>Routes: throw the error "error occured during search bank account(s)"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "the error occured during search bank account(s)"
+            end
+            UserModel->>BankCont: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
+            BankCont->>Routes: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}or<br>200, "seach bank account successful", {bank-account: {...}}
         end
-    else read all bank aacounts
+    else read all bank accounts of current user
         rect rgb(152, 142, 232)
             Client->>Routes: POST /bank/all
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
