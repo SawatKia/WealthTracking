@@ -108,6 +108,12 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
             end
+            Controller->>Controller: convert searchCriteria from parameter<br> by pre-defined criteria using if-else statement<br>for only permit to search with id, username, email,and memberSince
+            opt searchCriteria not in this list id, username, email,and memberSince
+                Controller-->>Routes: throw the error "the specified searchCriteria not permit"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 403, "specified searchCriteria not permit"
+            end
             Note over Controller, UserModel: search_user(searchCriteria: str, searchValue: str, one: <True, False>bool,<br> sorting: <"asc", "desc">Sort)
             Controller->>UserModel: search_user("email", email, false, "asc")
             opt search user Failed
