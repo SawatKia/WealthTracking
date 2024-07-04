@@ -23,9 +23,20 @@ each diagram have it own image in png file. you can examine it.
 | Diagram Name               | finish | verify |
 |----------------------------|--------|--------|
 | GeneralClassTemplate.md    |  [x]   |  [x]   |
-**Classes**
+**---------Classes---------**
 | Security.md                |  [x]   |  [x]   |
 | User.md                    |  [x]   |  [x]   |
-
-
+| BankAccount.md             |  [ ]   |  [ ]   |
+| Assets.md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+**-----------Api-----------**
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
+| .md                  |  [ ]   |  [ ]   |
 
