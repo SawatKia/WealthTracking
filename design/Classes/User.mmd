@@ -56,9 +56,9 @@ sequenceDiagram
             end
             UserModel->>UserController: return user created id: str
             opt any error
-                UserController-->>Routes: throw any error
+                UserController-->>Routes: throw the error "internal server error"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "something went wrong"
+                Routes-->>Client: 500, "internal server error"
             end
             UserController->>Routes: return user created id: str
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
@@ -125,6 +125,11 @@ sequenceDiagram
             end
             Note left of UserModel: return only non-sensitive data (user data: userUniqueId,<br>memberSince, userName, email))
             UserModel->>UserController: return array of user object [{...}, {...}, ...] or<br>return user object{...}
+            opt any error
+                UserController-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
             UserController->>Routes: return array of user object [{...}, {...}, ...] or<br>return user object{...}
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "seach user email successful", {users: [{...},{...},{...},...]} or<br>200, "seach user email successful", {user: {...}}
@@ -182,6 +187,11 @@ sequenceDiagram
                 Routes-->>Client: 500, "error occured during update user"
             end
             UserModel->>UserController: return True
+            opt any error
+                UserController-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
             UserController->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "user updated"
@@ -208,6 +218,11 @@ sequenceDiagram
             end
             UserController->>UserModel: delete(userId)
             UserModel->>UserController: return True
+            opt any error
+                UserController-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
             UserController->>Routes: return True
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "delete successful"
