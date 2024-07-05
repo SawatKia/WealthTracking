@@ -1,8 +1,11 @@
 # Implementing
 
 ## frontend
-- remove the frontend directory(if the directory is exist) 
-- create your own frontend directory by React, Vue, Angular, etc. anything you want.
+- remove the "frontend" directory(if the directory is exist) 
+- create your own frontend directory by React, Vue, Angular, etc. anything you 
+want.
+- open your created directory to workspace 
+- start coding
 ## backend
 - Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 - Proin eu semper odio. Aenean vel risus accumsan, tincidunt sem eu, suscipit est.
