@@ -2,53 +2,57 @@ sequenceDiagram
     Actor Client
     participant Router
     participant Cont as slipController
+    participant ApiClient as EasySlipApiClient
     Actor Api as EasySlipApi
 
     Cont->>Cont: add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
     alt get EasyAlip quota information
         rect rgb(124,255,236)
-            Client->>Router: GET /slip/quota
-            Router->>Cont: is_usable()
-            Cont->>Cont: add EASYSLIP_API_KEY from .env to Header
-            Cont->>Api: GET /me
-            Api->>Cont: return quota information object
+        Client->>Router: GET /slip/quota
+        Router->>Cont: checkSlipApiAvailability()
+        Cont->>ApiClient: fetchQuotaInformation()
+        ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
+        ApiClient->>Api: GET /me
+        Api->>ApiClient: Return quota information object
+        ApiClient->>Cont: Return quota information
             opt any error
                 Cont-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
             end
             alt remainingQuota >= 10
-                Cont->>Router: return true, {"remainingQuota":remainingQuota}
+                Cont->>Router: return true, {"remainingQuota": X}
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router->>Client: 200, "slipApi is availiable", {"remainingQuota":remainingQuota} 
+                Router->>Client: 200, "slipApi is availiable", {status: "available",<br>"remainingQuota":remainingQuota} 
             else remainingQuota < 10
-                Cont->>Router: return False, {"remainingQuota":remainingQuota}
+                Cont->>Router: return False, {"remainingQuota": X}
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router->>Client: 403, "slipApi is out of service", {"remainingQuota":remainingQuota}
+                Router->>Client: 403, "slipApi is out of service", {status: "unavailable",<br>"remainingQuota":remainingQuota}
             end
 
         end
     else get slip data
         rect rgb(188,191,50)
             Client->>Router: POST /slip/
-            Router->>Cont: extract_slip_data(image)
+            Router->>Cont: extractSlipData(image)
             Cont->>Cont: verify if image was attached
             opt image not found
-                Cont-->>Router:throw the error "slip image not found"
-                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Cont-->>Router: throw error "slip image not found"
                 Router->>Client: 400, "slip image not found"
             end
-            Cont->>Cont: add EASYSLIP_API_KEY from .env to Header
-            Cont->>Cont: convert image to Base64 and add to the body
-            Cont->>Api: POST /verify
-            Api->>Cont: return slip information object
-            opt any error
-                Cont-->>Router: throw the error "internal server error"
-                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "internal server error"
+            Cont->>ApiClient: verifySlip(base64Image)
+            ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
+            ApiClient->>Api: POST /verify
+            alt API available
+                Api->>ApiClient: Return slip information object
+                ApiClient->>Cont: Return slip information object
+                Cont->>Router: return slip information object
+                Router->>Client: 200, "extract slip data successful", {"slipInfo":slipInfoObject}
+            else API unavailable
+                Api-->>ApiClient: 500, any error
+                ApiClient-->>Cont: throw error "API service unavailable"
+                Cont-->>Router: return error "API service unavailable"
+                Router->>Client: 503, "API service unavailable"
             end
-            Cont->>Router: return slip information object
-            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "extract slip data successful", {"slipInfo":slipInfoObject}
         end
     end
