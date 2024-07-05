@@ -1,0 +1,30 @@
+sequenceDiagram
+    Actor Client
+    participant Routes
+    participant Cont as slipController
+    Actor Api as EasySlip
+
+    Cont->>Cont: add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
+    alt get EasyAlip quota information
+        rect rgb(124,255,236)
+            Client->>Routes: GET /slip/quota
+            Routes->>Cont: is_usable()
+            Cont->>Cont: add EASYSLIP_API_KEY from .env to Header
+            Cont->>Api: /me
+            Api->>Cont: return quota information object
+            alt remainingQuota >= 10
+                Cont->>Routes: return true, {"remainingQuota":remainingQuota}
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes->>Client: 200, "slipApi is availiable", {"remainingQuota":remainingQuota} 
+            else remainingQuota < 10
+                Cont->>Routes: return False, {"remainingQuota":remainingQuota}
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes->>Client: 403, "slipApi is out of service", {"remainingQuota":remainingQuota}
+            end
+
+        end
+    else get slip data
+        rect rgb(188,191,50)
+            Client->>Routes: POST /slip/
+        end
+    end
