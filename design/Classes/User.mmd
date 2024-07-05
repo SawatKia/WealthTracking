@@ -103,7 +103,7 @@ sequenceDiagram
             Note over Routes: with body of {searchCriteria, searchValue, isFindOne, sorting}
             Client->>Routes:POST /user/search
             Routes->>UserController: search_user(searchCriteria, searchValue, isFindOne, sorting)
-            UserController->>UserController: verify all parameters is not null
+            UserController->>UserController: verify all parameters is not nulll or empty
             opt some parameter is null or empty
                 UserController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
@@ -140,11 +140,11 @@ sequenceDiagram
             Client->>Routes: PUT /user
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>UserController: update_current_user(request, updateData, password)
-            UserController->>UserController: verify updateData is not null
-            opt updateData is null or empty
+            UserController->>UserController: verify all parameters is not null or empty
+            opt some parameter is null or empty
                 UserController-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "updateData and password is required"
+                Routes-->>Client: 400, "request, updateData and password is required"
             end
             Note right of  UserController: as the get_current_user was defined in "read current user"
             UserController->>UserController: this.get_current_user(request)
@@ -202,7 +202,7 @@ sequenceDiagram
             Client->>Routes: DELETE /user
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>UserController: delete_user(userId)
-            UserController->>UserController: verify userId is not null
+            UserController->>UserController: verify userId is not null or empty
             opt userId is null or empty
                 UserController-->>Routes: throw the error "parameter is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}

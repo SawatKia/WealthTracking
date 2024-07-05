@@ -27,7 +27,7 @@ each diagram have it own image in svg file. you can examine it.
 **---------Classes---------**
 | Security.md                |  [x]   |  [x]   |
 | User.md                    |  [x]   |  [x]   |
-| BankAccount.md             |  [ ]   |  [ ]   |
+| BankAccount.md             |  [x]   |  [x]   |
 | Assets.md                  |  [ ]   |  [ ]   |
 | .md                  |  [ ]   |  [ ]   |
 | .md                  |  [ ]   |  [ ]   |

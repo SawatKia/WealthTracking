@@ -10,11 +10,12 @@ sequenceDiagram
         rect rgb(73,204,144)
             Client->>Routes: POST /bank/create
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>BankCont: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName. initialBalance) 
+            Routes->>BankCont: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName, initialBalance) 
+            BankCont->>BankCont: verify all parameters is not null or empty
             opt some parameter is null or empty
                 BankCont-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "bank Account Name and bank Name are required"
+                Routes-->>Client: 400, "displayName,bankAccountName, bankName, and initialBalance are required"
             end
             BankCont->>BankCont: create new bank account object from pameters
             BankCont->>BankModel: create(db, newBankAccount: NewBankAccount)
@@ -40,12 +41,12 @@ sequenceDiagram
             Client->>Routes: POST /bank/search
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>BankCont: search_bank_account(searchCriteria, searchValue, isFindOne, sorting)
-            BankCont->>BankCont: verify all parameters is not null
+            BankCont->>BankCont: verify all parameters is not null or empty
             opt some parameter is null or empty
                 BankCont-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, criteria, value,<br> isFindOne, and sorting are required"
-            end 
+                Routes-->>Client: 400, "searchCriteria, searchValue, isFindOne, and sorting are required"
+            end
             BankCont->>BankCont: convert searchCriteria from parameter<br>to pre-defined criteria using if-else statement<br>for only permit to search with<br>bankAccountUniqueId, bankName, and userUniqueId
             opt searchCriteria not in this list bankAccountUniqueId, bankName, and userUniqueId
                 BankCont-->>Routes: throw the error "the specified searchCriteria not permit"
@@ -73,12 +74,12 @@ sequenceDiagram
         rect rgb(152, 142, 232)
             Client->>Routes: POST /bank/all
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>BankCont: get_all(request)
-            BankCont->>BankCont: verify request is not null or empty
-            opt request is null or empty
-                BankCont->>Routes: throw the error "request is null or empty"
+            Routes->>BankCont: get_all_current_user_bank_accounts(request)
+            BankCont->>BankCont: verify all parameters is not null or empty
+            opt some parameter is null or empty
+                BankCont-->>Routes: throw the error "parameters is required"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes->>Client: 400, "request is null or empty"
+                Routes-->>Client: 400, "request is required"
             end
             BankCont->>UserController: get_current_user(request)
             opt get_current_user Failed
@@ -96,6 +97,11 @@ sequenceDiagram
                 Routes-->>Client: 500, "the error occured during search bank account(s)"
             end
             BankModel->>BankCont: return array of bank account object [{...}, {...}, ...]
+            opt any error
+                BankCont-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
             BankCont->>Routes: return array of bank account object [{...}, {...}, ...] 
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}
@@ -106,6 +112,12 @@ sequenceDiagram
             Client->>Routes: PUT  /bank/update
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
             Routes->>BankCont: update_bank_account(request, bankAccountUniqueId, updateData)
+            BankCont->>BankCont: verify all parameters is not null or empty
+            opt some parameter is null or empty
+                BankCont-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "request, bankAccountUniqueId, and updateData are required"
+            end
             Note right of BankCont: verify_right_to_modify first define
             BankCont->>BankCont: verify if current user is an owner of specified bank account id<br>this.verify_right_to_modify(request, bankAccountUniqueId)
             rect rgb(254,235,176)
@@ -125,7 +137,7 @@ sequenceDiagram
                     Routes-->>Client: 500, "the error occured during search bank account(s)"
                 end
                 BankModel->>BankCont: return bank account object{...}
-                BankCont->>BankCont: verifying...
+                BankCont->>BankCont: verifying...(return True or False)
                 opt this current user not an owner
                     BankCont-->>Routes: throw the error "you are not allow to modify this data"
                     Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
@@ -155,6 +167,31 @@ sequenceDiagram
         rect rgb(247,155,155)
             Client->>Routes: DELETE /bank/delete
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            
+            Routes->>BankCont: delete_bank_account(request, bankAccountUniqueId)
+            BankCont->>BankCont: verify all parameters is not null or empty
+            opt some parameter is null or empty
+                BankCont-->>Routes: throw the error "parameters is required"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 400, "request, and bankAccountUniqueId are required"
+            end
+            Note right of BankCont: as verify_right_to_modify was defined in update bank account
+            BankCont->>BankCont:  this.verify_right_to_modify(request, bankAccountUniqueId)
+            BankCont->>BankModel: delete(bankAccountUniqueId)
+            opt delete Failed
+                BankModel-->>BankCont: throw any error
+                BankCont-->>Routes: throw the error "error occured during delete bank account"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured during delete bank account"
+            end
+            BankModel->>BankCont: return True
+            opt any error
+                BankCont-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            BankCont->>Routes: return True
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "delete successful"
+
         end
     end
