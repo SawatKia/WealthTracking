@@ -2,8 +2,9 @@ sequenceDiagram
     title Bank Accounts
     participant Client
     participant Routes
-    participant BankCont as BankCont
-    participant Bank as BankAccount
+    participant BankCont as BankController
+    participant BankModel as BankAccountModel
+    participant UserController
 
     alt create a new bank account
         rect rgb(73,204,144)
@@ -16,14 +17,14 @@ sequenceDiagram
                 Routes-->>Client: 400, "bank Account Name and bank Name are required"
             end
             BankCont->>BankCont: create new bank account object from pameters
-            BankCont->>Bank: create(newBankAccount: NewBankAccount)
+            BankCont->>BankModel: create(newBankAccount: NewBankAccount)
             opt create Failed
-                Bank-->>BankCont: throw any error
+                BankModel-->>BankCont: throw any error
                 BankCont-->>Routes: throw the error "error occured during create a new account"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during create a new account"                
             end
-            Bank-->>BankCont: return bank account created id
+            BankModel-->>BankCont: return bank account created id
             BankCont-->>Routes: return bank account created id
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes-->>Client: 200, "cretae a new bank account successful", {id: id}
@@ -46,14 +47,14 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 403, "specified searchCriteria not permit"
             end
-            BankCont->>Bank: search("userUniqueId", userUniqueId, False, "asc")
+            BankCont->>BankModel: search("userUniqueId", userUniqueId, False, "asc")
             opt search Failed
-                UserModel-->>BankCont: throw any error
+                BankModel-->>BankCont: throw any error
                 BankCont-->>Routes: throw the error "error occured during search bank account(s)"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "the error occured during search bank account(s)"
             end
-            UserModel->>BankCont: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
+            BankModel->>BankCont: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
             BankCont->>Routes: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
             Routes->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}or<br>200, "seach bank account successful", {bank-account: {...}}
@@ -62,6 +63,7 @@ sequenceDiagram
         rect rgb(152, 142, 232)
             Client->>Routes: POST /bank/all
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>BankCont: get_all(request)
         end
     else update bank aacount
         rect rgb(252,182,142)
