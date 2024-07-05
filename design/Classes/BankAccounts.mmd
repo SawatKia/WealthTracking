@@ -17,7 +17,7 @@ sequenceDiagram
                 Routes-->>Client: 400, "bank Account Name and bank Name are required"
             end
             BankCont->>BankCont: create new bank account object from pameters
-            BankCont->>BankModel: create(newBankAccount: NewBankAccount)
+            BankCont->>BankModel: create(db, newBankAccount: NewBankAccount)
             opt create Failed
                 BankModel-->>BankCont: throw any error
                 BankCont-->>Routes: throw the error "error occured during create a new account"
@@ -52,7 +52,7 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 403, "specified searchCriteria not permit"
             end
-            BankCont->>BankModel: search("bankAccountUniqueId", bankAccountUniqueId, True, "asc")
+            BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
             opt search Failed
                 BankModel-->>BankCont: throw any error
                 BankCont-->>Routes: throw the error "error occured during search bank account(s)"
@@ -82,13 +82,13 @@ sequenceDiagram
             end
             BankCont->>UserController: get_current_user(request)
             opt get_current_user Failed
-                UserController-->>BankCont: throw the error "the error occured during get_current_user"
+                UserController-->>BankCont: throw any error 
                 BankCont-->>Routes: throw the error "the error occured during get_current_user"
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "the error occured during get_current_user"
             end
             UserController->>BankCont: return user object {...}
-            BankCont->>BankModel: search("userUniqueId", userUniqueId, False, "asc")
+            BankCont->>BankModel: search(db, "userUniqueId", userUniqueId, False, "asc")
             opt search Failed
                 BankModel-->>BankCont: throw any error
                 BankCont-->>Routes: throw the error "error occured during search bank account(s)"
@@ -105,10 +105,56 @@ sequenceDiagram
         rect rgb(252,182,142)
             Client->>Routes: PUT  /bank/update
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>BankCont: update_bank_account(request, bankAccountUniqueId, updateData)
+            Note right of BankCont: verify_right_to_modify first define
+            BankCont->>BankCont: verify if current user is an owner of specified bank account id<br>this.verify_right_to_modify(request, bankAccountUniqueId)
+            rect rgb(254,235,176)
+                BankCont->>UserController: get_current_user(request)
+                opt get_current_user Failed
+                    UserController-->>BankCont: throw any error 
+                    BankCont-->>Routes: throw the error "the error occured during get_current_user"
+                    Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                    Routes-->>Client: 500, "the error occured during get_current_user"
+                end
+                UserController->>BankCont: return user object {...}
+                BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
+                opt search Failed
+                    BankModel-->>BankCont: throw any error
+                    BankCont-->>Routes: throw the error "error occured during search bank account(s)"
+                    Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                    Routes-->>Client: 500, "the error occured during search bank account(s)"
+                end
+                BankModel->>BankCont: return bank account object{...}
+                BankCont->>BankCont: verifying...
+                opt this current user not an owner
+                    BankCont-->>Routes: throw the error "you are not allow to modify this data"
+                    Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                    Routes-->>Client: 403,"you are not allow to modify this data"
+                end
+            end
+            BankCont->>BankCont: include bank account data that doesn't exist in the updateData<br>into updateData
+            BankCont->>BankModel: update(db, bankAccountUniqueId, updateData)
+            opt
+                BankModel-->>BankCont: throw any error
+                BankCont-->>Routes: throw the error "error occured during update bank account"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "error occured during update bank account"
+            end
+            BankModel->>BankCont: return True
+            opt any error
+                BankCont-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            BankCont->>Routes: return True
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "user updated"
+
         end
     else delete bank account
         rect rgb(247,155,155)
             Client->>Routes: DELETE /bank/delete
             Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            
         end
     end
