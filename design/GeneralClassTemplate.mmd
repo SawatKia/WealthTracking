@@ -2,7 +2,7 @@ sequenceDiagram
     autonumber
     title genral Class Diagram
     Actor Client
-    participant Routes
+    participant Router
     participant Controller
     participant UserModel
     participant TargetModel 
@@ -10,27 +10,27 @@ sequenceDiagram
 
     %% alt เลือกทำอย่างใดอย่างหนึ่ง
     %% opt จะทำหรือไม่ทำก็ได้
-    Note over Client,Routes: with body {JWT token, ...}
-    Client->>Routes: HTTP Request
+    Note over Client,Router: with body {JWT token, ...}
+    Client->>Router: HTTP Request
     rect rgb(185,185,185)
     Note over Client, Database: these processes are Middleware that was process before any tasks
         opt verify method
-            Routes->>Routes: verify method
+            Router->>Router: verify method
             rect rgb(239, 157, 157)
             Note right of Client: method not allow
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 405 Method Not Allowed
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 405 Method Not Allowed
             end
         end
-            Routes->>Controller: some_function(request)
+            Router->>Controller: some_function(request)
         rect rgb(191, 223, 255)
         Note right of Client: verify request body
             Controller->>Controller: verifying if a Cookies token was attached with reqyest in the body?<br>isCookie(token: str)
             
             opt Cookie not found
-                Controller-->>Routes: throw error missing token in the body
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400 insufficient arguments
+                Controller-->>Router: throw error missing token in the body
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400 insufficient arguments
             end
             Note over Controller: successful, do nothing. and goto next verification
         end
@@ -44,9 +44,9 @@ sequenceDiagram
             opt not found
             Database-->>UserModel: return empty object
                 UserModel-->>Controller: return false
-                Controller-->>Routes: throw Client unauthorized
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 401 Unauthorized
+                Controller-->>Router: throw Client unauthorized
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 401 Unauthorized
             end
             Database->>UserModel: return user object
             UserModel->>Controller: return true
@@ -61,9 +61,9 @@ sequenceDiagram
                 TargetModel->>Controller: return true
             else User doesn't have right to access/modify
                 TargetModel-->>Controller: return false
-                Controller-->>Routes: Indicate forbidden access
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 403 Forbidden
+                Controller-->>Router: Indicate forbidden access
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 403 Forbidden
             end
         end
     end
@@ -119,9 +119,9 @@ sequenceDiagram
             TargetModel->>Controller: RESULT: bool = true
         end
         
-        Controller->>Routes: return message("<action> success") and data(if any) from model
-        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes->>Client: 200 OK with JSON response
+        Controller->>Router: return message("<action> success") and data(if any) from model
+        Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+        Router->>Client: 200 OK with JSON response
     end
     Note over Controller: CATCH Block
     rect rgb(255, 255, 153)
@@ -129,9 +129,9 @@ sequenceDiagram
     opt Operation Failed
         Database-->>TargetModel: Operation fails
         TargetModel-->>Controller: throw the error message.
-        Controller-->>Routes: Pass error information
-        Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-        Routes-->>Client: Appropriate error code (e.g. 500, Internal Server Error)
+        Controller-->>Router: Pass error information
+        Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+        Router-->>Client: Appropriate error code (e.g. 500, Internal Server Error)
     end
     end
 

@@ -1,54 +1,54 @@
 sequenceDiagram
     Actor Client
-    participant Routes
+    participant Router
     participant Cont as slipController
-    Actor Api as EasySlip
+    Actor Api as EasySlipApi
 
     Cont->>Cont: add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
     alt get EasyAlip quota information
         rect rgb(124,255,236)
-            Client->>Routes: GET /slip/quota
-            Routes->>Cont: is_usable()
+            Client->>Router: GET /slip/quota
+            Router->>Cont: is_usable()
             Cont->>Cont: add EASYSLIP_API_KEY from .env to Header
             Cont->>Api: GET /me
             Api->>Cont: return quota information object
             opt any error
-                Cont-->>Routes: throw the error "internal server error"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "internal server error"
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
             end
             alt remainingQuota >= 10
-                Cont->>Routes: return true, {"remainingQuota":remainingQuota}
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes->>Client: 200, "slipApi is availiable", {"remainingQuota":remainingQuota} 
+                Cont->>Router: return true, {"remainingQuota":remainingQuota}
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router->>Client: 200, "slipApi is availiable", {"remainingQuota":remainingQuota} 
             else remainingQuota < 10
-                Cont->>Routes: return False, {"remainingQuota":remainingQuota}
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes->>Client: 403, "slipApi is out of service", {"remainingQuota":remainingQuota}
+                Cont->>Router: return False, {"remainingQuota":remainingQuota}
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router->>Client: 403, "slipApi is out of service", {"remainingQuota":remainingQuota}
             end
 
         end
     else get slip data
         rect rgb(188,191,50)
-            Client->>Routes: POST /slip/
-            Routes->>Cont: extract_slip_data(image)
+            Client->>Router: POST /slip/
+            Router->>Cont: extract_slip_data(image)
             Cont->>Cont: verify if image was attached
             opt image not found
-                Cont-->>Routes:throw the error "slip image not found"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes->>Client: 400, "slip image not found"
+                Cont-->>Router:throw the error "slip image not found"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router->>Client: 400, "slip image not found"
             end
             Cont->>Cont: add EASYSLIP_API_KEY from .env to Header
             Cont->>Cont: convert image to Base64 and add to the body
             Cont->>Api: POST /verify
             Api->>Cont: return slip information object
             opt any error
-                Cont-->>Routes: throw the error "internal server error"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "internal server error"
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
             end
-            Cont->>Routes: return slip information object
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes->>Client: 200, "extract slip data successful", {"slipInfo":slipInfoObject}
+            Cont->>Router: return slip information object
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "extract slip data successful", {"slipInfo":slipInfoObject}
         end
     end

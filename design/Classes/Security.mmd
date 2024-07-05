@@ -1,7 +1,7 @@
 sequenceDiagram
     title Security Class
     participant Client
-    participant Routes
+    participant Router
     participant SecurityController
     participant UserModel
     participant Security
@@ -9,64 +9,64 @@ sequenceDiagram
 
     alt logging in
         rect rgb(97,175,254)
-            Note over Routes, SecurityController: the log in endpoint can receive either email or username
-            Note over Routes, Client: with body of {username, email,Password, confirmPass}
-            Client->>Routes: POST /user/login
-            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>SecurityController: login (username, password)
+            Note over Router, SecurityController: the log in endpoint can receive either email or username
+            Note over Router, Client: with body of {username, email,Password, confirmPass}
+            Client->>Router: POST /user/login
+            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Router->>SecurityController: login (username, password)
             SecurityController->>SecurityController: verify all pameters is not null 
             opt some parameter is null or empty
-                SecurityController-->>Routes: throw the error "parameters is required"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 400, "username and password are required"
+                SecurityController-->>Router: throw the error "parameters is required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "username and password are required"
             end
             Note right of  SecurityController: as the check_password was defined in UserModel
             SecurityController->>UserModel: User.check_password(db, userName.lower(), password)
             opt password check Failed
                 UserModel-->>SecurityController: return False
-                SecurityController-->>Routes: throw the error "password invalid"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 401, unauthorized
+                SecurityController-->>Router: throw the error "password invalid"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 401, unauthorized
             end
             UserModel->>SecurityController: return True
             SecurityController->>Security: Security.create_token(user)
             opt cannot create token
                 Security-->>SecurityController: throw any error
-                SecurityController-->>Routes: throw the error "error occured when logging in"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "error occured when logging in"
+                SecurityController-->>Router: throw the error "error occured when logging in"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured when logging in"
             end
             Security->>SecurityController: return token
             opt any error
-                SecurityController-->>Routes: throw the error "internal server error"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "internal server error"
+                SecurityController-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
             end
-            SecurityController->>Routes:retun token
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Note right of Routes: the token might be send in<br> Header with "Barear " prefix
-            Routes->>Client: 200, login successful, {token: token}
+            SecurityController->>Router:retun token
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Note right of Router: the token might be send in<br> Header with "Barear " prefix
+            Router->>Client: 200, login successful, {token: token}
         end
     
     else log out
         rect rgb(247,155,155)
-            Client->>Routes: POST /user/logout
-            Routes->>SecurityController: logout()
+            Client->>Router: POST /user/logout
+            Router->>SecurityController: logout()
             %% delete token in the cookie is when for not enable cors but this Application enable cors, examine this condition
             SecurityController->>SecurityController: delete token in the cookie <br>or blank the token in the cookie
             opt
-                SecurityController-->>Routes: throw the error "error occured during logging out"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "error occured when logging out"
+                SecurityController-->>Router: throw the error "error occured during logging out"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured when logging out"
             end
             opt any error
-                SecurityController-->>Routes: throw the error "internal server error"
-                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-                Routes-->>Client: 500, "internal server error"
+                SecurityController-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
             end
-            SecurityController->>Routes: return True
-            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 200, "logout success"
+            SecurityController->>Router: return True
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router-->>Client: 200, "logout success"
         end
 
     end 
