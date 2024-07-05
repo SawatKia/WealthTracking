@@ -24,10 +24,15 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "error occured during create a new account"                
             end
-            BankModel-->>BankCont: return bank account created id
-            BankCont-->>Routes: return bank account created id
+            BankModel->>BankCont: return bank account created id
+            opt any error
+                BankCont-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            BankCont->>Routes: return bank account created id
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes-->>Client: 200, "cretae a new bank account successful", {id: id}
+            Routes->>Client: 200, "cretae a new bank account successful", {id: id}
         end
     else read a bank account
         rect rgb(142,172,252)
@@ -47,6 +52,42 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 403, "specified searchCriteria not permit"
             end
+            BankCont->>BankModel: search("bankAccountUniqueId", bankAccountUniqueId, True, "asc")
+            opt search Failed
+                BankModel-->>BankCont: throw any error
+                BankCont-->>Routes: throw the error "error occured during search bank account(s)"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "the error occured during search bank account(s)"
+            end
+            BankModel->>BankCont: return bank account object{...}
+            opt any error
+                BankCont-->>Routes: throw the error "internal server error"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "internal server error"
+            end
+            BankCont->>Routes: return bank account object{...}
+            Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 200, "seach bank account successful", {bank-account: {...}}
+        end
+    else read all bank accounts of current user
+        rect rgb(152, 142, 232)
+            Client->>Routes: POST /bank/all
+            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
+            Routes->>BankCont: get_all(request)
+            BankCont->>BankCont: verify request is not null or empty
+            opt request is null or empty
+                BankCont->>Routes: throw the error "request is null or empty"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+            Routes->>Client: 400, "request is null or empty"
+            end
+            BankCont->>UserController: get_current_user(request)
+            opt get_current_user Failed
+                UserController-->>BankCont: throw the error "the error occured during get_current_user"
+                BankCont-->>Routes: throw the error "the error occured during get_current_user"
+                Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
+                Routes-->>Client: 500, "the error occured during get_current_user"
+            end
+            UserController->>BankCont: return user object {...}
             BankCont->>BankModel: search("userUniqueId", userUniqueId, False, "asc")
             opt search Failed
                 BankModel-->>BankCont: throw any error
@@ -54,16 +95,11 @@ sequenceDiagram
                 Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
                 Routes-->>Client: 500, "the error occured during search bank account(s)"
             end
-            BankModel->>BankCont: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
-            BankCont->>Routes: return array of bank account object [{...}, {...}, ...] or<br>return bank account object{...}
+            BankModel->>BankCont: return array of bank account object [{...}, {...}, ...]
+            BankCont->>Routes: return array of bank account object [{...}, {...}, ...] 
             Note over Routes,Client: JSON Response: {status_code, message, data(if any)}
-            Routes->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}or<br>200, "seach bank account successful", {bank-account: {...}}
-        end
-    else read all bank accounts of current user
-        rect rgb(152, 142, 232)
-            Client->>Routes: POST /bank/all
-            Routes->>Routes: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Routes->>BankCont: get_all(request)
+            Routes->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}
+
         end
     else update bank aacount
         rect rgb(252,182,142)
