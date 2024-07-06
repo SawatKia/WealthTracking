@@ -3,3 +3,34 @@ sequenceDiagram
     participant Router
     participant Cont as OcrController
     participant Ocr as OcrService
+
+    alt use coordinate of 3 rectangles
+        rect rgb(144,193,255)
+            Note right of Client: with body of image attached and<br>coordinate of 3 rectangles(left, top, width, height)
+            Client->>Router: POST ocr/rectangles
+            Note over Cont,Router: array of 3 rectangle coordinate
+            Router->>Cont: getStocksData(image, rectangles)
+            Cont->>Cont: verify if each rectangle are specified in correct format and<br>have 3 rectangles
+            opt insufficient rectangle
+                Cont-->>Router: throw the error "require 3 rectangles"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "require 3 rectangles"
+            end
+            opt rectangle format invalid 
+                Cont-->>Router: throw the error "rectangle format invalid "
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "rectangle format invalid"
+            end
+            Cont->>Ocr: extract_stock(image, rectArr)
+            Ocr->>Ocr: do OCR
+            Note over Ocr: process_text(textToProcess, whatToGet)<br>do RegEx to get whatToGet
+            Ocr->>Ocr: process_text(text, "Symbol")
+        end
+    else just a screenshot
+        rect rgb(144,255,166)
+            Note right of Client: with body of screenshot
+            Client->>Router: POST ocr/shot
+            Note over Cont, Ocr: use image width in percent to specify the rectangle
+            Cont->>Ocr: extract_text
+        end
+    end
