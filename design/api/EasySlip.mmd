@@ -38,6 +38,7 @@ sequenceDiagram
             Cont->>Cont: verify if image was attached
             opt image not found
                 Cont-->>Router: throw error "slip image not found"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router->>Client: 400, "slip image not found"
             end
             Cont->>ApiClient: verifySlip(base64Image)
@@ -47,11 +48,13 @@ sequenceDiagram
                 Api->>ApiClient: Return slip information object
                 ApiClient->>Cont: Return slip information object
                 Cont->>Router: return slip information object
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router->>Client: 200, "extract slip data successful", {"slipInfo":slipInfoObject}
             else API unavailable
                 Api-->>ApiClient: 500, any error
                 ApiClient-->>Cont: throw error "API service unavailable"
                 Cont-->>Router: return error "API service unavailable"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router->>Client: 503, "API service unavailable"
             end
         end
