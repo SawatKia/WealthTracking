@@ -23,8 +23,13 @@ sequenceDiagram
             end
             Cont->>Ocr: extract_stock(image, rectArr)
             Ocr->>Ocr: do OCR
-            Note over Ocr: process_text(textToProcess, whatToGet)<br>do RegEx to get whatToGet
+            Note over Ocr: process_text(textToProcess, whatToGet)<br>do RegEx to get whatToGet {"Symbol", "amont", "unitPrice"}
             Ocr->>Ocr: process_text(text, "Symbol")
+            Ocr->>Cont: return Array of Stock Data object<br>[{stock:XYZ, amount:200, unitPrice:25.25}, {...}, ...]
+            Cont->>Router: return Array of Stock Data object<br>[{stock:XYZ, amount:200, unitPrice:25.25}, {...}, ...]
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "get stock data successful", {stocks: [{...}, {...}, ...]}
+
         end
     else just a screenshot
         rect rgb(144,255,166)
