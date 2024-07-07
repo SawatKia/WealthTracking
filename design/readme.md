@@ -18,7 +18,7 @@ the design consist sequence-diagram designing of each entity and api how it hand
 - [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting) *(optional)* - to highlight the syntax if you want to modify the diagram.
 
 # to examine the diagram?
-each diagram have it own image in svg file. you can examine it.
+run file preview.html with live server extension
 
 # Diagrams status
 | Diagram Name               | finish | verify |
@@ -28,16 +28,16 @@ each diagram have it own image in svg file. you can examine it.
 | Security.md                |  [x]   |  [x]   |
 | User.md                    |  [x]   |  [x]   |
 | BankAccount.md             |  [x]   |  [x]   |
-| Assets.md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
+| Assets.md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
+| .md                  |  []   |  []   |
 **-----------Api-----------**
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
-| .md                  |  [ ]   |  [ ]   |
+| EasySlip.md               |  [x]   |  [x]   |
+| Ocr.md                    |  [x]   |  [x]   |
+| Stocks.md                 |  []   |  []   |
 
