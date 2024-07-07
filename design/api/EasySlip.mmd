@@ -4,8 +4,13 @@ sequenceDiagram
     participant Cont as slipController
     participant ApiClient as EasySlipApiClient
     Actor Api as EasySlipApi
+    %% EASYSLIP_API document = "https://developer.easyslip.com/document"
 
-    Cont->>Cont: add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
+    %% add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
+    %% add EASYSLIP_API_KEY from Easy api to .env
+    
+    ApiClient->>ApiClient: load EASYSLIP_API_URL from .env
+    ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
     alt get EasyAlip quota information
         rect rgb(124,255,236)
         Client->>Router: GET /slip/quota
