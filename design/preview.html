@@ -1,61 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLasses preview</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Classes preview</title>
     <style>
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 10px;
-            position: sticky;
-            top: 0;
-            background-color: #f1f1f1;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .grid-item {
-            padding: 10px;
-            text-align: center;
-            /* background-color: aquamarine;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
-        }
-        .my-systems {
-            grid-column: 1;
-        }
-        .other-systems {
-            grid-column: 2;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .grid-container {
+        position: sticky;
+        top: 0;
+        background-color: #f1f1f1;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+      }
+      .grid-content {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 10px;
+      }
+      .grid-item {
+        padding: 10px;
+        text-align: center;
+      }
+      #mySystems, #otherSystems {
+        padding: 20px;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="grid-container">
-        <div class="my-systems">
-            <div class="grid-item"><a href="#user-class">User Class</a></div>
-            <div class="grid-item"><a href="#security-class">Security Class</a></div>
-            <div class="grid-item"><a href="#bank-account">Bank Account</a></div>
+      <div class="grid-content">
+        <div class="grid-item"><a href="#user-class">User Class</a></div>
+        <div class="grid-item">
+          <a href="#security-class">Security Class</a>
         </div>
-        <div class="other-systems">
-            <div class="grid-item"><a href="#easy-slip">EasySlip</a></div>
-        </div>
+        <div class="grid-item"><a href="#bank-account">Bank Account</a></div>
+        <div class="grid-item"><a href="#asset">Asset</a></div>
+        <div class="grid-item"><a href="#easy-slip">EasySlip</a></div>
+        <div class="grid-item"><a href="#ocr">OCR</a></div>
+        <div class="grid-item"><a href="#stocks">Stocks</a></div>
+      </div>
     </div>
     <h1>Sequence Diagrams</h1>
-    <h2>my systems</h2>
-    <h3 id="user-class">User Class</h3>
-    <p><a href="#top">Back to top</a></p>
-    <img src="./Classes/User.svg">
-    <h3 id="security-class">Security Class</h3>
-    <p><a href="#top">Back to top</a></p>
-    <img src="./Classes/Security.svg">
-    <h3 id="bank-account">Bank Account</h3>
-    <p><a href="#top">Back to top</a></p>
-    <img src="./Classes/BankAccounts.svg">
-    <h2>other systems</h2>
-    <h3 id="easy-slip">EasySlip</h3>
-    <p><a href="#top">Back to top</a></p>
-    <img src="./api/EasySlip.svg">
-</body>
+    <div id="mySystems">
+      <h2>my systems</h2>
+      <div>
+        <h3 id="user-class">User Class</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./Classes/User.svg" alt="User Class Diagram" />
+      </div>
+      <div>
+        <h3 id="security-class">Security Class</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./Classes/Security.svg" alt="Security Class Diagram" />
+      </div>
+      <div>
+        <h3 id="bank-account">Bank Account</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./Classes/BankAccounts.svg" alt="Bank Account Diagram" />
+      </div>
+      <div>
+        <h3 id="asset">Asset</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./Classes/Asset.svg" alt="Asset Diagram" />
+      </div>
+    </div>
+    <div id="otherSystems">
+      <h2>other systems</h2>
+      <div>
+        <h3 id="easy-slip">EasySlip</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./api/EasySlip.svg" alt="EasySlip Diagram" />
+      </div>
+      <div>
+        <h3 id="ocr">OCR</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./api/Ocr.svg" alt="OCR Diagram" />
+      </div>
+      <div>
+        <h3 id="stocks">Stocks</h3>
+        <p><a href="#top">Back to top</a></p>
+        <img src="./api/Stocks.svg" alt="Stocks Diagram" />
+      </div>
+    </div>
+  </body>
 </html>
