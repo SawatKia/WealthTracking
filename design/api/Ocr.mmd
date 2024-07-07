@@ -9,7 +9,7 @@ sequenceDiagram
             Note right of Client: with body of image attached and<br>coordinate of 3 rectangles(left, top, width, height)
             Client->>Router: POST ocr/rectangles
             Note over Cont,Router: array of 3 rectangle coordinate
-            Router->>Cont: getStocksData(image, rectangles)
+            Router->>Cont: get_stocks_data(image, rectangles)
             Cont->>Cont: verify if each rectangle are specified in correct format and<br>have 3 rectangles
             opt image not found
                 Cont-->>Router: throw the error "image not found"
@@ -46,11 +46,11 @@ sequenceDiagram
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
             Router->>Client: 200, "get stock data successful", {stocks: [{...}, {...}, ...]}
         end
-    else just a screenshot
+    else use a screenshot
         rect rgb(144,255,166)
             Note right of Client: with body of screenshot
             Client->>Router: POST ocr/shot
-            Router->>Cont: getStocksData(image)
+            Router->>Cont: get_stocks_data(image)
             Cont->>Cont: verify if each rectangle are specified in correct format and<br>have 3 rectangles
             opt image not found
                 Cont-->>Router: throw the error "image not found"
@@ -79,3 +79,4 @@ sequenceDiagram
             Router->>Client: 200, "get stock data successful", {stocks: [{...}, {...}, ...]}
         end
     end
+

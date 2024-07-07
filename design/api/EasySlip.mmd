@@ -9,8 +9,8 @@ sequenceDiagram
     alt get EasyAlip quota information
         rect rgb(124,255,236)
         Client->>Router: GET /slip/quota
-        Router->>Cont: checkSlipApiAvailability()
-        Cont->>ApiClient: fetchQuotaInformation()
+        Router->>Cont: check_slip_api_availability()
+        Cont->>ApiClient: fetch_quota_information()
         ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
         ApiClient->>Api: GET /me
         Api->>ApiClient: Return quota information object
@@ -34,14 +34,14 @@ sequenceDiagram
     else get slip data
         rect rgb(188,191,50)
             Client->>Router: POST /slip/
-            Router->>Cont: extractSlipData(image)
+            Router->>Cont: extract_slip_data(image)
             Cont->>Cont: verify if image was attached
             opt image not found
                 Cont-->>Router: throw error "slip image not found"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router->>Client: 400, "slip image not found"
             end
-            Cont->>ApiClient: verifySlip(base64Image)
+            Cont->>ApiClient: verify_slip(base64Image)
             ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
             ApiClient->>Api: POST /verify
             alt API available
