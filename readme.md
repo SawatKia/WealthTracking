@@ -8,7 +8,8 @@ want.
 - open your created directory to workspace 
 - start coding
 ### modifying existing
-- open your frontend directory to workspace 
+- open Project directory to workspace
+- open terminal goto frontend directory by ```cd frontend```  and use ```npm i``` to install dependencies
 - start coding
 ## backend
 - Lorem ipsum dolor sit amet, consectetur adipiscing elit.
