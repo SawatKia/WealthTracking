@@ -2,5 +2,43 @@ sequenceDiagram
     actor Client
     participant Router
     participant Cont as StockController
+    participant Stock as StockClient
     actor RapidApi
+    %% STOCK_PULSE_API document: https://rapidapi.com/manwilbahaa/api/yahoo-finance127
 
+    %% add STOCK_PULSE_API_URL = "https://yahoo-finance127.p.rapidapi.com" to .env
+    %% add x-rapidapi-host, and x-rapidapi-key from STOCK_PULSE_API document to .env
+
+    alt get stock(s) current price
+        rect rgb(144,193,255)
+            Stock->>Stock: set timeFrame array that supported by interval to select
+            Client->>Router: GET /stock/price/{Symbol}
+            Note over Router, Cont: use for loop to iteration<br>for pass each Symbol to the function
+            Router->>Cont: get_stock_price(Symbol)
+            Cont->>Cont: verify all parameter is not null or empty
+            opt some parameter is null or empty
+                Cont-->>Router: throw the error "parameters is required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "Symbol is required"
+            end
+            Cont->>Stock: fetch_stock_current_price(Symbol)
+            Note over Stock: preparing parameters
+            Stock->>Stock: interval="1h"<br>range="1d"<br>symbol=Symbol
+            Stock->>Stock: load x-rapidapi-host, and x-rapidapi-key to header
+            Stock->>RapidApi: GET /historic/{Symbol}/{interval}/{range}
+            opt fetch stock proce fail
+                RapidApi-->>Stock: throw any error
+                Stock-->>Cont: throw the error "error occured during fetch stock price"
+                Cont-->>Router: throw the error "error occured during fetch stock price"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured during fetch stock price"
+            end
+            RapidApi->>Stock: return
+
+
+        end
+    else get a stock chart data
+        rect rgb(144,255,166)
+            Client->> Router: GET /stock/chart/{Symbol}
+        end
+    end
