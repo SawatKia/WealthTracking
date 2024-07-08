@@ -25,20 +25,48 @@ sequenceDiagram
             Note over Stock: preparing parameters
             Stock->>Stock: interval="1h"<br>range="1d"<br>symbol=Symbol
             Stock->>Stock: load x-rapidapi-host, and x-rapidapi-key to header
-            Stock->>RapidApi: GET /historic/{Symbol}/{interval}/{range}
-            opt fetch stock proce fail
+            Stock->>RapidApi: GET /price/{Symbol}{TH?".bk":""}
+            opt fetch stock price fail
                 RapidApi-->>Stock: throw any error
                 Stock-->>Cont: throw the error "error occured during fetch stock price"
                 Cont-->>Router: throw the error "error occured during fetch stock price"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during fetch stock price"
             end
-            RapidApi->>Stock: return
+            RapidApi->>Stock: return Response
+            Stock->>Stock: create new currentPrice object:<br>dayPricePercentChange = regularMarketChangePercent<br>lastestPrice = regularMarketPrice
 
-
+            Stock->>Cont: return currentPrice object
+            Cont->>Router: return currentPrice object
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "get stock current orice successful", data: {currentPrice: currentPrice object}
         end
     else get a stock chart data
         rect rgb(144,255,166)
-            Client->> Router: GET /stock/chart/{Symbol}
+        %% interval is timeFrame, range is how long do you want the data 
+            Client->> Router: GET /stock/chart/{Symbol}/{internal}/{range}
+            Cont->>Cont: verify all parameter is not null or empty
+            opt some parameter is null or empty
+                Cont-->>Router: throw the error "parameters is required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "Symbol, internal, and range are required"
+            end
+            Cont->>Stock: fetch_stock_chart(Symbol, interval, range)
+            Stock->>Stock: load x-rapidapi-host, and x-rapidapi-key to header
+            Stock->>RapidApi: GET /historic/{Symbol}{TH?".bk":""}/{interval}/{range}
+            opt fetch stock price fail
+                RapidApi-->>Stock: throw any error
+                Stock-->>Cont: throw the error "error occured during fetch stock price"
+                Cont-->>Router: throw the error "error occured during fetch stock price"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured during fetch stock price"
+            end
+            RapidApi->>Stock: return Response
+            Stock->>Stock: create new chartData object:<br>timestamp = timestamp<br>ohlcv = indicators.quote.0
+            Stock->>Cont: return chartData object
+            Cont->>Router: return chartData object
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "get stock current orice successful", data: {chartData: chartData object}
+
         end
     end
