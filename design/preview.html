@@ -52,22 +52,35 @@
       background-color: #e6f2ff;
     }
     .external-systems {
-      background-color: #ffcccb;
+      background-color: #f0c37f;
     }
-    .grid-item {
+    .my-systems .grid-item,
+    .external-systems .grid-item {
       padding: 10px;
       text-align: center;
-      background-color: #e6f2ff;
       border-radius: 5px;
       transition: background-color 0.3s ease;
+      cursor: pointer;
     }
-    .grid-item:hover {
+    .my-systems .grid-item {
+      background-color: #e6f2ff;
+    }
+    .external-systems .grid-item {
+      background-color: #f0c37f;
+    }
+    .my-systems .grid-item:hover {
       background-color: #cce5ff;
+    }
+    .external-systems .grid-item:hover {
+      background-color: #e6ba78;
     }
     .grid-item a {
       text-decoration: none;
       color: #0066cc;
       font-weight: bold;
+      display: block;
+      height: 100%;
+      width: 100%;
     }
     h1, h2 {
       text-align: center;
@@ -86,6 +99,7 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .diagram-container h3 {
+      padding-top: 80px;
       color: #0066cc;
       border-bottom: 2px solid #cce5ff;
       padding-bottom: 10px;
@@ -117,7 +131,7 @@
   </style>
 </head>
 <body>
-  <div class="header">Designed Classes</div>
+  <div class="header">Designed Sequence diagrams</div>
   <div class="grid-container">
     <div class="grid-content">
       <div class="grid-group my-systems">
@@ -135,7 +149,7 @@
       </div>
     </div>
   </div>
-  <h1>Class Diagram Explorer</h1>
+  <h1>Sequence Diagrams Preview</h1>
   <div id="mySystems">
     <h2>My Systems</h2>
     <div class="diagram-container">
@@ -179,14 +193,15 @@
     </div>
     <div class="diagram-container">
       <h3 id="stocks">Stocks</h3>
-      <img src="./api/Stocks.svg" alt="Stocks Diagram" />
       <p class="description">Get stock prices.</p>
+      <img src="./api/Stocks.svg" alt="Stocks Diagram" />
       <a href="#" class="back-to-top">Back to top</a>
     </div>
   </div>
   <script>
     const header = document.querySelector('.header');
     const gridContainer = document.querySelector('.grid-container');
+    const gridItems = document.querySelectorAll('.grid-item');
 
     let isHovering = false;
 
@@ -216,6 +231,15 @@
       if (!isHovering && !header.matches(':hover')) {
         gridContainer.classList.remove('show');
       }
+    });
+
+    gridItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const link = item.querySelector('a');
+        if (link) {
+          window.location.href = link.href;
+        }
+      });
     });
   </script>
 </body>
