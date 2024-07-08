@@ -1,28 +1,28 @@
 sequenceDiagram
-    title Bank Accounts
+    title Asset 
     participant Client
     participant Router
     participant Controller
-    participant Bank as BankAccounk
+    participant Asset as Asset
 
-    alt create a new bank account
+    alt create a new Asset account
         rect rgb(73,204,144)
-            Client->>Router: POST /bank/create
+            Client->>Router: POST /Asset/create
         end
-    else read a bank account
+    else read a Asset account
         rect rgb(142,172,252)
-            Client->>Router: POST /bank/id
+            Client->>Router: POST /Asset/id
         end
-    else read all bank aacounts
+    else read all Asset aacounts
         rect rgb(152, 142, 232)
-            Client->>Router: POST /bank/all
+            Client->>Router: POST /Asset/all
         end
-    else update bank aacount
+    else update Asset aacount
         rect rgb(252,182,142)
-            Client->>Router: PUT  /bank/update
+            Client->>Router: PUT  /Asset/update
         end
-    else delete bank account
+    else delete Asset account
         rect rgb(247,155,155)
-            Client->>Router: DELETE /bank/delete
+            Client->>Router: DELETE /Asset/delete
         end
     end
