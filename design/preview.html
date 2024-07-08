@@ -3,36 +3,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Classes preview</title>
+    <title>Class Diagram Explorer</title>
     <style>
       body {
+        font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
+        background-color: #f0f4f8;
+        color: #333;
       }
       .grid-container {
         position: sticky;
         top: 0;
-        background-color: #f1f1f1;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         z-index: 100;
       }
       .grid-content {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-gap: 15px;
+        max-width: 1200px;
+        margin: 0 auto;
       }
       .grid-item {
         padding: 10px;
         text-align: center;
+        background-color: #e6f2ff;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+      .grid-item:hover {
+        background-color: #cce5ff;
+      }
+      .grid-item a {
+        text-decoration: none;
+        color: #0066cc;
+        font-weight: bold;
+      }
+      h1, h2 {
+        text-align: center;
+        color: #003366;
       }
       #mySystems, #otherSystems {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .diagram-container {
+        background-color: #ffffff;
+        border-radius: 10px;
         padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .diagram-container h3 {
+        color: #0066cc;
+        border-bottom: 2px solid #cce5ff;
+        padding-bottom: 10px;
       }
       img {
         max-width: 100%;
         height: auto;
+        border: 1px solid #cce5ff;
+        border-radius: 5px;
+      }
+      .back-to-top {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 5px 10px;
+        background-color: #0066cc;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+      .back-to-top:hover {
+        background-color: #004c99;
       }
     </style>
   </head>
@@ -40,9 +88,7 @@
     <div class="grid-container">
       <div class="grid-content">
         <div class="grid-item"><a href="#user-class">User Class</a></div>
-        <div class="grid-item">
-          <a href="#security-class">Security Class</a>
-        </div>
+        <div class="grid-item"><a href="#security-class">Security Class</a></div>
         <div class="grid-item"><a href="#bank-account">Bank Account</a></div>
         <div class="grid-item"><a href="#asset">Asset</a></div>
         <div class="grid-item"><a href="#easy-slip">EasySlip</a></div>
@@ -50,46 +96,46 @@
         <div class="grid-item"><a href="#stocks">Stocks</a></div>
       </div>
     </div>
-    <h1>Sequence Diagrams</h1>
+    <h1>Class Diagram Explorer</h1>
     <div id="mySystems">
-      <h2>my systems</h2>
-      <div>
+      <h2>My Systems</h2>
+      <div class="diagram-container">
         <h3 id="user-class">User Class</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./Classes/User.svg" alt="User Class Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
-      <div>
+      <div class="diagram-container">
         <h3 id="security-class">Security Class</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./Classes/Security.svg" alt="Security Class Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
-      <div>
+      <div class="diagram-container">
         <h3 id="bank-account">Bank Account</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./Classes/BankAccounts.svg" alt="Bank Account Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
-      <div>
+      <div class="diagram-container">
         <h3 id="asset">Asset</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./Classes/Asset.svg" alt="Asset Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
     </div>
     <div id="otherSystems">
-      <h2>other systems</h2>
-      <div>
+      <h2>External Systems</h2>
+      <div class="diagram-container">
         <h3 id="easy-slip">EasySlip</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./api/EasySlip.svg" alt="EasySlip Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
-      <div>
-        <h3 id="ocr">OCR</h3>
-        <p><a href="#top">Back to top</a></p>
+      <div class="diagram-container">
+        <h3 id="ocr">OCR (Optical Character Recognition)</h3>
         <img src="./api/Ocr.svg" alt="OCR Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
-      <div>
+      <div class="diagram-container">
         <h3 id="stocks">Stocks</h3>
-        <p><a href="#top">Back to top</a></p>
         <img src="./api/Stocks.svg" alt="Stocks Diagram" />
+        <a href="#" class="back-to-top">Back to top</a>
       </div>
     </div>
   </body>
