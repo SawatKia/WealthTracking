@@ -62,7 +62,7 @@ sequenceDiagram
             end
             UserController->>Router: return user created id: str
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 201, "user created", {id: userCreatedId}
+            Router->>Client: 201, "user created", data: {id: userCreatedId}
         end
     else read current user
         rect rgb(142,172,252)
@@ -95,7 +95,7 @@ sequenceDiagram
                 Router-->>Client: 500, "internal server error"
             end
             UserController->>Router: return user object {...}
-            Router->>Client: 200, "get current user success",{user: user}
+            Router->>Client: 200, "get current user success", data: {user: user}
         end
     else search users
         rect rgb(253,164,255)
@@ -124,15 +124,15 @@ sequenceDiagram
                 Router-->>Client: 500, "the error occured during search a user"
             end
             Note left of UserModel: return only non-sensitive data (user data: userUniqueId,<br>memberSince, userName, email))
-            UserModel->>UserController: return array of user object [{...}, {...}, ...] or<br>return user object{...}
+            UserModel->>UserController: return array of user object [{...}, {...}, ...] 
             opt any error
                 UserController-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
             end
-            UserController->>Router: return array of user object [{...}, {...}, ...] or<br>return user object{...}
+            UserController->>Router: return array of user object [{...}, {...}, ...] 
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "seach user email successful", {users: [{...},{...},{...},...]} or<br>200, "seach user email successful", {user: {...}}
+            Router->>Client: 200, "seach user email successful", data: {users: [{...},{...},{...},...]} 
         end
     else update current user
         rect rgb(252,182,142)
@@ -149,9 +149,9 @@ sequenceDiagram
             Note right of  UserController: as the get_current_user was defined in "read current user"
             UserController->>UserController: this.get_current_user(request)
             UserController->>UserModel: check_password(db, username.lower(), password)
-            UserModel->>UserModel: this.search_user(db, "username", userName, True, "asc")
+            UserModel->>UserModel: this.search(db, "username", userName, True, "asc")
             opt not found the username
-                UserModel->>UserModel: this.search_user(db, "email", userName, True, "asc")
+                UserModel->>UserModel: this.search(db, "email", userName, True, "asc")
             end
             opt not found the email
                 UserModel-->>UserController: return empty object

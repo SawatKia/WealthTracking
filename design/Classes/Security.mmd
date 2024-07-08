@@ -45,7 +45,7 @@ sequenceDiagram
             SecurityController->>Router:retun token
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
             Note right of Router: the token might be send in<br> Header with "Barear " prefix
-            Router->>Client: 200, login successful, {token: token}
+            Router->>Client: 200, login successful, data: {token: token}
         end
     
     else log out

@@ -33,7 +33,7 @@ sequenceDiagram
             end
             BankCont->>Router: return bank account created id
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "cretae a new bank account successful", {id: id}
+            Router->>Client: 200, "cretae a new bank account successful", data: {id: id}
         end
     else read a bank account
         rect rgb(142,172,252)
@@ -68,7 +68,7 @@ sequenceDiagram
             end
             BankCont->>Router: return bank account object{...}
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "seach bank account successful", {bank-account: {...}}
+            Router->>Client: 200, "seach bank account successful", data: {bank-account: {...}}
         end
     else read all bank accounts of current user
         rect rgb(152, 142, 232)
@@ -104,7 +104,7 @@ sequenceDiagram
             end
             BankCont->>Router: return array of bank account object [{...}, {...}, ...] 
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "seach bank account successful" , {bank accounts: [{...},{...},{...},...]}
+            Router->>Client: 200, "seach bank account successful" , data: {bank accounts: [{...},{...},{...},...]}
 
         end
     else update bank aacount
