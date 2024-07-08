@@ -3,38 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON File Visualizer</title>
+    <title>Customizable JSON File Visualizer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 20px;
             background-color: #f0f0f0;
+            color: #333;
         }
-        h1 {
+        h1, #instructions {
             text-align: center;
         }
-        #instructions {
-            text-align: center;
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 20px;
         }
         #fileInput {
             display: none;
         }
-        #importButton {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
+        button, select {
+            padding: 10px 15px;
             font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            padding-right: 30px;
+        }
+        select:hover, select:focus {
+            border-color: #888;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        #importButton {
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #importButton:hover {
+            background-color: #45a049;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         #grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
             margin-top: 20px;
         }
@@ -55,42 +79,54 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        .key {
-            color: #881391;
-        }
-        .string {
-            color: #0B7500;
-        }
-        .number {
-            color: #1A01CC;
-        }
-        .boolean {
-            color: #FF0000;
-        }
-        .null {
-            color: #808080;
-        }
+        .key { color: #881391; }
+        .string { color: #0B7500; }
+        .number { color: #1A01CC; }
+        .boolean { color: #FF0000; }
+        .null { color: #808080; }
     </style>
 </head>
 <body>
-    <h1>JSON File Visualizer</h1>
+    <h1>Customizable JSON File Visualizer</h1>
     <div id="instructions">
-        <p>Click the button below to import up to 10 JSON files. The contents will be displayed in a 2x5 grid of cards.</p>
+        <p>Select the number of rows and columns, then import your JSON files.</p>
     </div>
-    <input type="file" id="fileInput" multiple accept=".json">
-    <button id="importButton">Import JSON Files</button>
+    <div id="controls">
+        <select id="rowsSelect">
+            <option value="1">1 Row</option>
+            <option value="2" selected>2 Rows</option>
+            <option value="3">3 Rows</option>
+            <option value="4">4 Rows</option>
+            <option value="5">5 Rows</option>
+        </select>
+        <select id="columnsSelect">
+            <option value="1">1 Column</option>
+            <option value="2">2 Columns</option>
+            <option value="3">3 Columns</option>
+            <option value="4">4 Columns</option>
+            <option value="5" selected>5 Columns</option>
+        </select>
+        <input type="file" id="fileInput" multiple accept=".json">
+        <button id="importButton">Import JSON Files</button>
+    </div>
     <div id="grid"></div>
 
     <script>
         const fileInput = document.getElementById('fileInput');
         const importButton = document.getElementById('importButton');
         const grid = document.getElementById('grid');
+        const rowsSelect = document.getElementById('rowsSelect');
+        const columnsSelect = document.getElementById('columnsSelect');
 
         importButton.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (event) => {
-            const files = Array.from(event.target.files).slice(0, 10);
+            const files = Array.from(event.target.files);
+            const rows = parseInt(rowsSelect.value);
+            const columns = parseInt(columnsSelect.value);
+            
             grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
 
             files.forEach((file, index) => {
                 const reader = new FileReader();
