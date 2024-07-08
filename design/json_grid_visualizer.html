@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON File Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+        }
+        #instructions {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #fileInput {
+            display: none;
+        }
+        #importButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .key {
+            color: #881391;
+        }
+        .string {
+            color: #0B7500;
+        }
+        .number {
+            color: #1A01CC;
+        }
+        .boolean {
+            color: #FF0000;
+        }
+        .null {
+            color: #808080;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON File Visualizer</h1>
+    <div id="instructions">
+        <p>Click the button below to import up to 10 JSON files. The contents will be displayed in a 2x5 grid of cards.</p>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".json">
+    <button id="importButton">Import JSON Files</button>
+    <div id="grid"></div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const importButton = document.getElementById('importButton');
+        const grid = document.getElementById('grid');
+
+        importButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files).slice(0, 10);
+            grid.innerHTML = '';
+
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    try {
+                        const json = JSON.parse(content);
+                        const formatted = JSON.stringify(json, null, 2);
+                        const card = createCard(file.name, syntaxHighlight(formatted));
+                        grid.appendChild(card);
+                    } catch (error) {
+                        const card = createCard(file.name, `Invalid JSON: ${error.message}`);
+                        grid.appendChild(card);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        });
+
+        function createCard(title, content) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${content}</pre>
+            `;
+            return card;
+        }
+
+        function syntaxHighlight(json) {
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+    </script>
+</body>
+</html>
