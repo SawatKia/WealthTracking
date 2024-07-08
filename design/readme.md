@@ -2,9 +2,9 @@
 this is the system design before implementing.
 the design consist sequence-diagram designing of each entity and api how it handle the request and returning the error by using Mermaid.js
 
-# to modify the diagram?
+# How to modify the diagram?
 <ol>
-<li>clone this project to your local repository.</li>
+<li>clone this repository to your local repository.</li>
 <ol>
 <h2>install extensions below</h2>
 <li>Mermaid Editor</li>
@@ -21,23 +21,24 @@ the design consist sequence-diagram designing of each entity and api how it hand
 run file preview.html with live server extension
 
 # Diagrams status
-| Diagram Name               | finish | verify |
-|----------------------------|--------|--------|
-| GeneralClassTemplate.md    |  [x]   |  [x]   |
+| Diagram Name                         | finish | verify |
+|--------------------------------------|--------|--------|
+| 1. GeneralClassTemplate.md           |   [x]  |   [x]  |
 **---------Classes---------**
-| Security.md                |  [x]   |  [x]   |
-| User.md                    |  [x]   |  [x]   |
-| BankAccount.md             |  [x]   |  [x]   |
-| Assets.md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
-| .md                  |  []   |  []   |
+| 2. Security.md                       |   [x]  |   [x]  |
+| 3. User.md                           |   [x]  |   [x]  |
+| 7. BankAccount.md                    |   [x]  |   [x]  |
+| 8. UserTransactions.md               |   [ ]  |   [ ]  |
+| 9. Assets.md                         |   [ ]  |   [ ]  |
+| 10. InvestingTransaction.md          |   [ ]  |   [ ]  |
+| 11. BankAccountTransactions.md       |   [ ]  |   [ ]  |
+| 12. Debts.md                         |   [ ]  |   [ ]  |
+| 13. DebtsPayments.md                 |   [ ]  |   [ ]  |
+| 14. Setting.md                       |   [ ]  |   [ ]  |
+| 15. Notifications.md                 |   [ ]  |   [ ]  |
 **-----------Api-----------**
-| EasySlip.md               |  [x]   |  [x]   |
-| Ocr.md                    |  [x]   |  [x]   |
-| Stocks.md                 |  []   |  []   |
+| 4. EasySlip.md                       |   [x]  |   [x]  |
+| 5. Ocr.md                            |   [x]  |   [x]  |
+| 6. Stocks.md                         |   [x]  |   [x]  |
+
 
