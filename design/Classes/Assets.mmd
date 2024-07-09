@@ -20,6 +20,7 @@ sequenceDiagram
             Cont->>User: get_current_user(request)
             opt get_current_user Failed
                 User-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
                 Cont-->>Router: throw the error "error occured during get_current_user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during get_current_user"
@@ -30,6 +31,7 @@ sequenceDiagram
             Cont->>Asset: create(newAsset: New_Asset)
             opt Create asset Failed
                 Asset-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
                 Cont-->>Router: throw the error "error occured during create an asset"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during create an asset"

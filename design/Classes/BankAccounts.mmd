@@ -21,6 +21,7 @@ sequenceDiagram
             BankCont->>BankModel: create(db, newBankAccount: NewBankAccount)
             opt create Failed
                 BankModel-->>BankCont: throw any error
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "error occured during create a new account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during create a new account"                
@@ -56,6 +57,7 @@ sequenceDiagram
             BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
             opt search Failed
                 BankModel-->>BankCont: throw any error
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "error occured during search bank account(s)"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during search bank account(s)"
@@ -84,6 +86,7 @@ sequenceDiagram
             BankCont->>UserController: get_current_user(request)
             opt get_current_user Failed
                 UserController-->>BankCont: throw any error 
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "the error occured during get_current_user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during get_current_user"
@@ -92,6 +95,7 @@ sequenceDiagram
             BankCont->>BankModel: search(db, "userUniqueId", userUniqueId, False, "asc")
             opt search Failed
                 BankModel-->>BankCont: throw any error
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "error occured during search bank account(s)"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during search bank account(s)"
@@ -123,7 +127,8 @@ sequenceDiagram
             rect rgb(254,235,176)
                 BankCont->>UserController: get_current_user(request)
                 opt get_current_user Failed
-                    UserController-->>BankCont: throw any error 
+                    UserController-->>BankCont: throw any error
+                    BankCont->>BankCont: show error message in logging 
                     BankCont-->>Router: throw the error "the error occured during get_current_user"
                     Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                     Router-->>Client: 500, "the error occured during get_current_user"
@@ -132,6 +137,7 @@ sequenceDiagram
                 BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
                 opt search Failed
                     BankModel-->>BankCont: throw any error
+                    BankCont->>BankCont: show error message in logging
                     BankCont-->>Router: throw the error "error occured during search bank account(s)"
                     Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                     Router-->>Client: 500, "the error occured during search bank account(s)"
@@ -148,6 +154,7 @@ sequenceDiagram
             BankCont->>BankModel: update(db, bankAccountUniqueId, updateData)
             opt
                 BankModel-->>BankCont: throw any error
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "error occured during update bank account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during update bank account"
@@ -179,6 +186,7 @@ sequenceDiagram
             BankCont->>BankModel: delete(bankAccountUniqueId)
             opt delete Failed
                 BankModel-->>BankCont: throw any error
+                BankCont->>BankCont: show error message in logging
                 BankCont-->>Router: throw the error "error occured during delete bank account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during delete bank account"

@@ -28,6 +28,7 @@ sequenceDiagram
             Stock->>RapidApi: GET /price/{Symbol}{TH?".bk":""}
             opt fetch stock price fail
                 RapidApi-->>Stock: throw any error
+                Stock->>Stock: show error message in logging
                 Stock-->>Cont: throw the error "error occured during fetch stock price"
                 Cont-->>Router: throw the error "error occured during fetch stock price"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
@@ -56,6 +57,7 @@ sequenceDiagram
             Stock->>RapidApi: GET /historic/{Symbol}{TH?".bk":""}/{interval}/{range}
             opt fetch stock price fail
                 RapidApi-->>Stock: throw any error
+                Stock->>Stock: show error message in logging
                 Stock-->>Cont: throw the error "error occured during fetch stock price"
                 Cont-->>Router: throw the error "error occured during fetch stock price"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}

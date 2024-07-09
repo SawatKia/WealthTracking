@@ -37,6 +37,7 @@ sequenceDiagram
             Ocr->>Ocr: process_text(text, "Symbol")
             opt extract_stock Failed
                 Ocr-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
                 Cont-->>Router: throw the error "the error occured during extract_stock"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during extract_stock"
@@ -67,8 +68,9 @@ sequenceDiagram
             Ocr->>Ocr: do OCR
             Note over Ocr: process_text(textToProcess, whatToGet)<br>do RegEx to get whatToGet {"Symbol", "amont", "unitPrice"}
             Ocr->>Ocr: process_text(text, "Symbol")
-                        opt extract_stock Failed
+            opt extract_stock Failed
                 Ocr-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
                 Cont-->>Router: throw the error "the error occured during extract_stock"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during extract_stock"
