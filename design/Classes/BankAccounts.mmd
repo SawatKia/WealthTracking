@@ -1,30 +1,40 @@
 sequenceDiagram
-    title Bank Accounts
+    autonumber
+    title Bank Accounts Using BaseController
     participant Client
     participant Router
-    participant BankCont as BankController
+    participant BankCont as BankController extends BaseController
     participant BankModel as BankAccountModel
     participant UserController
 
     alt create a new bank account
         rect rgb(73,204,144)
             Client->>Router: POST /bank/create
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>BankCont: createBankAccount(displayName?="bank "+(lenght+1},<br>bankAccountName, bankName, initialBalance) 
-            BankCont->>BankCont: verify all parameters is not null or empty
+            Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
+            Router->>BankCont: createBankAccount(request)
+            BankCont->>BankCont: verifyParams({displayName, bankAccountName, bankName, initialBalance})
             opt some parameter is null or empty
-                BankCont-->>Router: throw the error "parameters is required"
+                BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 400, "displayName,bankAccountName, bankName, and initialBalance are required"
+                Router-->>Client: 400, "displayName, bankAccountName, bankName, and initialBalance are required"
             end
-            BankCont->>BankCont: create new bank account object from pameters
-            BankCont->>BankModel: create(db, newBankAccount: NewBankAccount)
+            BankCont->>UserController: get_current_user(request)
+            opt get_current_user Failed
+                UserController-->>BankCont: throw any error 
+                BankCont->>BankCont: show error message in logging
+                BankCont-->>Router: throw the error "error occurred during get_current_user"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occurred during get_current_user"
+            end
+            UserController->>BankCont: return user object {...}
+            BankCont->>BankCont: create new bank account object with user id
+            BankCont->>BankModel: create(newBankAccount: NewBankAccount)
             opt create Failed
                 BankModel-->>BankCont: throw any error
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "error occured during create a new account"
+                BankCont-->>Router: throw the error "error occurred during create a new account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "error occured during create a new account"                
+                Router-->>Client: 500, "error occurred during create a new account"                
             end
             BankModel->>BankCont: return bank account created id
             opt any error
@@ -34,33 +44,27 @@ sequenceDiagram
             end
             BankCont->>Router: return bank account created id
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "cretae a new bank account successful", data: {id: id}
+            Router->>Client: 200, "create a new bank account successful", data: {id: id}
         end
     else read a bank account
         rect rgb(142,172,252)
             Note right of Client: search by id, fav, and userUniqueId
             Client->>Router: POST /bank/search
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>BankCont: search_bank_account(searchCriteria, searchValue, isFindOne, sorting)
-            BankCont->>BankCont: verify all parameters is not null or empty
+            Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
+            Router->>BankCont: searchBankAccount(request)
+            BankCont->>BankCont: verifyParams({searchCriteria, searchValue, isFindOne, sorting})
             opt some parameter is null or empty
-                BankCont-->>Router: throw the error "parameters is required"
+                BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 400, "searchCriteria, searchValue, isFindOne, and sorting are required"
             end
-            BankCont->>BankCont: convert searchCriteria from parameter<br>to pre-defined criteria using if-else statement<br>for only permit to search with<br>bankAccountUniqueId, bankName, and userUniqueId
-            opt searchCriteria not in this list bankAccountUniqueId, bankName, and userUniqueId
-                BankCont-->>Router: throw the error "the specified searchCriteria not permit"
-                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 403, "specified searchCriteria not permit"
-            end
-            BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
+            BankCont->>BankModel: search({searchCriteria, searchValue, isFindOne, sorting})
             opt search Failed
                 BankModel-->>BankCont: throw any error
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "error occured during search bank account(s)"
+                BankCont-->>Router: throw the error "error occurred during search bank account(s)"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "the error occured during search bank account(s)"
+                Router-->>Client: 500, "error occurred during search bank account(s)"
             end
             BankModel->>BankCont: return bank account object{...}
             opt any error
@@ -70,126 +74,142 @@ sequenceDiagram
             end
             BankCont->>Router: return bank account object{...}
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "seach bank account successful", data: {bank-account: {...}}
+            Router->>Client: 200, "search bank account successful", data: {bank-account: {...}}
         end
     else read all bank accounts of current user
         rect rgb(152, 142, 232)
             Client->>Router: POST /bank/all
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>BankCont: get_all_current_user_bank_accounts(request)
-            BankCont->>BankCont: verify all parameters is not null or empty
-            opt some parameter is null or empty
-                BankCont-->>Router: throw the error "parameters is required"
-                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 400, "request is required"
-            end
+            Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
+            Router->>BankCont: getAllCurrentUserBankAccounts(request)
             BankCont->>UserController: get_current_user(request)
             opt get_current_user Failed
                 UserController-->>BankCont: throw any error 
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "the error occured during get_current_user"
+                BankCont-->>Router: throw the error "error occurred during get_current_user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "the error occured during get_current_user"
+                Router-->>Client: 500, "error occurred during get_current_user"
             end
             UserController->>BankCont: return user object {...}
-            BankCont->>BankModel: search(db, "userUniqueId", userUniqueId, False, "asc")
+            BankCont->>BankModel: search({userUniqueId: user.id, isFindOne: false, sorting: "asc"})
             opt search Failed
                 BankModel-->>BankCont: throw any error
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "error occured during search bank account(s)"
+                BankCont-->>Router: throw the error "error occurred during search bank account(s)"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "the error occured during search bank account(s)"
+                Router-->>Client: 500, "error occurred during search bank account(s)"
             end
-            BankModel->>BankCont: return array of bank account object [{...}, {...}, ...]
+            BankModel->>BankCont: return array of bank account objects [{...}, {...}, ...]
             opt any error
                 BankCont-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
             end
-            BankCont->>Router: return array of bank account object [{...}, {...}, ...] 
+            BankCont->>Router: return array of bank account objects [{...}, {...}, ...] 
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "seach bank account successful" , data: {bank accounts: [{...},{...},{...},...]}
-
+            Router->>Client: 200, "search bank accounts successful" , data: {bank accounts: [{...},{...},{...},...]}
         end
-    else update bank aacount
+    else update bank account
         rect rgb(252,182,142)
             Client->>Router: PUT  /bank/update
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>BankCont: update_bank_account(request, bankAccountUniqueId, updateData)
-            BankCont->>BankCont: verify all parameters is not null or empty
+            Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
+            Router->>BankCont: updateBankAccount(request, bankAccountUniqueId, updateData)
+            BankCont->>BankCont: verifyParams({request, bankAccountUniqueId, updateData})
             opt some parameter is null or empty
-                BankCont-->>Router: throw the error "parameters is required"
+                BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 400, "request, bankAccountUniqueId, and updateData are required"
             end
-            Note right of BankCont: verify_right_to_modify first define
-            BankCont->>BankCont: verify if current user is an owner of specified bank account id<br>this.verify_right_to_modify(request, bankAccountUniqueId)
+            BankCont->>BankCont: verify_right_to_modify(request, bankAccountUniqueId)
             rect rgb(254,235,176)
                 BankCont->>UserController: get_current_user(request)
                 opt get_current_user Failed
                     UserController-->>BankCont: throw any error
                     BankCont->>BankCont: show error message in logging 
-                    BankCont-->>Router: throw the error "the error occured during get_current_user"
+                    BankCont-->>Router: throw the error "error occurred during get_current_user"
                     Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                    Router-->>Client: 500, "the error occured during get_current_user"
+                    Router-->>Client: 500, "error occurred during get_current_user"
                 end
                 UserController->>BankCont: return user object {...}
-                BankCont->>BankModel: search(db, "bankAccountUniqueId", bankAccountUniqueId, True, "asc")
+                BankCont->>BankModel: search({bankAccountUniqueId, isFindOne: true, sorting: "asc"})
                 opt search Failed
                     BankModel-->>BankCont: throw any error
                     BankCont->>BankCont: show error message in logging
-                    BankCont-->>Router: throw the error "error occured during search bank account(s)"
+                    BankCont-->>Router: throw the error "error occurred during search bank account(s)"
                     Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                    Router-->>Client: 500, "the error occured during search bank account(s)"
+                    Router-->>Client: 500, "error occurred during search bank account(s)"
                 end
                 BankModel->>BankCont: return bank account object{...}
-                BankCont->>BankCont: verifying...(return True or False)
-                opt this current user not an owner
-                    BankCont-->>Router: throw the error "you are not allow to modify this data"
+                BankCont->>BankCont: verifying... (return True or False)
+                opt current user not owner
+                    BankCont-->>Router: throw the error "you are not allowed to modify this data"
                     Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                    Router-->>Client: 403,"you are not allow to modify this data"
+                    Router-->>Client: 403, "you are not allowed to modify this data"
                 end
             end
             BankCont->>BankCont: include bank account data that doesn't exist in the updateData<br>into updateData
-            BankCont->>BankModel: update(db, bankAccountUniqueId, updateData)
-            opt
+            BankCont->>BankModel: update(bankAccountUniqueId, updateData)
+            opt update Failed
                 BankModel-->>BankCont: throw any error
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "error occured during update bank account"
+                BankCont-->>Router: throw the error "error occurred during update bank account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "error occured during update bank account"
+                Router-->>Client: 500, "error occurred during update bank account"
             end
-            BankModel->>BankCont: return True
+            BankModel->>BankCont: return updated bank account object{...}
             opt any error
                 BankCont-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
             end
-            BankCont->>Router: return True
+            BankCont->>Router: return updated bank account object{...}
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "user updated"
-
+            Router->>Client: 200, "bank account updated successfully", data: {bank account: {...}}
         end
     else delete bank account
         rect rgb(247,155,155)
             Client->>Router: DELETE /bank/delete
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>BankCont: delete_bank_account(request, bankAccountUniqueId)
-            BankCont->>BankCont: verify all parameters is not null or empty
+            Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
+            Router->>BankCont: deleteBankAccount(request, bankAccountUniqueId)
+            BankCont->>BankCont: verifyParams({request, bankAccountUniqueId})
             opt some parameter is null or empty
-                BankCont-->>Router: throw the error "parameters is required"
+                BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 400, "request, and bankAccountUniqueId are required"
             end
-            Note right of BankCont: as verify_right_to_modify was defined in update bank account
-            BankCont->>BankCont:  this.verify_right_to_modify(request, bankAccountUniqueId)
+            BankCont->>BankCont: verify_right_to_modify(request, bankAccountUniqueId)
+            rect rgb(254,235,176)
+                BankCont->>UserController: get_current_user(request)
+                opt get_current_user Failed
+                    UserController-->>BankCont: throw any error
+                    BankCont->>BankCont: show error message in logging 
+                    BankCont-->>Router: throw the error "error occurred during get_current_user"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 500, "error occurred during get_current_user"
+                end
+                UserController->>BankCont: return user object {...}
+                BankCont->>BankModel: search({bankAccountUniqueId, isFindOne: true, sorting: "asc"})
+                opt search Failed
+                    BankModel-->>BankCont: throw any error
+                    BankCont->>BankCont: show error message in logging
+                    BankCont-->>Router: throw the error "error occurred during search bank account(s)"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 500, "error occurred during search bank account(s)"
+                end
+                BankModel->>BankCont: return bank account object{...}
+                BankCont->>BankCont: verifying... (return True or False)
+                opt current user not owner
+                    BankCont-->>Router: throw the error "you are not allowed to modify this data"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 403, "you are not allowed to modify this data"
+                end
+            end
             BankCont->>BankModel: delete(bankAccountUniqueId)
             opt delete Failed
                 BankModel-->>BankCont: throw any error
                 BankCont->>BankCont: show error message in logging
-                BankCont-->>Router: throw the error "error occured during delete bank account"
+                BankCont-->>Router: throw the error "error occurred during delete bank account"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "error occured during delete bank account"
+                Router-->>Client: 500, "error occurred during delete bank account"
             end
             BankModel->>BankCont: return True
             opt any error
@@ -200,6 +220,5 @@ sequenceDiagram
             BankCont->>Router: return True
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
             Router->>Client: 200, "delete successful"
-
         end
     end
