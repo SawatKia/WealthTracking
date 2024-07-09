@@ -1,8 +1,9 @@
 sequenceDiagram
-    title Asset 
+    autonumber
+    title Asset Accounts Using BaseController
     participant Client
     participant Router
-    participant Cont as AssetController
+    participant Cont as AssetController extends BaseController
     participant User as UserController
     participant Asset as AssetModel
 
@@ -10,57 +11,162 @@ sequenceDiagram
         rect rgb(73,204,144)
             Note over Client,Router: with body of array of Asset object<br>{dateFirstPurchased, assetType,<br>assetName, amount,<br>unitPrice(fee included)}
             Client->>Router: POST /Asset/create
-            Router->>Cont: add_assets(request, assetArray)
-            Cont->>Cont: verify all parameters is not null or empty
+            Router->>Cont: addAssets(request)
+            Cont->>Cont: verifyParams({assetArray})
             opt some parameter is null or empty
-                Cont-->>Router: throw the error "parameters is required"
+                Cont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 400, "displayName, bankAccountName,<br>bankName, and initialBalance are required"
+                Router-->>Client: 400, "assetArray is required"
             end
             Cont->>User: get_current_user(request)
             opt get_current_user Failed
                 User-->>Cont: throw any error
                 Cont->>Cont: show error message in logging
-                Cont-->>Router: throw the error "error occured during get_current_user"
+                Cont-->>Router: throw the error "error occurred during get_current_user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "error occured during get_current_user"
+                Router-->>Client: 500, "error occurred during get_current_user"
             end
             User->>Cont: return user object {...}
             Note over Cont: iteration through assetArray
-            Cont->>Cont: create new asset object from assetArray one-by-one and<br>add userUniquesId
-            Cont->>Asset: create(newAsset: New_Asset)
-            opt Create asset Failed
-                Asset-->>Cont: throw any error
-                Cont->>Cont: show error message in logging
-                Cont-->>Router: throw the error "error occured during create an asset"
-                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-                Router-->>Client: 500, "error occured during create an asset"
+            loop create assets
+                Cont->>Cont: create new asset object from assetArray one-by-one and<br>add userUniqueId
+                Cont->>Asset: create(newAsset)
+                opt Create asset Failed
+                    Asset-->>Cont: throw any error
+                    Cont->>Cont: show error message in logging
+                    Cont-->>Router: throw the error "error occurred during create an asset"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 500, "error occurred during create an asset"
+                end
+                Asset->>Cont: return asset created id: str
             end
-            Asset->>Cont: return asset created id: str
             opt any error
                 Cont-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
             end
-            Cont->>Router: return asset created id
+            Cont->>Router: return asset created ids
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
-            Router->>Client: 200, "cretae a new asset successful", data: {id: id}
-
+            Router->>Client: 200, "create a new asset successful", data: {ids: [ids]}
         end
-    else read a Asset 
+    else read a specific Asset
         rect rgb(142,172,252)
             Client->>Router: POST /Asset/id
+            Router->>Cont: readAsset(request)
+            Cont->>Cont: verifyParams({assetId})
+            opt some parameter is null or empty
+                Cont-->>Router: throw the error "parameters are required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "assetId is required"
+            end
+            Cont->>Asset: read(assetId)
+            opt Read asset Failed
+                Asset-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
+                Cont-->>Router: throw the error "error occurred during read asset"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occurred during read asset"
+            end
+            Asset->>Cont: return asset object {...}
+            opt any error
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
+            end
+            Cont->>Router: return asset object {...}
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "read asset successful", data: {asset: {...}}
         end
-    else read all Asset aacounts
+    else read all Assets
         rect rgb(152, 142, 232)
             Client->>Router: POST /Asset/all
+            Router->>Cont: readAllAssets(request)
+            Cont->>User: get_current_user(request)
+            opt get_current_user Failed
+                User-->>Cont: throw any error 
+                Cont->>Cont: show error message in logging
+                Cont-->>Router: throw the error "error occurred during get_current_user"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occurred during get_current_user"
+            end
+            User->>Cont: return user object {...}
+            Cont->>Asset: readAll({userUniqueId: user.id})
+            opt Read all assets Failed
+                Asset-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
+                Cont-->>Router: throw the error "error occurred during read all assets"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occurred during read all assets"
+            end
+            Asset->>Cont: return array of asset objects [{...}, {...}, ...]
+            opt any error
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
+            end
+            Cont->>Router: return array of asset objects [{...}, {...}, ...]
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "read all assets successful", data: {assets: [{...},{...},{...},...]}
         end
-    else update Asset aacount
+    else update an Asset
         rect rgb(252,182,142)
             Client->>Router: PUT  /Asset/update
+            Router->>Cont: updateAsset(request)
+            Cont->>Cont: verifyParams({assetId, updateData})
+            opt some parameter is null or empty
+                Cont-->>Router: throw the error "parameters are required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "assetId and updateData are required"
+            end
+            Cont->>Cont: verify_right_to_modify(request, assetId)
+            rect rgb(254,235,176)
+                Cont->>User: get_current_user(request)
+                opt get_current_user Failed
+                    User-->>Cont: throw any error
+                    Cont->>Cont: show error message in logging 
+                    Cont-->>Router: throw the error "error occurred during get_current_user"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 500, "error occurred during get_current_user"
+                end
+                User->>Cont: return user object {...}
+                Cont->>Asset: read({assetId, isFindOne: true})
+                opt read asset Failed
+                    Asset-->>Cont: throw any error
+                    Cont->>Cont: show error message in logging
+                    Cont-->>Router: throw the error "error occurred during read asset"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 500, "error occurred during read asset"
+                end
+                Asset->>Cont: return asset object{...}
+                Cont->>Cont: verifying... (return True or False)
+                opt current user not owner
+                    Cont-->>Router: throw the error "you are not allowed to modify this data"
+                    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                    Router-->>Client: 403, "you are not allowed to modify this data"
+                end
+            end
+            Cont->>Asset: update(assetId, updateData)
+            opt update Failed
+                Asset-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
+                Cont-->>Router: throw the error "error occurred during update asset"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occurred during update asset"
+            end
+            Asset->>Cont: return updated asset object{...}
+            opt any error
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
+            end
+            Cont->>Router: return updated asset object{...}
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "asset updated successfully", data: {asset: {...}}
         end
+        %% the verify_right_to_modify is using throughout every classes please put this function in BaseController
     else delete Asset 
         rect rgb(247,155,155)
             Client->>Router: DELETE /Asset/delete
         end
+        %% complete the delete path with my style
     end
