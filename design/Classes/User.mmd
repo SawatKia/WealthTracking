@@ -45,10 +45,11 @@ sequenceDiagram
             UserModel->>UserController: return user empty object
             UserController->>UserController: hashing the password<br>bcrypt.hashpw(password, salt?)
             UserController->>UserController: create user object from parameters
-            UserController->>UserController: add member_since,and role fields to object
-            Note over UserController, UserModel: New_User {userName, email, hashedPassword,<br>role, memberSince}
+            UserController->>UserController: add role fields to object
+            Note over UserController, UserModel: New_User {userName, email, hashedPassword, role}
             UserController->>UserModel: create(db, newUser: New_User)
-            opt Created user Failed
+            UserModel->>UserModel: add member_since fields to newUser object
+            opt Create user Failed
                 UserModel-->>UserController: throw any error
                 UserController-->>Router: throw the error "error occured during create a user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
