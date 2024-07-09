@@ -1,0 +1,44 @@
+sequenceDiagram
+    title Base Controller Design
+    participant Client
+    participant Router
+    participant BaseController
+    participant UserModel
+    participant SpecificModel as SpecificModel (e.g., BankModel, AssetModel)
+
+    alt Verify Parameters
+        Client->>Router: POST /some_endpoint
+        Router->>BaseController: call specific method (e.g., createBankAccount)
+        BaseController->>BaseController: verifyParams(params)
+        opt some parameter is null or empty
+            BaseController-->>Router: throw the error "parameters are required"
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router-->>Client: 400, "parameters are required"
+        end
+    end
+
+    alt Get Current User
+        BaseController->>UserModel: getCurrentUser(req)
+        opt get_current_user Failed
+            UserModel-->>BaseController: throw any error
+            BaseController-->>Router: throw the error "error occurred during get_current_user"
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router-->>Client: 500, "error occurred during get_current_user"
+        end
+        UserModel->>BaseController: return user object {...}
+    end
+
+    alt Handle Specific Logic
+        BaseController->>SpecificModel: perform specific operation (e.g., create, update, delete)
+        opt operation Failed
+            SpecificModel-->>BaseController: throw any error
+            BaseController-->>Router: throw the error "error occurred during operation"
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router-->>Client: 500, "error occurred during operation"
+        end
+        SpecificModel->>BaseController: return result
+    end
+
+    BaseController->>Router: return result
+    Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+    Router->>Client: 200, "operation successful", data: {result}
