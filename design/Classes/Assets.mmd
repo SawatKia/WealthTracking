@@ -2,14 +2,50 @@ sequenceDiagram
     title Asset 
     participant Client
     participant Router
-    participant Controller
-    participant Asset as Asset
+    participant Cont as AssetController
+    participant User as UserController
+    participant Asset as AssetModel
 
     alt create a new Asset account
         rect rgb(73,204,144)
+            Note over Client,Router: with body of array of Asset object<br>{dateFirstPurchased, assetType,<br>assetName, amount,<br>unitPrice(fee included)}
             Client->>Router: POST /Asset/create
+            Router->>Cont: add_assets(request, assetArray)
+            Cont->>Cont: verify all parameters is not null or empty
+            opt some parameter is null or empty
+                Cont-->>Router: throw the error "parameters is required"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 400, "displayName, bankAccountName,<br>bankName, and initialBalance are required"
+            end
+            Cont->>User: get_current_user(request)
+            opt get_current_user Failed
+                User-->>Cont: throw any error
+                Cont-->>Router: throw the error "error occured during get_current_user"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured during get_current_user"
+            end
+            User->>Cont: return user object {...}
+            Note over Cont: iteration through assetArray
+            Cont->>Cont: create new asset object from assetArray one-by-one and<br>add userUniquesId
+            Cont->>Asset: create(newAsset: New_Asset)
+            opt Create asset Failed
+                Asset-->>Cont: throw any error
+                Cont-->>Router: throw the error "error occured during create an asset"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "error occured during create an asset"
+            end
+            Asset->>Cont: return asset created id: str
+            opt any error
+                Cont-->>Router: throw the error "internal server error"
+                Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+                Router-->>Client: 500, "internal server error"
+            end
+            Cont->>Router: return asset created id
+            Note over Router,Client: JSON Response: {status_code, message, data(if any)}
+            Router->>Client: 200, "cretae a new asset successful", data: {id: id}
+
         end
-    else read a Asset account
+    else read a Asset 
         rect rgb(142,172,252)
             Client->>Router: POST /Asset/id
         end
@@ -21,7 +57,7 @@ sequenceDiagram
         rect rgb(252,182,142)
             Client->>Router: PUT  /Asset/update
         end
-    else delete Asset account
+    else delete Asset 
         rect rgb(247,155,155)
             Client->>Router: DELETE /Asset/delete
         end
