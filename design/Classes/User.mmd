@@ -51,6 +51,7 @@ sequenceDiagram
             UserModel->>UserModel: add member_since fields to newUser object
             opt Create user Failed
                 UserModel-->>UserController: throw any error
+                UserController->>UserController: show error message in logging
                 UserController-->>Router: throw the error "error occured during create a user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during create a user"
@@ -120,6 +121,7 @@ sequenceDiagram
             UserController->>UserModel: search(db, "email", email, false, "asc")
             opt search Failed
                 UserModel-->>UserController: throw any error
+                UserController->>UserController: show error message in logging
                 UserController-->>Router: throw the error "error occured during search a user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "the error occured during search a user"
@@ -183,6 +185,7 @@ sequenceDiagram
             UserController->>UserModel: update(db, userId, updateData)
             opt
                 UserModel-->>UserController: throw any error
+                UserController->>UserController: show error message in logging
                 UserController-->>Router: throw the error "error occured during update user"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "error occured during update user"

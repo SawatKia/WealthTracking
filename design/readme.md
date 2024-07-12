@@ -17,8 +17,13 @@ the design consist sequence-diagram designing of each entity and api how it hand
 - [Mermaid Editor](https://marketplace.visualstudio.com/items?itemName=tomoyukim.vscode-mermaid-editor) - to preview the diagram in the editor
 - [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting) *(optional)* - to highlight the syntax if you want to modify the diagram.
 
-# to examine the diagram?
-run file preview.html with live server extension
+# to preview the diagram?
+run the file `../design/diagram_preview.html` with live server extension
+
+# to examine the sample Dataset
+run the file `../design/json_grid_visualizer.html` with live server extension
+
+
 
 # Diagrams status
 | Diagram Name                         | finish | verify |

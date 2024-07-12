@@ -28,6 +28,7 @@ sequenceDiagram
         Api->>ApiClient: Return quota information object
         opt any error
             ApiClient-->>Cont: throw any error
+            Cont->>Cont: show error message in logging
             Cont-->>Router: throw the error "internal server error"
             Note over Router,Client: JSON Response: {status_code, message, data(if any)}
             Router-->>Client: 500, "internal server error"
@@ -69,6 +70,7 @@ sequenceDiagram
             Api->>ApiClient: Return slip information object
             opt any error
                 ApiClient-->>Cont: throw any error
+                Cont->>Cont: show error message in logging
                 Cont-->>Router: throw the error "internal server error"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
                 Router-->>Client: 500, "internal server error"
