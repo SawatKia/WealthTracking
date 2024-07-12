@@ -11,7 +11,7 @@ sequenceDiagram
         rect rgb(73,204,144)
             Client->>Router: POST /bank/create
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
-            Router->>BankCont: createBankAccount(request)
+            Router->>BankCont: create_bank_account(request)
             BankCont->>BankCont: verifyParams({displayName, bankAccountName, bankName, initialBalance})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
@@ -51,7 +51,7 @@ sequenceDiagram
             Note right of Client: search by id, fav, and userUniqueId
             Client->>Router: POST /bank/search
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
-            Router->>BankCont: searchBankAccount(request)
+            Router->>BankCont: search_bank_account(request)
             BankCont->>BankCont: verifyParams({searchCriteria, searchValue, isFindOne, sorting})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
@@ -80,7 +80,7 @@ sequenceDiagram
         rect rgb(152, 142, 232)
             Client->>Router: POST /bank/all
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
-            Router->>BankCont: getAllCurrentUserBankAccounts(request)
+            Router->>BankCont: get_current_user_all_bank_accounts(request)
             BankCont->>UserController: get_current_user(request)
             opt get_current_user Failed
                 UserController-->>BankCont: throw any error 
@@ -112,7 +112,7 @@ sequenceDiagram
         rect rgb(252,182,142)
             Client->>Router: PUT  /bank/update
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
-            Router->>BankCont: updateBankAccount(request, bankAccountUniqueId, updateData)
+            Router->>BankCont: update_bank_account(request, bankAccountUniqueId, updateData)
             BankCont->>BankCont: verifyParams({request, bankAccountUniqueId, updateData})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
@@ -169,7 +169,7 @@ sequenceDiagram
         rect rgb(247,155,155)
             Client->>Router: DELETE /bank/delete
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
-            Router->>BankCont: deleteBankAccount(request, bankAccountUniqueId)
+            Router->>BankCont: delete_bank_account(request, bankAccountUniqueId)
             BankCont->>BankCont: verifyParams({request, bankAccountUniqueId})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
