@@ -17,7 +17,7 @@ sequenceDiagram
 
     %% Router verifies the HTTP method
     opt verify method
-        Router->>Router: verify_method
+        Router->>Router: verifyMethod
         Note over Router,Client: JSON Response: {status_code, message, data(if any)}
         Router-->>Client: 405 Method Not Allowed
     end
@@ -26,7 +26,7 @@ sequenceDiagram
     Router->>SpecificController: call specific method (e.g., createEntity)
 
     %% SpecificController verifies the request body for a cookie token
-    SpecificController->>BaseController: is_token(request)
+    SpecificController->>BaseController: isToken(request)
     BaseController->>BaseController: if(request.cookies.token)
     opt Cookie not found
         BaseController-->>SpecificController: throw error missing token in the body
@@ -36,7 +36,7 @@ sequenceDiagram
     end
     
     %% SpecificController verifies parameters using BaseController method
-    SpecificController->>BaseController: verify_params(params)
+    SpecificController->>BaseController: verifyParams(params)
     opt some parameter is null or empty
         BaseController-->>SpecificController: throw the error "${key} are required"
         SpecificController-->>Router: pass error to Router
@@ -45,10 +45,10 @@ sequenceDiagram
     end
 
     %% SpecificController verifies user authorization
-    Note over SpecificController: verify_client(token)<br/>to check if client is a user or not
-    SpecificController->>UserModel: verify_client(request.cookies.token)
-    UserModel->>UserModel: this.decode_token(token)
-    UserModel->>UserModel: this.get_user_by_id(userId)
+    Note over SpecificController: verifyClient(token)<br/>to check if client is a user or not
+    SpecificController->>UserModel: verifyClient(request.cookies.token)
+    UserModel->>UserModel: this.decodeToken(token)
+    UserModel->>UserModel: this.getUserById(userId)
     UserModel->>Database: Perform database operation
     opt not found
         Database-->>UserModel: return empty object
@@ -61,7 +61,7 @@ sequenceDiagram
     UserModel->>SpecificController: return true
 
     %% SpecificController verifies user permissions
-    SpecificController->>BaseController: verify_right_to_modify(request, entityId)
+    SpecificController->>BaseController: verifyRightToModify(request, entityId)
     opt permission denied
         BaseController-->>SpecificController: throw the error "permission denied"
         SpecificController-->>Router: pass error to Router
