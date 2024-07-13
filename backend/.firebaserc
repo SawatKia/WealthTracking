@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "wealthtrack-fd5b5"
-  }
+    "wealthtrack": "wealthtrack-fd5b5"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }
