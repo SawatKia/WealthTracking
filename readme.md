@@ -12,8 +12,21 @@ want.
 - open terminal goto frontend directory by ```cd frontend```  and use ```npm i``` to install dependencies
 - start coding
 ## backend
-- Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-- Proin eu semper odio. Aenean vel risus accumsan, tincidunt sem eu, suscipit est.
-- Aenean mauris metus, mattis ac diam eget, molestie condimentum dui. Suspendisse ac convallis diam. In nec venenatis nunc.
+- download `mongoDBCompass` to examine what datas store in the database
+- download `Docker Desktop`
+- create a `.env` file with these key and value
+```
+NODE_ENV=development # or
+NODE_ENV=production
+MONGO_INITDB_ROOT_USERNAME=any_name
+MONGO_INITDB_ROOT_PASSWORD=any_password
+PORT=3000 # or your desired port
+```
+- open `Docker Desktop`
+- at ~/backend
+- use `docker-compose up -d --build` to build and start docker comatainer
+- check your app at `localhost:PORT`
 
-__Note: examine the design directory to understand how the backend works__
+**when modified any code to watch the changes, you need to stop the container by command or by Docker Desktop as you desired. and start the container again by above command**
+# Note
+_examine the design directory to understand how the backend works_
