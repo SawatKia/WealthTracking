@@ -1,39 +1,38 @@
 [
-    {
-      "userUniqueId": "2A7F5B",
-      "bankAccountUniqueId": "01-011-0001-0001",
-      "bankAccountDisplayName": "ttb ดอก 2%",
-      "Favourite": false,
-      "bankAccountName": "นาย สวรรษ ล",
-      "bankName": "ธนาคารทหารไทยธนชาต (TH-TTB)",
-      "currentBalance": 500.00
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "bankAccountUniqueId": "01-012-0001-0001",
-      "bankAccountDisplayName": "บัญชีเงินเดือน",
-      "Favourite": false,
-      "bankAccountName": "นาย สวรรษ ล",
-      "bankName": "ธนาคารกรุงเทพ (TH-KTB)",
-      "currentBalance": 500.00
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "bankAccountUniqueId": "01-025-0001-0001",
-      "bankAccountDisplayName": "บัญชีซื้อขายกองทุน",
-      "Favourite": false,
-      "bankAccountName": "นาย สวรรษ ล",
-      "bankName": "ธนาคารกรุงศรีอยุธยา (TH-BAY)",
-      "currentBalance": 500.00
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "bankAccountUniqueId": "01-028-0001-0001",
-      "bankAccountDisplayName": "บัญชี ดอก 3%",
-      "Favourite": true,
-      "bankAccountName": "นาย สวรรษ ล",
-      "bankName": "ธนาคารกสิกรไทย (TH-KBANK)",
-      "currentBalance": 500.00
-    }
-  ]
-  
+  {
+    "userUniqueId": "2A7F5B",
+    "bankAccountUniqueId": "01-011-0001-0001",
+    "bankAccountDisplayName": "ttb ดอก 2%",
+    "favourite": false,
+    "bankAccountName": "นาย สวรรษ ล",
+    "bankName": "ธนาคารทหารไทยธนชาต (TH-TTB)",
+    "currentBalance": 500.00
+  },
+  {
+    "userUniqueId": "2A7F5B",
+    "bankAccountUniqueId": "01-012-0001-0001",
+    "bankAccountDisplayName": "บัญชีเงินเดือน",
+    "favourite": false,
+    "bankAccountName": "นาย สวรรษ ล",
+    "bankName": "ธนาคารกรุงเทพ (TH-KTB)",
+    "currentBalance": 500.00
+  },
+  {
+    "userUniqueId": "2A7F5B",
+    "bankAccountUniqueId": "01-025-0001-0001",
+    "bankAccountDisplayName": "บัญชีซื้อขายกองทุน",
+    "favourite": false,
+    "bankAccountName": "นาย สวรรษ ล",
+    "bankName": "ธนาคารกรุงศรีอยุธยา (TH-BAY)",
+    "currentBalance": 500.00
+  },
+  {
+    "userUniqueId": "2A7F5B",
+    "bankAccountUniqueId": "01-028-0001-0001",
+    "bankAccountDisplayName": "บัญชี ดอก 3%",
+    "favourite": true,
+    "bankAccountName": "นาย สวรรษ ล",
+    "bankName": "ธนาคารกสิกรไทย (TH-KBANK)",
+    "currentBalance": 500.00
+  }
+]

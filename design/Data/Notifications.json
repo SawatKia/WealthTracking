@@ -1,43 +1,26 @@
 [
-    {
-      "userUniqueId": "2A7F5B",
-      "notificationUniqueId": "06-A3B687",
-      "notificationDatetime": "2023-01-25T08:00:00.000Z",
-      "notificationType": "stocks",
-      "notificationTitle": "STOCKS XD",
-      "notificationDescription": "MSFT will be dividend at the end of 2023"
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "notificationUniqueId": "06-ECB643",
-      "notificationDatetime": "2023-01-26T08:00:00.000Z",
-      "notificationType": "app",
-      "notificationTitle": "New Update",
-      "notificationDescription": "We have released new version of our app. Please update it to get latest features"
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "notificationUniqueId": "06-705DCA",
-      "notificationDatetime": "2023-01-27T08:00:00.000Z",
-      "notificationType": "debt",
-      "notificationTitle": "Debt Repayment Reminder",
-      "notificationDescription": "Your debt repayment is due on 28th of January 2023"
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "notificationUniqueId": "06-B7D4B8",
-      "notificationDatetime": "2023-01-28T08:00:00.000Z",
-      "notificationType": "investing",
-      "notificationTitle": "Investing Result",
-      "notificationDescription": "Your investing result of last 3 months is available"
-    },
-    {
-      "userUniqueId": "2A7F5B",
-      "notificationUniqueId": "06-98AB5D",
-      "notificationDatetime": "2023-01-29T08:00:00.000Z",
-      "notificationType": "interest",
-      "notificationTitle": "Interest Payment",
-      "notificationDescription": "Your interest payment is due on 29th of January 2023"
-    }
-  ]
-  
+  {
+    "userUniqueId": "2A7F5B",
+    "notificationUniqueId": "06-ECB643",
+    "notificationDatetime": "2023-01-26T08:00:00.000Z",
+    "notificationType": "app",
+    "notificationTitle": "New Update",
+    "notificationDescription": "We have released new version of our app. Please update it to get latest features"
+  },
+  {
+    "userUniqueId": "2A7F5B",
+    "notificationUniqueId": "06-705DCA",
+    "notificationDatetime": "2023-01-27T08:00:00.000Z",
+    "notificationType": "debt",
+    "notificationTitle": "Debt Repayment Reminder",
+    "notificationDescription": "Your debt repayment{xxxxyyyy} is due on 28th of January 2023"
+  },
+  {
+    "userUniqueId": "2A7F5B",
+    "notificationUniqueId": "06-98AB5D",
+    "notificationDatetime": "2023-01-29T08:00:00.000Z",
+    "notificationType": "interest",
+    "notificationTitle": "Interest Payment",
+    "notificationDescription": "Your interest payment is due on 29th of January 2023"
+  }
+]
