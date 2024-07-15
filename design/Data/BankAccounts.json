@@ -4,6 +4,7 @@
     "bankAccountUniqueId": "01-011-0001-0001",
     "bankAccountDisplayName": "ttb ดอก 2%",
     "favourite": false,
+    "BankAccountId": "222-0002-0001",
     "bankAccountName": "นาย สวรรษ ล",
     "bankName": "ธนาคารทหารไทยธนชาต (TH-TTB)",
     "currentBalance": 500.00
@@ -13,6 +14,7 @@
     "bankAccountUniqueId": "01-012-0001-0001",
     "bankAccountDisplayName": "บัญชีเงินเดือน",
     "favourite": false,
+    "BankAccountId": "222-0002-0002",
     "bankAccountName": "นาย สวรรษ ล",
     "bankName": "ธนาคารกรุงเทพ (TH-KTB)",
     "currentBalance": 500.00
@@ -22,6 +24,7 @@
     "bankAccountUniqueId": "01-025-0001-0001",
     "bankAccountDisplayName": "บัญชีซื้อขายกองทุน",
     "favourite": false,
+    "BankAccountId": "222-0002-0003",
     "bankAccountName": "นาย สวรรษ ล",
     "bankName": "ธนาคารกรุงศรีอยุธยา (TH-BAY)",
     "currentBalance": 500.00
@@ -31,6 +34,7 @@
     "bankAccountUniqueId": "01-028-0001-0001",
     "bankAccountDisplayName": "บัญชี ดอก 3%",
     "favourite": true,
+    "BankAccountId": "222-0002-0004",
     "bankAccountName": "นาย สวรรษ ล",
     "bankName": "ธนาคารกสิกรไทย (TH-KBANK)",
     "currentBalance": 500.00
