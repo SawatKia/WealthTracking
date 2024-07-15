@@ -25,8 +25,8 @@ sequenceDiagram
             Note right of IncomeExpensesForm: Form details:<br>1.<br>2.<br>3.<br>4. 
             IncomeExpensesForm->>IncomeExpensesForm: fill a new income or expenses
         else use Banking slip
-            IncomeExpensesForm->>Ocr: upload banking slip
-            Ocr-->>IncomeExpensesForm:fill the form with data frim banking slip
+            IncomeExpensesForm->>+Ocr: upload banking slip
+            Ocr-->>-IncomeExpensesForm:fill the form with data frim banking slip
             IncomeExpensesForm->>IncomeExpensesForm:Validate data correctness
         end
         IncomeExpensesForm-->>-IncomeExpensesMenu: add new transaction successful
