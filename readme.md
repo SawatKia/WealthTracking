@@ -1,5 +1,5 @@
 # Implementing
-- before start coding **make sure you are in your own branch**
+- before start coding **make sure you are in your own branch** (if your branch is not available, create a new one by your own)
 ## frontend
 ### create new
 - for newly create Project, remove the "frontend" directory(if the directory is exist) 
