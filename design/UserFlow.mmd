@@ -8,7 +8,7 @@ sequenceDiagram
     participant DebtList
     participant DebtForm
     participant PaymentForm
-    actor OCR service
+    actor Ocr as OCR service
 
     User->>Home: register/login
     opt In case of new user
@@ -21,8 +21,14 @@ sequenceDiagram
     alt add new Income or Expense
         Home->>+IncomeExpensesMenu: goto Income-Expense menu
         IncomeExpensesMenu->>+IncomeExpensesForm: add record income/expenses
-        Note right of IncomeExpensesForm: Form details:<br>1.<br>2.<br>3.<br>4. 
-        IncomeExpensesForm->>IncomeExpensesForm: fill a new income or expenses
+        alt Manully fill the fields
+            Note right of IncomeExpensesForm: Form details:<br>1.<br>2.<br>3.<br>4. 
+            IncomeExpensesForm->>IncomeExpensesForm: fill a new income or expenses
+        else use Banking slip
+            IncomeExpensesForm->>Ocr: upload banking slip
+            Ocr-->>IncomeExpensesForm:fill the form with data frim banking slip
+            IncomeExpensesForm->>IncomeExpensesForm:Validate data correctness
+        end
         IncomeExpensesForm-->>-IncomeExpensesMenu: add new transaction successful
         IncomeExpensesMenu-->>-Home: back to home page
     else add new debt
