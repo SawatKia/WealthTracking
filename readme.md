@@ -20,7 +20,7 @@ NODE_ENV=development
 # or NODE_ENV=production
 MONGO_INITDB_ROOT_USERNAME=any_name
 MONGO_INITDB_ROOT_PASSWORD=any_password
-MONGO_HOST=any_mongo_client_name
+MONGO_HOST=mongodb # the same name of DB service in docker-compose
 PORT=3000 # or your desired port
 ```
 - open `Docker Desktop`
