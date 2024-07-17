@@ -16,10 +16,11 @@ want.
 - download `Docker Desktop`
 - create a `.env` file with these key and value
 ```
-NODE_ENV=development # or
-NODE_ENV=production
+NODE_ENV=development 
+# or NODE_ENV=production
 MONGO_INITDB_ROOT_USERNAME=any_name
 MONGO_INITDB_ROOT_PASSWORD=any_password
+MONGO_HOST=any_mongo_client_name
 PORT=3000 # or your desired port
 ```
 - open `Docker Desktop`
