@@ -15,6 +15,7 @@ sequenceDiagram
         Home->>+Bank: goto bankLists menu
         Bank->>+BankAccountsForm: create a new bank account
         BankAccountsForm->>BankAccountsForm: fills a new bank account information
+        Note right of BankAccountsForm: Form details:<br>1.<br>2.<br>3.<br>4. 
         BankAccountsForm-->>-Bank: back to bankLists menu
         Bank-->>-Home: back to home page
     end
