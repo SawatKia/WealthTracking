@@ -5,9 +5,15 @@ services:
     env_file: .env
     ports:
       - "${PORT}:${PORT}"
+      - "9229:9229"
     volumes:
-      - ./src:/usr/src/Wealthtrack-app/src
-    depends_on: ["mongodb"]
+      - ./.src:/usr/src/Wealthtrack-app/src
+    depends_on: [ "mongodb" ]
+    logging:
+     driver: "json-file"
+     options:
+       max-size: "10m"
+       max-file: "5"
   mongodb:
     image: mongo
     container_name: mongodb_container
