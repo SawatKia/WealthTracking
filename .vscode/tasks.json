@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker-compose down",
+            "type": "shell",
+            "command": "cd backend; docker-compose down",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose build",
+            "type": "shell",
+            "command": "cd backend; docker-compose build",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose up",
+            "type": "shell",
+            "command": "cd backend; docker-compose up -d",
+            "problemMatcher": [],
+            "dependsOn": [
+                "docker-compose down"
+            ]
+        },
+        {
+            "label": "docker-compose up with rebuild",
+            "type": "shell",
+            "command": "cd backend; docker-compose up -d --build",
+            "problemMatcher": [],
+            "dependsOn": [
+                "docker-compose down"
+            ]
+        }
+    ]
+}
