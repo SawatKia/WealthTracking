@@ -29,5 +29,11 @@ PORT=3000 # or your desired port
 - check your app at `localhost:PORT`
 
 **when modified any code to watch the changes, you need to stop the container by command or by Docker Desktop as you desired. and start the container again by above command**
+
+- for automatically run. goto run and debug tab selecte the dropdown in menu `Docker: Attach to Node (with rebuild)` or `Docker: Attach to Node`
+### Remember, you don't need to rebuild every time unless:
+ - You've made changes to your Dockerfile
+ - You've added or updated dependencies in your package.json
+ - You've made changes to your source code that aren't reflected in the container due to volume mounts
 # Note
 _examine the design directory to understand how the backend works_
