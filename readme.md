@@ -14,7 +14,7 @@ want.
 ## backend
 - download `mongoDBCompass` to examine what datas store in the database
 - download `Docker Desktop`
-- create a `.env` file with these key and value
+- create a `.env` file in root level (the samee level as `backend` `.vscode` `design` `frontend` `project_structure.txt`) with these following keys and value
 ```
 NODE_ENV=development 
 # or NODE_ENV=production
@@ -30,7 +30,7 @@ PORT=3000 # or your desired port
 
 **when modified any code to watch the changes, you need to stop the container by command or by Docker Desktop as you desired. and start the container again by above command**
 
-- for automatically run. goto run and debug tab selecte the dropdown in menu `Docker: Attach to Node (with rebuild)` or `Docker: Attach to Node`
+- for one click to run. goto run and debug tab select the dropdown in the menu `Docker: Attach to Node (with rebuild)` 
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json
