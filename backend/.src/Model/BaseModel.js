@@ -33,9 +33,11 @@ class BaseModel {
         }
     }
 
-    async find(conditions) {
+    async finds(criteria, value, sorting = { field: '_id', order: 'asc' }) {
         try {
-            return await this.model.find(conditions);
+            const query = { [criteria]: value };
+            const sortOrder = sorting.order === 'asc' ? 1 : -1;
+            return await this.model.find(query).sort({ [sorting.field]: sortOrder });
         } catch (error) {
             throw new Error(`Find operation failed: ${error.message}`);
         }
