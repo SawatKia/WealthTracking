@@ -1,13 +1,14 @@
 version: "3"
 services:
   node-server:
-    build: .
-    env_file: .env
+    build: ./backend
+    env_file: 
+      - ./.env
     ports:
       - "${PORT}:${PORT}"
       - "9229:9229"
     volumes:
-      - ./.src:/usr/src/Wealthtrack-app/src
+      - ./frontend/build:/usr/src/Wealthtrack-app/frontend_build
     depends_on: [ "mongodb" ]
     logging:
      driver: "json-file"
