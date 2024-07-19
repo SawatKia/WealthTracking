@@ -13,17 +13,19 @@ class BaseController {
         return true;
     }
 
-    //FIXME - this method will pass if required parameter wasn't attached at first
-    verifyParams(params) {
-        for (const [key, value] of Object.entries(params)) {
-            if (value === null || value === undefined || value === '') {
-                throw new Error(`${key} is required`);
+    async verifyParams(params, requiredFields) {
+        try {
+            for (const field of requiredFields) {
+                if (!params.hasOwnProperty(field) || params[field] === null || params[field] === undefined || params[field] === '') {
+                    throw new Error(`${field} is required`);
+                }
             }
+            return true;
+        } catch (error) {
+            throw error;
         }
-        return true;
     }
 
-    //FIXME - make this method is abstract method. so it'll must be implement in child class
     async verifyRightToModify(request, entityId) {
         // This method should be implemented in child classes
         throw new Error("Method 'verifyRightToModify' must be implemented.");
