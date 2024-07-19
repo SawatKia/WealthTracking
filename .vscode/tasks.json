@@ -41,6 +41,13 @@
                 "docker-compose down",
                 "build-react"
             ]
+        },
+        {
+            "label": "npm: start",
+            "type": "npm",
+            "script": "start",
+            "path": "frontend/",
+            "problemMatcher": []
         }
     ]
 }
