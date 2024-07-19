@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Docker: Attach to Node",
+            "remoteRoot": "/usr/src/Wealthtrack-app",
+            "port": 3000,
+            // "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}/backend",
+            "protocol": "inspector",
+            "restart": true,
+            "preLaunchTask": "docker-compose up"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Docker: Attach to Node (with rebuild)",
+            "remoteRoot": "/usr/src/Wealthtrack-app",
+            "port": 3000,
+            // "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}/backend",
+            "protocol": "inspector",
+            "restart": true,
+            "preLaunchTask": "docker-compose up with rebuild"
+        },
+        {
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Launch React App",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend",
+            "preLaunchTask": "npm: start"
+        }
+    ]
+}

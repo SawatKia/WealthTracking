@@ -1,0 +1,28 @@
+version: "3"
+services:
+  node-server:
+    build: ./backend
+    env_file: 
+      - ./.env
+    ports:
+      - "${PORT}:${PORT}"
+      - "9229:9229"
+    volumes:
+      - ./frontend/build:/usr/src/Wealthtrack-app/frontend_build
+    depends_on: [ "mongodb" ]
+    logging:
+     driver: "json-file"
+     options:
+       max-size: "10m"
+       max-file: "5"
+  mongodb:
+    image: mongo
+    container_name: mongodb_container
+    env_file: 
+      - ./.env
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_container:/data/db
+volumes:
+  mongodb_data_container:

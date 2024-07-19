@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-react",
+            "type": "npm",
+            "script": "build",
+            "path": "frontend/",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "docker-compose down",
+            "type": "shell",
+            "command": "docker-compose down",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose build",
+            "type": "shell",
+            "command": "docker-compose build",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-compose up",
+            "type": "shell",
+            "command": "docker-compose up -d",
+            "problemMatcher": [],
+            "dependsOn": [
+                "docker-compose down"
+            ]
+        },
+        {
+            "label": "docker-compose up with rebuild",
+            "type": "shell",
+            "command": "docker-compose up -d --build",
+            "problemMatcher": [],
+            "dependsOn": [
+                "docker-compose down",
+                "build-react"
+            ]
+        },
+        {
+            "label": "npm: start",
+            "type": "npm",
+            "script": "start",
+            "path": "frontend/",
+            "problemMatcher": []
+        }
+    ]
+}
