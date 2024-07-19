@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const logger = require('./logger');
 
 const MONGO_USERNAME = process.env.MONGO_INITDB_ROOT_USERNAME;
 const MONGO_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD;
@@ -10,7 +11,10 @@ const MONGO_URI = `mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}:2
 const connectDB = async () => {
     try {
         await mongoose.connect(MONGO_URI);
-        console.log('Connected to MongoDB');
+        logger.info('Connected to MongoDB');
+        if (logger.isDebugEnabled()) {
+            logger.debug(`Connected to MongoDB at Mongo Host: ${MONGO_HOST}`);
+        }
     } catch (error) {
         console.error('MongoDB connection error:', error);
         throw error;
