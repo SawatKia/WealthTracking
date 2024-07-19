@@ -18,7 +18,8 @@ services:
   mongodb:
     image: mongo
     container_name: mongodb_container
-    env_file: .env
+    env_file: 
+      - ./.env
     ports:
       - "27017:27017"
     volumes:
