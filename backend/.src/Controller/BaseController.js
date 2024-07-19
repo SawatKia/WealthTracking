@@ -13,6 +13,11 @@ class BaseController {
         return true;
     }
 
+    decodeToken(token) {
+        //TODO - implement token decoding
+        return token;
+    }
+
     async verifyParams(params, requiredFields) {
         try {
             for (const field of requiredFields) {
