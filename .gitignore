@@ -1,4 +1,8 @@
-.vscode/*
+extensions.json
+settings.json
+
+# Database data
+data/*
 
 # Local History for Visual Studio Code
 .history/
