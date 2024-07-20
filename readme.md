@@ -1,42 +1,89 @@
-# Implementing
-- before start coding **make sure you are in your own branch** (if your branch is not available, create a new one by your own)
+# Project Setup and Development Guide
+*this readme rewrite by AI from `old_readme.md` if you have any question, please see old_readme.md first*
+## Prerequisites
+
+Before starting, ensure you have the following installed on your machine:
+
+- **Node.js**: [Install Node.js](https://nodejs.org/)
+### Backend Prerequisites
+- **Docker Desktop**: [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- **MongoDB Compass**: [Download MongoDB Compass](https://www.mongodb.com/products/compass)
+- **PostMan**: [download Postman](https://www.postman.com/downloads/)
+
+## Getting Started
+
+### 1. Create a New Branch
+
+- Before you start coding, make sure you are in your own branch. If your branch is not available, create a new one:
+
+```bash
+git checkout -b your-branch-name
+```
+### 2. Frontend Setup
+#### Creating a New Project
+1. Remove the existing "frontend" directory if it exists
+2. Create a new frontend directory using your preferred framework (React, Vue, Angular, etc.) or whatever
+3. Open your created directory in your workspace and start coding.
+#### Modifying an Existing Project
+1. Open the project directory in your workspace.
+2. Open a terminal and navigate to the frontend directory:
+```bash
+cd frontend
+```
+3. Install dependencies:
+```bash
+npm install
+```
+4. Start the frontend development server:
+```bash
+npm run start
+```
 - if you want to call the api you need to run the backend (for running both frontend and backebd at the same origin) **if you are in early stages of Frontend development, you probably only run your frontend with `npm run start` or whatever. for faster start your runtime.** running the backend can take some time.
 - **you should try to run the backend at least once** (since the project isn't too big, it can be easier to run). before dev your frontend.
-## frontend
-### create new
-- for newly create Project, remove the "frontend" directory(if the directory is exist) 
-- create your own frontend directory by React, Vue, Angular, etc. anything you 
-want.
-- open your created directory to workspace 
-- start coding
-### modifying existing
-- open Project directory to workspace
-- open terminal goto frontend directory by ```cd frontend```  and use ```npm i``` to install dependencies
-- start coding
-- run `npm run start` in frontend to see changes
-## backend
-- download `mongoDBCompass` to examine what datas store in the database
-- download `Docker Desktop`
-- create a `.env` file in root level (the same level as `backend` `.vscode` `design` `frontend` `project_structure.txt`) with these following keys and value
-```
-NODE_ENV=development 
+### 3. Backend Setup
+1. Download and install `MongoDB Compass` to examine the data stored in the database.
+2. Download and install `Docker Desktop`.
+3. Create a `.env` file in the root directory (same level as backend, .vscode, design, frontend, project_structure.txt) with the following keys and values:
+```makefile
+NODE_ENV=development
 # or NODE_ENV=production
 MONGO_INITDB_ROOT_USERNAME=any_name
 MONGO_INITDB_ROOT_PASSWORD=any_password
 MONGO_HOST=mongodb # the same name of DB service in docker-compose
 PORT=3000 # or your desired port
 ```
-- open `Docker Desktop`
-- at ~ *(project root level)* or press f5, find dropdown in VsCode and select `Docker: Attach to Node (with rebuild)` and **the rest steps can be omit**
-- use `docker-compose up -d --build` to build and start docker container
-- check your app at `localhost:PORT`
-
-**when modified any code** to watch the changes, **you need to stop the container** by command or by Docker Desktop as you desired. **and start the container again** by above command
-
-- for one click run. goto run and debug tab`(ctrl+shift+d)` select the dropdown menu `Docker: Attach to Node (with rebuild)` 
+4. Open Docker Desktop.
+5. In the project root directory, build and start the Docker container:
+```bash
+docker-compose up -d --build
+```
+6. Check your app at localhost:PORT.
+### 4. Running the Backend
+To watch for changes in the backend, you need to stop and restart the Docker container after making modifications:
+1. Stop the container:
+```bash
+docker-compose down
+```
+2. Build and start the container again:
+```bash
+docker-compose up -d --build
+```
+**Alternatively, you can use VSCode for a one-click run:**
+1. Go to the Run and Debug tab `Ctrl+Shift+D`.
+2. Select the dropdown menu `Docker: Attach to Node (with rebuild)` and press `F5`.
+## Note
+- Examine the design directory to understand how the backend works.
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json
  - You've made changes to your source code that aren't reflected in the container due to volume mounts
-# Note
-*examine the design directory to understand how the backend works*
+## Common Issues and Troubleshooting
+- **Issue 1**: If the backend is not connecting to MongoDB, ensure your `.env` file has the correct values and Docker Desktop is running.
+- **Issue 2**: If the frontend is not starting, make sure all dependencies are installed with `npm install`.
+
+
+
+
+
+
+
