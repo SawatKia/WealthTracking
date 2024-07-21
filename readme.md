@@ -11,6 +11,25 @@ Before starting, ensure you have the following installed on your machine:
 - **PostMan**: [download Postman](https://www.postman.com/downloads/)
 
 ## Getting Started
+### 0. Clonning the project
+To clone the project from GitHub, follow these steps:
+
+1. Open your terminal or command prompt.
+2. Navigate to the directory where you want to clone the project.
+3. Run the following command to clone the repository:
+
+```bash
+git clone https://github.com/SawatKia/4thYear-Project.git
+```
+
+4. Once the cloning process is complete, navigate into the cloned directory:
+
+```bash
+cd 4thYear-Project
+```
+
+Now you have successfully cloned the project from GitHub.
+
 
 ### 1. Create a New Branch
 
