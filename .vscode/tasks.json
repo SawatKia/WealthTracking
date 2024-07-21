@@ -33,7 +33,16 @@
             ]
         },
         {
-            "label": "docker-compose up with rebuild",
+            "label": "docker-compose up with docker-rebuild",
+            "type": "shell",
+            "command": "docker-compose up -d --build",
+            "problemMatcher": [],
+            "dependsOn": [
+                "docker-compose down",
+            ]
+        },
+        {
+            "label": "docker-compose up with full-rebuild",
             "type": "shell",
             "command": "docker-compose up -d --build",
             "problemMatcher": [],

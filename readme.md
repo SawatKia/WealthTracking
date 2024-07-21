@@ -89,9 +89,10 @@ docker-compose up -d --build
 ```
 **Alternatively, you can use VSCode for a one-click run:**
 1. Go to the Run and Debug tab `Ctrl+Shift+D`.
-2. Select the dropdown menu `Docker: Attach to Node (with rebuild)` and press `F5`.
+2. Select the dropdown menu `Docker: Attach to Node (with fully-rebuild)` and press `F5`.
 ## Note
 - Examine the design directory to understand how the backend works.
+- to run only backend part select `Docker: Attach to Node (with docker-rebuild)`
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json
