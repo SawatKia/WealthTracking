@@ -38,12 +38,12 @@ npm install
 ```bash
 npm run start
 ```
-- if you want to call the api you need to run the backend (for running both frontend and backebd at the same origin) **if you are in early stages of Frontend development, you probably only run your frontend with `npm run start` or whatever. for faster start your runtime.** running the backend can take some time.
+- if you want to call the api you need to run the backend (this will running both frontend and backend at the same origin) **if you are in early stages of Frontend development, you probably only run your frontend with `npm run start` or whatever. for faster start your runtime.** running the backend can take some time.
 - **you should try to run the backend at least once** (since the project isn't too big, it can be easier to run). before dev your frontend.
 ### 3. Backend Setup
 1. Download and install `MongoDB Compass` to examine the data stored in the database.
 2. Download and install `Docker Desktop`.
-3. Create a `.env` file in the root directory (same level as backend, .vscode, design, frontend, project_structure.txt) with the following keys and values:
+3. Create a `.env` file in the root directory (same level as `~/backend`, `~/.vscode`, `~/design`, `~/frontend`, `~/project_structure.txt`) with the following keys and values:
 ```makefile
 NODE_ENV=development
 # or NODE_ENV=production
@@ -57,7 +57,7 @@ PORT=3000 # or your desired port
 ```bash
 docker-compose up -d --build
 ```
-6. Check your app at localhost:PORT.
+6. Check your app at *localhost:PORT*.
 ### 4. Running the Backend
 To watch for changes in the backend, you need to stop and restart the Docker container after making modifications:
 1. Stop the container:
