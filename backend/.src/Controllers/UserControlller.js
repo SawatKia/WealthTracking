@@ -1,6 +1,10 @@
-const UserModel = require("../Models/UserModel")
-const BaseController = require("./BaseController")
-const logger = require("../configs/logger")
+const UserModel = require("../Models/UserModel");
+const BaseController = require("./BaseController");
+const Logging = require("../configs/logger");
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError } = require('../utils/error');
+const formatResponse = require('../utils/responseFormatter');
+
+const logger = new Logging('UserController');
 
 class UserController extends BaseController {
     constructor() {
@@ -8,19 +12,23 @@ class UserController extends BaseController {
         this.UserModel = new UserModel();
     }
 
-    async createUser(newUserData) {
+    async register(req, res, next) {
         try {
-            logger.info('[UserController] - Creating user');
-            logger.debug(`[UserController] - newUserData: ${JSON.stringify(newUserData)}`);
-            const requiredFields = ['username', 'email', 'password'];
+            logger.info('request to /create endpoint');
+            logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
+            const newUserData = req.body;
+            logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
+            const requiredFields = ['username', 'email', 'password', 'confirmPassword'];
             await this.verifyParams(newUserData, requiredFields);
+            logger.info('Creating user');
             const user = await this.UserModel.createUser(newUserData);
-            return user;
+            res.status(201).json(formatResponse(201, 'User created successfully', { id: user._id }));
         } catch (error) {
-            logger.error(`[UserController] - Error creating user: ${error.message}`);
-            throw error;
+            logger.error(`Error creating user: ${error.message}`);
+            next(error);
         }
     }
+
 
     // async loginUser(request) {
     //     try {
