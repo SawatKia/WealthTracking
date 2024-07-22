@@ -1,7 +1,8 @@
 const BaseModel = require("./BaseModel");
 const mongoose = require('mongoose');
-const logger = require('../configs/logger');
+const Logging = require('../configs/logger');
 
+const logger = new Logging('UserModel');
 const userSchema = new mongoose.Schema({
     username: String,
     email: String,
@@ -16,11 +17,11 @@ class UserModel extends BaseModel {
 
     async createUser(data) {
         try {
-            logger.info('[UserModel] - Creating user');
-            logger.debug(`[UserModel] - User data to store: ${JSON.stringify(data)}`);
+            logger.info('Creating user');
+            logger.debug(`User data to store: ${JSON.stringify(data)}`);
             return await this.create(data);
         } catch (error) {
-            logger.error(`[UserModel] - Error creating user: ${error.message}`);
+            logger.error(`Error creating user: ${error.message}`);
             throw error;
         }
     }
