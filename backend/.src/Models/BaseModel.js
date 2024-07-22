@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-const logger = require('../configs/logger')
+const Logging = require('../configs/logger')
+
+const logger = new Logging('BaseModel');
 
 class BaseModel {
     constructor(modelName, schema) {
@@ -12,10 +14,10 @@ class BaseModel {
     async create(data) {
         try {
             const newDoc = new this.model(data);
-            logger.debug(`[BaseModel] - Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
+            logger.debug(`Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
             return await newDoc.save();
         } catch (error) {
-            logger.error(`[BaseModel] - Error creating new ${this.model.modelName}: ${error.message}`);
+            logger.error(`Error creating new ${this.model.modelName}: ${error.message}`);
             throw new Error(`Create operation failed: ${error.message}`);
         }
     }
