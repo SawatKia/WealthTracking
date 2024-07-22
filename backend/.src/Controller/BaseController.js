@@ -1,5 +1,6 @@
+const logger = require("../logger");
+
 class BaseController {
-    //FIXME - make all method protected like in ../../../Backend_firebase/functions/src/controllers/BaseController
     constructor() {
         if (this.constructor === BaseController) {
             throw new Error("Abstract classes can't be instantiated.");
@@ -19,12 +20,16 @@ class BaseController {
     }
 
     async verifyParams(params, requiredFields) {
+        logger.info('Verifying params');
+        logger.debug(`Verifying params: ${JSON.stringify(params)}, required fields: ${requiredFields}`);
         try {
             for (const field of requiredFields) {
                 if (!params.hasOwnProperty(field) || params[field] === null || params[field] === undefined || params[field] === '') {
+                    logger.error(`${field} is required`);
                     throw new Error(`${field} is required`);
                 }
             }
+            logger.info('Params verified');
             return true;
         } catch (error) {
             throw error;
@@ -54,3 +59,5 @@ class BaseController {
         // return user;
     }
 }
+
+module.exports = BaseController;

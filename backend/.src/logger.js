@@ -1,4 +1,5 @@
 const winston = require('winston');
+const path = require('path');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -13,22 +14,16 @@ const logger = winston.createLogger({
         winston.format.json()
     ),
     defaultMeta: { service: 'wealthtrack-backend' },
-    //  ensure that your logs are saved persistently
     transports: [
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' }),
+        isDevelopment ? new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.simple()
+            )
+        }) : new winston.transports.File({ filename: 'combined.csv', format: winston.format.combine(winston.format.csv()) })
     ]
 });
-
-if (isDevelopment) {
-    // output log messages to the console (terminal).
-    logger.add(new winston.transports.Console({
-        format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-        )
-    }));
-}
 
 // Add a custom method to check if debug is enabled
 logger.isDebugEnabled = () => isDevelopment;

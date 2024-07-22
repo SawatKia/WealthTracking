@@ -4,19 +4,20 @@ require('dotenv').config();
 const connectDB = require('./database');
 const logger = require('./logger');
 const path = require('path');
+const userRoutes = require('./routes/UserRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 // cannot access the process.env throw the error
-
 
 app.use(cors());
 app.use(express.json());
 // Serve static files from the frontend build directory
 app.use(express.static(path.join(__dirname, '../frontend_build')));
 app.get("/api/v1", (req, res) => {
-    res.send('you are on the api/v1 route')
+    res.send('you are on the api/v1 route');
 })
+app.use('/api/v1/user', userRoutes);
 
 const startServer = async () => {
     try {
@@ -29,7 +30,6 @@ const startServer = async () => {
             } else {
                 logger.info('Starting server...');
             }
-            logger.info('Press Ctrl+C to quit.');
         });
     } catch (error) {
         logger.error('Failed to start server:', error);

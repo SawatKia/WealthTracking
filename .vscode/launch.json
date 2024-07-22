@@ -17,7 +17,7 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Docker: Attach to Node (with rebuild)",
+            "name": "Docker: Attach to Node (with fully-rebuild)",
             "remoteRoot": "/usr/src/Wealthtrack-app",
             "port": 3000,
             // "port": 9229,
@@ -25,7 +25,20 @@
             "localRoot": "${workspaceFolder}/backend",
             "protocol": "inspector",
             "restart": true,
-            "preLaunchTask": "docker-compose up with rebuild"
+            "preLaunchTask": "docker-compose up with full-rebuild"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Docker: Attach to Node (with docker-rebuild)",
+            "remoteRoot": "/usr/src/Wealthtrack-app",
+            "port": 3000,
+            // "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}/backend",
+            "protocol": "inspector",
+            "restart": true,
+            "preLaunchTask": "docker-compose up with docker-rebuild"
         },
         {
             "type": "pwa-chrome",
