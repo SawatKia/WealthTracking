@@ -1,6 +1,6 @@
-const UserModel = require("../Model/UserModel")
+const UserModel = require("../Models/UserModel")
 const BaseController = require("./BaseController")
-const logger = require("../logger")
+const logger = require("../configs/logger")
 
 class UserController extends BaseController {
     constructor() {

@@ -1,6 +1,6 @@
 const BaseModel = require("./BaseModel");
 const mongoose = require('mongoose');
-const logger = require('../logger');
+const logger = require('../configs/logger');
 
 const userSchema = new mongoose.Schema({
     username: String,

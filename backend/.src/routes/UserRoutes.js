@@ -1,6 +1,6 @@
 const express = require('express');
-const UserController = require('../Controller/UserControlller');
-const logger = require('../logger');
+const UserController = require('../Controllers/UserControlller');
+const logger = require('../configs/logger');
 
 const router = express.Router();
 const UserCont = new UserController();

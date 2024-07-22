@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const logger = require('../logger')
+const logger = require('../configs/logger')
 
 class BaseModel {
     constructor(modelName, schema) {
