@@ -13,6 +13,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 app.use(cors());
 app.use(express.json());
+app.disable('x-powered-by');
 // Log middleware
 app.use((req, res, next) => {
     const { ip, method, path } = req;
