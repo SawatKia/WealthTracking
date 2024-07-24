@@ -1,5 +1,9 @@
+const Logging = require("../configs/logger");
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError } = require('../utils/error');
+
+const logger = new Logging('BaseController');
+
 class BaseController {
-    //FIXME - make all method protected like in ../../../Backend_firebase/functions/src/controllers/BaseController
     constructor() {
         if (this.constructor === BaseController) {
             throw new Error("Abstract classes can't be instantiated.");
@@ -18,13 +22,21 @@ class BaseController {
         return token;
     }
 
-    async verifyParams(params, requiredFields) {
+    verifyParams(params, requiredFields) {
+        logger.info('Verifying params');
+        logger.debug(`Verifying params: ${JSON.stringify(params)}, required fields: ${requiredFields}`);
         try {
+            if (Object.keys(params).length !== requiredFields.length) {
+                logger.error('Invalid number of params');
+                throw new BadRequestError('Invalid number of params');
+            }
             for (const field of requiredFields) {
                 if (!params.hasOwnProperty(field) || params[field] === null || params[field] === undefined || params[field] === '') {
-                    throw new Error(`${field} is required`);
+                    logger.error(`${field} is required`);
+                    throw new BadRequestError(`${field} is required`);
                 }
             }
+            logger.info('Params verified');
             return true;
         } catch (error) {
             throw error;
@@ -54,3 +66,5 @@ class BaseController {
         // return user;
     }
 }
+
+module.exports = BaseController;
