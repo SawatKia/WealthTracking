@@ -1,8 +1,13 @@
 const winston = require('winston');
 const path = require('path');
+const { format } = require('winston');
 
 require('dotenv').config();
-
+const timezoned = () => {
+    return new Date().toLocaleString('en-GB', {
+        timeZone: 'Asia/Bangkok'
+    });
+}
 
 class Logger {
     constructor(moduleName) {
@@ -11,14 +16,14 @@ class Logger {
         this.logger = winston.createLogger({
             level: isDevelopment ? 'debug' : 'info',
             format: winston.format.combine(
-                winston.format.timestamp({
-                    format: 'YYYY-MM-DD HH:mm:ss'
+                format.timestamp({
+                    format: timezoned
                 }),
                 winston.format.errors({ stack: true }),
                 winston.format.splat(),
-                winston.format.label({ label: moduleName }), // Add label with moduleName
+                winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`; // Use label instead of moduleName
+                    return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
@@ -27,7 +32,7 @@ class Logger {
                 isDevelopment ? new winston.transports.Console({
                     format: winston.format.combine(
                         winston.format.colorize(),
-                        winston.format.printf(info => {// make it still colorized
+                        winston.format.printf(info => {
                             return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
                         })
                     )
@@ -35,7 +40,6 @@ class Logger {
             ]
         });
 
-        // Add a custom method to check if debug is enabled
         this.logger.isDebugEnabled = () => isDevelopment;
     }
 
@@ -58,6 +62,7 @@ class Logger {
     debug(message) {
         this.logger.debug(message);
     }
+
     silly(message) {
         this.logger.silly(message);
     }
