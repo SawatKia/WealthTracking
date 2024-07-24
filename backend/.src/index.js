@@ -16,22 +16,22 @@ app.use(express.json());
 // Log middleware
 app.use((req, res, next) => {
     const { ip, method, path } = req;
-    logger.silly(`Incoming request: IP=${ip}, Method=${method}, Path=${path}`);
-    if (req.method == "POST" ||
-        req.method == "PUT" ||
-        req.method == "PATCH" ||
-        req.method == "DELETE") {
+    const allowedMethods = ["POST", "PUT", "PATCH", "DELETE"];
+
+    if (allowedMethods.includes(req.method)) {
         logger.debug(`Incoming Request, body: IP=${ip}, Method=${method}, Path=${path}, Body=${JSON.stringify(req.body)}`);
+    } else {
+        logger.silly(`Incoming request: Method=${method}, Path=${path}`);
     }
+
     res.on('finish', () => {
-        if (req.method == "POST" ||
-            req.method == "PUT" ||
-            req.method == "PATCH" ||
-            req.method == "DELETE") {
+        if (allowedMethods.includes(req.method)) {
             logger.debug(`Response status=${res.statusCode}`);
+        } else {
+            logger.silly(`response: Method=${method}, Path=${path}, Status=${res.statusCode}`);
         }
-        logger.silly(`Outgoing response: IP=${ip}, Method=${method}, Path=${path}, Status=${res.statusCode}`);
     });
+
     next();
 });
 // Serve static files from the frontend build directory
