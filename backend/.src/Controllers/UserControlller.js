@@ -14,12 +14,18 @@ class UserController extends BaseController {
 
     async register(req, res, next) {
         try {
+            //TODO - hashed pasword with bcrypt
+            //TODO - add memberSince
             logger.info('request to /create endpoint');
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
             const newUserData = req.body;
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
             const requiredFields = ['username', 'email', 'password', 'confirmPassword'];
             await this.verifyParams(newUserData, requiredFields);
+            if (newUserData['password'] != newUserData['confirmPassword']) {
+                throw new BadRequestError("Password don't match");
+            }
+            newUserData['memberSince'] = new Date();
             logger.info('Creating user');
             const user = await this.UserModel.createUser(newUserData);
             res.status(201).json(formatResponse(201, 'User created successfully', { id: user._id }));
@@ -28,18 +34,6 @@ class UserController extends BaseController {
             next(error);
         }
     }
-
-
-    // async loginUser(request) {
-    //     try {
-    //         const requiredFields = ['email', 'hashedpassword'];
-    //         await this.verifyParams(request.body, requiredFields);
-    //         const user = await this.UserModel.loginUser(request.body);
-    //         return user;
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
 
     // async getUser(request) {
     //     try {
