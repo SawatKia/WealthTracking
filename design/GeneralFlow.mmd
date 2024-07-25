@@ -30,7 +30,7 @@ sequenceDiagram
     BaseController->>BaseController: if(request.cookies.token)
     opt Cookie not found
         BaseController-->>SpecificController: throw error missing token in the body
-        SpecificController-->>Router: pass error to Router
+        SpecificController-->>Router: throw error to Router
         Note over Router,Client: JSON Response: {status_code, message, data(if any)}
         Router-->>Client: 400 insufficient arguments
     end
@@ -39,7 +39,7 @@ sequenceDiagram
     SpecificController->>BaseController: verifyParams(params)
     opt some parameter is null or empty
         BaseController-->>SpecificController: throw the error "${key} are required"
-        SpecificController-->>Router: pass error to Router
+        SpecificController-->>Router: throw error to Router
         Note over Router,Client: JSON Response: {status_code, message, data(if any)}
         Router-->>Client: 400, "${key} are required"
     end
@@ -64,7 +64,7 @@ sequenceDiagram
     SpecificController->>BaseController: verifyRightToModify(request, entityId)
     opt permission denied
         BaseController-->>SpecificController: throw the error "permission denied"
-        SpecificController-->>Router: pass error to Router
+        SpecificController-->>Router: throw error to Router
         Note over Router,Client: JSON Response: {status_code, message, data(if any)}
         Router-->>Client: 403, "permission denied"
     end
@@ -86,7 +86,7 @@ sequenceDiagram
         Database-->>BaseModel: return error
         BaseModel-->>SpecificModel: throw error
         SpecificModel-->>SpecificController: throw error
-        SpecificController-->>Router: pass error to Router
+        SpecificController-->>Router: throw error to Router
         Note over Router,Client: JSON Response: {status_code, message, data(if any)}
         Router-->>Client: 500, "operation failed", error: {error}
     end
