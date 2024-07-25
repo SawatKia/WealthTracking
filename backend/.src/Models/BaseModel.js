@@ -22,16 +22,19 @@ class BaseModel {
         }
     }
 
-    async findById(id) {
-        try {
-            return await this.model.findById(id);
-        } catch (error) {
-            throw new Error(`FindById operation failed: ${error.message}`);
-        }
-    }
+    // async findById(id) {
+    //     try {
+
+    //         return await this.model.findById(id);
+    //     } catch (error) {
+    //         throw new Error(`FindById operation failed: ${error.message}`);
+    //     }
+    // }
 
     async findOne(criteria, value) {
         try {
+            logger.info(`Finding ${this.model.modelName}`);
+            logger.debug(`Finding ${this.model.modelName} with ${criteria}: ${value}`);
             const query = { [criteria]: value };
             return await this.model.findOne(query);
         } catch (error) {
@@ -41,8 +44,10 @@ class BaseModel {
 
     async finds(criteria, value, sorting = { field: '_id', order: 'asc' }) {
         try {
+            logger.info(`finds`)
             const query = { [criteria]: value };
             const sortOrder = sorting.order === 'asc' ? 1 : -1;
+            logger.debug(``)
             return await this.model.find(query).sort({ [sorting.field]: sortOrder });
         } catch (error) {
             throw new Error(`Find operation failed: ${error.message}`);
