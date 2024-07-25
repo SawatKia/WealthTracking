@@ -23,7 +23,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
+                    return `${info.timestamp}, [${info.label}], ${info.level}, ${info.message}`;// global log format  
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
@@ -33,7 +33,7 @@ class Logger {
                     format: winston.format.combine(
                         winston.format.colorize(),
                         winston.format.printf(info => {
-                            return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
+                            return `[${info.label}] ${info.level}: ${info.message}`; // specify log format for console
                         })
                     )
                 }) : new winston.transports.File({ filename: 'combined.csv', format: winston.format.combine(winston.format.csv()) })
