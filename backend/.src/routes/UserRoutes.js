@@ -12,7 +12,9 @@ router.get('/', (req, res) => {
     res.send('Hello World, from UserRoutes');
 });
 // Route to create a new user
+//TODO - check incoming method if the method are allowed?
 router.post('/register', UserCont.register.bind(UserCont));
+router.post('/checkPassword', UserCont.checkPassword.bind(UserCont));
 
 
 // Error-handling middleware
