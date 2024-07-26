@@ -53,6 +53,7 @@ class BaseModel {
 
     async create(data) {
         try {
+            logger.info(`Creating new ${this.model.modelName}`);
             this._verifyData(data);
             const newDoc = new this.model(data);
             logger.debug(`Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
@@ -63,14 +64,15 @@ class BaseModel {
         }
     }
 
-    // async findById(id) {
-    //     try {
-
-    //         return await this.model.findById(id);
-    //     } catch (error) {
-    //         throw new Error(`FindById operation failed: ${error.message}`);
-    //     }
-    // }
+    async findById(id) {
+        try {
+            logger.debug(`Finding by id: ${id}`);
+            return await this.model.findById(id);
+        } catch (error) {
+            logger.error(`Error finding by id: ${error.message}`);
+            throw new Error(`FindById operation failed: ${error.message}`);
+        }
+    }
 
     async find(criteria, value) {
         try {
@@ -79,6 +81,7 @@ class BaseModel {
             const query = { [criteria]: value };
             return await this.model.findOne(query);
         } catch (error) {
+            logger.error(`Error finding ${this.model.modelName}: ${error.message}`);
             throw new Error(`Find operation failed: ${error.message}`);
         }
     }
@@ -97,6 +100,7 @@ class BaseModel {
 
     async updateById(id, data) {
         try {
+            logger.info(`Updating ${this.model.modelName} with id: ${id}`);
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             throw new Error(`Update operation failed: ${error.message}`);
