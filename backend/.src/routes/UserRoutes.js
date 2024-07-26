@@ -1,7 +1,8 @@
 const express = require('express');
 const UserController = require('../Controllers/UserControlller');
 const Logging = require('../configs/logger');
-const { AppError } = require('../utils/error')
+const { AppError, methodNotAllowedError, BadRequestError } = require('../utils/error');
+const formatResponse = require('../utils/responseFormatter');
 
 const router = express.Router();
 const UserCont = new UserController();
@@ -11,24 +12,33 @@ router.get('/', (req, res) => {
     logger.info('request to / endpoint');
     res.send('Hello World, from UserRoutes');
 });
-// Route to create a new user
+router.use((req, res, next) => {
+    const { method, path } = req;
+    const allowedMethods = {
+        '/register': ['POST'],
+        '/checkPassword': ['POST'],
+        '/updateUser': ['PATCH']
+    };
+    if (!allowedMethods[path]) {
+        return next(new BadRequestError(`${path} not available`));
+    }
+    if (!allowedMethods[path].includes(method)) {
+        return next(new methodNotAllowedError(`${method} method not allowed in ${path}`));
+    }
+    next();
+});
 router.post('/register', UserCont.register.bind(UserCont));
+router.post('/checkPassword', UserCont.checkPassword.bind(UserCont));
+router.patch('/updateUser', UserCont.updateUser.bind(UserCont));
 
 
 // Error-handling middleware
 router.use((err, req, res, next) => {
     if (err instanceof AppError) {
-        res.status(err.statusCode).json({
-            status_code: err.statusCode,
-            message: err.message,
-            data: err.data || null
-        });
+        res.status(err.statusCode).json(formatResponse(err.statusCode, err.message));
     } else {
-        console.error(err); // Log the error for debugging purposes
-        res.status(500).json({
-            status_code: 500,
-            message: 'Internal Server Error'
-        });
+        logger.error(err);
+        res.status(500).json(formatResponse(500, 'Internal Server Error'));
     }
 });
 

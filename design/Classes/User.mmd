@@ -12,9 +12,8 @@ sequenceDiagram
         rect rgb(73,204,144)
             Note over Router: with body of {username, email,<br/>Password, confirmPass}
             Client->>Router: POST /user/create
-            Router->>Router: extract the body (whatever it have or don't have)<br> by body parser to parameters
-            Router->>UserController: register(username, email,<br>Password, confirmPass)
-            UserController->>BaseCont: this.verifyParams({username, email, password, confirmPass}, ['username', 'email', 'password', 'confirmPass'])
+            Router->>UserController: register(req.body)
+            UserController->>BaseCont: this.verifyParams(newUserData, ['username', 'email', 'password', 'confirmPass'])
             opt some parameter is null or empty
                 BaseCont-->>UserController: throw the error "<field> is required"
                 UserController-->>Router: pass error to Router
