@@ -50,7 +50,7 @@ class UserController extends BaseController {
             newUserData = this.normalizeUsernameEmail(newUserData);
             newUserData['memberSince'] = new Date();
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
-            logger.info('Creating user...');
+            logger.info('Create user...');
             const user = await this.UserModel.createUser(newUserData);
             res.status(201).json(formatResponse(201, 'User created successfully', { id: user._id }));
         } catch (error) {
@@ -63,9 +63,18 @@ class UserController extends BaseController {
         }
     }
 
+    /**
+     * Check the password for a given username.
+     *
+     * @param {Object} req - The request object.
+     * @param {Object} res - The response object.
+     * @param {Function} next - The next middleware function.
+     * @returns {Promise<void>} - A promise that resolves when the password check is complete.
+     * @throws {UnauthorizedError} - If the username or password is incorrect.
+     */
     async checkPassword(req, res, next) {
         try {
-            logger.info('request to /login endpoint');
+            logger.info('request to /checkPassword endpoint');
             const { username, password } = req.body;
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
             const passwordMatch = await this.UserModel.checkPassword(username, password);
@@ -80,32 +89,74 @@ class UserController extends BaseController {
         }
     }
 
-    // async getUser(request) {
-    //     try {
-    //         const user = await this.getCurrentUser(request);
-    //         return user;
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
 
-    // async updateUser(request) {
-    //     try {
-    //         const user = await this.getCurrentUser(request);
-    //         const requiredFields = ['Username', 'email', 'hashedpassword'];
-    //         await this.verifyParams(request.body, requiredFields);
-    //         await this.verifyRightToModify(request, user._id);
-    //         const updatedUser = await this.UserModel.updateUser(user._id, request.body);
-    //         return updatedUser;
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
+    //TODO - getCurrentUser need to call security.js to decode the JWT token
+    async getCurrentUser(req) {
+        try {
+            const currentUser = await security.getCurrentUser(req);
+            const userData = await this.UserModel.findById(currentUser._Id)
+            return user;
+        } catch (error) {
+            next(error);
+        }
+    }
 
-    // async deleteUser(request) {
+    async updateUser(req, res, next) {
+        try {
+            logger.info('request to /update endpoint');
+            if (!req.body.id) {
+                throw new BadRequestError('User ID is required');
+            }
+            //FIXME - waititng for getCurrentUser to be implemented
+            /*NOTE - getCurrentUser is decode the JWT token and return the user data
+            * we need to check if the user is authorized to update the user data*/
+            // const user = await this.getCurrentUser(req);
+            const { id } = req.body
+            logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
+            const user = await this.UserModel.findById(id);
+            if (!user) {
+                logger.error('User not found');
+                throw new NotFoundError('User not found');
+            }
+            logger.debug(`user found: ${JSON.stringify(user)}`);
+            const { currentPassword, newPassword, confirmNewPassword, username, email } = req.body;
+
+            // Verify that the current password is provided
+            if (!currentPassword) {
+                throw new BadRequestError("'currentPassword' is required to update user information");
+            }
+
+            // Verify that the new password and confirm new password match
+            if (newPassword !== confirmNewPassword) {
+                throw new BadRequestError('New password and confirm new password do not match');
+            }
+
+            // Verify the current password
+            const isPasswordValid = await this.UserModel.checkPassword(user.username, currentPassword);
+            if (!isPasswordValid) {
+                throw new UnauthorizedError('Invalid current password');
+            }
+
+            // Prepare the fields to be updated
+            const updateFields = {};
+            if (username) updateFields.username = username;
+            if (email) updateFields.email = email;
+            if (newPassword) updateFields.password = newPassword;
+            logger.debug(`Fields to be update: ${JSON.stringify(updateFields)}`);
+            // Update the user
+            const updatedUser = await this.UserModel.updateById(user._id, updateFields);
+            logger.debug(`updated User: ${JSON.stringify(updatedUser)}`);
+            res.status(200).json(formatResponse(200, 'User updated successfully', { id: updatedUser._id }));
+        } catch (error) {
+            logger.error(`Error updating user: ${error.message}`);
+            next(error);
+        }
+    }
+
+    // async deleteUser(req) {
     //     try {
-    //         const user = await this.getCurrentUser(request);
-    //         await this.verifyRightToModify(request, user._id);
+    //         const user = await this.getCurrentUser(req);
+    //         await this.verifyRightToModify(req, user._id);
     //         const deletedUser = await this.UserModel.deleteUser(user._id);
     //         return deletedUser;
     //     } catch (error) {

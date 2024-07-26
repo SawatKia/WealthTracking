@@ -22,8 +22,12 @@ class UserModel extends BaseModel {
 
     async _hashPassword(password) {
         try {
-            logger.info('Hashing password');
-            return await bcrypt.hash(password, saltRounds);
+            if (this instanceof UserModel) {
+                logger.info('Hashing password');
+                return await bcrypt.hash(password, saltRounds);
+            } else {
+                throw new Error("cannot call '_hashPassword', this method is private");
+            }
         } catch (error) {
             logger.error(`Error hashing password: ${error.message}`);
             throw error;
@@ -41,7 +45,10 @@ class UserModel extends BaseModel {
                 throw new UnauthorizedError('Username or password is incorrect');
             }
             logger.debug(`User found: ${JSON.stringify(user)}`);
-            return bcrypt.compare(password, user.hashedPassword);
+            if (bcrypt.compare(password, user.hashedPassword)) {
+                logger.info('Password match');
+                return true;
+            }
 
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);
@@ -58,6 +65,22 @@ class UserModel extends BaseModel {
             return await this.create(data);
         } catch (error) {
             logger.error(`Error creating user: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async updateById(id, data) {
+        try {
+            logger.info('Updating user by id');
+            logger.debug(`Updating user id: ${id} with data: ${JSON.stringify(data)}`);
+            if (data.password) {
+                data.hashedPassword = await this._hashPassword(data.password);
+                delete data.password;
+                logger.info('Password hashed');
+            }
+            return await this.model.findByIdAndUpdate(id, data, { new: true });
+        } catch (error) {
+            logger.error(`Error updating user: ${error.message}`);
             throw error;
         }
     }
