@@ -20,14 +20,14 @@ app.use((req, res, next) => {
     const allowedMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
     if (allowedMethods.includes(req.method)) {
-        logger.debug(`Incoming Request, body: IP=${ip}, Method=${method}, Path=${path}, Body=${JSON.stringify(req.body)}`);
+        logger.debug(`Incoming Request, ${ip} => ${method} ${path}   with ${JSON.stringify(req.body)}`);
     } else {
         logger.silly(`Incoming request: Method=${method}, Path=${path}`);
     }
 
     res.on('finish', () => {
         if (allowedMethods.includes(req.method)) {
-            logger.debug(`Response status=${res.statusCode}`);
+            logger.debug(`${path} => ${res.statusCode} ${res.statusMessage} => ${ip} `);
         } else {
             logger.silly(`response: Method=${method}, Path=${path}, Status=${res.statusCode}`);
         }
@@ -52,7 +52,7 @@ const startServer = async () => {
             if (isDevelopment) {
                 logger.info('Starting server in debug mode...');
             } else {
-                logger.info('Starting server...');
+                logger.info('Starting Production server...');
             }
         });
     } catch (error) {
