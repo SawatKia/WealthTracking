@@ -11,14 +11,55 @@ class BaseModel {
         this.model = mongoose.model(modelName, schema);
     }
 
+    _verifyData(data) {
+        try {
+            logger.info(`Verifying data`);
+            logger.debug(`Data to verify: ${JSON.stringify(data)}`);
+            // Check if all required fields exist
+            const requiredPaths = this.model.schema.requiredPaths();
+            logger.info(`Checking for required fields`);
+            logger.debug(`Required fields: ${requiredPaths}`);
+            for (const path of requiredPaths) {
+                logger.debug(`Checking for required field: ${path}`);
+                if (!data.hasOwnProperty(path)) {
+                    logger.error(`Missing required field: ${path}`);
+                    throw new Error(`Missing required field: ${path}`);
+                }
+            }
+            logger.info(`All required fields are present`);
+
+            // Verify types of all fields
+            logger.info('Verifying types of all fields');
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const value = data[key];
+                    const schemaType = this.model.schema.path(key);
+                    logger.debug(`Field ${key} has type ${schemaType.instance}`);
+
+                    // Compare the type correctly using Mongoose's schema type
+                    if (schemaType && schemaType.instance !== value.constructor.name) {
+                        logger.error(`Invalid type for field ${key}. Expected ${schemaType.instance}, got ${value.constructor.name}`);
+                        throw new Error(`Invalid type for field ${key}. Expected ${schemaType.instance}, got ${value.constructor.name}`);
+                    }
+                    logger.debug(`Field ${key} has valid type`);
+                }
+            }
+            logger.info('all fields have valid types');
+        } catch (error) {
+            logger.error(`Error verifying data: ${error.message}`);
+            throw new Error(`Verify data operation failed: ${error.message}`);
+        }
+    }
+
     async create(data) {
         try {
+            this._verifyData(data);
             const newDoc = new this.model(data);
             logger.debug(`Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
             return await newDoc.save();
         } catch (error) {
             logger.error(`Error creating new ${this.model.modelName}: ${error.message}`);
-            throw new Error(`Create operation failed: ${error.message}`);
+            throw error;
         }
     }
 
@@ -31,14 +72,14 @@ class BaseModel {
     //     }
     // }
 
-    async findOne(criteria, value) {
+    async find(criteria, value) {
         try {
             logger.info(`Finding ${this.model.modelName}`);
-            logger.debug(`Finding ${this.model.modelName} with ${criteria}: ${value}`);
+            logger.debug(`Finding in ${this.model.modelName} with ${criteria}: ${value}`);
             const query = { [criteria]: value };
             return await this.model.findOne(query);
         } catch (error) {
-            throw new Error(`FindOne operation failed: ${error.message}`);
+            throw new Error(`Find operation failed: ${error.message}`);
         }
     }
 
