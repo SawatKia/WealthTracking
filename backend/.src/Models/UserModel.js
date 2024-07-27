@@ -37,19 +37,33 @@ class UserModel extends BaseModel {
     async checkPassword(username, password) {
         try {
             logger.info('Checking password');
-            logger.debug(`user to check password, Username: ${username} Password: ${password}`);
-            const user = await this.find("username", username)
-            // const user = users[0];
+            logger.debug(`User to check password, Username: ${username} Password: ${password}`);
+
+            const user = await this.find("username", username);
+            logger.debug(`User from find: ${JSON.stringify(user)}`);
+
             if (!user) {
                 logger.error('User not found');
-                throw new UnauthorizedError('Username or password is incorrect');
-            }
-            logger.debug(`User found: ${JSON.stringify(user)}`);
-            if (bcrypt.compare(password, user.hashedPassword)) {
-                logger.info('Password match');
-                return true;
+                return false;
             }
 
+            logger.debug(`User found: ${JSON.stringify(user)}`);
+
+            return bcrypt.compare(password, user.hashedPassword)
+                .then(result => {
+                    logger.debug(`Password compare result: ${result}`);
+                    if (result) {
+                        logger.info('Password match');
+                        return true;
+                    } else {
+                        logger.info('Password does not match');
+                        return false;
+                    }
+                })
+                .catch(err => {
+                    logger.error(`Error checking password: ${err.message}`);
+                    throw err;
+                });
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);
             throw error;
