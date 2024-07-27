@@ -25,7 +25,7 @@ git clone https://github.com/SawatKia/4thYear-Project.git
 4. Once the cloning process is complete, navigate into the cloned directory:
 
 ```bash
-cd 4thYear-Project
+cd WealthTracking
 ```
 
 Now you have successfully cloned the project from GitHub.

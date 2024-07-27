@@ -66,6 +66,7 @@ class BaseModel {
 
     async findById(id) {
         try {
+            logger.info(`Finding by id`);
             logger.debug(`Finding by id: ${id}`);
             return await this.model.findById(id);
         } catch (error) {
@@ -109,6 +110,8 @@ class BaseModel {
 
     async deleteById(id) {
         try {
+            logger.info(`Deleting ${this.model.modelName}`);
+            logger.debug(`Deleting ${this.model.modelName} with id: ${id}`);
             return await this.model.findByIdAndDelete(id);
         } catch (error) {
             throw new Error(`Delete operation failed: ${error.message}`);
