@@ -22,14 +22,14 @@ app.use((req, res, next) => {
     if (allowedMethods.includes(req.method)) {
         logger.debug(`Incoming Request, ${ip} => ${method} ${path}   with ${JSON.stringify(req.body)}`);
     } else {
-        logger.silly(`Incoming request: Method=${method}, Path=${path}`);
+        logger.silly(`Incoming Request: Method=${method}, Path=${path}`);
     }
 
     res.on('finish', () => {
         if (allowedMethods.includes(req.method)) {
-            logger.debug(`${path} => ${res.statusCode} ${res.statusMessage} => ${ip} `);
+            logger.debug(`Outgoing response, ${path} => ${res.statusCode} ${res.statusMessage} => ${ip} `);
         } else {
-            logger.silly(`response: Method=${method}, Path=${path}, Status=${res.statusCode}`);
+            logger.silly(`Outgoing response: Method=${method}, Path=${path}, Status=${res.statusCode}`);
         }
     });
 
