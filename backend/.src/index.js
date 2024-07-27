@@ -10,6 +10,7 @@ const logger = new Logging('index');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isDevelopment = process.env.NODE_ENV === 'development';
+const router = express.Router();
 
 app.use(cors());
 app.use(express.json());
@@ -41,7 +42,10 @@ app.use(express.static(path.join(__dirname, '../frontend_build')));
 app.get("/api/v1", (req, res) => {
     res.send('you are on the api/v1 route');
 })
-app.use('/api/v1/user', userRoutes);
+
+router.use('/user', userRoutes);
+
+app.use('/api/v1', router);
 
 const startServer = async () => {
     try {
