@@ -1,9 +1,8 @@
 const UserModel = require("../Models/UserModel");
 const BaseController = require("./BaseController");
 const Logging = require("../configs/logger");
-const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError } = require('../utils/error');
 const formatResponse = require('../utils/responseFormatter');
-const { log } = require("winston");
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError } = require('../utils/error');
 
 const logger = new Logging('UserController');
 
@@ -33,6 +32,30 @@ class UserController extends BaseController {
         return emailRegex.test(email);
     }
 
+    async addAdmin(req, res, next) {
+        try {
+            const { username, email, password, confirmPassword } = req.body;
+            logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
+            // Ensure the user making this request is an admin
+            const currentUser = await this.getCurrentUser(req);
+            if (currentUser.role !== 'admin') {
+                throw new ForbiddenError('Only admins can add new admins');
+            }
+            if (password !== confirmPassword) {
+                throw new BadRequestError("Passwords don't match");
+            }
+            delete req.body.confirmPassword;
+
+            // Create new user with admin role
+            const newUserData = { username, email, password, memberSince: new Date(), role: 'admin' };
+            const newAdmin = await this.UserModel.createUser(newUserData, true);
+
+            res.status(201).json(formatResponse(201, 'Admin created successfully', { id: newAdmin._id }));
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async register(req, res, next) {
         try {
             logger.info('request to /create endpoint');
@@ -55,6 +78,8 @@ class UserController extends BaseController {
             const normalizedData = this.normalizeUsernameEmail(newUserData['username'], newUserData['email']);
             newUserData = { ...newUserData, ...normalizedData };
             newUserData['memberSince'] = new Date();
+            // add role
+            newUserData['role'] = 'user';
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
             logger.info('Create user...');
             const user = await this.UserModel.createUser(newUserData);
@@ -65,6 +90,22 @@ class UserController extends BaseController {
                 // Duplicate key error
                 next(new ConflictError('Username or email already in use'));
             }
+            next(error);
+        }
+    }
+
+    async getAllUsers(req, res, next) {
+        try {
+            logger.info('request to /getAllUsers endpoint');
+            const users = await this.UserModel.getAllUsers();
+            if (users.length === 0) {
+                logger.error('No users found');
+                return res.status(200).json(formatResponse(200, 'No users found'));
+            }
+            logger.debug(`users: ${JSON.stringify(users)}`);
+            res.status(200).json(formatResponse(200, 'Users found', { users }));
+        } catch (error) {
+            logger.error(`Error getting all users: ${error.message}`);
             next(error);
         }
     }

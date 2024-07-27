@@ -4,14 +4,13 @@ const Logging = require('../configs/logger');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-
-
 const logger = new Logging('UserModel');
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     hashedPassword: { type: String, required: true },
     memberSince: { type: Date, required: true },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
 });
 const saltRounds = parseInt(process.env.SALT_ROUNDS);
 
@@ -70,18 +69,45 @@ class UserModel extends BaseModel {
         }
     }
 
-    async createUser(data) {
+    async createUser(data, isAdmin = false) {
         try {
             logger.info('Creating user');
             logger.debug(`User data to store: ${JSON.stringify(data)}`);
             data.hashedPassword = await this._hashPassword(data.password);
             delete data.password;
+            // Set role if the request is made by an admin
+            if (isAdmin && data.role) {
+                data.role = data.role; // Admin can specify role
+            } else {
+                data.role = 'user'; // Default role for regular users
+            }
             return await this.create(data);
         } catch (error) {
             logger.error(`Error creating user: ${error.message}`);
             throw error;
         }
     }
+
+    async getAllUsers() {
+        try {
+            logger.info('getting all users');
+            let users = await this.model.find({}).lean(); // Convert Mongoose documents to plain JS objects
+            if (users.length === 0) {
+                logger.error('No users found');
+                return [];
+            }
+            logger.debug(`Users found: ${JSON.stringify(users)}`);
+            users = users.map(user => {
+                delete user.hashedPassword;
+                return user;
+            });
+            return users;
+        } catch (error) {
+            logger.error(`Error fetching users: ${error.message}`);
+            throw error;
+        }
+    }
+
 
     async updateById(id, data) {
         try {
