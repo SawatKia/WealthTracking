@@ -32,7 +32,7 @@ class NotFoundError extends AppError {
     }
 }
 
-class methodNotAllowedError extends AppError {
+class MethodNotAllowedError extends AppError {
     constructor(message, data = null) {
         super(message, 405, data);
     }
@@ -44,12 +44,19 @@ class ConflictError extends AppError {
     }
 }
 
+class PasswordError extends AppError {
+    constructor(data = null) {
+        super('Invalid username or password', 401, data);
+    }
+}
+
 module.exports = {
     AppError,
     BadRequestError,
     UnauthorizedError,
     ForbiddenError,
     NotFoundError,
-    methodNotAllowedError,
-    ConflictError
+    MethodNotAllowedError,
+    ConflictError,
+    PasswordError
 };
