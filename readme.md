@@ -25,7 +25,7 @@ git clone https://github.com/SawatKia/4thYear-Project.git
 4. Once the cloning process is complete, navigate into the cloned directory:
 
 ```bash
-cd 4thYear-Project
+cd WealthTracking
 ```
 
 Now you have successfully cloned the project from GitHub.
@@ -76,7 +76,7 @@ PORT=3000 # or your desired port
 ```bash
 docker-compose up -d --build
 ```
-6. Check your app at *localhost:PORT*.
+6. Check your app with Postman or Browser at *localhost:PORT*.
 ### 4. Running the Backend
 To watch for changes in the backend, you need to stop and restart the Docker container after making modifications:
 1. Stop the container:
@@ -87,12 +87,16 @@ docker-compose down
 ```bash
 docker-compose up -d --build
 ```
+3. Check your app with Postman or Browser at *localhost:PORT*.
+---
 **Alternatively, you can use VSCode for a one-click run:**
 1. Go to the Run and Debug tab `Ctrl+Shift+D`.
 2. Select the dropdown menu `Docker: Attach to Node (with fully-rebuild)` and press `F5`.
+3. Check your app with Postman or Browser at *localhost:PORT*.
 ## Note
 - Examine the design directory to understand how the backend works.
-- to run only backend part select `Docker: Attach to Node (with docker-rebuild)`
+- to run only backend part select `Docker: Attach to Node (with docker-rebuild)`. Check your app with Postman at *localhost:PORT*.
+- to fully-rebuild, you also need to do the Frontend Setup
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json

@@ -25,7 +25,7 @@ sequenceDiagram
         Home->>+IncomeExpensesMenu: goto Income-Expense menu
         IncomeExpensesMenu->>+IncomeExpensesForm: add record income/expenses
         alt Manully fill the fields
-            Note right of IncomeExpensesForm: Form details:<br>1.หมวดหมู่(หมวดหมู่รายรับ เงินเดือน ดอกเบี้ย ปันผล กำไร ค่าเช่า อื่นๆ<br>หมวดหมู่รายจ่าย ค่าอาหาร ค่าเดินทาง บัตรเครดิต สาธารณูปโภค หนี้ อื่นๆ)<br>2.วันที่และเวลา<br>3.รายละเอียด(ถ้ามี)<br>4.จำนวนเงิน<br>5.บัญชีที่ใช้จ่าย/บัญชีที่รับเงิน
+            Note right of IncomeExpensesForm: Form details:<br>1.วันที่และเวลา<br>2.ประเภท(รายรับ/รายจ่าย)<br>3.หมวดหมู่(หมวดหมู่รายรับ เงินเดือน ดอกเบี้ย ปันผล กำไร ค่าเช่า อื่นๆ<br>หมวดหมู่รายจ่าย ค่าอาหาร ค่าเดินทาง บัตรเครดิต สาธารณูปโภค หนี้ อื่นๆ)<br>3.รายละเอียด(ถ้ามี)<br>4.จำนวนเงิน<br>5.บัญชีที่ใช้จ่าย/บัญชีที่รับเงิน
             IncomeExpensesForm->>IncomeExpensesForm: fill a new income or expenses
         else use Banking slip
             IncomeExpensesForm->>+Ocr: upload banking slip
