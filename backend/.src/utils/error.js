@@ -45,14 +45,14 @@ class ConflictError extends AppError {
 }
 
 class PasswordError extends AppError {
-    constructor(data = null) {
-        super('Invalid username or password', 401, data);
+    constructor() {
+        super('Invalid username or password', 401);
     }
 }
 
 class DuplicateError extends AppError {
-    constructor(message, data = null) {
-        super('Username or email already in use', 409, data);
+    constructor() {
+        super('Username or email already in use', 409);
     }
 }
 
