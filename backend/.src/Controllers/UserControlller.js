@@ -63,7 +63,7 @@ class UserController extends BaseController {
             let newUserData = req.body;
             logger.debug(`newUserData from body: ${JSON.stringify(newUserData)}`);
             const requiredFields = ['username', 'email', 'password', 'confirmPassword'];
-            await this.verifyParams(newUserData, requiredFields);
+            await this.verifyBody(newUserData, requiredFields);
             logger.info('Verifying password matchings');
             if (newUserData['password'] != newUserData['confirmPassword']) {
                 logger.error('Password do not match');
@@ -177,7 +177,7 @@ class UserController extends BaseController {
             /*NOTE - getCurrentUser is decode the JWT token and return the user data
             * we need to check if the user is authorized to update the user data*/
             // const user = await this.getCurrentUser(req);
-            // const id = user._id;
+            // const userid = user._id;
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
             const user = await this.UserModel.findById(userId);
 
@@ -225,7 +225,7 @@ class UserController extends BaseController {
     async deleteUser(req, res, next) {
         try {
             // const user = await this.getCurrentUser(req);
-            // const id = user.id
+            // const userid = user.id
             const { userId } = req.params;
             if (!userId) {
                 throw new BadRequestError("'userId' is required");
