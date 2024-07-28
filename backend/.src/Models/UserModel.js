@@ -1,8 +1,9 @@
-const BaseModel = require("./BaseModel");
 const mongoose = require('mongoose');
-const Logging = require('../configs/logger');
 const bcrypt = require('bcrypt');
+
+const Logging = require('../configs/logger');
 require('dotenv').config();
+const BaseModel = require("./BaseModel");
 
 const logger = new Logging('UserModel');
 const userSchema = new mongoose.Schema({

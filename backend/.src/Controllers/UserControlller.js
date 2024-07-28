@@ -2,7 +2,7 @@ const UserModel = require("../Models/UserModel");
 const BaseController = require("./BaseController");
 const Logging = require("../configs/logger");
 const formatResponse = require('../utils/responseFormatter');
-const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError } = require('../utils/error');
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError, DuplicateError } = require('../utils/error');
 
 const logger = new Logging('UserController');
 
@@ -88,7 +88,7 @@ class UserController extends BaseController {
             logger.error(`Error creating user: ${JSON.stringify(error)}`);
             if (error.code === 11000) {
                 // Duplicate key error
-                next(new ConflictError('Username or email already in use'));
+                next(new DuplicateError());
             }
             next(error);
         }
@@ -168,17 +168,18 @@ class UserController extends BaseController {
     async updateUser(req, res, next) {
         try {
             logger.info('request to /update endpoint');
-            if (!req.body.id) {
-                throw new BadRequestError("'id' is required");
+            const { userId } = req.params;
+            if (!userId) {
+                throw new BadRequestError("'userId' is required");
             }
-            const { id, currentPassword, newPassword, confirmNewPassword, newusername, email } = req.body;
+            const { currentPassword, newPassword, confirmNewPassword, newusername, email } = req.body;
             //FIXME - waiting for getCurrentUser to be implemented
             /*NOTE - getCurrentUser is decode the JWT token and return the user data
             * we need to check if the user is authorized to update the user data*/
             // const user = await this.getCurrentUser(req);
             // const id = user._id;
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
-            const user = await this.UserModel.findById(id);
+            const user = await this.UserModel.findById(userId);
 
             if (!user) {
                 logger.error('User not found');
@@ -208,9 +209,13 @@ class UserController extends BaseController {
             logger.debug(`Fields and datas to be updated: ${JSON.stringify(updateFields)}`);
             const updatedUser = await this.UserModel.updateById(user._id, updateFields);
             logger.debug(`updated User: ${JSON.stringify(updatedUser)}`);
-            res.status(200).json(formatResponse(200, 'User updated successfully', { id: updatedUser._id }));
+            res.status(200).json(formatResponse(200, 'User updated successfully', { userId: updatedUser._id }));
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
+            if (error.code === 11000) {
+                // Duplicate key error
+                next(new DuplicateError());
+            }
             next(error);
         }
     }
@@ -221,14 +226,15 @@ class UserController extends BaseController {
         try {
             // const user = await this.getCurrentUser(req);
             // const id = user.id
-            if (!req.body.id) {
-                throw new BadRequestError("'id' is required");
+            const { userId } = req.params;
+            if (!userId) {
+                throw new BadRequestError("'userId' is required");
             }
-            const { id, currentPassword } = req.body;
+            const { currentPassword } = req.body;
             if (!currentPassword) {
                 throw new BadRequestError("'currentPassword' is required to delete user");
             }
-            const user = await this.UserModel.findById(id);
+            const user = await this.UserModel.findById(userId);
             if (!user) {
                 logger.error('User not found');
                 throw new NotFoundError('User not found');
@@ -239,9 +245,9 @@ class UserController extends BaseController {
                 logger.error('Invalid username or password');
                 throw new PasswordError();
             }
-            const deletedUser = await this.UserModel.deleteById(id);
+            const deletedUser = await this.UserModel.deleteById(userId);
             logger.debug(`deleted user: ${JSON.stringify(deletedUser)}`);
-            res.status(200).json(formatResponse(200, 'User deleted successfully', { id: deletedUser._id }));
+            res.status(200).json(formatResponse(200, 'User deleted successfully', { userId: deletedUser._id }));
         } catch (error) {
             logger.error(`Error deleting user: ${error.message}`);
             next(error);

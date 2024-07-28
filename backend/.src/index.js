@@ -43,7 +43,7 @@ app.get("/api/v1", (req, res) => {
     res.send('you are on the api/v1 route');
 })
 
-router.use('/user', userRoutes);
+router.use('/users', userRoutes);
 
 app.use('/api/v1', router);
 

@@ -2,36 +2,38 @@ const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 
-const UserController = require('../Controllers/UserControlller');
 const Logging = require('../configs/logger');
 const { AppError, ForbiddenError, UnauthorizedError } = require('../utils/error');
 const formatResponse = require('../utils/responseFormatter');
 const MethodValidator = require('../utils/allowedMethod')
+const UserController = require('../Controllers/UserControlller');
 
 const UserCont = new UserController();
 const logger = new Logging('UserRoutes');
 
-router.get('/', (req, res) => {
-    logger.info('request to /api/v1/user endpoint');
-    res.send('Hello World, from UserRoutes');
-});
 const allowedMethods = {
-    '/register': ['POST'],
-    '/updateUser': ['PATCH'],
-    '/deleteUser': ['DELETE'],
-    '/getAllUsers': ['POST'],
+    '/': ['GET'],
+    '/': ['POST'],
+    '/:userId': ['PATCH', 'DELETE'],
+    '/Admins': ['POST']
 };
 
 if (process.env.NODE_ENV === 'development') {
-    allowedMethods['/checkPassword'] = ['POST'];
-    allowedMethods['/getAllUsers'] = ['POST'];
-    router.post('/checkPassword', UserCont.checkPassword.bind(UserCont));
-    router.post('/getAllUsers', UserCont.getAllUsers.bind(UserCont));
+    allowedMethods['/check'] = ['POST'];
+    allowedMethods['/list'] = ['GET'];
+    router.post('/check', UserCont.checkPassword.bind(UserCont));
+    router.get('/list', UserCont.getAllUsers.bind(UserCont));
 }
 router.use(MethodValidator(allowedMethods));
-router.post('/register', UserCont.register.bind(UserCont));
-router.patch('/updateUser', UserCont.updateUser.bind(UserCont));
-router.delete('/deleteUser', UserCont.deleteUser.bind(UserCont));
+
+//NOTE - or remove this to have only one GET route
+router.get('/', (req, res) => {
+    logger.info('request to /api/v1/user/ endpoint');
+    res.send('Hello World, from UserRoutes');
+});
+router.post('/', UserCont.register.bind(UserCont));
+router.patch('/:userId', UserCont.updateUser.bind(UserCont));
+router.delete('/:userId', UserCont.deleteUser.bind(UserCont));
 const adminMiddleware = async (req, res, next) => {
     try {
         //TODO - wait for the implementation of getCurrentUser, then test this middleware
@@ -49,7 +51,7 @@ const adminMiddleware = async (req, res, next) => {
         next(error);
     }
 };
-router.post('/addAdmin', adminMiddleware, UserCont.addAdmin.bind(UserCont));
+router.post('/Admins', adminMiddleware, UserCont.addAdmin.bind(UserCont));
 
 // Error-handling middleware
 router.use((err, req, res, next) => {
