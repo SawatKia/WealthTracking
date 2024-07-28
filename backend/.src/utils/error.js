@@ -50,6 +50,12 @@ class PasswordError extends AppError {
     }
 }
 
+class DuplicateError extends AppError {
+    constructor(message, data = null) {
+        super('Username or email already in use', 409, data);
+    }
+}
+
 module.exports = {
     AppError,
     BadRequestError,
@@ -58,5 +64,6 @@ module.exports = {
     NotFoundError,
     MethodNotAllowedError,
     ConflictError,
-    PasswordError
+    PasswordError,
+    DuplicateError
 };
