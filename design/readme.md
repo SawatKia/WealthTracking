@@ -1,6 +1,6 @@
 # What is this?
 this is the system design before implementing.
-the design consist sequence-diagram designing of each entity and api how it handle the request and returning the error by using Mermaid.js
+the design consist sequence-diagram designing of each entity and api how it handle the request and returning the error by using Mermaid.js but some design is using plantUML which I knew it after knowing Mermaid. which is better than Mermaid
 
 # How to modify the diagram?
 <ol>
@@ -17,9 +17,11 @@ the design consist sequence-diagram designing of each entity and api how it hand
 - [Mermaid Editor](https://marketplace.visualstudio.com/items?itemName=tomoyukim.vscode-mermaid-editor) - to preview the diagram in the editor
 - [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting) *(optional)* - to highlight the syntax if you want to modify the diagram.
 - [Live Share](https://marketplace.visualstudio.com/items?itemName=MS-vsliveshare.vsliveshare) - to edit code together in realtime
+- [PlantUML](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml) - to preview the `.puml` file
 
 # to preview the diagram?
 run the file `../design/diagram_preview.html` with live server extension
+#### for PlantUML open that diagram and press `alt+D`
 
 # to examine the sample Dataset
 run the file `../design/json_grid_visualizer.html` with live server extension

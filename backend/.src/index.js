@@ -1,24 +1,41 @@
 const express = require('express');
 const cors = require('cors');
+const { rateLimit } = require('express-rate-limit')
 require('dotenv').config();
+
 const connectDB = require('./configs/database');
 const Logging = require('./configs/logger');
 const path = require('path');
+
 const userRoutes = require('./routes/UserRoutes');
+const BankAccountRoutes = require('./routes/BankAccountRoutes');
+const formatResponse = require('./utils/responseFormatter');
 
 const logger = new Logging('index');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isDevelopment = process.env.NODE_ENV === 'development';
 const router = express.Router();
+const limiter = rateLimit({
+    windowMs: 1000, // 1 second
+    limit: 2, // Limit each IP to 2 requests per `window` (here, per 15 minutes)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: 'Too many requests from this IP, please try again later.',
+    handler: (req, res, next, options) => {
+        logger.warn(`Rate limit exceeded for IP ${req.ip}`);
+        res.status(options.statusCode).json(formatResponse(options.statusCode, options.message));
+    },
+})
 
+app.use(limiter);
 app.use(cors());
 app.use(express.json());
 app.disable('x-powered-by');
 // Log middleware
 app.use((req, res, next) => {
     const { ip, method, path } = req;
-    const allowedMethods = ["POST", "PUT", "PATCH", "DELETE"];
+    const allowedMethods = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
     if (allowedMethods.includes(req.method)) {
         logger.debug(`Incoming Request, ${ip} => ${method} ${path}   with ${JSON.stringify(req.body)}`);
@@ -40,10 +57,11 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../frontend_build')));
 
 app.get("/api/v1", (req, res) => {
-    res.send('you are on the api/v1 route');
+    res.status(200).json(formatResponse(200, 'you are connected to the API'));
 })
 
 router.use('/users', userRoutes);
+router.use('/bank-accounts', BankAccountRoutes);
 
 app.use('/api/v1', router);
 

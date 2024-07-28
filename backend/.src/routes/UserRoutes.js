@@ -12,8 +12,7 @@ const UserCont = new UserController();
 const logger = new Logging('UserRoutes');
 
 const allowedMethods = {
-    '/': ['GET'],
-    '/': ['POST'],
+    '/': ['GET', 'POST'],
     '/:userId': ['PATCH', 'DELETE'],
     '/Admins': ['POST']
 };
@@ -28,8 +27,8 @@ router.use(MethodValidator(allowedMethods));
 
 //NOTE - or remove this to have only one GET route
 router.get('/', (req, res) => {
-    logger.info('request to /api/v1/user/ endpoint');
-    res.send('Hello World, from UserRoutes');
+    logger.info('request to /api/v1/users/ endpoint');
+    res.status(200).json(formatResponse(200, 'you are connected to the UserRoutes'));
 });
 router.post('/', UserCont.register.bind(UserCont));
 router.patch('/:userId', UserCont.updateUser.bind(UserCont));

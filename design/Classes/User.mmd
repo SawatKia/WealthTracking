@@ -13,7 +13,7 @@ sequenceDiagram
             Note over Router: with body of {username, email,<br/>Password, confirmPass}
             Client->>Router: POST /user/create
             Router->>UserController: register(req.body)
-            UserController->>BaseCont: this.verifyParams(newUserData, ['username', 'email', 'password', 'confirmPass'])
+            UserController->>BaseCont: this.verifyBody(newUserData, ['username', 'email', 'password', 'confirmPass'])
             opt some parameter is null or empty
                 BaseCont-->>UserController: throw the error "<field> is required"
                 UserController-->>Router: pass error to Router
@@ -110,7 +110,7 @@ sequenceDiagram
             Note over Router: with body of {searchCriteria, searchValue, isFindOne, sorting}
             Client->>Router:POST /user/search
             Router->>UserController: searchUser(searchCriteria, searchValue, isFindOne, sorting)
-            UserController->>BaseCont: this.verifyParams({searchCriteria, searchValue, isFindOne, sorting}, ['searchCriteria', 'searchValue', 'isFindOne', 'sorting'])
+            UserController->>BaseCont: this.verifyBody({searchCriteria, searchValue, isFindOne, sorting}, ['searchCriteria', 'searchValue', 'isFindOne', 'sorting'])
             opt some parameter is null or empty
                 BaseCont-->>UserController: throw the error "<field> is required"
                 UserController-->>Router: pass error to Router
@@ -150,7 +150,7 @@ sequenceDiagram
             Client->>Router: PUT /user/update
             Router->>Router: extract body and headers
             Router->>UserController: updateUser(id, updatesData)
-            UserController->>BaseCont: this.verifyParams({id, updatesData}, ['id', 'updatesData'])
+            UserController->>BaseCont: this.verifyBody({id, updatesData}, ['id', 'updatesData'])
             opt some parameter is null or empty
                 BaseCont-->>UserController: throw the error "<field> is required"
                 UserController-->>Router: pass error to Router
@@ -215,7 +215,7 @@ sequenceDiagram
             Client->>Router: DELETE /user/delete
             Router->>Router: extract body and headers
             Router->>UserController: deleteUser(id)
-            UserController->>BaseCont: this.verifyParams({id}, ['id'])
+            UserController->>BaseCont: this.verifyBody({id}, ['id'])
             opt some parameter is null or empty
                 BaseCont-->>UserController: throw the error "<field> is required"
                 UserController-->>Router: pass error to Router
