@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Logging = require('../configs/logger')
+const MongoObject = require('./MongoObject');
 
 const logger = new Logging('BaseModel');
 
@@ -34,7 +35,7 @@ class BaseModel {
                 if (data.hasOwnProperty(key)) {
                     const value = data[key];
                     const schemaType = this.model.schema.path(key);
-                    logger.debug(`Field ${key} has type ${schemaType.instance}`);
+                    logger.debug(`checking field ${key} type`);
 
                     // Compare the type correctly using Mongoose's schema type
                     if (schemaType && schemaType.instance !== value.constructor.name) {
@@ -57,6 +58,9 @@ class BaseModel {
             this._verifyData(data);
             const newDoc = new this.model(data);
             logger.debug(`Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const result = await newDoc.save();
+            // return MongoObject.toObject(result);
             return await newDoc.save();
         } catch (error) {
             logger.error(`Error creating new ${this.model.modelName}: ${error.message}`);
@@ -68,6 +72,9 @@ class BaseModel {
         try {
             logger.info(`Finding by id`);
             logger.debug(`Finding by id: ${id}`);
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const result = await this.model.findById(id);
+            // return MongoObject.toObject(result);
             return await this.model.findById(id);
         } catch (error) {
             logger.error(`Error finding by id: ${error.message}`);
@@ -80,6 +87,9 @@ class BaseModel {
             logger.info(`Finding ${this.model.modelName}`);
             logger.debug(`Finding in ${this.model.modelName} with ${criteria}: ${value}`);
             const query = { [criteria]: value };
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const result = await this.model.findOne(query);
+            // return MongoObject.toObject(result);
             return await this.model.findOne(query);
         } catch (error) {
             logger.error(`Error finding ${this.model.modelName}: ${error.message}`);
@@ -93,6 +103,9 @@ class BaseModel {
             const query = { [criteria]: value };
             const sortOrder = sorting.order === 'asc' ? 1 : -1;
             logger.debug(``)
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const results = await this.model.find(query).sort({ [sorting.field]: sortOrder });
+            // return MongoObject.toObjects(results);
             return await this.model.find(query).sort({ [sorting.field]: sortOrder });
         } catch (error) {
             throw new Error(`Find operation failed: ${error.message}`);
@@ -102,6 +115,9 @@ class BaseModel {
     async updateById(id, data) {
         try {
             logger.info(`Updating ${this.model.modelName} with id: ${id}`);
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const result = await this.model.findByIdAndUpdate(id, data, { new: true });
+            // return MongoObject.toObject(result);
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             throw new Error(`Update operation failed: ${error.message}`);
@@ -112,6 +128,9 @@ class BaseModel {
         try {
             logger.info(`Deleting ${this.model.modelName}`);
             logger.debug(`Deleting ${this.model.modelName} with id: ${id}`);
+            //TODO - implement toObject method, which have to apply with UserControler
+            // const result = await this.model.findByIdAndDelete(id);
+            // return MongoObject.toObject(result);
             return await this.model.findByIdAndDelete(id);
         } catch (error) {
             throw new Error(`Delete operation failed: ${error.message}`);
