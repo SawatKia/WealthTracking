@@ -12,7 +12,7 @@ sequenceDiagram
             Client->>Router: POST /bank/create
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
             Router->>BankCont: create_bank_account(request)
-            BankCont->>BankCont: verifyParams({displayName, bankAccountName, bankName, initialBalance})
+            BankCont->>BankCont: verifyBody({displayName, bankAccountName, bankName, initialBalance})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
@@ -52,7 +52,7 @@ sequenceDiagram
             Client->>Router: POST /bank/search
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
             Router->>BankCont: search_bank_account(request)
-            BankCont->>BankCont: verifyParams({searchCriteria, searchValue, isFindOne, sorting})
+            BankCont->>BankCont: verifyBody({searchCriteria, searchValue, isFindOne, sorting})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
@@ -113,7 +113,7 @@ sequenceDiagram
             Client->>Router: PUT  /bank/update
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
             Router->>BankCont: update_bank_account(request, bankAccountUniqueId, updateData)
-            BankCont->>BankCont: verifyParams({request, bankAccountUniqueId, updateData})
+            BankCont->>BankCont: verifyBody({request, bankAccountUniqueId, updateData})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}
@@ -170,7 +170,7 @@ sequenceDiagram
             Client->>Router: DELETE /bank/delete
             Router->>Router: extract the body (whatever it has or doesn't have)<br> by body parser to parameters
             Router->>BankCont: delete_bank_account(request, bankAccountUniqueId)
-            BankCont->>BankCont: verifyParams({request, bankAccountUniqueId})
+            BankCont->>BankCont: verifyBody({request, bankAccountUniqueId})
             opt some parameter is null or empty
                 BankCont-->>Router: throw the error "parameters are required"
                 Note over Router,Client: JSON Response: {status_code, message, data(if any)}

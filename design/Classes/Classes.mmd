@@ -3,7 +3,7 @@ classDiagram
     BaseModel <|-- SpecificModel
     
     class BaseController {
-        +verifyParams(params)
+        +verifyBody(params)
         +verifyRightToModify(request, entityId, Model)
         +getCurrentUser(request)
         +isToken(request)

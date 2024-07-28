@@ -36,7 +36,7 @@ sequenceDiagram
     end
     
     %% SpecificController verifies parameters using BaseController method
-    SpecificController->>BaseController: verifyParams(params)
+    SpecificController->>BaseController: verifyBody(params)
     opt some parameter is null or empty
         BaseController-->>SpecificController: throw the error "${key} are required"
         SpecificController-->>Router: throw error to Router
