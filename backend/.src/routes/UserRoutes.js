@@ -2,20 +2,15 @@ const express = require('express');
 const router = express.Router();
 require('dotenv').config();
 
-const UserController = require('../Controllers/UserControlller');
 const Logging = require('../configs/logger');
 const { AppError, ForbiddenError, UnauthorizedError } = require('../utils/error');
 const formatResponse = require('../utils/responseFormatter');
 const MethodValidator = require('../utils/allowedMethod')
+const UserController = require('../Controllers/UserControlller');
 
 const UserCont = new UserController();
 const logger = new Logging('UserRoutes');
 
-//NOTE - or remove this to have only one GET route
-router.get('/', (req, res) => {
-    logger.info('request to /api/v1/user/ endpoint');
-    res.send('Hello World, from UserRoutes');
-});
 const allowedMethods = {
     '/': ['GET'],
     '/': ['POST'],
@@ -30,6 +25,12 @@ if (process.env.NODE_ENV === 'development') {
     router.get('/list', UserCont.getAllUsers.bind(UserCont));
 }
 router.use(MethodValidator(allowedMethods));
+
+//NOTE - or remove this to have only one GET route
+router.get('/', (req, res) => {
+    logger.info('request to /api/v1/user/ endpoint');
+    res.send('Hello World, from UserRoutes');
+});
 router.post('/', UserCont.register.bind(UserCont));
 router.patch('/:userId', UserCont.updateUser.bind(UserCont));
 router.delete('/:userId', UserCont.deleteUser.bind(UserCont));
