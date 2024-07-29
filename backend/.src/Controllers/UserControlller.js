@@ -83,7 +83,9 @@ class UserController extends BaseController {
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
             logger.info('Create user...');
             const user = await this.UserModel.createUser(newUserData);
-            res.status(201).json(formatResponse(201, 'User created successfully', { id: user._id }));
+            logger.debug(`user created: ${JSON.stringify(user)}`);
+            const createdId = this.UserModel.toStringId(user._id);
+            res.status(201).json(formatResponse(201, 'User created successfully', { id: createdId }));
         } catch (error) {
             logger.error(`Error creating user: ${JSON.stringify(error)}`);
             if (error.code === 11000) {
@@ -172,6 +174,9 @@ class UserController extends BaseController {
             if (!userId) {
                 throw new BadRequestError("'userId' is required");
             }
+            if (this.UserModel.isValidObjectId(userId)) {
+                throw new BadRequestError('Invalid userId');
+            }
             const { currentPassword, newPassword, confirmNewPassword, newusername, email } = req.body;
             //FIXME - waiting for getCurrentUser to be implemented
             /*NOTE - getCurrentUser is decode the JWT token and return the user data
@@ -224,11 +229,16 @@ class UserController extends BaseController {
     // get id from current
     async deleteUser(req, res, next) {
         try {
+            logger.info('request to /delete endpoint');
             // const user = await this.getCurrentUser(req);
             // const userid = user.id
             const { userId } = req.params;
+            logger.info('Verifying userId');
             if (!userId) {
                 throw new BadRequestError("'userId' is required");
+            }
+            if (!this.UserModel.isValidObjectId(userId)) {
+                throw new BadRequestError('Invalid userId');
             }
             const { currentPassword } = req.body;
             if (!currentPassword) {

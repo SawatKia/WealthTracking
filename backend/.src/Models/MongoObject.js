@@ -1,19 +1,27 @@
 const mongoose = require('mongoose');
 const Logging = require('../configs/logger');
-const logger = new Logging('MongoObject');
 
 class MongoObject {
+    //create constructor
+    constructor() {
+        if (this.constructor === MongoObject) {
+            throw new Error("Abstract classes can't be instantiated.");
+        }
+        this.logger = new Logging('MongoObject');
+    }
     /**
      * Converts a string to ObjectId
      * @param {string} stringId - The string to convert
      * @returns {ObjectId|null} - The converted ObjectId or null if invalid
      */
-    static toObjectId(stringId) {
-        if (!mongoose.Types.ObjectId.isValid(stringId)) {
-            logger.warn(`Invalid 'ObjectId' format: ${stringId}`);
+    toObjectId(stringId) {
+        this.logger.info(`Converting string to ObjectId`);
+        this.logger.debug(`String to convert: ${stringId}`);
+        if (!mongoose.isObjectIdOrHexString(stringId)) {
+            this.logger.warn(`Invalid 'ObjectId' format: ${stringId}`);
             return null;
         }
-        logger.info(`Converted string to ObjectId: ${stringId}`);
+        this.logger.debug(`Converted string to ObjectId: ${stringId}`);
         return new mongoose.Types.ObjectId(stringId);
     }
 
@@ -22,13 +30,15 @@ class MongoObject {
      * @param {ObjectId} objectId - The ObjectId to convert
      * @returns {string|null} - The converted string or null if invalid
      */
-    static toStringId(objectId) {
+    toStringId(objectId) {
+        this.logger.info('Converting ObjectId to string');
+        this.logger.debug(`ObjectId to convert: ${objectId}`);
         if (!(objectId instanceof mongoose.Types.ObjectId)) {
-            logger.warn(`Invalid ObjectId instance: ${objectId}`);
+            this.logger.warn(`Invalid ObjectId instance: ${objectId}`);
             return null;
         }
         const stringId = objectId.toString();
-        logger.info(`Converted ObjectId to string: ${stringId}`);
+        this.logger.debug(`Converted ObjectId to string: ${stringId}`);
         return stringId;
     }
 
@@ -37,12 +47,14 @@ class MongoObject {
      * @param {Document} result - The document to convert
      * @returns {Object|null} - The plain object or null if the input is null
      */
-    static toObject(result) {
+    toObject(result) {
+        this.logger.info('Converting document to plain object');
+        this.logger.debug(`Document to convert: ${result}`);
         if (!result) {
-            logger.info('Null document provided to toObject');
+            this.logger.warn('Null document provided to toObject');
             return null;
         }
-        logger.info('Converted document to plain object');
+        this.logger.debug(`Converted document to plain object: ${result.toObject()}`);
         return result.toObject();
     }
 
@@ -51,12 +63,14 @@ class MongoObject {
      * @param {Array<Document>} results - The array of documents to convert
      * @returns {Array<Object>} - The array of plain objects
      */
-    static toObjects(results) {
+    toObjects(results) {
+        this.logger.info('Converting documents to plain objects');
+        this.logger.debug(`Documents to convert: ${results}`);
         if (!Array.isArray(results)) {
-            logger.warn('Non-array input provided to toObjects');
+            this.logger.warn('Non-array input provided to toObjects');
             return [];
         }
-        logger.info(`Converted ${results.length} documents to plain objects`);
+        this.logger.debug(`Converted documents to plain objects: ${results.map(result => result.toObject())}`);
         return results.map(result => result.toObject());
     }
 
@@ -65,9 +79,21 @@ class MongoObject {
      * @param {string} stringId - The string to validate
      * @returns {boolean} - True if valid, otherwise false
      */
-    static isValidObjectId(stringId) {
-        const isValid = mongoose.Types.ObjectId.isValid(stringId);
-        logger.info(`ObjectId validation result for ${stringId}: ${isValid}`);
+    isValidObjectId(stringId) {
+        this.logger.info(`Validating ObjectId format`);
+        this.logger.debug(`String to validate: ${stringId}`);
+        const isValid = mongoose.isObjectIdOrHexString(stringId);
+        /** isObjectIdOrHexString 
+         * return true for:
+         * 1. ObjectId instance
+         * 2. 24-character hex string
+         * 
+         * return false for:
+         * 1. numbers
+         * 2. string with length other than 24
+         * 3. documents
+         */
+        this.logger.info(`ObjectId validation result for ${stringId}: ${isValid}`);
         return isValid;
     }
 
@@ -77,13 +103,15 @@ class MongoObject {
      * @param {string} field - The field name to extract
      * @returns {ObjectId|null} - The extracted ObjectId or null if invalid
      */
-    static extractObjectId(req, field) {
+    extractObjectId(req, field) {
+        this.logger.info(`Extracting ObjectId from request`);
+        this.logger.debug(`Field to extract: ${field}`);
         const id = req.params[field] || req.body[field];
         if (!id || !MongoObject.isValidObjectId(id)) {
-            logger.warn(`Invalid or missing '${field}' in request`);
+            this.logger.warn(`Invalid or missing '${field}' in request`);
             return null;
         }
-        logger.info(`Extracted ObjectId for field '${field}': ${id}`);
+        this.logger.info(`Extracted ObjectId for field '${field}': ${id}`);
         return MongoObject.toObjectId(id);
     }
 
@@ -92,15 +120,16 @@ class MongoObject {
      * @param {Object} doc - The document to process
      * @param {Array<string>} fields - The list of fields to convert
      */
-    static convertNestedObjectIds(doc, fields) {
+    convertNestedObjectIds(doc, fields) {
+        this.logger.info('Converting nested ObjectId fields');
         fields.forEach(field => {
             if (doc[field] && typeof doc[field] === 'string') {
                 const convertedId = MongoObject.toObjectId(doc[field]);
                 if (convertedId) {
                     doc[field] = convertedId;
-                    logger.info(`Converted nested ObjectId for field '${field}'`);
+                    this.logger.info(`Converted nested ObjectId for field '${field}'`);
                 } else {
-                    logger.warn(`Failed to convert nested ObjectId for field '${field}'`);
+                    this.logger.warn(`Failed to convert nested ObjectId for field '${field}'`);
                 }
             }
         });
