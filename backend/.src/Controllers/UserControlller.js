@@ -58,7 +58,7 @@ class UserController extends BaseController {
 
     async register(req, res, next) {
         try {
-            logger.info('request to /create endpoint');
+            logger.info('register');
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
             let newUserData = req.body;
             logger.debug(`newUserData from body: ${JSON.stringify(newUserData)}`);
@@ -98,7 +98,7 @@ class UserController extends BaseController {
 
     async getAllUsers(req, res, next) {
         try {
-            logger.info('request to /getAllUsers endpoint');
+            logger.info('getAllUsers');
             const users = await this.UserModel.getAllUsers();
             if (users.length === 0) {
                 logger.error('No users found');
@@ -123,7 +123,7 @@ class UserController extends BaseController {
      */
     async checkPassword(req, res, next) {
         try {
-            logger.info('request to /checkPassword endpoint');
+            logger.info('checkPassword');
             let { username, password } = req.body;
             if (!username || !password) {
                 throw new BadRequestError('Username and password are required');
@@ -169,15 +169,28 @@ class UserController extends BaseController {
     // get id from current
     async updateUser(req, res, next) {
         try {
-            logger.info('request to /update endpoint');
+            logger.info('updateUser');
             const { userId } = req.params;
             if (!userId) {
                 throw new BadRequestError("'userId' is required");
             }
-            if (this.UserModel.isValidObjectId(userId)) {
+            if (!this.UserModel.isValidObjectId(userId)) {
                 throw new BadRequestError('Invalid userId');
             }
-            const { currentPassword, newPassword, confirmNewPassword, newusername, email } = req.body;
+            const { currentPassword, newPassword, confirmNewPassword, newUsername, newEmail } = req.body;
+            // Verify that the current password is provided
+            if (!currentPassword) {
+                throw new BadRequestError("'currentPassword' is required to update user information");
+            }
+            // Verify the current password
+            const passwordMatch = await this.UserModel.checkPassword(user.username, currentPassword);
+            if (!passwordMatch) {
+                logger.error('Invalid username or password');
+                throw new PasswordError();
+            }
+            if (!newPassword && !newUsername && !newEmail) {
+                throw new BadRequestError('At least one field is required to update user information');
+            }
             //FIXME - waiting for getCurrentUser to be implemented
             /*NOTE - getCurrentUser is decode the JWT token and return the user data
             * we need to check if the user is authorized to update the user data*/
@@ -192,23 +205,13 @@ class UserController extends BaseController {
             }
             logger.debug(`user found: ${JSON.stringify(user)}`);
 
-            // Verify that the current password is provided
-            if (!currentPassword) {
-                throw new BadRequestError("'currentPassword' is required to update user information");
-            }
-            // Verify the current password
-            const passwordMatch = await this.UserModel.checkPassword(user.username, currentPassword);
-            if (!passwordMatch) {
-                logger.error('Invalid username or password');
-                throw new PasswordError();
-            }
 
             // Verify that the new password and confirm new password match
             if (newPassword !== confirmNewPassword) {
                 throw new BadRequestError('New password and confirm new password do not match');
             }
 
-            const normalizedData = this.normalizeUsernameEmail(newusername, email);
+            const normalizedData = this.normalizeUsernameEmail(newUsername, newEmail);
             const updateFields = { ...normalizedData };
             if (newPassword) updateFields.password = newPassword;
             logger.debug(`Fields and datas to be updated: ${JSON.stringify(updateFields)}`);
@@ -229,7 +232,7 @@ class UserController extends BaseController {
     // get id from current
     async deleteUser(req, res, next) {
         try {
-            logger.info('request to /delete endpoint');
+            logger.info('deleteUser');
             // const user = await this.getCurrentUser(req);
             // const userid = user.id
             const { userId } = req.params;
