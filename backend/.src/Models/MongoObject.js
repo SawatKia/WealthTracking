@@ -49,7 +49,6 @@ class MongoObject {
      */
     toObject(result) {
         this.logger.info('Converting document to plain object');
-        this.logger.debug(`Document to convert: ${result}`);
         if (!result) {
             this.logger.warn('Null document provided to toObject');
             return null;
@@ -65,7 +64,6 @@ class MongoObject {
      */
     toObjects(results) {
         this.logger.info('Converting documents to plain objects');
-        this.logger.debug(`Documents to convert: ${results}`);
         if (!Array.isArray(results)) {
             this.logger.warn('Non-array input provided to toObjects');
             return [];
