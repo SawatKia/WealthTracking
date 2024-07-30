@@ -49,7 +49,7 @@ class BaseModel extends MongoObject {
             logger.info('all fields have valid types');
         } catch (error) {
             logger.error(`Error verifying data: ${error.message}`);
-            throw new Error(`Verify data operation failed: ${error.message}`);
+            throw error;
         }
     }
 
@@ -74,6 +74,17 @@ class BaseModel extends MongoObject {
         } catch (error) {
             logger.error(`Error finding by id: ${error.message}`);
             throw new Error(`FindById operation failed: ${error.message}`);
+        }
+    }
+
+    async findOne(query) {
+        try {
+            logger.info(`Finding ${this.model.modelName}`);
+            logger.debug(`Finding in ${this.model.modelName} with query: ${JSON.stringify(query)}`);
+            return await this.model.findOne(query);
+        } catch (error) {
+            logger.error(`Error finding ${this.model.modelName}: ${error.message}`);
+            throw new Error(`Find operation failed: ${error.message}`);
         }
     }
 
