@@ -13,7 +13,7 @@ const logger = new Logging('UserRoutes');
 
 const allowedMethods = {
     '/': ['GET', 'POST'],
-    '/:userId': ['PATCH', 'DELETE'],
+    '/:ObjectId': ['PATCH', 'DELETE'],
     '/Admins': ['POST']
 };
 
