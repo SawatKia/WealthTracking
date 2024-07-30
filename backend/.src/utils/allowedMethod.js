@@ -1,28 +1,42 @@
 const { MethodNotAllowedError, BadRequestError } = require('../utils/error');
 const logging = require('../configs/logger');
+const { isValidObjectId } = require('mongoose');
 require('dotenv').config();
 
 const logger = new logging('allowedMethod');
+
+const isObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
 
 const MethodValidator = (allowedMethods) => {
     return (req, res, next) => {
         logger.info('Validating request method');
         const { method, path } = req;
         logger.debug(`Validating ${method} method for ${path}`);
-        // Replace any id in the path with :userId
-        const pathWithParams = path.replace(/\/[0-9a-fA-F]{24}$/, '/:userId');
-        logger.debug(`Modified path: ${pathWithParams}`);
+
+        const segments = path.split('/').filter(segment => segment);
+
+        // Replace segments that are ObjectIds with :ObjectId
+        const pathWithParams = segments.map((segment) => {
+            if (isValidObjectId(segment)) {
+                logger.debug(`Replacing segment ${segment} with :ObjectId`);
+                return ':ObjectId';
+            }
+            return segment;
+        }).join('/');
+
+        const fullPath = '/' + pathWithParams;
+
+        logger.debug(`Modified path: ${fullPath}`);
 
         // Check if the exact path or the modified path exists in allowedMethods
-        if (!allowedMethods[path] && !allowedMethods[pathWithParams]) {
+        if (!allowedMethods[path] && !allowedMethods[fullPath]) {
             logger.error(`${path} not available`);
             return next(new BadRequestError(`${path} not available`));
         }
         logger.info(`${path} available`);
 
         // Get the allowed methods for the exact path or the modified path
-        const methods = allowedMethods[path] || allowedMethods[pathWithParams];
-        logger.debug(`Allowed methods: ${methods}`);
+        const methods = allowedMethods[path] || allowedMethods[fullPath];
 
         // Check if the method is allowed for the path
         if (!methods.includes(method)) {
