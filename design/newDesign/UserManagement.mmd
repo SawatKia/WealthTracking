@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant Client
+    participant UserRouter as UserRouter
+    participant BaseController as BaseController
+    participant UserController as UserController
+    participant BaseModel as BaseModel
+    participant Model as UserModel
+    participant MongoObject as MongoObject
+
+    %% Create User
+    Client->>UserRouter: POST /user (createUser)
+    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    UserRouter->>UserController: register(req, res, next)
+    UserController->>UserController: Destructoring req.body
+    UserController->>BaseController: verifyBody(req.body, requiredFields)
+    opt length of body != requiredFields
+        BaseController-->>UserController: throw BadRequestError('Invalid number of body')
+        UserController-->>UserRouter: next(error)
+        UserRouter-->>Client: 400, "Invalid number of body"
+    end
+    opt 
+
+
+
+    %% Get User
+    Client->>UserRouter: GET /user/:userId (getUserById)
+
+    %% Update User
+    Client->>UserRouter: PUT /user/:userId (updateUserById)
+
+    %% Delete User
+    Client->>UserRouter: DELETE /user/:userId (deleteUserById)
