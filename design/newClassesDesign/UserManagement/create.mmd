@@ -1,0 +1,64 @@
+sequenceDiagram
+    participant Client
+    participant UserRouter as UserRouter
+    participant BaseCont as BaseController
+    participant UserCont as UserController extends<br> BaseController
+    participant MongoObject as MongoObject
+    participant BaseModel as BaseModel extends<br> MongoObject
+    participant Model as UserModel extends<br> BaseModel
+
+    %% Create User
+    Client->>+UserRouter: POST /users/ (create User)
+    Note over UserRouter : verifying the path and method if it allowed
+    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    opt path not available
+        UserRouter-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        UserRouter-->>Client: 405, "<method> not allowed for <path>"
+    end
+    UserRouter->>+UserCont: register(req, res, next)
+    UserCont->>UserCont: Destructoring req.body
+    UserCont->>+BaseCont: verifyBody(req.body, requiredFields)
+    opt length of body != length of requiredFields
+        BaseCont-->>UserCont: throw BadRequestError('Invalid number of body')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 400, "Invalid number of body"
+    end
+    opt <field> is not in req.body
+        BaseCont-->>UserCont: throw BadRequestError('<field> is required')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 400, "<field> is required"
+    end
+    BaseCont->>-UserCont: return true
+    UserCont->>UserCont: validateEmail(email)
+    opt Invalid email
+        UserCont-->>UserRouter: throw BadRequestError("Invalid email")
+        UserRouter-->>Client: 400, "Invalid email"
+    end
+    UserCont->>UserCont: normalizeUsernameEmail(username, email)
+    UserCont->>+Model: createUser(newUserData)
+    Model->>Model: _hashPassword(password)
+    opt error hashing password
+        Model-->>UserCont: throw InternalServerError('Error hashing password')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 500, "something went wrong"
+    end
+    Model->>+BaseModel: create(data)
+    BaseModel->>BaseModel: _verifyData(data)
+    opt missing required field
+        BaseModel-->>Model: throw Error('Missing required field: <field>')
+        Model-->>UserCont: next(error)
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 400, "Missing required field: <field>"
+    end
+    opt invalid type
+        BaseModel-->>Model: throw Error('Invalid type: <field>.<br>expected <type>, got <type>')
+        Model-->>UserCont: next(error)
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 400, "Invalid type: <field>"
+    end
+    BaseModel->>-Model: Save user to database
+    Model-->>-UserCont: Created user
+    UserCont-->>-UserRouter: User created successfully
+    UserRouter-->>-Client: 201, "User created successfully", { id: createdId }

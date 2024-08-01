@@ -13,7 +13,7 @@ const bankAccountSchema = new mongoose.Schema({
     accountName: { type: String, required: true },
     bankName: { type: String, required: true },
     balance: { type: Number, required: true },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
 
 class BankAccountModel extends BaseModel {

@@ -14,14 +14,19 @@ const BankAccountCont = new BankAccountController();
 const allowedMethods = {
     // '/': ['GET', 'POST'],
     '/': ['GET'],
-    '/:userId': ['POST'],
+    '/:ObjectId': ['GET', 'POST', 'PATCH'],
+    // '/:ObjectId': ['GET'],
+    '/user/:ObjectId': ['GET'],
 };
+router.use(MethodValidator(allowedMethods));
 router.get('/', (req, res) => {
     logger.info('request to /api/v1/bank-account/ endpoint');
     res.status(200).json(formatResponse(200, 'you are connected to the BankAccountRoutes'));
 });
-router.use(MethodValidator(allowedMethods));
-router.post('/:userId', BankAccountCont.createBankAccount.bind(BankAccountCont));
+router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont));
+router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont));
+router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont));
+router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont));
 
 router.use((err, req, res, next) => {
     if (err instanceof AppError) {

@@ -13,7 +13,7 @@ const logger = new Logging('UserRoutes');
 
 const allowedMethods = {
     '/': ['GET', 'POST'],
-    '/:userId': ['PATCH', 'DELETE'],
+    '/:ObjectId': ['PATCH', 'DELETE'],
     '/Admins': ['POST']
 };
 
@@ -58,7 +58,7 @@ router.use((err, req, res, next) => {
         res.status(err.statusCode).json(formatResponse(err.statusCode, err.message));
     } else {
         logger.error(err);
-        res.status(500).json(formatResponse(500, 'Internal Server Error'));
+        res.status(500).json(formatResponse(500, 'somethong went wrong'));
     }
 });
 
