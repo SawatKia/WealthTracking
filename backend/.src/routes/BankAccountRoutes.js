@@ -14,8 +14,8 @@ const BankAccountCont = new BankAccountController();
 const allowedMethods = {
     // '/': ['GET', 'POST'],
     '/': ['GET'],
-    '/:ObjectId': ['POST'],
-    '/:ObjectId': ['GET'],
+    '/:ObjectId': ['GET', 'POST', 'PATCH'],
+    // '/:ObjectId': ['GET'],
     '/user/:ObjectId': ['GET'],
 };
 router.use(MethodValidator(allowedMethods));
@@ -26,6 +26,7 @@ router.get('/', (req, res) => {
 router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont));
 router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont));
 router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont));
+router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont));
 
 router.use((err, req, res, next) => {
     if (err instanceof AppError) {
