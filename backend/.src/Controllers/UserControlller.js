@@ -59,27 +59,22 @@ class UserController extends BaseController {
     async register(req, res, next) {
         try {
             logger.info('register');
+            const { username, email, password, confirmPassword } = req.body;
             logger.debug(`parse request body: ${JSON.stringify(req.body)}`);
-            let newUserData = req.body;
-            logger.debug(`newUserData from body: ${JSON.stringify(newUserData)}`);
             const requiredFields = ['username', 'email', 'password', 'confirmPassword'];
-            await this.verifyBody(newUserData, requiredFields);
+            await this.verifyBody(req.body, requiredFields);
             logger.info('Verifying password matchings');
-            if (newUserData['password'] != newUserData['confirmPassword']) {
+            if (password != confirmPassword) {
                 logger.error('Password do not match');
                 throw new BadRequestError("Password don't match");
             }
-            delete newUserData['confirmPassword'];
             logger.info('Verifying email');
-            if (!this.validateEmail(newUserData['email'])) {
+            if (!this.validateEmail(email)) {
                 logger.error('Invalid email');
                 throw new BadRequestError("Invalid email");
             }
-            const normalizedData = this.normalizeUsernameEmail(newUserData['username'], newUserData['email']);
-            newUserData = { ...newUserData, ...normalizedData };
-            newUserData['memberSince'] = new Date();
-            // add role
-            newUserData['role'] = 'user';
+            const normalizedData = this.normalizeUsernameEmail(username, email);
+            const newUserData = { ...req.body, ...normalizedData, memberSince: new Date(), role: 'user' };
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
             logger.info('Create user...');
             const user = await this.UserModel.createUser(newUserData);
@@ -142,7 +137,7 @@ class UserController extends BaseController {
         }
     }
 
-    //TODO - getCurrentUser need to call security.js to decode the JWT token
+    //FIXME - getCurrentUser need to call security.js to decode the JWT token
     async getCurrentUser(req) {
         try {
             const currentUser = await security.getCurrentUser(req);
@@ -217,7 +212,7 @@ class UserController extends BaseController {
             logger.debug(`Fields and datas to be updated: ${JSON.stringify(updateFields)}`);
             const updatedUser = await this.UserModel.updateById(user._id, updateFields);
             logger.debug(`updated User: ${JSON.stringify(updatedUser)}`);
-            res.status(200).json(formatResponse(200, 'User updated successfully', { userId: updatedUser._id }));
+            res.status(200).json(formatResponse(200, 'User updated successfully', { updatedUser: updatedUser }));
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
             if (error.code === 11000) {
