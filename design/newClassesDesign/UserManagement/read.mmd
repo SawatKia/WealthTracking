@@ -1,0 +1,59 @@
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant UserRouter as UserRouter
+    participant BaseCont as BaseController
+    participant UserCont as UserController extends<br> BaseController
+    participant Mongo as MongoObject
+    participant BaseModel as BaseModel extends<br> MongoObject
+    participant Model as UserModel extends<br> BaseModel
+
+    %% Get User
+    Client->>UserRouter: GET /users/ (get current user)
+    Note over UserRouter : verifying the path and method if it a available or allowed
+    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    opt path not available
+        UserRouter-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        UserRouter-->>Client: 405, "<method> not allowed for <path>"
+    end
+    Note over UserRouter, UserCont : this mehtod will use several times in the application
+    UserRouter->>UserCont: getCurrentUser(req, res, next)
+    UserCont->>Sec: verifyToken(req.headers.authorization)
+    Sec->>Sec: jwt.verify(token, secret)
+    opt Invalid token
+        Sec-->>UserCont: throw UnauthorizedError('Invalid token')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 401, "Invalid token"
+    end
+    Sec->>Sec: jwt.decode(token)
+    Sec-->>UserCont: decoded user object
+    UserCont->>Model: findById(decoded.id)
+    Model->>BaseModel: findById(id)
+    BaseModel->>Mongo: isValidObjectId(id)
+    opt invalid id
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: throw Error('Invalid id')
+        Model-->>UserCont: throw error
+        UserCont-->>UserRouter: next(BadRequestError('Invalid id'))
+        UserRouter-->>Client: 400, "Invalid id"
+    end
+    Mongo-->>BaseModel: true
+    opt user not found
+        BaseModel-->>Model: null
+        Model-->>UserCont: throw Error('User not found')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 404, "User not found"
+    end
+    opt error finding user
+        BaseModel-->>Model: throw Error('Error finding user')
+        Model-->>UserCont: throw error
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 500, "something went wrong"
+    end
+    BaseModel-->>Model: user data object
+    Model->>Model: Remove hashedPassword from user data
+    Model-->>UserCont: User data without password
+    UserCont-->>UserRouter: Users found
+    UserRouter-->>Client: 200, "Users found", { users }

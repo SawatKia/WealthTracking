@@ -1,0 +1,66 @@
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant UserRouter as UserRouter
+    participant BaseCont as BaseController
+    participant UserCont as UserController extends<br> BaseController
+    participant Mongo as MongoObject
+    participant BaseModel as BaseModel extends<br> MongoObject
+    participant Model as UserModel extends<br> BaseModel
+
+    %% Update User
+    Client->>UserRouter: PATCH /users/:userId (updateUserById)
+    Note over UserRouter : verifying the path and method if it a available or allowed
+    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    opt path not available
+        UserRouter-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        UserRouter-->>Client: 405, "<method> not allowed for <path>"
+    end
+    UserRouter->>UserCont: updateUser(req, res, next)
+    Note over UserCont: this method was defined in read.mmd
+    UserCont->>UserCont: this.getCurrentUser(req)
+    opt user not found
+        UserCont-->>UserRouter: throw NotFoundError('User not found')
+        UserRouter-->>Client: 404, "User not found"
+    end
+    UserCont->>UserCont: Destructoring req.body
+    opt currentPassword is not in req.body
+        UserCont-->>UserRouter: throw BadRequestError('currentPassword is required')
+        UserRouter-->>Client: 400, "currentPassword is required"
+    end
+    Note over UserCont, Model: this method will use several times in the application
+    UserCont->>Model: checkPassword(user.username, currentPassword)
+    opt Invalid password
+        Model-->>UserCont: return false
+        UserCont-->>UserRouter: throw PasswordError()
+        UserRouter-->>Client: 401, "Invalid username or password"
+    end
+    Model-->>UserCont: return true
+    opt there is no field to update specified in req.body
+        UserCont-->>UserRouter: throw BadRequestError('At least one field is required to update user information')
+        UserRouter-->>Client: 400, "At least one field is required to update user information"
+    end
+    opt newPassword != newConfirmPassword
+        UserCont-->>UserRouter: throw BadRequestError('newPassword and newConfirmPassword do not match')
+        UserRouter-->>Client: 400, "newPassword and newConfirmPassword do not match"
+    end
+    UserCont->>UserCont: normalizeUsernameEmail(newUsername, newEmail)
+    UserCont->>Model: updateById(user._id, updateFields)
+    Model->>BaseModel: findByIdAndUpdate(id, data, { new: true })
+    opt if error updating user
+        BaseModel-->>Model: throw Error('Error updating user')
+        Model-->>UserCont: throw error
+        alt error code == 11000
+            UserCont-->>UserRouter: throw BadRequestError('Username or email already exists')
+            UserRouter-->>Client: 400, "Username or email already exists"
+        else any other error
+            UserCont-->>UserRouter: next(error)
+            UserRouter-->>Client: 500, "something went wrong"
+        end
+    end
+    BaseModel-->>Model: Updated user
+    Model-->>UserCont: Updated user data
+    UserCont-->>UserRouter: User updated successfully
+    UserRouter-->>Client: 200, "User updated successfully", { updatedUser }
