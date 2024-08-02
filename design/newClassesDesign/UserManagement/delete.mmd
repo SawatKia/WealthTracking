@@ -9,8 +9,8 @@ sequenceDiagram
     participant Model as UserModel extends<br> BaseModel
 
     %% Delete User
-    Client->>UserRouter: DELETE /users/:userId (deleteUserById)
-    UserRouter->>UserCont: deleteUser(req, res, next)
+    Client->>+UserRouter: DELETE /users/:userId (deleteUserById)
+    UserRouter->>+UserCont: deleteUser(req, res, next)
     Note over UserCont: this method was defined in read.mmd
     UserCont->>UserCont: this.getCurrentUser(req)
     opt user not found
@@ -22,14 +22,14 @@ sequenceDiagram
         UserCont-->>UserRouter: throw BadRequestError('currentPassword is required')
         UserRouter-->>Client: 400, "currentPassword is required"
     end
-    UserCont->>Model: checkPassword(user.username, currentPassword)
+    UserCont->>+Model: checkPassword(user.username, currentPassword)
     opt Invalid password
         Model-->>UserCont: return false
         UserCont-->>UserRouter: throw PasswordError()
         UserRouter-->>Client: 401, "Invalid username or password"
     end
-    Model-->>UserCont: return true
-    UserCont->>BaseModel: deleteById(userId)
-    BaseModel-->>UserCont: Deleted user
-    UserCont-->>UserRouter: User deleted successfully
-    UserRouter-->>Client: 200, "User deleted successfully", { userId: deletedUser._id }
+    Model-->>-UserCont: return true
+    UserCont->>+BaseModel: deleteById(userId)
+    BaseModel-->>-UserCont: Deleted user
+    UserCont-->>-UserRouter: User deleted successfully
+    UserRouter-->>-Client: 200, "User deleted successfully", { userId: deletedUser._id }

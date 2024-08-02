@@ -9,7 +9,7 @@ sequenceDiagram
     participant Model as UserModel extends<br> BaseModel
 
     %% Update User
-    Client->>UserRouter: PATCH /users/:userId (updateUserById)
+    Client->>+UserRouter: PATCH /users/:userId (updateUserById)
     Note over UserRouter : verifying the path and method if it a available or allowed
     UserRouter->>UserRouter: MethodValidator(allowedMethods)
     opt path not available
@@ -18,7 +18,7 @@ sequenceDiagram
     opt method not allowed
         UserRouter-->>Client: 405, "<method> not allowed for <path>"
     end
-    UserRouter->>UserCont: updateUser(req, res, next)
+    UserRouter->>+UserCont: updateUser(req, res, next)
     Note over UserCont: this method was defined in read.mmd
     UserCont->>UserCont: this.getCurrentUser(req)
     opt user not found
@@ -31,13 +31,13 @@ sequenceDiagram
         UserRouter-->>Client: 400, "currentPassword is required"
     end
     Note over UserCont, Model: this method will use several times in the application
-    UserCont->>Model: checkPassword(user.username, currentPassword)
+    UserCont->>+Model: checkPassword(user.username, currentPassword)
     opt Invalid password
         Model-->>UserCont: return false
         UserCont-->>UserRouter: throw PasswordError()
         UserRouter-->>Client: 401, "Invalid username or password"
     end
-    Model-->>UserCont: return true
+    Model-->>-UserCont: return true
     opt there is no field to update specified in req.body
         UserCont-->>UserRouter: throw BadRequestError('At least one field is required to update user information')
         UserRouter-->>Client: 400, "At least one field is required to update user information"
@@ -47,8 +47,8 @@ sequenceDiagram
         UserRouter-->>Client: 400, "newPassword and newConfirmPassword do not match"
     end
     UserCont->>UserCont: normalizeUsernameEmail(newUsername, newEmail)
-    UserCont->>Model: updateById(user._id, updateFields)
-    Model->>BaseModel: findByIdAndUpdate(id, data, { new: true })
+    UserCont->>+Model: updateById(user._id, updateFields)
+    Model->>+BaseModel: findByIdAndUpdate(id, data, { new: true })
     opt if error updating user
         BaseModel-->>Model: throw Error('Error updating user')
         Model-->>UserCont: throw error
@@ -60,7 +60,7 @@ sequenceDiagram
             UserRouter-->>Client: 500, "something went wrong"
         end
     end
-    BaseModel-->>Model: Updated user
-    Model-->>UserCont: Updated user data
-    UserCont-->>UserRouter: User updated successfully
-    UserRouter-->>Client: 200, "User updated successfully", { updatedUser }
+    BaseModel-->>-Model: Updated user
+    Model-->>-UserCont: Updated user data
+    UserCont-->>-UserRouter: User updated successfully
+    UserRouter-->>-Client: 200, "User updated successfully", { updatedUser }
