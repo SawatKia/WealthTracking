@@ -1,0 +1,61 @@
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant UserRouter as UserRouter
+    participant BaseCont as BaseController
+    participant UserCont as UserController extends<br> BaseController
+    participant Mongo as MongoObject
+    participant BaseModel as BaseModel extends<br> MongoObject
+    participant Model as UserModel extends<br> BaseModel
+
+    %% Delete User
+    Client->>+UserRouter: DELETE /users/:userId (deleteUserById)
+    Note over Sec, UserRouter: this method defined in read.mmd
+    UserRouter->>+Sec: Verify Token(token)
+    Sec-->>-UserRouter: decoded user object
+    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    Note over Client,UserRouter : verifying the path and method if it a available or allowed
+    opt path not available
+        UserRouter-->>Client: 404, "<path> not available"
+    end
+    opt method not allowed
+        UserRouter-->>Client: 405, "<method> not allowed for <path>"
+    end
+    UserRouter->>+UserCont: deleteUser(req, res, next)
+    Note over UserCont: this method was defined in read.mmd
+    UserCont->>UserCont: this.getCurrentUser(req)
+    opt user not found
+        UserCont-->>UserRouter: throw NotFoundError('User not found')
+        UserRouter-->>Client: 404, "User not found"
+    end
+    UserCont->>UserCont: Destructoring req.body
+    opt currentPassword is not in req.body
+        UserCont-->>UserRouter: throw BadRequestError('currentPassword is required')
+        UserRouter-->>Client: 400, "currentPassword is required"
+    end
+    UserCont->>+Model: checkPassword(user.username, currentPassword)
+    opt Invalid password
+        Model-->>UserCont: return false
+        UserCont-->>UserRouter: throw PasswordError()
+        UserRouter-->>Client: 401, "Invalid username or password"
+    end
+    Model-->>-UserCont: return true
+    Note over UserCont, BaseModel: In actually, this method called through UserModel but there is no anything required to do in UserModel<br> so we'll show as it directly call from UserCont
+    UserCont->>+BaseModel: deleteById(userId)
+    BaseModel->>+Mongo: isValidObjectId(id)
+    opt invalid id
+        Mongo-->>BaseModel: false
+        BaseModel-->>UserCont: throw Error('Invalid id')
+        UserCont-->>UserRouter: next(BadRequestError('Invalid id'))
+        UserRouter-->>Client: 400, "Invalid id"
+    end
+    Mongo-->>-BaseModel: true
+    BaseModel->>BaseModel: findByIdAndDelete(id)
+    opt any error
+        BaseModel-->>UserCont: throw Error('Error deleting user')
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 500, "something went wrong"
+    end
+    BaseModel-->>-UserCont: Deleted user
+    UserCont-->>-UserRouter: User deleted successfully
+    UserRouter-->>-Client: 200, "User deleted successfully", { userId: deletedUser._id }
