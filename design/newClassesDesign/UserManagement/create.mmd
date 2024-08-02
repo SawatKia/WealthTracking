@@ -58,6 +58,12 @@ sequenceDiagram
         UserCont-->>UserRouter: next(error)
         UserRouter-->>Client: 400, "Invalid type: <field>"
     end
+    opt any error
+        BaseModel-->>Model: throw Error('Error creating user')
+        Model-->>UserCont: next(error)
+        UserCont-->>UserRouter: next(error)
+        UserRouter-->>Client: 500, "something went wrong" 
+    end
     BaseModel->>-Model: Save user to database
     Model-->>-UserCont: Created user
     UserCont-->>-UserRouter: User created successfully

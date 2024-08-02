@@ -10,50 +10,68 @@ sequenceDiagram
 
     %% Get User
     Client->>+UserRouter: GET /users/ (get current user)
-    Note over UserRouter : verifying the path and method if it a available or allowed
+    Note over Sec, UserRouter: this method will be used in<br>several places in the application
+    UserRouter->>+Sec: Verify Token(token)
+    alt if token is invalid
+    Note over Sec: the token maybe in Header or Cookies.<br>so this method try to extract the token from the request
+        Sec->>Sec: extractToken(request)
+    end
+    Sec->>Sec: jwt.decode(token)
+    opt Token decode error
+        Note over Sec, UserRouter: Use the same error class to<br> ensure consistency of error messages 
+        Sec-->>UserRouter: throw CredentialsException()
+        UserRouter-->>Client: 401, "Could not validate credentials"
+    end
+    opt Token expired
+        Sec-->>UserRouter: throw CredentialsException()
+        UserRouter-->>Client: 401, "Could not validate credentials"
+    end
+    opt Invalid token
+        Sec-->>UserRouter: throw CredentialsException()
+        UserRouter-->>Client: 401, "Could not validate credentials"
+    end
+    Sec-->>-UserRouter: decoded user object
     UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    Note over Client,UserRouter : verifying the path and method if it a available or allowed
     opt path not available
-        UserRouter-->>Client: 401, "<path> not available"
+        UserRouter-->>Client: 404, "<path> not available"
     end
     opt method not allowed
         UserRouter-->>Client: 405, "<method> not allowed for <path>"
     end
-    Note over UserRouter, UserCont : this mehtod will use several times in the application
     UserRouter->>+UserCont: getCurrentUser(req, res, next)
-    UserCont->>+Sec: verifyToken(req.headers.authorization)
-    Sec->>Sec: jwt.verify(token, secret)
-    opt Invalid token
-        Sec-->>UserCont: throw UnauthorizedError('Invalid token')
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 401, "Invalid token"
-    end
+    Note over UserCont, BaseCont: this method will use several times<br> in the application
+    UserCont->>+BaseCont: getCurrentUser(req)
+    BaseCont->>+Sec: Verify Token(token)
     Sec->>Sec: jwt.decode(token)
-    Sec-->>-UserCont: decoded user object
-    UserCont->>+Model: findById(decoded.id)
+    Sec-->>-BaseCont: decoded user object
+    BaseCont->>+Model: findById(decoded.id)
     Model->>+BaseModel: findById(id)
     BaseModel->>+Mongo: isValidObjectId(id)
     opt invalid id
         Mongo-->>BaseModel: false
         BaseModel-->>Model: throw Error('Invalid id')
-        Model-->>UserCont: throw error
-        UserCont-->>UserRouter: next(BadRequestError('Invalid id'))
+        Model-->>BaseCont: throw error
+        BaseCont-->>UserRouter: next(BadRequestError('Invalid id'))
         UserRouter-->>Client: 400, "Invalid id"
     end
     Mongo-->>-BaseModel: true
+    BaseModel->>BaseModel: findById(id)
     opt user not found
         BaseModel-->>Model: null
-        Model-->>UserCont: throw Error('User not found')
-        UserCont-->>UserRouter: next(error)
+        Model-->>BaseCont: throw Error('User not found')
+        BaseCont-->>UserRouter: next(error)
         UserRouter-->>Client: 404, "User not found"
     end
     opt error finding user
         BaseModel-->>Model: throw Error('Error finding user')
-        Model-->>UserCont: throw error
-        UserCont-->>UserRouter: next(error)
+        Model-->>BaseCont: throw error
+        BaseCont-->>UserRouter: next(error)
         UserRouter-->>Client: 500, "something went wrong"
     end
     BaseModel-->>-Model: user data object
     Model->>Model: Remove hashedPassword from user data
-    Model-->>-UserCont: User data without password
+    Model-->>-BaseCont: User data without password
+    BaseCont-->>-UserCont: User data
     UserCont-->>-UserRouter: Users found
     UserRouter-->>-Client: 200, "Users found", { users }
