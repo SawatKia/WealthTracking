@@ -73,5 +73,6 @@ sequenceDiagram
     end
     BaseModel-->>-Model: Deleted user
     Model-->>-UserCont: pass result
-    UserCont-->>-UserRouter: User deleted successfully
-    UserRouter-->>-Client: 200, "User deleted successfully", { userId: deletedUser._id }
+    UserCont->>UserCont: formatResponse(200, 'User deleted successfully', { userId: deletedUser._id })
+    UserCont-->>-UserRouter: Formatted response
+    UserRouter-->>-Client: 200, { status: 200, message: "User deleted successfully", data: { userId: deletedUser._id } }

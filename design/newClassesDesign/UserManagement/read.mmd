@@ -86,5 +86,6 @@ sequenceDiagram
     Model->>Model: Remove hashedPassword from user data
     Model-->>-BaseCont: User data without password
     BaseCont-->>-UserCont: User data
-    UserCont-->>-UserRouter: Users found
-    UserRouter-->>-Client: 200, "Users found", { users }
+    UserCont->>UserCont: formatResponse(200, 'User found', { user })
+    UserCont-->>-UserRouter: Formatted response
+    UserRouter-->>-Client: 200, { status: 200, message: "User found", data: { user } }

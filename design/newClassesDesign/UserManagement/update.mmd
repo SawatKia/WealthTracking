@@ -91,5 +91,6 @@ sequenceDiagram
         end
     end
     Model-->>-UserCont: Updated user data
-    UserCont-->>-UserRouter: User updated successfully
-    UserRouter-->>-Client: 200, "User updated successfully", { updatedUser }
+    UserCont->>UserCont: formatResponse(200, 'User updated successfully', { updatedUser })
+    UserCont-->>-UserRouter: Formatted response
+    UserRouter-->>-Client: 200, { status: 200, message: "User updated successfully", data: { updatedUser } }
