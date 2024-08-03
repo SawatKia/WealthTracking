@@ -15,7 +15,7 @@ sequenceDiagram
     Actor Client
     participant Router as ThirdPartyAPIRouter
     participant Cont as ThirdPartyAPIController
-    participant ApiClient as ExternalAPIServiceExternalAPIService
+    participant ApiClient as ExternalAPIService
     Actor Api as EasySlipApi
     %% EASYSLIP_API document = "https://developer.easyslip.com/document"
 
@@ -26,29 +26,32 @@ sequenceDiagram
     ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
     Client->>Router: POST /slip/
     Router->>Cont: extract_slip_data(image)
-    Cont->>Cont: verify if image was attached
     opt image not found
         Cont-->>Router: throw error "slip image not found"
-        Router->>Client: 400, "slip image not found"
+        Router-->>Client: 400, "slip image not found"
     end
-    Cont->>Cont: this.checkSlipApiAvailability()
-    opt if data.status == "available"
-    Cont->>ApiClient: verify_slip(base64Image)
+    Cont->>ApiClient: checkSlipApiAvailability()
+    opt API not available
+        ApiClient-->>Cont: return false
+        Cont-->>Router: throw error "slipApi is out of service. Please try again later."
+        Router-->>Client: 429, "slipApi is out of service. Please try again later."
+    end
+    ApiClient-->>Cont: return true
+    Cont->>ApiClient: verifySlip(base64Image)
     ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
     ApiClient->>Api: POST /verify
-    end 
     opt API unavailable
         Api-->>ApiClient: 500, any error
         ApiClient-->>Cont: throw error 
         Cont-->>Router: next(ApiError(error)) 
-        Router->>Client: 503, "API service unavailable"
+        Router-->>Client: 503, "API service unavailable"
     end
-    Api->>ApiClient: Return slip information object
+    Api-->>ApiClient: Return slip information object
     opt any error
         ApiClient-->>Cont: throw error
         Cont-->>Router: throw error 
         Router-->>Client: 500, "internal server error"
     end
-    ApiClient->>Cont: Return slip information object
-    Cont->>Router: return slip information object
-    Router->>Client: 200, "extract slip data successful",data: {"slipInfo":slipInfoObject}
+    ApiClient-->>Cont: Return slip information object
+    Cont-->>Router: formatResponse("extract slip data successful", data: {"slipInfo":slipInfoObject})
+    Router-->>Client: 200, "extract slip data successful", data: {"slipInfo":slipInfoObject}
