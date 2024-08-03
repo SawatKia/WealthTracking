@@ -25,23 +25,23 @@ sequenceDiagram
     ApiClient->>ApiClient: load EASYSLIP_API_URL from .env
     ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
 
-    Client->>Router: GET /slip/quota
-    Router->>Cont: getQuotaInformation()
-    Cont->>ApiClient: fetchQuotaInformation()
+    Client->>+Router: GET /slip/quota
+    Router->>+Cont: getQuotaInformation()
+    Cont->>+ApiClient: fetchQuotaInformation()
     ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
-    ApiClient->>Api: GET /me
+    ApiClient->>+Api: GET /me
     opt API unavailable
         Api-->>ApiClient: 500, any error
         ApiClient-->>Cont: throw error 
         Cont-->>Router: next(ApiError(error)) 
         Router->>Client: 503, "API service unavailable"
     end
-    Api-->>ApiClient: Return quota information object
+    Api-->>-ApiClient: Return quota information object
     opt any error
         ApiClient-->>Cont: throw any error
         Cont-->>Router: next(error)
         Router-->>Client: 500, "internal server error"
     end
-    ApiClient-->>Cont: Return quota information object
-    Cont-->>Router: formatResponse("slipApi quota info", data: {quotaInfo})
-    Router-->>Client: 200, "slipApi quota info", data: {quotaInfo}
+    ApiClient-->>-Cont: Return quota information object
+    Cont-->>-Router: formatResponse("slipApi quota info", data: {quotaInfo})
+    Router-->>-Client: 200, "slipApi quota info", data: {quotaInfo}

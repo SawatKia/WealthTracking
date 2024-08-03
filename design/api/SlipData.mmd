@@ -24,34 +24,34 @@ sequenceDiagram
     
     ApiClient->>ApiClient: load EASYSLIP_API_URL from .env
     ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
-    Client->>Router: POST /slip/
-    Router->>Cont: extract_slip_data(image)
+    Client->>+Router: POST /slip/
+    Router->>+Cont: extract_slip_data(image)
     opt image not found
         Cont-->>Router: throw error "slip image not found"
         Router-->>Client: 400, "slip image not found"
     end
-    Cont->>ApiClient: checkSlipApiAvailability()
+    Cont->>+ApiClient: checkSlipApiAvailability()
     opt API not available
         ApiClient-->>Cont: return false
         Cont-->>Router: throw error "slipApi is out of service. Please try again later."
         Router-->>Client: 429, "slipApi is out of service. Please try again later."
     end
-    ApiClient-->>Cont: return true
-    Cont->>ApiClient: verifySlip(base64Image)
+    ApiClient-->>-Cont: return true
+    Cont->>+ApiClient: verifySlip(base64Image)
     ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
-    ApiClient->>Api: POST /verify
+    ApiClient->>+Api: POST /verify
     opt API unavailable
         Api-->>ApiClient: 500, any error
         ApiClient-->>Cont: throw error 
         Cont-->>Router: next(ApiError(error)) 
         Router-->>Client: 503, "API service unavailable"
     end
-    Api-->>ApiClient: Return slip information object
+    Api-->>-ApiClient: Return slip information object
     opt any error
         ApiClient-->>Cont: throw error
         Cont-->>Router: throw error 
         Router-->>Client: 500, "internal server error"
     end
-    ApiClient-->>Cont: Return slip information object
-    Cont-->>Router: formatResponse("extract slip data successful", data: {"slipInfo":slipInfoObject})
-    Router-->>Client: 200, "extract slip data successful", data: {"slipInfo":slipInfoObject}
+    ApiClient-->>-Cont: Return slip information object
+    Cont-->>-Router: formatResponse("extract slip data successful", data: {"slipInfo":slipInfoObject})
+    Router-->>-Client: 200, "extract slip data successful", data: {"slipInfo":slipInfoObject}
