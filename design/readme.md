@@ -40,6 +40,6 @@ run the file `../design/json_grid_visualizer.html` with live server extension
 | 9. SettingManagement                    |   [ ]  |   [ ]  |
 | 10. NotificationsManagement             |   [ ]  |   [ ]  |
 **------------------Api------------------**
-| 4. EasySlip.mmd                         |   [ ]  |   [ ]  |
+| 4. EasySlip                             |   [x]  |   [x]  |
 
 
