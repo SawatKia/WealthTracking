@@ -22,7 +22,7 @@ graph TD
     APIGateway --> DebtsRouter
     APIGateway --> ThirdPartyAPIRouter
     end
-    
+
     subgraph "Controller Layer"
     UsersRouter --> UserController
     BankAccountsRouter --> BankAccountController
@@ -39,6 +39,9 @@ graph TD
     IncomesExpensesController --> IncomesExpensesModel
     DebtController --> DebtModel
     end
+
+    ThirdPartyAPIRouter -.Note.-Note{{the generic names, to keep the architecture diagram\n flexible and maintain a higher level of abstraction}}
+
     
     UserModel --> MongoDB[(MongoDB)]
     BankAccountModel --> MongoDB[(MongoDB)]
