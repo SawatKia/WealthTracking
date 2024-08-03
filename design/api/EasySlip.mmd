@@ -1,8 +1,8 @@
 sequenceDiagram
     Actor Client
-    participant Router
-    participant Cont as slipController
-    participant ApiClient as EasySlipApiClient
+    participant Router as ThirdPartyAPIRouter
+    participant Cont as ThirdPartyAPIController
+    participant ApiClient as ExternalAPIServiceExternalAPIService
     Actor Api as EasySlipApi
     %% EASYSLIP_API document = "https://developer.easyslip.com/document"
 
