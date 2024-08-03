@@ -1,12 +1,25 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 180 
+        } 
+    }
+}%%
 sequenceDiagram
     participant Client
     participant Sec as Security
     participant UserRouter as UserRouter
     participant BaseCont as BaseController
-    participant UserCont as UserController extends<br> BaseController
+    participant UserCont as UserController extends BaseController
     participant Mongo as MongoObject
-    participant BaseModel as BaseModel extends<br> MongoObject
-    participant Model as UserModel extends<br> BaseModel
+    participant BaseModel as BaseModel extends MongoObject
+    participant Model as UserModel extends BaseModel
 
     %% Update User
     Client->>+UserRouter: PATCH /users/:userId (updateUserById)
@@ -43,11 +56,11 @@ sequenceDiagram
     end
     Model-->>-UserCont: return true
     opt there is no field to update specified in req.body
-        UserCont-->>UserRouter: throw BadRequestError('At least one field is required<br> to update user information')
+        UserCont-->>UserRouter: throw BadRequestError('At least one field is required to update user information')
         UserRouter-->>Client: 400, "At least one field is required to update user information"
     end
     opt newPassword != newConfirmPassword
-        UserCont-->>UserRouter: throw BadRequestError('newPassword and<br> newConfirmPassword do not match')
+        UserCont-->>UserRouter: throw BadRequestError('newPassword and newConfirmPassword do not match')
         UserRouter-->>Client: 400, "newPassword and newConfirmPassword do not match"
     end
     UserCont->>UserCont: normalizeUsernameEmail(newUsername, newEmail)
@@ -55,14 +68,17 @@ sequenceDiagram
     opt if newPassword in updateFields
         Model->>Model: this_hashPassword(newPassword)
     end
-    Model->>+Mongo: isValidObjectId(id)
+    Model->>+BaseModel: isValidObjectId(id)
+    BaseModel->>+Mongo: pass call
     opt invalid id
-        Mongo-->>Model: false
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: pass result
         Model-->>UserCont: throw Error('Invalid id')
         UserCont-->>UserRouter: next(BadRequestError('Invalid id'))
         UserRouter-->>Client: 400, "Invalid id"
     end
-    Mongo-->>-Model: true
+    Mongo-->>-BaseModel: true
+    BaseModel-->>-Model: pass result
     Model->>Model: findByIdAndUpdate(id, data, { new: true })
     opt if error updating user
         Model-->>UserCont: throw error

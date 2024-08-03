@@ -1,24 +1,37 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 180 
+        } 
+    }
+}%%
 sequenceDiagram
     participant Client
     participant Sec as Security
     participant UserRouter as UserRouter
     participant BaseCont as BaseController
-    participant UserCont as UserController extends<br> BaseController
+    participant UserCont as UserController extends BaseController
     participant Mongo as MongoObject
-    participant BaseModel as BaseModel extends<br> MongoObject
-    participant Model as UserModel extends<br> BaseModel
+    participant BaseModel as BaseModel extends MongoObject
+    participant Model as UserModel extends BaseModel
 
     %% Get User
     Client->>+UserRouter: GET /users/ (get current user)
-    Note over Sec, UserRouter: this method will be used in<br>several places in the application
+    Note over Sec, UserRouter: this method will be used in several places in the application
     UserRouter->>+Sec: Verify Token(token)
     alt if token is invalid
-    Note over Sec: the token maybe in Header or Cookies.<br>so this method try to extract the token from the request
+    Note over Sec: the token maybe in Header or Cookies. so this method try to extract the token from the request
         Sec->>Sec: extractToken(request)
     end
     Sec->>Sec: jwt.decode(token)
     opt Token decode error
-        Note over Sec, UserRouter: Use the same error class to<br> ensure consistency of error messages 
+        Note over Sec, UserRouter: Use the same error class to ensure consistency of error messages 
         Sec-->>UserRouter: throw CredentialsException()
         UserRouter-->>Client: 401, "Could not validate credentials"
     end
@@ -40,12 +53,12 @@ sequenceDiagram
         UserRouter-->>Client: 405, "<method> not allowed for <path>"
     end
     UserRouter->>+UserCont: getCurrentUser(req, res, next)
-    Note over UserCont, BaseCont: this method will use several times<br> in the application
+    Note over UserCont, BaseCont: this method will use several times in the application
     UserCont->>+BaseCont: getCurrentUser(req)
     BaseCont->>+Sec: Verify Token(token)
     Sec->>Sec: jwt.decode(token)
     Sec-->>-BaseCont: decoded user object
-    BaseCont->>+Model: findById(decoded.id)
+    BaseCont->>+Model: findId(decoded.id)
     Model->>+BaseModel: findById(id)
     BaseModel->>+Mongo: isValidObjectId(id)
     opt invalid id
@@ -60,7 +73,7 @@ sequenceDiagram
     opt user not found
         BaseModel-->>Model: null
         Model-->>BaseCont: throw Error('User not found')
-        BaseCont-->>UserRouter: next(error)
+        BaseCont-->>UserRouter: next(UserNotFoundError())
         UserRouter-->>Client: 404, "User not found"
     end
     opt error finding user

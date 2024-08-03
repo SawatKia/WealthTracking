@@ -1,11 +1,24 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 180 
+        } 
+    }
+}%%
 sequenceDiagram
     participant Client
     participant UserRouter as UserRouter
     participant BaseCont as BaseController
-    participant UserCont as UserController extends<br> BaseController
+    participant UserCont as UserController extends BaseController
     participant MongoObject as MongoObject
-    participant BaseModel as BaseModel extends<br> MongoObject
-    participant Model as UserModel extends<br> BaseModel
+    participant BaseModel as BaseModel extends MongoObject
+    participant Model as UserModel extends BaseModel
 
     %% Create User
     Client->>+UserRouter: POST /users/ (create User)
@@ -53,7 +66,7 @@ sequenceDiagram
         UserRouter-->>Client: 400, "Missing required field: <field>"
     end
     opt invalid type
-        BaseModel-->>Model: throw Error('Invalid type: <field>.<br>expected <type>, got <type>')
+        BaseModel-->>Model: throw Error('Invalid type: <field>. expected <type>, got <type>')
         Model-->>UserCont: next(error)
         UserCont-->>UserRouter: next(error)
         UserRouter-->>Client: 400, "Invalid type: <field>"

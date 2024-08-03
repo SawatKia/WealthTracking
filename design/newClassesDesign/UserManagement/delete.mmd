@@ -1,3 +1,16 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 180 
+        } 
+    }
+}%%
 sequenceDiagram
     participant Client
     participant Sec as Security
@@ -41,7 +54,8 @@ sequenceDiagram
     end
     Model-->>-UserCont: return true
     Note over UserCont, BaseModel: In actually, this method called through UserModel but there is no anything required to do in UserModel<br> so we'll show as it directly call from UserCont
-    UserCont->>+BaseModel: deleteById(userId)
+    UserCont->>+Model: deleteById(userId)
+    Model->>+BaseModel: pass call
     BaseModel->>+Mongo: isValidObjectId(id)
     opt invalid id
         Mongo-->>BaseModel: false
@@ -52,10 +66,12 @@ sequenceDiagram
     Mongo-->>-BaseModel: true
     BaseModel->>BaseModel: findByIdAndDelete(id)
     opt any error
-        BaseModel-->>UserCont: throw Error('Error deleting user')
+        BaseModel-->>Model: throw Error('Error deleting user')
+        Model-->>UserCont: pass error
         UserCont-->>UserRouter: next(error)
         UserRouter-->>Client: 500, "something went wrong"
     end
-    BaseModel-->>-UserCont: Deleted user
+    BaseModel-->>-Model: Deleted user
+    Model-->>-UserCont: pass result
     UserCont-->>-UserRouter: User deleted successfully
     UserRouter-->>-Client: 200, "User deleted successfully", { userId: deletedUser._id }
