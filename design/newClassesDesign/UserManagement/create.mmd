@@ -7,7 +7,7 @@
         },
         "sequence": { 
             "wrap": true, 
-            "width": 180 
+            "width": 200 
         } 
     }
 }%%
@@ -31,7 +31,7 @@ sequenceDiagram
         UserRouter-->>Client: 405, "<method> not allowed for <path>"
     end
     UserRouter->>+UserCont: register(req, res, next)
-    UserCont->>UserCont: Destructoring req.body
+    UserCont->>UserCont: Destructuring req.body
     UserCont->>+BaseCont: verifyBody(req.body, requiredFields)
     opt length of body != length of requiredFields
         BaseCont-->>UserCont: throw BadRequestError('Invalid number of body')
@@ -44,6 +44,10 @@ sequenceDiagram
         UserRouter-->>Client: 400, "<field> is required"
     end
     BaseCont->>-UserCont: return true
+    opt Passwords don't match
+        UserCont-->>UserRouter: throw BadRequestError("Password don't match")
+        UserRouter-->>Client: 400, "Password don't match"
+    end
     UserCont->>UserCont: validateEmail(email)
     opt Invalid email
         UserCont-->>UserRouter: throw BadRequestError("Invalid email")
@@ -53,7 +57,7 @@ sequenceDiagram
     UserCont->>+Model: createUser(newUserData)
     Model->>Model: _hashPassword(password)
     opt error hashing password
-        Model-->>UserCont: throw InternalServerError('Error hashing password')
+        Model-->>UserCont: throw Error('Error hashing password')
         UserCont-->>UserRouter: next(error)
         UserRouter-->>Client: 500, "something went wrong"
     end
@@ -71,6 +75,13 @@ sequenceDiagram
         UserCont-->>UserRouter: next(error)
         UserRouter-->>Client: 400, "Invalid type: <field>"
     end
+    opt Duplicate key error (code 11000)
+        BaseModel-->>Model: throw Error with code 11000
+        Model-->>UserCont: next(error)
+        UserCont->>UserCont: Check error.code === 11000
+        UserCont-->>UserRouter: next(new DuplicateError())
+        UserRouter-->>Client: Appropriate error response for duplicate
+    end
     opt any error
         BaseModel-->>Model: throw Error('Error creating user')
         Model-->>UserCont: next(error)
@@ -79,5 +90,6 @@ sequenceDiagram
     end
     BaseModel->>-Model: Save user to database
     Model-->>-UserCont: Created user
-    UserCont-->>-UserRouter: User created successfully
-    UserRouter-->>-Client: 201, "User created successfully", { id: createdId }
+    UserCont->>UserCont: formatResponse(201, 'User created successfully', { createdId })
+    UserCont-->>-UserRouter: Formatted response
+    UserRouter-->>-Client: 201, { status: 201, message: "User created successfully", data: { createdId } }
