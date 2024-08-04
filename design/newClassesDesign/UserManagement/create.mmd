@@ -13,83 +13,79 @@
 }%%
 sequenceDiagram
     participant Client
-    participant UserRouter as UserRouter
+    participant Sec as Security
+    participant Router as UserRouter
     participant BaseCont as BaseController
-    participant UserCont as UserController extends BaseController
+    participant Cont as UserController extends BaseController
     participant MongoObject as MongoObject
     participant BaseModel as BaseModel extends MongoObject
     participant Model as UserModel extends BaseModel
 
     %% Create User
-    Client->>+UserRouter: POST /users/ (create User)
-    Note over UserRouter : verifying the path and method if it allowed
-    UserRouter->>UserRouter: MethodValidator(allowedMethods)
+    Client->>+Router: POST /users/ (create User)
+    Router->>Router: MethodValidator(allowedMethods)
     opt path not available
-        UserRouter-->>Client: 401, "<path> not available"
+        Router-->>Client: 401, "<path> not available"
     end
     opt method not allowed
-        UserRouter-->>Client: 405, "<method> not allowed for <path>"
+        Router-->>Client: 405, "<method> not allowed for <path>"
     end
-    UserRouter->>+UserCont: register(req, res, next)
-    UserCont->>UserCont: Destructuring req.body
-    UserCont->>+BaseCont: verifyBody(req.body, requiredFields)
-    opt length of body != length of requiredFields
-        BaseCont-->>UserCont: throw BadRequestError('Invalid number of body')
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 400, "Invalid number of body"
-    end
+    Router->>+Cont: register(req, res, next)
+    Cont->>Cont: Destructuring req.body
+    Note over Cont: requiredFields = ['username', 'email', 'password', 'confirmPassword']
+    Cont->>+BaseCont: verifyBody(req.body, requiredFields)
     opt <field> is not in req.body
-        BaseCont-->>UserCont: throw BadRequestError('<field> is required')
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 400, "<field> is required"
+        BaseCont-->>Cont: throw BadRequestError('<field> is required')
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "<field> is required"
     end
-    BaseCont->>-UserCont: return true
+    BaseCont->>-Cont: return true
     opt Passwords don't match
-        UserCont-->>UserRouter: throw BadRequestError("Password don't match")
-        UserRouter-->>Client: 400, "Password don't match"
+        Cont-->>Router: throw BadRequestError("Password don't match")
+        Router-->>Client: 400, "Password don't match"
     end
-    UserCont->>UserCont: validateEmail(email)
+    Cont->>Cont: validateEmail(email)
     opt Invalid email
-        UserCont-->>UserRouter: throw BadRequestError("Invalid email")
-        UserRouter-->>Client: 400, "Invalid email"
+        Cont-->>Router: throw BadRequestError("Invalid email")
+        Router-->>Client: 400, "Invalid email"
     end
-    UserCont->>UserCont: normalizeUsernameEmail(username, email)
-    UserCont->>+Model: createUser(newUserData)
+    Cont->>Cont: normalizeUsernameEmail(username, email)
+    Cont->>+Model: createUser(newUserData)
     Model->>Model: _hashPassword(password)
     opt error hashing password
-        Model-->>UserCont: throw Error('Error hashing password')
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 500, "something went wrong"
+        Model-->>Cont: throw Error('Error hashing password')
+        Cont-->>Router: next(error)
+        Router-->>Client: 500, "something went wrong"
     end
     Model->>+BaseModel: create(data)
     BaseModel->>BaseModel: _verifyData(data)
     opt missing required field
         BaseModel-->>Model: throw Error('Missing required field: <field>')
-        Model-->>UserCont: next(error)
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 400, "Missing required field: <field>"
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "Missing required field: <field>"
     end
     opt invalid type
         BaseModel-->>Model: throw Error('Invalid type: <field>. expected <type>, got <type>')
-        Model-->>UserCont: next(error)
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 400, "Invalid type: <field>"
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "Invalid type: <field>"
     end
     opt Duplicate key error (code 11000)
         BaseModel-->>Model: throw Error with code 11000
-        Model-->>UserCont: next(error)
-        UserCont->>UserCont: Check error.code === 11000
-        UserCont-->>UserRouter: next(new DuplicateError())
-        UserRouter-->>Client: Appropriate error response for duplicate
+        Model-->>Cont: next(error)
+        Cont->>Cont: Check error.code === 11000
+        Cont-->>Router: next(new DuplicateError())
+        Router-->>Client: Appropriate error response for duplicate
     end
     opt any error
         BaseModel-->>Model: throw Error('Error creating user')
-        Model-->>UserCont: next(error)
-        UserCont-->>UserRouter: next(error)
-        UserRouter-->>Client: 500, "something went wrong" 
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(error)
+        Router-->>Client: 500, "something went wrong" 
     end
     BaseModel->>-Model: Save user to database
-    Model-->>-UserCont: Created user
-    UserCont->>UserCont: formatResponse(201, 'User created successfully', { createdId })
-    UserCont-->>-UserRouter: Formatted response
-    UserRouter-->>-Client: 201, { status: 201, message: "User created successfully", data: { createdId } }
+    Model-->>-Cont: Created user
+    Cont->>Cont: formatResponse(201, 'User created successfully', { createdId })
+    Cont-->>-Router: Formatted response
+    Router-->>-Client: 201, { status: 201, message: "User created successfully", data: { createdId } }
