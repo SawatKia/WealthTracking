@@ -7,7 +7,59 @@
         },
         "sequence": { 
             "wrap": true, 
-            "width": 180 
+            "width": 200 
         } 
     }
 }%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as BankRouter
+    participant BaseCont as BaseController
+    participant Cont as BankController extends BaseController
+    participant UserCont as UserController
+    participant MongoObject
+    participant BaseModel as BaseModel extends MongoObject
+    participant BankModel as BankAccountModel extends BaseModel
+
+    Client->>+Router: POST /banks/ (create Bank Account)
+    Note over Sec, Router: this method defined in read.mmd, the error are omitted for brevity
+    Router->>+Sec: Verify Token(token)
+    Sec-->>-Router: decoded user object
+    Note over Router : verifying the path and method if it allowed
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 405, "<method> not allowed for <path>"
+    end
+    Router->>+Cont: create_bank_account(req, res, next)
+    Cont->>Cont: Destructuring req.body
+    Note over Cont: requiredFields = ['displayName', 'accountName', 'accountNumber', 'bankName', 'accountType', 'initialBalance']
+    Cont->>+BaseCont: verifyBody(req.body, requiredFields)
+    opt <field> is not in req.body
+        BaseCont-->>Cont: throw BadRequestError('<field> is required')
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "<field> is required"
+    end
+    BaseCont->>-Cont: return true
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: User data
+    Cont->>Cont: Create new bank account object with user._id
+    Cont->>+BankModel: create(newBankAccount)
+    BankModel->>+BaseModel: create(data)
+    BaseModel->>BaseModel: _verifyData(data)
+    opt Data verification failed
+        BaseModel-->>BankModel: throw Error
+        BankModel-->>Cont: throw error
+        Cont->>Cont: Log error
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "Invalid data for bank account"
+    end
+    BaseModel->>-BankModel: Save account to database
+    BankModel->>-Cont: return created account id
+    Cont->>Cont: formatResponse(201, 'Bank account created successfully', { id })
+    Cont-->>-Router: Formatted response
+    Router-->>-Client: 201, { status: 201, message: "Bank account created successfully", data: { id } }
