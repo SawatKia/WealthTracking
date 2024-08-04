@@ -44,14 +44,8 @@ sequenceDiagram
         Router-->>Client: 401, "Could not validate credentials"
     end
     Sec-->>-Router: decoded user object
+    Note over Router : this method defined in create.mmd, the error are omitted for brevity
     Router->>Router: MethodValidator(allowedMethods)
-    Note over Client,Router : verifying the path and method if it a available or allowed
-    opt path not available
-        Router-->>Client: 404, "<path> not available"
-    end
-    opt method not allowed
-        Router-->>Client: 405, "<method> not allowed for <path>"
-    end
     Router->>+Cont: getCurrentUser(req, res, next)
     Note over Cont, BaseCont: this method will use several times in the application
     Cont->>+BaseCont: getCurrentUser(req)

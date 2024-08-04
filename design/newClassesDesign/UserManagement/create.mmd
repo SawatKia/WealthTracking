@@ -23,6 +23,7 @@ sequenceDiagram
 
     %% Create User
     Client->>+Router: POST /users/ (create User)
+    Note over Router: this method will be used in several places in the application
     Router->>Router: MethodValidator(allowedMethods)
     opt path not available
         Router-->>Client: 401, "<path> not available"
