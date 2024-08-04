@@ -200,10 +200,13 @@ class UserController extends BaseController {
             }
             logger.debug(`user found: ${JSON.stringify(user)}`);
 
-
             // Verify that the new password and confirm new password match
             if (newPassword !== confirmNewPassword) {
                 throw new BadRequestError('New password and confirm new password do not match');
+            }
+            if (!this.validateEmail(email)) {
+                logger.error('Invalid email');
+                throw new BadRequestError("Invalid email");
             }
 
             const normalizedData = this.normalizeUsernameEmail(newUsername, newEmail);
