@@ -1,0 +1,57 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 202 
+        } 
+    }
+}%%
+sequenceDiagram
+    Actor Client
+    participant Router as ThirdPartyAPIRouter
+    participant Cont as ThirdPartyAPIController
+    participant ApiClient as ExternalAPIService
+    Actor Api as EasySlipApi
+    %% EASYSLIP_API document = "https://developer.easyslip.com/document"
+
+    %% add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
+    %% add EASYSLIP_API_KEY from Easy api to .env
+    
+    ApiClient->>ApiClient: load EASYSLIP_API_URL from .env
+    ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
+    Client->>+Router: POST /slip/
+    Router->>+Cont: extract_slip_data(image)
+    opt image not found
+        Cont-->>Router: throw error "slip image not found"
+        Router-->>Client: 400, "slip image not found"
+    end
+    Cont->>+ApiClient: checkSlipApiAvailability()
+    opt API not available
+        ApiClient-->>Cont: return false
+        Cont-->>Router: throw error "slipApi is out of service. Please try again later."
+        Router-->>Client: 429, "slipApi is out of service. Please try again later."
+    end
+    ApiClient-->>-Cont: return true
+    Cont->>+ApiClient: verifySlip(base64Image)
+    ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
+    ApiClient->>+Api: POST /verify
+    opt API unavailable
+        Api-->>ApiClient: 500, any error
+        ApiClient-->>Cont: throw error 
+        Cont-->>Router: next(ApiError(error)) 
+        Router-->>Client: 503, "API service unavailable"
+    end
+    Api-->>-ApiClient: Return slip information object
+    opt any error
+        ApiClient-->>Cont: throw error
+        Cont-->>Router: throw error 
+        Router-->>Client: 500, "internal server error"
+    end
+    ApiClient-->>-Cont: Return slip information object
+    Cont-->>-Router: formatResponse("extract slip data successful", data: {"slipInfo":slipInfoObject})
+    Router-->>-Client: 200, "extract slip data successful", data: {"slipInfo":slipInfoObject}

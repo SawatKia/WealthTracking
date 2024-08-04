@@ -37,9 +37,10 @@ class UserModel extends BaseModel {
     async checkPassword(username, password) {
         try {
             logger.info('Checking password');
+            username = username.toLowerCase();
             logger.debug(`User to check password, Username: ${username} Password: ${password}`);
-
-            const user = await this.find("username", username);
+            //TODO - test below line changed from this.find to this.findOne
+            const user = await this.findOne({ username: username });
             logger.debug(`User from find: ${JSON.stringify(user)}`);
 
             if (!user) {
@@ -92,6 +93,7 @@ class UserModel extends BaseModel {
     async getAllUsers() {
         try {
             logger.info('getting all users');
+            //FIXME - to use this.finds in BaseMOdel instead of find
             let users = await this.model.find({}).lean(); // Convert Mongoose documents to plain JS objects
             if (users.length === 0) {
                 logger.error('No users found');
@@ -119,6 +121,7 @@ class UserModel extends BaseModel {
                 delete data.password;
                 logger.info('Password hashed');
             }
+            //FIXME - make it partial update support
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);

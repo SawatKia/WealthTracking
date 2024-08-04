@@ -1,0 +1,47 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            "fontFamily": "system-ui",
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 202 
+        } 
+    }
+}%%
+sequenceDiagram
+    Actor Client
+    participant Router as ThirdPartyAPIRouter
+    participant Cont as ThirdPartyAPIController
+    participant ApiClient as ExternalAPIService
+    Actor Api as EasySlipApi
+    %% EASYSLIP_API document = "https://developer.easyslip.com/document"
+
+    %% add EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1"<br>to .env
+    %% add EASYSLIP_API_KEY from Easy api to .env
+    
+    ApiClient->>ApiClient: load EASYSLIP_API_URL from .env
+    ApiClient->>ApiClient: load EASYSLIP_API_KEY from .env
+
+    Client->>+Router: GET /slip/quota
+    Router->>+Cont: getQuotaInformation()
+    Cont->>+ApiClient: fetchQuotaInformation()
+    ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
+    ApiClient->>+Api: GET /me
+    opt API unavailable
+        Api-->>ApiClient: 500, any error
+        ApiClient-->>Cont: throw error 
+        Cont-->>Router: next(ApiError(error)) 
+        Router->>Client: 503, "API service unavailable"
+    end
+    Api-->>-ApiClient: Return quota information object
+    opt any error
+        ApiClient-->>Cont: throw any error
+        Cont-->>Router: next(error)
+        Router-->>Client: 500, "internal server error"
+    end
+    ApiClient-->>-Cont: Return quota information object
+    Cont-->>-Router: formatResponse("slipApi quota info", data: {quotaInfo})
+    Router-->>-Client: 200, "slipApi quota info", data: {quotaInfo}

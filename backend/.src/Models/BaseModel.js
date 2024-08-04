@@ -88,17 +88,17 @@ class BaseModel extends MongoObject {
         }
     }
 
-    async find(criteria, value) {
-        try {
-            logger.info(`Finding ${this.model.modelName}`);
-            logger.debug(`Finding in ${this.model.modelName} with ${criteria}: ${value}`);
-            const query = { [criteria]: value };
-            return await this.model.findOne(query);
-        } catch (error) {
-            logger.error(`Error finding ${this.model.modelName}: ${error.message}`);
-            throw new Error(`Find operation failed: ${error.message}`);
-        }
-    }
+    // async find(criteria, value) {
+    //     try {
+    //         logger.info(`Finding ${this.model.modelName}`);
+    //         logger.debug(`Finding in ${this.model.modelName} with ${criteria}: ${value}`);
+    //         const query = { [criteria]: value };
+    //         return await this.model.findOne(query);
+    //     } catch (error) {
+    //         logger.error(`Error finding ${this.model.modelName}: ${error.message}`);
+    //         throw new Error(`Find operation failed: ${error.message}`);
+    //     }
+    // }
 
     async finds(criteria, value, sorting = { field: '_id', order: 'asc' }) {
         try {

@@ -97,6 +97,12 @@ docker-compose up -d --build
 - Examine the design directory to understand how the backend works.
 - to run only backend part select `Docker: Attach to Node (with docker-rebuild)`. Check your app with Postman at *localhost:PORT*.
 - to fully-rebuild, you also need to do the Frontend Setup
+- to list the structure, navigate to your desired directory and use this command `tree /F /A > backend_structure.txt`
+- This command does the following:
+  - `tree`: Displays the directory structure
+  - `/F`: Displays the names of the files in each folder
+  - `/A` option tells the tree command to use ASCII characters instead of extended characters. This will produce output using "|" and "+" symbols
+  - `> backend_structure.txt`: Redirects the output to a text file named "backend_structure.txt"
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json
