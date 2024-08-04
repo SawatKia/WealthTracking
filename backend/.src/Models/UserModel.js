@@ -121,6 +121,7 @@ class UserModel extends BaseModel {
                 delete data.password;
                 logger.info('Password hashed');
             }
+            //FIXME - make it partial update support
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
