@@ -17,11 +17,11 @@ sequenceDiagram
     participant Router as BankRouter
     participant BaseCont as BaseController
     participant Cont as BankAccountController extends BaseController
-    participant MongoObject
+    participant Mongo as MongoObject
     participant BaseModel as BaseModel extends MongoObject
     participant Model as BankAccountModel extends BaseModel
 
-    Client->>+Router: POST /banks/ (create Bank Account)
+    Client->>+Router: GET /banks/:bankAccountId (get Bank Account by bankAccountId)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -51,10 +51,10 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: createBankAccount(req, res, next)
-    Cont->>Cont: Destructuring req.body
-    Note over Cont: requiredFields = ['displayName', 'accountName', 'accountNumber', 'bankName', 'accountType', 'initialBalance']
-    Cont->>+BaseCont: verifyBody(req.body, requiredFields)
+    Router->>+Cont: getBankAccountById(req, res, next)
+    Cont->>Cont: parseParams(req.params)
+    Note over Cont: requiredFields = ['bankAccountId']
+    Cont->>+BaseCont: verifyBody(bankAccountId, requiredFields)
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
@@ -64,21 +64,22 @@ sequenceDiagram
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: User data
-    Cont->>Cont: Create new bank account data object with user._id
-    Cont->>+Model: create(newBankAccount)
-    Model->>+BaseModel: create(data)
-    BaseModel->>BaseModel: _verifyData(data)
-    opt missing required field
-        BaseModel-->>Model: throw Error('Missing required field: <field>')
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 400, "Missing required field: <field>"
+    Cont->>+Model: findById(bankAccountId)
+    Model->>+BaseModel: pass call
+    BaseModel->>+Mongo: isValidObjectId(bankAccountId)
+    opt invalid bankAccountId
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: throw Error('Invalid bankAccountId')
+        Model-->>Cont: pass error
+        Cont-->>Router: next(BadRequestError('Invalid bankAccountId'))
+        Router-->>Client: 400, "Invalid bankAccountId"
     end
-    opt invalid type
-        BaseModel-->>Model: throw Error('Invalid type: <field>. expected <type>, got <type>')
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 400, "Invalid type: <field>"
+    Mongo-->>-BaseModel: true
+    opt Bank account not found
+        BaseModel-->>Model: return null
+        Model-->>Cont: pass result
+        Cont-->>Router: throw NotFoundError('Bank account not found')
+        Router-->>Client: 404, "Bank account not found"
     end
     opt any error occurred
         BaseModel-->>Model: throw Error
@@ -86,8 +87,15 @@ sequenceDiagram
         Cont-->>Router: next(error)
         Router-->>Client: 500, "something went wrong"
     end
-    BaseModel->>-Model: Save account to database
-    Model->>-Cont: return created account object
-    Cont->>Cont: formatResponse(201, 'Bank account created successfully', { bankAccountId })
+    BaseModel->>-Model: return bank account object
+    Model-->>-Cont: pass result
+    Cont->>+BaseCont: verifyOwnership(user, bankAccount)
+    opt Bank account user id does not match current user id
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+    Cont->>Cont: formatResponse(200, 'Search successful', { bankAccount })
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 201, { status: 201, message: "Bank account created successfully", data: { bankAccountId } }
+    Router-->>-Client: 200, { status: 200, message: "Search successful", data: { bankAccount } }
