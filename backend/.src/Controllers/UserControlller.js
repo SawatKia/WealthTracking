@@ -50,6 +50,7 @@ class UserController extends BaseController {
             const newUserData = { username, email, password, memberSince: new Date(), role: 'admin' };
             const newAdmin = await this.UserModel.createUser(newUserData, true);
 
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(201).json(formatResponse(201, 'Admin created successfully', { id: newAdmin._id }));
         } catch (error) {
             next(error);
@@ -80,6 +81,7 @@ class UserController extends BaseController {
             const user = await this.UserModel.createUser(newUserData);
             logger.debug(`user created: ${JSON.stringify(user)}`);
             const createdId = this.UserModel.toStringId(user._id);
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(201).json(formatResponse(201, 'User created successfully', { id: createdId }));
         } catch (error) {
             logger.error(`Error creating user: ${JSON.stringify(error)}`);
@@ -100,6 +102,7 @@ class UserController extends BaseController {
                 return res.status(200).json(formatResponse(200, 'No users found'));
             }
             logger.debug(`users: ${JSON.stringify(users)}`);
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(200).json(formatResponse(200, 'Users found', { users }));
         } catch (error) {
             logger.error(`Error getting all users: ${error.message}`);
@@ -130,6 +133,7 @@ class UserController extends BaseController {
                 logger.error('Invalid username or password');
                 throw new PasswordError();
             }
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(200).json(formatResponse(200, 'checkPassword pass'));
         } catch (error) {
             logger.error(`Error checkPassword: ${error.message}`);
@@ -215,6 +219,7 @@ class UserController extends BaseController {
             logger.debug(`Fields and datas to be updated: ${JSON.stringify(updateFields)}`);
             const updatedUser = await this.UserModel.updateById(user._id, updateFields);
             logger.debug(`updated User: ${JSON.stringify(updatedUser)}`);
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(200).json(formatResponse(200, 'User updated successfully', { updatedUser: updatedUser }));
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
@@ -258,6 +263,7 @@ class UserController extends BaseController {
             }
             const deletedUser = await this.UserModel.deleteById(userId);
             logger.debug(`deleted user: ${JSON.stringify(deletedUser)}`);
+            //FIXME - to send formatResponse to UserRouter, and add middleware in UserRouter to send response to client
             res.status(200).json(formatResponse(200, 'User deleted successfully', { userId: deletedUser._id }));
         } catch (error) {
             logger.error(`Error deleting user: ${error.message}`);
