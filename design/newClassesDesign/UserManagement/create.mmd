@@ -35,9 +35,9 @@ sequenceDiagram
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['username', 'email', 'password', 'confirmPassword']
     Cont->>+BaseCont: verifyBody(req.body, requiredFields)
-    opt <field> is not in req.body
-        BaseCont-->>Cont: throw BadRequestError('<field> is required')
-        Cont-->>Router: next(error)
+    opt missing required fields
+        BaseCont-->>Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 400, "<field> is required"
     end
     BaseCont->>-Cont: return true
@@ -72,18 +72,16 @@ sequenceDiagram
         Cont-->>Router: next(error)
         Router-->>Client: 400, "Invalid type: <field>"
     end
-    opt Duplicate key error (code 11000)
-        BaseModel-->>Model: throw Error with code 11000
-        Model-->>Cont: next(error)
-        Cont->>Cont: Check error.code === 11000
-        Cont-->>Router: next(new DuplicateError())
-        Router-->>Client: Appropriate error response for duplicate
-    end
-    opt any error
-        BaseModel-->>Model: throw Error('Error creating user')
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 500, "something went wrong" 
+    opt if error creating user
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: throw error
+        alt error code == 11000
+            Cont-->>Router: throw DuplicateError()
+            Router-->>Client: 409, "Username or email already exists"
+        else any other error
+            Cont-->>Router: next(error)
+            Router-->>Client: 500, "something went wrong"
+        end
     end
     BaseModel->>-Model: Save user to database
     Model-->>-Cont: Created user
