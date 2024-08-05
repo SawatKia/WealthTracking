@@ -23,11 +23,35 @@ sequenceDiagram
 
     %% Delete User
     Client->>+Router: DELETE /users/:userId (deleteUserById)
-    Note over Sec, Router: this method defined in read.mmd, the error are omitted for brevity
+    Note over Sec, Router: this method defined in read.mmd
     Router->>+Sec: Verify Token(token)
+    alt if token is invalid
+    Note over Sec: the token maybe in Header or Cookies. so this method try to extract the token from the request
+        Sec->>Sec: extractToken(request)
+    end
+    Sec->>Sec: jwt.decode(token)
+    opt Token decode error
+        Note over Sec, Router: Use the same error class to ensure consistency of error messages 
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
+    opt Token expired
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
+    opt Invalid token
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
     Sec-->>-Router: decoded user object
-    Note over Router : this method defined in create.mmd, the error are omitted for brevity
+    Note over Router : this method defined in create.mmd
     Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 405, "<method> not allowed for <path>"
+    end
     Router->>+Cont: deleteUser(req, res, next)
     Note over Cont: this method was defined in read.mmd
     Cont->>Cont: this.getCurrentUser(req)
@@ -47,18 +71,18 @@ sequenceDiagram
         Router-->>Client: 401, "Invalid username or password"
     end
     Model-->>-Cont: return true
-    Note over Cont, BaseModel: In actually, this method called through UserModel but there is no anything required to do in UserModel<br> so we'll show as it directly call from Cont
     Cont->>+Model: deleteById(userId)
     Model->>+BaseModel: pass call
-    BaseModel->>+Mongo: isValidObjectId(id)
-    opt invalid id
+    BaseModel->>+Mongo: isValidObjectId(userId)
+    opt invalid userId
         Mongo-->>BaseModel: false
-        BaseModel-->>Cont: throw Error('Invalid id')
-        Cont-->>Router: next(BadRequestError('Invalid id'))
-        Router-->>Client: 400, "Invalid id"
+        BaseModel-->>Model: throw Error('Invalid userId')
+        Model-->>Cont: pass error
+        Cont-->>Router: next(BadRequestError('Invalid userId'))
+        Router-->>Client: 400, "Invalid userId"
     end
     Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: findByIdAndDelete(id)
+    BaseModel->>BaseModel: findByIdAndDelete(userId)
     opt any error
         BaseModel-->>Model: throw Error('Error deleting user')
         Model-->>Cont: pass error

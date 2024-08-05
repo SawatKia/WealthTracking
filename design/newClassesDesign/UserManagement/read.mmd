@@ -44,26 +44,32 @@ sequenceDiagram
         Router-->>Client: 401, "Could not validate credentials"
     end
     Sec-->>-Router: decoded user object
-    Note over Router : this method defined in create.mmd, the error are omitted for brevity
+    Note over Router : this method defined in create.mmd
     Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 405, "<method> not allowed for <path>"
+    end
     Router->>+Cont: getCurrentUser(req, res, next)
     Note over Cont, BaseCont: this method will use several times in the application
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont->>+Sec: Verify Token(token)
     Sec->>Sec: jwt.decode(token)
     Sec-->>-BaseCont: decoded user object
-    BaseCont->>+Model: findId(decoded.id)
-    Model->>+BaseModel: findById(id)
-    BaseModel->>+Mongo: isValidObjectId(id)
-    opt invalid id
+    BaseCont->>+Model: findUserById(decoded.userId)
+    Model->>+BaseModel: findById(userId)
+    BaseModel->>+Mongo: isValidObjectId(userId)
+    opt invalid userId
         Mongo-->>BaseModel: false
-        BaseModel-->>Model: throw Error('Invalid id')
+        BaseModel-->>Model: throw Error('Invalid userId')
         Model-->>BaseCont: throw error
-        BaseCont-->>Router: next(BadRequestError('Invalid id'))
-        Router-->>Client: 400, "Invalid id"
+        BaseCont-->>Router: next(BadRequestError('Invalid userId'))
+        Router-->>Client: 400, "Invalid userId"
     end
     Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: findById(id)
+    BaseModel->>BaseModel: findById(userId)
     opt user not found
         BaseModel-->>Model: null
         Model-->>BaseCont: throw Error('User not found')
