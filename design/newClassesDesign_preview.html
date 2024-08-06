@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>newClassesDesign Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        #menu {
+            width: 250px;
+            height: 100vh;
+            background-color: #f0f0f0;
+            padding: 20px;
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #content {
+            margin-left: 290px;
+            /* 250px + 20px padding on both sides */
+            padding: 20px;
+            width: calc(100% - 290px);
+            box-sizing: border-box;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        #backToTop {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        #backToTop:hover {
+            background-color: #0056b3;
+        }
+
+        #backToTop.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu">
+        <h2>Menu</h2>
+        <h3>1. High-level Design</h3>
+        <ul>
+            <li><a href="#generalFlow">General Flow</a></li>
+            <li><a href="#softwareArchitecture">Software Architecture</a></li>
+            <li><a href="#userFlow">User Flow</a></li>
+        </ul>
+        <h3>2. Our System</h3>
+        <h4>User Management</h4>
+        <ul>
+            <li><a href="#userCreate">Create</a></li>
+            <li><a href="#userRead">Read</a></li>
+            <li><a href="#userUpdate">Update</a></li>
+            <li><a href="#userDelete">Delete</a></li>
+        </ul>
+        <h4>Bank Account Management</h4>
+        <ul>
+            <li><a href="#bankAdd">Add</a></li>
+            <li><a href="#bankReadAll">Read All</a></li>
+            <li><a href="#bankReadOne">Read One</a></li>
+            <li><a href="#bankUpdate">Update</a></li>
+            <li><a href="#bankDelete">Delete</a></li>
+        </ul>
+        <h3>3. Other Systems (3rd-party API)</h3>
+        <ul>
+            <li><a href="#quotaCheck">Quota Check</a></li>
+            <li><a href="#slipData">Slip Data</a></li>
+        </ul>
+    </div>
+
+    <div id="content">
+        <div class="section" id="highLevelDesign">
+            <h2>1. High-level Design</h2>
+            <div id="generalFlow">
+                <h3>General Flow</h3>
+                <img src="newClassesDesign/GeneralFlow.svg" alt="General Flow">
+            </div>
+            <div id="softwareArchitecture">
+                <h3>Software Architecture</h3>
+                <img src="newClassesDesign/SoftwareArchitectureDiagram.svg" alt="Software Architecture Diagram">
+            </div>
+            <div id="userFlow">
+                <h3>User Flow</h3>
+                <img src="newClassesDesign/UserFlow.svg" alt="User Flow">
+            </div>
+        </div>
+
+        <div class="section" id="ourSystem">
+            <h2>2. Our System</h2>
+            <div id="userManagement">
+                <h3>User Management</h3>
+                <div id="userCreate">
+                    <h4>Create</h4>
+                    <img src="newClassesDesign/UserManagement/create.svg" alt="User Create">
+                </div>
+                <div id="userRead">
+                    <h4>Read</h4>
+                    <img src="newClassesDesign/UserManagement/read.svg" alt="User Read">
+                </div>
+                <div id="userUpdate">
+                    <h4>Update</h4>
+                    <img src="newClassesDesign/UserManagement/update.svg" alt="User Update">
+                </div>
+                <div id="userDelete">
+                    <h4>Delete</h4>
+                    <img src="newClassesDesign/UserManagement/delete.svg" alt="User Delete">
+                </div>
+            </div>
+            <div id="bankAccountManagement">
+                <h3>Bank Account Management</h3>
+                <div id="bankAdd">
+                    <h4>Add</h4>
+                    <img src="newClassesDesign/BankAccountManagement/add.svg" alt="Bank Account Add">
+                </div>
+                <div id="bankReadAll">
+                    <h4>Read All</h4>
+                    <img src="newClassesDesign/BankAccountManagement/ReadAll.svg" alt="Bank Account Read All">
+                </div>
+                <div id="bankReadOne">
+                    <h4>Read One</h4>
+                    <img src="newClassesDesign/BankAccountManagement/ReadOne.svg" alt="Bank Account Read One">
+                </div>
+                <div id="bankUpdate">
+                    <h4>Update</h4>
+                    <img src="newClassesDesign/BankAccountManagement/update..svg" alt="Bank Account Update">
+                </div>
+                <div id="bankDelete">
+                    <h4>Delete</h4>
+                    <img src="newClassesDesign/BankAccountManagement/Delete.svg" alt="Bank Account Delete">
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="otherSystems">
+            <h2>3. Other Systems (3rd-party API)</h2>
+            <div id="quotaCheck">
+                <h3>Quota Check</h3>
+                <img src="newClassesDesign/api/QuotaCheck.svg" alt="Quota Check">
+            </div>
+            <div id="slipData">
+                <h3>Slip Data</h3>
+                <img src="newClassesDesign/api/SlipData.svg" alt="Slip Data">
+            </div>
+        </div>
+    </div>
+
+    <button id="backToTop" title="Back to Top">↑</button>
+
+    <script>
+        const backToTopButton = document.getElementById("backToTop");
+
+        window.onscroll = function () {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopButton.classList.add("visible");
+            } else {
+                backToTopButton.classList.remove("visible");
+            }
+        };
+
+        backToTopButton.onclick = function () {
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        };
+    </script>
+</body>
+
+</html>
