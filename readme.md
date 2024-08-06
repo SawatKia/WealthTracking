@@ -103,6 +103,7 @@ docker-compose up -d --build
   - `/F`: Displays the names of the files in each folder
   - `/A` option tells the tree command to use ASCII characters instead of extended characters. This will produce output using "|" and "+" symbols
   - `> backend_structure.txt`: Redirects the output to a text file named "backend_structure.txt"
+- to undo the lastest git local commit use this command `git reset --soft HEAD~1`
 ### Remember, you don't need to rebuild every time unless:
  - You've made changes to your Dockerfile
  - You've added or updated dependencies in your package.json
