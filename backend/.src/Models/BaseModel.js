@@ -115,6 +115,7 @@ class BaseModel extends MongoObject {
     async updateById(id, data) {
         try {
             logger.info(`Updating ${this.model.modelName} with id: ${id}`);
+            //FIXME - make htis support partial updates
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             throw new Error(`Update operation failed: ${error.message}`);

@@ -112,6 +112,7 @@ class UserModel extends BaseModel {
     }
 
 
+    //FIXME - change name
     async updateById(id, data) {
         try {
             logger.info('Updating user by id');
@@ -121,7 +122,7 @@ class UserModel extends BaseModel {
                 delete data.password;
                 logger.info('Password hashed');
             }
-            //FIXME - make it partial update support
+            //FIXME - after changed this mehtod name, call updateById instead
             return await this.model.findByIdAndUpdate(id, data, { new: true });
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
