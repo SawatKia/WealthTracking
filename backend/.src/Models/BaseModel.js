@@ -13,55 +13,17 @@ class BaseModel extends MongoObject {
         this.model = mongoose.model(modelName, schema);
     }
 
-    _verifyData(data) {
-        try {
-            logger.info(`Verifying data`);
-            logger.debug(`Data to verify: ${JSON.stringify(data)}`);
-            // Check if all required fields exist
-            const requiredPaths = this.model.schema.requiredPaths();
-            logger.info(`Checking for required fields`);
-            logger.debug(`Required fields: ${requiredPaths}`);
-            for (const path of requiredPaths) {
-                logger.debug(`Checking for required field: ${path}`);
-                if (!data.hasOwnProperty(path)) {
-                    logger.error(`Missing required field: ${path}`);
-                    throw new Error(`Missing required field: ${path}`);
-                }
-            }
-            logger.info(`All required fields are present`);
-
-            // Verify types of all fields
-            logger.info('Verifying types of all fields');
-            for (const key in data) {
-                if (data.hasOwnProperty(key)) {
-                    const value = data[key];
-                    const schemaType = this.model.schema.path(key);
-                    logger.debug(`checking field ${key} type`);
-
-                    // Compare the type correctly using Mongoose's schema type
-                    if (schemaType && schemaType.instance !== value.constructor.name) {
-                        logger.error(`Invalid type for field ${key}. Expected ${schemaType.instance}, got ${value.constructor.name}`);
-                        throw new Error(`Invalid type for field ${key}. Expected ${schemaType.instance}, got ${value.constructor.name}`);
-                    }
-                    logger.debug(`Field ${key} has valid type`);
-                }
-            }
-            logger.info('all fields have valid types');
-        } catch (error) {
-            logger.error(`Error verifying data: ${error.message}`);
-            throw error;
-        }
-    }
 
     async create(data) {
         try {
             logger.info(`Creating new ${this.model.modelName}`);
-            this._verifyData(data);
-            const newDoc = new this.model(data);
-            logger.debug(`Creating new ${this.model.modelName}: ${JSON.stringify(newDoc)}`);
-            return await newDoc.save();
+            const document = new this.model(data);
+            await document.validate(); // Explicitly validate the data
+            await document.save(); // Save the document if validation passes
+            logger.debug(`Creating new ${this.model.modelName} document: ${JSON.stringify(document)}`);
+            return document;
         } catch (error) {
-            logger.error(`Error creating new ${this.model.modelName}: ${error.message}`);
+            logger.error(`Error creating new ${this.model.modelName} document: ${error.message}`);
             throw error;
         }
     }
@@ -115,8 +77,17 @@ class BaseModel extends MongoObject {
     async updateById(id, data) {
         try {
             logger.info(`Updating ${this.model.modelName} with id: ${id}`);
-            //FIXME - make htis support partial updates
-            return await this.model.findByIdAndUpdate(id, data, { new: true });
+            if (!super.isValidObjectId(id)) {
+                throw new Error('Invalid ObjectId');
+            }
+            const document = await this.model.findById(id);
+            if (!document) {
+                throw new Error('Document not found');
+            }
+            Object.assign(document, data);
+            await document.validate(); // Explicitly validate the data
+            await document.save(); // Save the document if validation passes
+            return document;
         } catch (error) {
             throw new Error(`Update operation failed: ${error.message}`);
         }
@@ -125,6 +96,9 @@ class BaseModel extends MongoObject {
     async deleteById(id) {
         try {
             logger.info(`Deleting ${this.model.modelName}`);
+            if (!super.isValidObjectId(id)) {
+                throw new Error('Invalid ObjectId');
+            }
             logger.debug(`Deleting ${this.model.modelName} with id: ${id}`);
             return await this.model.findByIdAndDelete(id);
         } catch (error) {

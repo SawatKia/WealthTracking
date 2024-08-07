@@ -3,9 +3,7 @@ const router = express.Router();
 require('dotenv').config();
 
 const logging = require('../configs/logger');
-const { AppError } = require('../utils/error');
-const formatResponse = require("../utils/responseFormatter");
-const MethodValidator = require('../utils/allowedMethod');
+const { errorHandler, methodValidator, responseHandler } = require('../middleware/Indexmiddleware');
 const BankAccountController = require('../Controllers/BankAccountController');
 
 const logger = new logging('BankAccountRoutes');
@@ -18,23 +16,17 @@ const allowedMethods = {
     // '/:ObjectId': ['GET'],
     '/user/:ObjectId': ['GET'],
 };
-router.use(MethodValidator(allowedMethods));
+router.use(methodValidator(allowedMethods));
 router.get('/', (req, res) => {
     logger.info('request to /api/v1/bank-account/ endpoint');
     res.status(200).json(formatResponse(200, 'you are connected to the BankAccountRoutes'));
 });
-router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont));
-router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont));
-router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont));
-router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont));
+router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont), responseHandler);
+router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont), responseHandler);
+router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont), responseHandler);
+router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont), responseHandler);
 
-router.use((err, req, res, next) => {
-    if (err instanceof AppError) {
-        res.status(err.statusCode).json(formatResponse(err.statusCode, err.message));
-    } else {
-        res.status(500).json(formatResponse(500, 'Internal Server Error'));
-    }
-});
+router.use(errorHandler);
 
 module.exports = router;
 
