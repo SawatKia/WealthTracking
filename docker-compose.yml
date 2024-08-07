@@ -6,7 +6,7 @@ services:
       - ./.env
     ports:
       - "${PORT}:${PORT}"
-      # - "9229:9229"
+      - "9229:9229"
     volumes:
       - ./frontend/build:/usr/src/Wealthtrack-app/frontend_build
     depends_on: [ "mongodb" ]

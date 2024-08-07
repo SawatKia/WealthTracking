@@ -1,4 +1,4 @@
-const { MethodNotAllowedError, BadRequestError } = require('../utils/error');
+const { MethodNotAllowedError, BadRequestError, NotFoundError } = require('../utils/error');
 const logging = require('../configs/logger');
 const { isValidObjectId } = require('mongoose');
 require('dotenv').config();
@@ -9,7 +9,8 @@ const isObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(id);
 
 const MethodValidator = (allowedMethods) => {
     return (req, res, next) => {
-        logger.info('Validating request method');
+        logger.info('Validating request path and method');
+        logger.info(`allowedMethod: ${JSON.stringify(allowedMethods)}`);
         const { method, path } = req;
         logger.debug(`Validating ${method} method for ${path}`);
 
@@ -31,8 +32,9 @@ const MethodValidator = (allowedMethods) => {
         // Check if the exact path or the modified path exists in allowedMethods
         if (!allowedMethods[path] && !allowedMethods[fullPath]) {
             logger.error(`${path} not available`);
-            return next(new BadRequestError(`${path} not available`));
+            return next(new NotFoundError(`${path} not available`));
         }
+
         logger.info(`${path} available`);
 
         // Get the allowed methods for the exact path or the modified path

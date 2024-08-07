@@ -52,7 +52,7 @@ class PasswordError extends AppError {
 
 class DuplicateError extends AppError {
     constructor() {
-        super('Username or email already in use', 409);
+        super('Username or email already exists', 409);
     }
 }
 

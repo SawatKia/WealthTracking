@@ -7,13 +7,44 @@ const BaseModel = require("./BaseModel");
 
 const logger = new Logging('UserModel');
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    hashedPassword: { type: String, required: true },
-    memberSince: { type: Date, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    username: {
+        type: String,
+        required: [true, 'Username is required'],
+        unique: [true, 'Username must be unique']
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: [true, 'Email must be unique']
+    },
+    hashedPassword: {
+        type: String,
+        required: [true, 'Password is required']
+    },
+    memberSince: {
+        type: Date,
+        required: [true, 'Member since date is required']
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
 });
 const saltRounds = parseInt(process.env.SALT_ROUNDS);
+
+// userSchema.pre('save', async function(next) {
+//     if (this.isModified('hashedPassword')) {
+//         try {
+//             logger.info('Hashing password before saving');
+//             this.hashedPassword = await bcrypt.hash(this.hashedPassword, saltRounds);
+//         } catch (error) {
+//             logger.error(`Error hashing password: ${error.message}`);
+//             return next(error);
+//         }
+//     }
+//     next();
+// });
 
 class UserModel extends BaseModel {
     constructor() {
@@ -112,7 +143,7 @@ class UserModel extends BaseModel {
     }
 
 
-    async updateById(id, data) {
+    async updateUserById(id, data) {
         try {
             logger.info('Updating user by id');
             logger.debug(`Updating user id: ${id} with data: ${JSON.stringify(data)}`);
@@ -121,8 +152,11 @@ class UserModel extends BaseModel {
                 delete data.password;
                 logger.info('Password hashed');
             }
-            //FIXME - make it partial update support
-            return await this.model.findByIdAndUpdate(id, data, { new: true });
+            let updatedUser = await this.updateById(id, data);
+            updatedUser = updatedUser.toObject();
+            delete updatedUser.hashedPassword;
+            logger.info('deleted hashed password')
+            return updatedUser;
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
             throw error;

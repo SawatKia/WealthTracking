@@ -7,23 +7,22 @@
         },
         "sequence": { 
             "wrap": true, 
-            "width": 180 
+            "width": 200 
         } 
     }
 }%%
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router as UserRouter
+    participant Router as BankRouter
     participant BaseCont as BaseController
-    participant Cont as UserController extends BaseController
+    participant Cont as BankAccountController extends BaseController
     participant Mongo as MongoObject
     participant BaseModel as BaseModel extends MongoObject
-    participant Model as UserModel extends BaseModel
+    participant Model as BankAccountModel extends BaseModel
 
-    %% Get User
-    Client->>+Router: GET /users/ (get current user)
-    Note over Sec, Router: this method will be used in several places in the application
+    Client->>+Router: GET /banks/
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
     Note over Sec: the token maybe in Header or Cookies. so this method try to extract the token from the request
@@ -44,7 +43,7 @@ sequenceDiagram
         Router-->>Client: 401, "Could not validate credentials"
     end
     Sec-->>-Router: decoded user object
-    Note over Router : this method defined in create.mmd
+    Note over Router : this method defined in UserManagement/create.mmd
     Router->>Router: MethodValidator(allowedMethods)
     opt path not available
         Router-->>Client: 401, "<path> not available"
@@ -52,40 +51,42 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: getCurrentUser(req, res, next)
-    Note over Cont, BaseCont: this method will use several times in the application
+    Router->>+Cont: getBankAccounts(request)
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
-    BaseCont->>+Sec: Verify Token(token)
-    Sec->>Sec: jwt.decode(token)
-    Sec-->>-BaseCont: decoded user object
-    BaseCont->>+Model: findUserById(decoded.userId)
-    Model->>+BaseModel: findById(userId)
+    BaseCont-->>-Cont: User data
+    Cont->>+Model: finds("userId", user._id)
+    Model->>+BaseModel: pass call
     BaseModel->>+Mongo: isValidObjectId(userId)
     opt invalid userId
         Mongo-->>BaseModel: false
         BaseModel-->>Model: throw Error('Invalid userId')
-        Model-->>BaseCont: throw error
-        BaseCont-->>Router: next(BadRequestError('Invalid userId'))
+        Model-->>Cont: pass error
+        Cont-->>Router: next(BadRequestError('Invalid userId'))
         Router-->>Client: 400, "Invalid userId"
     end
     Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: findById(userId)
-    opt user not found
-        BaseModel-->>Model: null
-        Model-->>BaseCont: throw Error('User not found')
-        BaseCont-->>Router: next(UserNotFoundError())
-        Router-->>Client: 404, "User not found"
+    opt Bank account not found
+        BaseModel-->>Model: return null
+        Model-->>Cont: pass result
+        Cont-->>Router: throw NotFoundError('Bank account not found')
+        Router-->>Client: 404, "Bank account not found"
     end
-    opt error finding user
-        BaseModel-->>Model: throw Error('Error finding user')
-        Model-->>BaseCont: throw error
-        BaseCont-->>Router: next(error)
+    opt any error occurred
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: pass error
+        Cont-->>Router: next(error)
         Router-->>Client: 500, "something went wrong"
     end
-    BaseModel-->>-Model: user data object
-    Model->>Model: Remove hashedPassword from user data
-    Model-->>-BaseCont: User data without password
-    BaseCont-->>-Cont: User data
-    Cont->>Cont: formatResponse(200, 'User found', { user })
+    BaseModel->>-Model: return array of bank account objects
+    Model-->>-Cont: pass results
+    Cont->>+BaseCont: verifyOwnership(user, bankAccount)
+    opt Bank account user id does not match current user id
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+    Cont->>Cont: formatResponse(200, 'Bank accounts retrieved successfully', { bankAccounts })
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 200, { status: 200, message: "User found", data: { user } }
+    Router-->>-Client: 200, { status: 200, message: "Bank accounts retrieved successfully", data: { bankAccounts } }

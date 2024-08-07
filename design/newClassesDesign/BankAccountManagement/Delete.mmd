@@ -21,7 +21,7 @@ sequenceDiagram
     participant BaseModel as BaseModel extends MongoObject
     participant Model as BankAccountModel extends BaseModel
 
-    Client->>+Router: PATCH /bank/update
+    Client->>+Router: DELETE /bank/delete
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -51,16 +51,15 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: updateBankAccount(req, res, next)
+    Router->>+Cont: deleteBankAccount(requ, res, next)
     Note over Cont, BaseCont: requiredFields = ['bankAccountId']
     Cont->>+BaseCont: verifyBody(req.body, requiredFields)
-    opt missing required fields
-        BaseCont-->>Cont: throw Error('<field> is required')
-        Cont-->>Router: next(BadRequestError(error))
-        Router-->>Client: 400, "<field> is required"
+    opt Missing or invalid parameters
+        BaseCont-->>Cont: throw BadRequestError
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "Invalid delete parameters"
     end
-    BaseCont-->>-Cont: return true
-    Cont->>Cont: Destructuring req.body
+    BaseCont->>-Cont: return true
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: User data
@@ -96,16 +95,26 @@ sequenceDiagram
         Router-->>Client: 403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-    Cont->>+Model: updateById(bankAccountId, updateData)
+    Cont->>+Model: deleteById(bankAccountId)
     Model->>+BaseModel: pass call
-    opt any error occurred
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: throw error
+    BaseModel->>+Mongo: isValidObjectId(bankAccountId)
+    opt invalid bankAccountId
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: throw Error('Invalid bankAccountId')
+        Model-->>Cont: pass error
+        Cont-->>Router: next(BadRequestError('Invalid bankAccountId'))
+        Router-->>Client: 400, "Invalid bankAccountId"
+    end
+    Mongo-->>-BaseModel: true
+    BaseModel->>BaseModel: findByIdAndDelete(bankAccountId)
+    opt any error
+        BaseModel-->>Model: throw Error('Error deleting user')
+        Model-->>Cont: pass error
         Cont-->>Router: next(error)
         Router-->>Client: 500, "something went wrong"
     end
-    BaseModel->>-Model: return updated bank account object
+    BaseModel-->>-Model: Deleted user
     Model-->>-Cont: pass result
-    Cont->>Cont: formatResponse(200, 'Bank account updated successfully', { updatedAccount })
+    Cont->>Cont: formatResponse(200, 'Bank account deleted successfully')
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 200, { status: 200, message: "Bank account updated successfully", data: { updatedAccount } }
+    Router-->>-Client: 200, { status: 200, message: "Bank account deleted successfully" }

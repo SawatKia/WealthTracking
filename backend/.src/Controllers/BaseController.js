@@ -26,10 +26,6 @@ class BaseController {
         logger.info('Verifying body');
         logger.debug(`Verifying body: ${JSON.stringify(body)}, required fields: ${requiredFields}`);
         try {
-            if (Object.keys(body).length !== requiredFields.length) {
-                logger.error('Invalid number of body');
-                throw new BadRequestError('Invalid number of body');
-            }
             for (const field of requiredFields) {
                 if (!body.hasOwnProperty(field) || body[field] === null || body[field] === undefined || body[field] === '') {
                     logger.error(`${field} is required`);
