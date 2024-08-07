@@ -53,8 +53,9 @@ sequenceDiagram
         Router-->>Client: 405, "<method> not allowed for <path>"
     end
     Router->>+Cont: deleteUser(req, res, next)
-    Note over Cont: this method was defined in read.mmd
-    Cont->>Cont: this.getCurrentUser(req)
+    Note over Cont, BaseCont: this method defined in read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: User data
     opt user not found
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 404, "User not found"

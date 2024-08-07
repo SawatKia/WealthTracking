@@ -36,8 +36,8 @@ sequenceDiagram
     Note over Cont: requiredFields = ['username', 'email', 'password', 'confirmPassword']
     Cont->>+BaseCont: verifyBody(req.body, requiredFields)
     opt missing required fields
-        BaseCont-->>Cont: throw Error('<field> is required')
-        Cont-->>Router: next(BadRequestError(error))
+        BaseCont-->>Cont: throw BadRequestError('<field> is required')
+        Cont-->>Router: next(error)
         Router-->>Client: 400, "<field> is required"
     end
     BaseCont->>-Cont: return true
@@ -59,18 +59,18 @@ sequenceDiagram
         Router-->>Client: 500, "something went wrong"
     end
     Model->>+BaseModel: create(data)
-    BaseModel->>BaseModel: _verifyData(data)
+    BaseModel->>BaseModel: validate()
     opt missing required field
-        BaseModel-->>Model: throw Error('Missing required field: <field>')
+        BaseModel-->>Model: throw Error
         Model-->>Cont: next(error)
         Cont-->>Router: next(error)
-        Router-->>Client: 400, "Missing required field: <field>"
+        Router-->>Client: 400, "<field> is required"
     end
     opt invalid type
-        BaseModel-->>Model: throw Error('Invalid type: <field>. expected <type>, got <type>')
+        BaseModel-->>Model: throw Error
         Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 400, "Invalid type: <field>"
+        Cont-->>Router: next(BadRequestError(error.message))
+        Router-->>Client: 400, <error.message>
     end
     opt if error creating user
         BaseModel-->>Model: throw Error

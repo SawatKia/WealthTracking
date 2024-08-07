@@ -1,0 +1,16 @@
+{
+    "generalFlow_check": true,
+    "softwareArchitecture_check": true,
+    "userFlow_check": true,
+    "userCreate_check": true,
+    "userRead_check": false,
+    "userUpdate_check": true,
+    "userDelete_check": false,
+    "bankAdd_check": false,
+    "bankReadAll_check": false,
+    "bankReadOne_check": false,
+    "bankUpdate_check": false,
+    "bankDelete_check": false,
+    "quotaCheck_check": false,
+    "slipData_check": false
+}
