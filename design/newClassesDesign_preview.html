@@ -75,7 +75,112 @@
             display: block;
             margin: 0 auto;
         }
+
+        input[type="checkbox"] {
+            line-height: 2.1ex;
+        }
+
+        input[type="checkbox"] {
+            position: absolute;
+            left: -999em;
+        }
+
+        input[type="checkbox"]+label {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            font-family: 'SExtralight';
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"]+label::before {
+            content: "";
+            display: inline-block;
+            vertical-align: -25%;
+            height: 2ex;
+            width: 2ex;
+            background-color: white;
+            border: 1px solid rgb(166, 166, 166);
+            border-radius: 4px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+            margin-right: 0.5em;
+        }
+
+        input[type="checkbox"]:checked+label::after {
+            content: '';
+            position: absolute;
+            width: 1.2ex;
+            height: 0.4ex;
+            background: rgba(0, 0, 0, 0);
+            top: 0.9ex;
+            left: 0.4ex;
+            border: 3px solid rgb(24, 211, 108);
+            border-top: none;
+            border-right: none;
+            -webkit-transform: rotate(-45deg);
+            -moz-transform: rotate(-45deg);
+            -o-transform: rotate(-45deg);
+            -ms-transform: rotate(-45deg);
+            transform: rotate(-45deg);
+        }
+
+        input[type="checkbox"]:checked+label .verified-text {
+            display: inline-block;
+        }
+
+        .verified-text {
+            display: none;
+            margin-left: 0.5em;
+            color: green;
+            font-size: 12px;
+        }
+
+        #menu ul li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        #menu ul li a {
+            flex-grow: 1;
+        }
+
+        #saveButton {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #saveButton:hover {
+            background-color: #0056b3;
+        }
     </style>
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch("./checkedData.json")
+                .then(response => response.json())
+                .then(data => {
+                    Object.keys(data).forEach(key => {
+                        const checkbox = document.getElementById(key);
+                        if (checkbox) {
+                            checkbox.checked = data[key];
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error("Error loading checkedData.json:", error);
+                });
+        });
+    </script>
 </head>
 
 <body>
@@ -83,31 +188,88 @@
         <h2>Menu</h2>
         <h3>1. High-level Design</h3>
         <ul>
-            <li><a href="#generalFlow">General Flow</a></li>
-            <li><a href="#softwareArchitecture">Software Architecture</a></li>
-            <li><a href="#userFlow">User Flow</a></li>
+            <li>
+                <a href="#generalFlow">General Flow</a>
+                <input type="checkbox" id="generalFlow_check">
+                <label for="generalFlow_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#softwareArchitecture">Software Architecture</a>
+                <input type="checkbox" id="softwareArchitecture_check">
+                <label for="softwareArchitecture_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userFlow">User Flow</a>
+                <input type="checkbox" id="userFlow_check">
+                <label for="userFlow_check"><span class="verified-text">code verified</span></label>
+            </li>
         </ul>
         <h3>2. Our System</h3>
         <h4>User Management</h4>
         <ul>
-            <li><a href="#userCreate">Create</a></li>
-            <li><a href="#userRead">Read</a></li>
-            <li><a href="#userUpdate">Update</a></li>
-            <li><a href="#userDelete">Delete</a></li>
+            <li>
+                <a href="#userCreate">Create</a>
+                <input type="checkbox" id="userCreate_check">
+                <label for="userCreate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userRead">Read</a>
+                <input type="checkbox" id="userRead_check">
+                <label for="userRead_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userUpdate">Update</a>
+                <input type="checkbox" id="userUpdate_check">
+                <label for="userUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userDelete">Delete</a>
+                <input type="checkbox" id="userDelete_check">
+                <label for="userDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
         </ul>
         <h4>Bank Account Management</h4>
         <ul>
-            <li><a href="#bankAdd">Add</a></li>
-            <li><a href="#bankReadAll">Read All</a></li>
-            <li><a href="#bankReadOne">Read One</a></li>
-            <li><a href="#bankUpdate">Update</a></li>
-            <li><a href="#bankDelete">Delete</a></li>
+            <li>
+                <a href="#bankAdd">Add</a>
+                <input type="checkbox" id="bankAdd_check">
+                <label for="bankAdd_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankReadAll">Read All</a>
+                <input type="checkbox" id="bankReadAll_check">
+                <label for="bankReadAll_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankReadOne">Read One</a>
+                <input type="checkbox" id="bankReadOne_check">
+                <label for="bankReadOne_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankUpdate">Update</a>
+                <input type="checkbox" id="bankUpdate_check">
+                <label for="bankUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankDelete">Delete</a>
+                <input type="checkbox" id="bankDelete_check">
+                <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
         </ul>
         <h3>3. Other Systems (3rd-party API)</h3>
         <ul>
-            <li><a href="#quotaCheck">Quota Check</a></li>
-            <li><a href="#slipData">Slip Data</a></li>
+            <li>
+                <a href="#quotaCheck">Quota Check</a>
+                <input type="checkbox" id="quotaCheck_check">
+                <label for="quotaCheck_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#slipData">Slip Data</a>
+                <input type="checkbox" id="slipData_check">
+                <label for="slipData_check"><span class="verified-text">code verified</span></label>
+            </li>
         </ul>
+        <button id="saveButton">Save</button>
     </div>
 
     <div id="content">
@@ -203,6 +365,44 @@
             document.body.scrollTop = 0; // For Safari
             document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
         };
+
+        document.getElementById("saveButton").addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll("input[type='checkbox']");
+            const data = {};
+            checkboxes.forEach(checkbox => {
+                data[checkbox.id] = checkbox.checked;
+            });
+            // Convert the data object to JSON string
+            const jsonData = JSON.stringify(data);
+
+            // Send the JSON data to the server to save it in a file
+            // You can use AJAX or fetch to send the data to the server
+            // Here, I'm using a simple console.log to simulate the server request
+            console.log(jsonData);
+
+            // Create a Blob object with the JSON data
+            const blob = new Blob([jsonData], { type: 'application/json' });
+
+            // Create a temporary anchor element
+            const anchor = document.createElement('a');
+            anchor.href = URL.createObjectURL(blob);
+            anchor.download = 'data.json';
+
+            // Programmatically click the anchor element to trigger the download
+            anchor.click();
+
+            // Save the file to the root folder
+            const fileReader = new FileReader();
+            fileReader.onloadend = function () {
+                const fileContent = fileReader.result;
+                const fileName = 'checkedData.json';
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(new Blob([fileContent], { type: 'application/json' }));
+                link.download = fileName;
+                link.click();
+            };
+            fileReader.readAsText(blob);
+        });
     </script>
 </body>
 
