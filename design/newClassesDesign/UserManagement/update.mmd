@@ -102,7 +102,20 @@ sequenceDiagram
         Router-->>Client: 400, "Invalid userId"
     end
     Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: findByIdAndUpdate(userId, data, { new: true })
+    BaseModel->>BaseModel: validate()
+    opt missing required field
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "<field> is required"
+    end
+    opt invalid type
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(BadRequestError(error.message))
+        Router-->>Client: 400, <error.message>
+    end
+    BaseModel->>BaseModel: save()
     opt if error updating user
         BaseModel-->>Model: throw Error
         Model-->>Cont: throw error
