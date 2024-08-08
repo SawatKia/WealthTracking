@@ -13,21 +13,20 @@ const allowedMethods = {
     '/:ObjectId': ['PATCH', 'DELETE'],
     '/Admins': ['POST']
 };
-
 if (isDev) {
     allowedMethods['/check'] = ['POST'];
-    router.post('/check', UserCont.checkPassword.bind(UserCont));
-    router.get('/', UserCont.getAllUsers.bind(UserCont));
 }
+
 router.use(methodValidator(allowedMethods));
 
 router.post('/', UserCont.register.bind(UserCont));
+router.post('/check', UserCont.checkPassword.bind(UserCont));
+router.get('/', UserCont.getAllUsers.bind(UserCont));
 router.patch('/:userId', UserCont.updateUser.bind(UserCont));
 router.delete('/:userId', UserCont.deleteUser.bind(UserCont));
 router.post('/Admins', adminMiddleware, UserCont.addAdmin.bind(UserCont));
 
 router.use(responseHandler);
-// Error-handling middleware
 router.use(errorHandler);
 
 module.exports = router;
