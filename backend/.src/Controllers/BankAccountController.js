@@ -2,7 +2,7 @@ const BankAccountModel = require('../Models/BankAccountModel');
 const BaseController = require('./BaseController');
 const logging = require('../configs/logger');
 const formatResponse = require('../utils/responseFormatter');
-const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError, DuplicateError } = require('../utils/error');
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError } = require('../utils/error');
 
 const logger = new logging('BankAccountController');
 
@@ -24,32 +24,39 @@ class BankAccountController extends BaseController {
             logger.info('addBankAccount');
             logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
+            const { accountNumber, accountDisplayName, accountName, bankName, balance } = req.body;
+            const requiredFields = ['accountNumber', 'accountDisplayName', 'accountName', 'bankName', 'balance'];
+            this.verifyBody(req.body, requiredFields);
             //FIXME - id should get from getCurrentUser and check if this user exist before creating a bank account
             // const { id } = this.getCurrentUser(req);
             let { userId } = req.params;
             if (!userId) {
                 throw new BadRequestError("'UserId' is required");
             }
-            if (!this.BankAccountModel.isValidObjectId(userId)) {
-                throw new BadRequestError("Invalid 'UserId'");
-            }
             userId = this.BankAccountModel.toObjectId(userId);
-            const { accountNumber, accountDisplayName, accountName, bankName, balance } = req.body;
-            const requiredFields = ['accountNumber', 'accountDisplayName', 'accountName', 'bankName', 'balance'];
-            this.verifyBody(req.body, requiredFields);
 
             const numericBalance = parseFloat(balance);
-            const account = await this.BankAccountModel.create({
+            const newBankAccount = {
                 accountNumber,
                 accountDisplayName,
                 accountName,
                 bankName,
                 balance: numericBalance,
                 userId
-            });
+            };
+            const account = await this.BankAccountModel.create(newBankAccount);
             const createdId = this.BankAccountModel.toStringId(account._id);
             res.status(201).json(formatResponse(201, 'Bank account created successfully', { id: createdId }));
         } catch (error) {
+            if (error.code === 11000) {
+                // Duplicate key error
+                next(new ConflictError('bank account number already exist'))
+            } else if (error instanceof mongoose.Error.ValidationError) {
+                next(new BadRequestError(error.errors[Object.keys(error.errors)[0]].message));
+            }
+            if (error.message === 'Invalid ObjectId') {
+                next(new BadRequestError('Invalid ObjectId'));
+            }
             next(error);
         }
     }
@@ -62,11 +69,7 @@ class BankAccountController extends BaseController {
             if (!accountId) {
                 throw new BadRequestError("'AccountId' is required");
             }
-            if (!this.BankAccountModel.isValidObjectId(accountId)) {
-                throw new BadRequestError("Invalid 'AccountId'");
-            }
-            const accountIdObj = this.BankAccountModel.toObjectId(accountId);
-            const account = await this.BankAccountModel.findOne({ _id: accountIdObj });
+            const account = await this.BankAccountModel.findById(accountId);
             if (!account) {
                 throw new NotFoundError('Bank account not found');
             }
