@@ -67,27 +67,32 @@ sequenceDiagram
     Cont->>Cont: Create new bank account data object with user._id
     Cont->>+Model: create(newBankAccount)
     Model->>+BaseModel: create(data)
-    BaseModel->>BaseModel: _verifyData(data)
+    BaseModel->>BaseModel: validate()
     opt missing required field
-        BaseModel-->>Model: throw Error('Missing required field: <field>')
+        BaseModel-->>Model: throw Error
         Model-->>Cont: next(error)
         Cont-->>Router: next(error)
-        Router-->>Client: 400, "Missing required field: <field>"
+        Router-->>Client: 400, "<field> is required"
     end
     opt invalid type
-        BaseModel-->>Model: throw Error('Invalid type: <field>. expected <type>, got <type>')
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 400, "Invalid type: <field>"
-    end
-    opt any error occurred
         BaseModel-->>Model: throw Error
-        Model-->>Cont: pass error
-        Cont-->>Router: next(error)
-        Router-->>Client: 500, "something went wrong"
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(BadRequestError(error.message))
+        Router-->>Client: 400, <error.message>
+    end
+    opt if error creating user
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: throw error
+        alt error code == 11000
+            Cont-->>Router: throw ConflictError()
+            Router-->>Client: 409, "bank account number already exists"
+        else any other error
+            Cont-->>Router: next(error)
+            Router-->>Client: 500, "something went wrong"
+        end
     end
     BaseModel->>-Model: Save account to database
-    Model->>-Cont: return created account object
+    Model->>-Cont: created account object
     Cont->>Cont: formatResponse(201, 'Bank account created successfully', { bankAccountId })
     Cont-->>-Router: Formatted response
     Router-->>-Client: 201, { status: 201, message: "Bank account created successfully", data: { bankAccountId } }

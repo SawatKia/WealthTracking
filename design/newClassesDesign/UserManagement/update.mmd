@@ -120,7 +120,7 @@ sequenceDiagram
         BaseModel-->>Model: throw Error
         Model-->>Cont: throw error
         alt error code == 11000
-            Cont-->>Router: throw DuplicateError()
+            Cont-->>Router: throw UserDuplicateError()
             Router-->>Client: 409, "Username or email already exists"
         else any other error
             Cont-->>Router: next(error)

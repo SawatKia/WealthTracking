@@ -80,6 +80,7 @@ sequenceDiagram
     end
     BaseModel->>-Model: return array of bank account objects
     Model-->>-Cont: pass results
+    Note over Cont, BaseCont: ensure that verifyOwnership is support iteration array of object
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
     opt Bank account user id does not match current user id
         BaseCont-->>Cont: return false

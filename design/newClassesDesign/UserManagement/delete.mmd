@@ -77,10 +77,10 @@ sequenceDiagram
     BaseModel->>+Mongo: isValidObjectId(userId)
     opt invalid userId
         Mongo-->>BaseModel: false
-        BaseModel-->>Model: throw Error('Invalid userId')
+        BaseModel-->>Model: throw Error('Invalid ObjectId')
         Model-->>Cont: pass error
-        Cont-->>Router: next(BadRequestError('Invalid userId'))
-        Router-->>Client: 400, "Invalid userId"
+        Cont-->>Router: next(BadRequestError('Invalid ObjectId'))
+        Router-->>Client: 400, "Invalid ObjectId"
     end
     Mongo-->>-BaseModel: true
     BaseModel->>BaseModel: findByIdAndDelete(userId)
