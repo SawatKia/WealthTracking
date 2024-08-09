@@ -1,0 +1,21 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as TransactionRouter
+    participant BaseCont as BaseController
+    participant Cont as TransactionController extends BaseController
+    participant MongoObject as MongoObject
+    participant BaseModel as BaseModel extends MongoObject
+    participant Model as TransactionModel extends BaseModel

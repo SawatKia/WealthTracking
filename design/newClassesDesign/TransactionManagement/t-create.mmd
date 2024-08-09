@@ -13,11 +13,11 @@
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router as UserRouter
+    participant Router as TransactionRouter
     participant BaseCont as BaseController
-    participant Cont as UserController extends BaseController
+    participant Cont as TransactionController extends BaseController
     participant MongoObject as MongoObject
     participant BaseModel as BaseModel extends MongoObject
-    participant Model as UserModel extends BaseModel
+    participant Model as TransactionModel extends BaseModel
 
     
