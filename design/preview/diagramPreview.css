@@ -1,37 +1,210 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Roboto", sans-serif;
   margin: 0;
   padding: 0;
   display: flex;
+  background-color: #f9f9f9;
+  color: #333;
 }
 
 #menu {
+  margin: 0;
   width: 250px;
   height: 100vh;
+  color: #222;
   background-color: #f0f0f0;
   padding: 20px;
   overflow-y: auto;
   position: fixed;
-  left: 0;
+  left: -300px;
   top: 0;
+  transition: left 0.5s ease-in-out;
   z-index: 1000;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+#menu-toggle {
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  width: 50px;
+  height: 50px;
+  color: #007bff;
+  background-color: #f0f0f0;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  z-index: 1001;
+  transition: left 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+#menu.expanded {
+  left: 0;
+}
+
+#menu.expanded + #content {
+  margin-left: 300px;
+  width: calc(100% - 250px);
+}
+
+/* Overlay for mobile */
+#overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 #content {
-  margin-left: 290px;
-  /* 250px + 20px padding on both sides */
+  margin-left: 50px;
   padding: 20px;
-  width: calc(100% - 290px);
   box-sizing: border-box;
+  width: 100%;
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+#menu h2,
+#menu h3,
+#menu h4 {
+  margin-top: 0;
+  color: #007bff;
+}
+
+#menu ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+#menu li {
+  margin-bottom: 10px;
+}
+
+#menu a {
+  text-decoration: none;
+  color: #007bff;
+  transition: color 0.3s;
+}
+
+#menu a:hover {
+  color: #0056b3;
+  background-color: #f0f0f0;
+}
+
+#menu input[type="checkbox"] {
+  margin-left: 10px;
+}
+
+#menu .verified-text {
+  color: green;
+  font-weight: bold;
+}
+
+#saveButton {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s;
+}
+
+#saveButton:hover {
+  background-color: #0056b3;
+}
+
+#header {
+  color: #222;
+  font-size: 2.5em;
+  font-weight: bold;
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-bottom: 3px solid #007bff;
+}
+
+#officialProjectName {
+  color: #444;
+  font-size: 1.8em;
+  font-weight: normal;
+  text-align: center;
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #e9ecef;
+  border-top: 3px solid #007bff;
+  border-bottom: 3px solid #007bff;
+}
+
+#description {
+  color: #555;
+  font-size: 1.2em;
+  text-align: center;
+  margin: 10px 0 30px 0;
+  padding: 15px;
+  background-color: #f1f1f1;
+  border-left: 5px solid #007bff;
+  border-right: 5px solid #007bff;
 }
 
 .section {
   margin-bottom: 40px;
 }
 
-h2 {
+.section h2 {
   color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  font-weight: bolder;
+  padding: 10px 0 5px 0;
+  border-bottom: 2px solid #007bff;
+  border-left: 5px solid #007bff;
+}
+
+.section h3 {
+  color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 40px; /* Adjust this value as needed */
+  z-index: 9;
+  font-weight: normal;
+  padding: 10px 0 5px 20px;
+  border-bottom: 2px solid #007bff;
+  border-left: 5px solid #28a745;
+}
+
+.section h4 {
+  color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 80px; /* Adjust this value as needed */
+  z-index: 8;
+  font-weight: 200;
+  padding: 10px 0 5px 40px;
+  border-bottom: 2px solid #007bff;
+  border-left: 5px solid #ffc107;
+}
+
+.section img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 #backToTop {
@@ -47,8 +220,8 @@ h2 {
   font-size: 24px;
   cursor: pointer;
   z-index: 1000;
-  transition: opacity 0.3s, transform 0.3s;
   opacity: 0;
+  transition: opacity 0.3s, transform 0.5s;
   transform: translateY(20px);
 }
 
@@ -59,13 +232,6 @@ h2 {
 #backToTop.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
 }
 
 input[type="checkbox"] {
@@ -149,6 +315,7 @@ input[type="checkbox"]:checked + label .verified-text {
   cursor: pointer;
   display: block;
   margin: 0 auto;
+  transition: background-color 0.3s;
 }
 
 #saveButton:hover {
