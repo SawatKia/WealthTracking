@@ -32,8 +32,8 @@ backToTopButton.onclick = function () {
   // Add smooth scroll animation
   window.scrollTo({
     top: 0,
-    behavior: "smooth"
-});
+    behavior: "smooth",
+  });
 };
 
 //NOTE - Save button
@@ -64,38 +64,6 @@ function saveData() {
   anchor.click();
 }
 
-//NOTE - Change the background color of the menu based on the active section
-// Get all menu items
-const menuItems = document.querySelectorAll("#menu a");
-
-// Function to add/remove highlight class
-const toggleHighlight = (menuItem, add) => {
-  menuItem.classList[add ? "add" : "remove"]("active");
-};
-
-//NOTE - Highlight the menu item when the section is in the viewport
-window.addEventListener("scroll", () => {
-  const scrollY = window.scrollY; // Get current scroll position
-
-  // Loop through menu items
-  menuItems.forEach((menuItem) => {
-    const href = menuItem.getAttribute("href");
-    const targetSection = document.querySelector(href);
-
-    if (targetSection) {
-      const sectionTop = targetSection.offsetTop;
-      const sectionHeight = targetSection.offsetHeight;
-
-      // Check if section is in viewport
-      if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-        toggleHighlight(menuItem, true); // Highlight menu item
-      } else {
-        toggleHighlight(menuItem, false); // Remove highlight
-      }
-    }
-  });
-});
-
 //NOTE - Toggle the menu
 document.addEventListener("DOMContentLoaded", function () {
   var menu = document.getElementById("menu");
@@ -117,3 +85,132 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+//NOTE - Load the Mermaid diagrams
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize Mermaid
+  mermaid.initialize({ startOnLoad: false });
+  if (typeof mermaid !== "object") {
+    console.error("Mermaid not loaded.");
+  }
+
+  // Array of diagram paths, including fallback SVG paths
+  const diagrams = [
+    {
+      id: "softwareArchitectureDiagram",
+      mmdPath: "../newClassesDesign/SoftwareArchitectureDiagram.mmd",
+      loadingId: "loadingSoftwareArchitecture",
+    },
+    {
+      id: "userFlowDiagram",
+      mmdPath: "../newClassesDesign/UserFlow.mmd",
+      loadingId: "loadingUserFlow",
+    },
+    {
+      id: "userCreateDiagram",
+      mmdPath: "../newClassesDesign/UserManagement/create.mmd",
+      loadingId: "loadingUserCreate",
+    },
+    {
+      id: "userReadDiagram",
+      mmdPath: "../newClassesDesign/UserManagement/read.mmd",
+      loadingId: "loadingUserRead",
+    },
+    {
+      id: "userUpdateDiagram",
+      mmdPath: "../newClassesDesign/UserManagement/update.mmd",
+      loadingId: "loadingUserUpdate",
+    },
+    {
+      id: "userDeleteDiagram",
+      mmdPath: "../newClassesDesign/UserManagement/delete.mmd",
+      loadingId: "loadingUserDelete",
+    },
+    {
+      id: "bankAddDiagram",
+      mmdPath: "../newClassesDesign/BankAccountManagement/add.mmd",
+      loadingId: "loadingBankAdd",
+    },
+    {
+      id: "bankReadAllDiagram",
+      mmdPath: "../newClassesDesign/BankAccountManagement/ReadAll.mmd",
+      loadingId: "loadingBankReadAll",
+    },
+    {
+      id: "bankReadOneDiagram",
+      mmdPath: "../newClassesDesign/BankAccountManagement/ReadOne.mmd",
+      loadingId: "loadingBankReadOne",
+    },
+    {
+      id: "bankUpdateDiagram",
+      mmdPath: "../newClassesDesign/BankAccountManagement/update.mmd",
+      loadingId: "loadingBankUpdate",
+    },
+    {
+      id: "bankDeleteDiagram",
+      mmdPath: "../newClassesDesign/BankAccountManagement/Delete.mmd",
+      loadingId: "loadingBankDelete",
+    },
+    {
+      id: "quotaCheckDiagram",
+      mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
+      loadingId: "loadingQuotaCheck",
+    },
+    {
+      id: "slipDataDiagram",
+      mmdPath: "../newClassesDesign/api/SlipData.mmd",
+      loadingId: "loadingSlipData",
+    },
+    {
+      id: "tCreateDiagram",
+      mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
+      loadingId: "loadingTCreate",
+    },
+    {
+      id: "tDeleteDiagram",
+      mmdPath: "../newClassesDesign/TransactionManagement/t-delete.mmd",
+      loadingId: "loadingTDelete",
+    },
+    {
+      id: "tReadAllDiagram",
+      mmdPath: "../newClassesDesign/TransactionManagement/t-readAll.mmd",
+      loadingId: "loadingTReadAll",
+    },
+    {
+      id: "tReadOneDiagram",
+      mmdPath: "../newClassesDesign/TransactionManagement/t-readOne.mmd",
+      loadingId: "loadingTReadOne",
+    },
+    {
+      id: "tUpdateDiagram",
+      mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
+      loadingId: "loadingTUpdate",
+    },
+  ];
+
+  //NOTE - Function to load diagram from a Mermaid file with fallback to SVG
+  diagrams.forEach((diagram) => {
+    const loading = document.getElementById(diagram.loadingId);
+
+    // Show loading indicator
+    loading.style.display = "flex";
+    fetch(diagram.mmdPath)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch Mermaid file.");
+        }
+        return response.text();
+      })
+      .then((text) => {
+        document.getElementById(diagram.id).textContent = text;
+        mermaid.init(undefined, `#${diagram.id}`);
+        console.log(`${diagram.id} loaded and rendered successfully.`);
+        loading.style.display = "none"; // Hide loading indicator on success
+      })
+      .catch((error) => {
+        console.error("Mermaid file not loaded, falling back to SVG:", error);
+        document.getElementById(
+          diagram.id
+        ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
+      });
+  });
+});

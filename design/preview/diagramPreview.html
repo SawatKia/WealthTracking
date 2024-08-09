@@ -8,8 +8,7 @@
     <title>newClassesDesign Preview</title>
 
     <link rel="stylesheet" href="diagramPreview.css">
-
-
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 
 <body>
@@ -17,11 +16,6 @@
     <div id="menu">
         <h3>1. High-level Design</h3>
         <ul>
-            <li>
-                <a href="#generalFlow">General Flow</a>
-                <input type="checkbox" id="generalFlow_check">
-                <label for="generalFlow_check"><span class="verified-text">code verified</span></label>
-            </li>
             <li>
                 <a href="#softwareArchitecture">Software Architecture</a>
                 <input type="checkbox" id="softwareArchitecture_check">
@@ -85,6 +79,33 @@
                 <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
             </li>
         </ul>
+        <h4>Transaction Management</h4>
+        <ul>
+            <li>
+                <a href="#tCreate">Create</a>
+                <input type="checkbox" id="tCreate_check">
+                <label for="tCreate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tDelete">Delete</a>
+                <input type="checkbox" id="tDelete_check">
+                <label for="tDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tReadAll">Read All</a>
+                <input type="checkbox" id="tReadAll_check">
+                <label for="tReadAll_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tReadOne">Read One</a>
+                <input type="checkbox" id="tReadOne_check">
+                <label for="tReadOne_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tUpdate">Update</a>
+                <input type="checkbox" id="tUpdate_check">
+                <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
         <h3>3. Other Systems (3rd-party API)</h3>
         <ul>
             <li>
@@ -102,84 +123,144 @@
     </div>
 
     <div id="content">
-        <h1 id="header">Sequence Diagram for WealthTrack web application a 4th Year Project</h1>
-        <h2 id="officialProjectName">Development of web application for recording personal income and expenses, debts and bank accounts</h2>
-        <p id="description">This diagram preview showcases the high-level design and system architecture for the
-            WealthTrack project, which is part of the Computer Engineering 4th Year curriculum for Project1.
+        <h1 id="header">Development of web application for recording personal income and expenses, debts and bank
+            accounts</h1>
+        <h2 id="officialProjectName">Diagrams for WealthTrack web application a 4th Year Project</h2>
+        <p id="description">These diagrams preview presents sequence diagrams, and system architecture for the
+            WealthTrack project. WealthTrack is a web application designed to track personal income, expenses, debts,
+            and bank accounts, developed as part of the Computer Engineering 4th Year curriculum for Project1.
         </p>
         <div class="section" id="highLevelDesign">
             <h2>1. High-level Design</h2>
-            <div id="generalFlow">
-                <h3>General Flow</h3>
-                <img src="../newClassesDesign/GeneralFlow.svg" alt="General Flow">
-            </div>
             <div id="softwareArchitecture">
                 <h3>Software Architecture</h3>
-                <img src="../newClassesDesign/SoftwareArchitectureDiagram.svg" alt="Software Architecture Diagram">
+                <div class="mermaid" id="softwareArchitectureDiagram">
+                    <div class="loading" id="loadingSoftwareArchitecture">Loading Software Architecture...</div>
+                </div>
             </div>
             <div id="userFlow">
                 <h3>User Flow</h3>
-                <img src="../newClassesDesign/UserFlow.svg" alt="User Flow">
+                <div class="mermaid" id="userFlowDiagram">
+                    <div class="loading" id="loadingUserFlow">Loading User Flow...</div>
+                </div>
             </div>
         </div>
-
+        
         <div class="section" id="ourSystem">
             <h2>2. Our System</h2>
             <div id="userManagement">
                 <h3>User Management</h3>
                 <div id="userCreate">
                     <h4>Create</h4>
-                    <img src="../newClassesDesign/UserManagement/create.svg" alt="User Create">
+                    <div class="mermaid" id="userCreateDiagram">
+                        <div class="loading" id="loadingUserCreate">Loading Create User...</div>
+                    </div>
                 </div>
                 <div id="userRead">
                     <h4>Read</h4>
-                    <img src="../newClassesDesign/UserManagement/read.svg" alt="User Read">
+                    <div class="mermaid" id="userReadDiagram">
+                        <div class="loading" id="loadingUserRead">Loading Read User...</div>
+                    </div>
                 </div>
                 <div id="userUpdate">
                     <h4>Update</h4>
-                    <img src="../newClassesDesign/UserManagement/update.svg" alt="User Update">
+                    <div class="mermaid" id="userUpdateDiagram">
+                        <div class="loading" id="loadingUserUpdate">Loading Update User...</div>
+                    </div>
                 </div>
                 <div id="userDelete">
                     <h4>Delete</h4>
-                    <img src="../newClassesDesign/UserManagement/delete.svg" alt="User Delete">
+                    <div class="mermaid" id="userDeleteDiagram">
+                        <div class="loading" id="loadingUserDelete">Loading Delete User...</div>
+                    </div>
                 </div>
             </div>
             <div id="bankAccountManagement">
                 <h3>Bank Account Management</h3>
                 <div id="bankAdd">
                     <h4>Add</h4>
-                    <img src="../newClassesDesign/BankAccountManagement/add.svg" alt="Bank Account Add">
+                    <div class="mermaid" id="bankAddDiagram">
+                        <div class="loading" id="loadingBankAdd">Loading Add Bank Account...</div>
+                    </div>
                 </div>
                 <div id="bankReadAll">
                     <h4>Read All</h4>
-                    <img src="../newClassesDesign/BankAccountManagement/ReadAll.svg" alt="Bank Account Read All">
+                    <div class="mermaid" id="bankReadAllDiagram">
+                        <div class="loading" id="loadingBankReadAll">Loading Read All Bank Accounts...</div>
+                    </div>
                 </div>
                 <div id="bankReadOne">
                     <h4>Read One</h4>
-                    <img src="../newClassesDesign/BankAccountManagement/ReadOne.svg" alt="Bank Account Read One">
+                    <div class="mermaid" id="bankReadOneDiagram">
+                        <div class="loading" id="loadingBankReadOne">Loading Read One Bank Account...</div>
+                    </div>
                 </div>
                 <div id="bankUpdate">
                     <h4>Update</h4>
-                    <img src="../newClassesDesign/BankAccountManagement/update..svg" alt="Bank Account Update">
+                    <div class="mermaid" id="bankUpdateDiagram">
+                        <div class="loading" id="loadingBankUpdate">Loading Update Bank Account...</div>
+                    </div>
                 </div>
                 <div id="bankDelete">
                     <h4>Delete</h4>
-                    <img src="../newClassesDesign/BankAccountManagement/Delete.svg" alt="Bank Account Delete">
+                    <div class="mermaid" id="bankDeleteDiagram">
+                        <div class="loading" id="loadingBankDelete">Loading Delete Bank Account...</div>
+                    </div>
                 </div>
             </div>
+            <div id="transactionManagement">
+                <h3>4. Transaction Management</h3>
+                <div id="tCreate">
+                    <h4>Create</h4>
+                    <div class="mermaid" id="tCreateDiagram">
+                        <div class="loading" id="loadingTCreate">Loading Create Transaction...</div>
+                    </div>
+                </div>
+                <div id="tDelete">
+                    <h4>Delete</h4>
+                    <div class="mermaid" id="tDeleteDiagram">
+                        <div class="loading" id="loadingTDelete">Loading Delete Transaction...</div>
+                    </div>
+                </div>
+                <div id="tReadAll">
+                    <h4>Read All</h4>
+                    <div class="mermaid" id="tReadAllDiagram">
+                        <div class="loading" id="loadingTReadAll">Loading Read All Transactions...</div>
+                    </div>
+                </div>
+                <div id="tReadOne">
+                    <h4>Read One</h4>
+                    <div class="mermaid" id="tReadOneDiagram">
+                        <div class="loading" id="loadingTReadOne">Loading Read One Transaction...</div>
+                    </div>
+                </div>
+                <div id="tUpdate">
+                    <h4>Update</h4>
+                    <div class="mermaid" id="tUpdateDiagram">
+                        <div class="loading" id="loadingTUpdate">Loading Update Transaction...</div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
-
+        
         <div class="section" id="otherSystems">
             <h2>3. Other Systems (3rd-party API)</h2>
             <div id="quotaCheck">
                 <h3>Quota Check</h3>
-                <img src="../newClassesDesign/api/QuotaCheck.svg" alt="Quota Check">
+                <div class="mermaid" id="quotaCheckDiagram">
+                    <div class="loading" id="loadingQuotaCheck">Loading Quota Check...</div>
+                </div>
             </div>
             <div id="slipData">
                 <h3>Slip Data</h3>
-                <img src="../newClassesDesign/api/SlipData.svg" alt="Slip Data">
+                <div class="mermaid" id="slipDataDiagram">
+                    <div class="loading" id="loadingSlipData">Loading Slip Data...</div>
+                </div>
             </div>
         </div>
+        
+
     </div>
 
     <button id="backToTop" title="Back to Top">↑</button>
