@@ -19,8 +19,9 @@ sequenceDiagram
     participant MongoObject as MongoObject
     participant BaseModel as BaseModel extends MongoObject
     participant Model as TransactionModel extends BaseModel
+    participant BankModel as BankAccountModel extends BaseModel
 
-    Client->>+Router: POST /transactions
+    Client->>+Router: POST /banks/:bankAccountId/transactions
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -65,6 +66,14 @@ sequenceDiagram
     opt user not found
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 404, "User not found"
+    end
+    Cont->>+BankModel: findById(bankAccountId)
+    BankModel->>+BaseModel: pass call
+    BaseModel-->>-BankModel: return bank account object
+    BankModel-->>-Cont: pass result
+    opt bank account not found
+        Cont-->>Router: throw NotFoundError('Bank account not found')
+        Router-->>Client: 404, "Bank account not found"
     end
     Cont->>Cont: create new transaction with userId and bankAccountId
     Cont->>+Model: createTransaction(req.body)
