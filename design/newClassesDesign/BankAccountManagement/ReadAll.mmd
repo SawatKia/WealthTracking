@@ -85,7 +85,7 @@ sequenceDiagram
     Model-->>-Cont: pass results
     Note over Cont, BaseCont: ensure that verifyOwnership is support iteration array of object
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
-    opt Bank account user id does not match current user id
+    opt Bank account's user id does not match current user id
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
         Router-->>Client: 403, "You are not allowed to access this resource"

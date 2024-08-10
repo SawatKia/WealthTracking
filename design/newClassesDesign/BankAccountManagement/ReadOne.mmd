@@ -90,10 +90,10 @@ sequenceDiagram
         Cont-->>Router: next(error)
         Router-->>Client: 500, "something went wrong"
     end
-    BaseModel->>-Model: return bank account object
+    BaseModel-->>-Model: return bank account object
     Model-->>-Cont: pass result
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
-    opt Bank account user id does not match current user id
+    opt Bank account's user id does not match current user id
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
         Router-->>Client: 403, "You are not allowed to access this resource"
