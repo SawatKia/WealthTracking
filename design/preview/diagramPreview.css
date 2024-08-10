@@ -4,7 +4,7 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
   color: #333;
 }
 
@@ -106,52 +106,50 @@ body {
 }
 
 /* Header Styling */
-#header {
+#officialProjectName {
   color: #222;
-  font-size: 2.5em;
-  font-weight: bold;
+  font-size: 2em; 
+  font-weight: 700; 
   text-align: center;
   margin: 20px 0;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-bottom: 3px solid #007bff;
+  padding: 10px;
+  background-color: #ffffff; 
 }
 
-#officialProjectName {
-  color: #444;
-  font-size: 1.8em;
-  font-weight: normal;
+#header {
+  color: #333;
+  font-size: 1.5em; 
+  font-weight: 500;
   text-align: center;
-  margin: 15px 0;
-  padding: 15px;
-  background-color: #e9ecef;
-  border-top: 3px solid #007bff;
-  border-bottom: 3px solid #007bff;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f0f0f0;
 }
 
 #description {
   color: #555;
   font-size: 1em;
-  font-weight: lighter;
+  font-weight: 400;
   text-align: center;
-  margin: 10px 0 30px 0;
-  padding: 15px;
-  background-color: #f1f1f1;
-  border-left: 5px solid #007bff;
-  border-right: 5px solid #007bff;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
 }
 
 @media (max-width: 600px) {
   #header {
-    font-size: 1.5em;
+    font-size: 1.2em;
+    padding: 8px;
   }
 
   #officialProjectName {
-    font-size: 1.2em;
+    font-size: 1.5em;
+    padding: 8px;
   }
 
   #description {
-    font-size: 0.8em;
+    font-size: 0.9em;
+    padding: 8px;
   }
 }
 
