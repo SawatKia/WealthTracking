@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (typeof mermaid !== "object") {
     console.error("Mermaid not loaded.");
   }
+  console.log("Mermaid loaded successfully.");
 
   // Array of diagram paths, including fallback SVG paths
   const diagrams = [
@@ -151,16 +152,6 @@ document.addEventListener("DOMContentLoaded", function () {
       loadingId: "loadingBankDelete",
     },
     {
-      id: "quotaCheckDiagram",
-      mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
-      loadingId: "loadingQuotaCheck",
-    },
-    {
-      id: "slipDataDiagram",
-      mmdPath: "../newClassesDesign/api/SlipData.mmd",
-      loadingId: "loadingSlipData",
-    },
-    {
       id: "tCreateDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
       loadingId: "loadingTCreate",
@@ -185,8 +176,18 @@ document.addEventListener("DOMContentLoaded", function () {
       mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
       loadingId: "loadingTUpdate",
     },
+    {
+      id: "quotaCheckDiagram",
+      mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
+      loadingId: "loadingQuotaCheck",
+    },
+    {
+      id: "slipDataDiagram",
+      mmdPath: "../newClassesDesign/api/SlipData.mmd",
+      loadingId: "loadingSlipData",
+    },
   ];
-
+  
   //NOTE - Function to load diagram from a Mermaid file with fallback to SVG
   diagrams.forEach((diagram) => {
     const loading = document.getElementById(diagram.loadingId);
