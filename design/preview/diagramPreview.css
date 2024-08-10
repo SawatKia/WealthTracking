@@ -147,7 +147,7 @@ body {
   background-color: #ffffff; 
 }
 
-#header {
+#diagramsHeader {
   color: #333;
   font-size: 1.5em; 
   font-weight: 500;
@@ -168,7 +168,7 @@ body {
 }
 
 @media (max-width: 600px) {
-  #header {
+  #diagramsHeader {
     font-size: 1.2em;
     padding: 8px;
   }
