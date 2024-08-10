@@ -192,7 +192,8 @@ body {
   height: 100px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
+  animation: loading 2s infinite;
+  will-change: background-position; /* Hint to the browser to optimize this property */
 }
 
 @keyframes loading {
@@ -250,6 +251,10 @@ body {
   padding: 10px 0 5px 40px;
   border-left: 5px solid #ffc107;
   box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
+
+#EasySlip h3{
+  display: none;
 }
 
 .section img {
