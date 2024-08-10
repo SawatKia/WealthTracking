@@ -216,9 +216,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Show all loading indicators first
   diagrams.forEach((diagram) => {
-    const loading = document.getElementById(diagram.loadingId);
-    // show loading indicator
-    loading.style.display = "flex";
+    const skeleton = document.getElementById(diagram.loadingId);
+    skeleton.style.display = "flex";
   });
 
   // Function to update loading progress
@@ -232,9 +231,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Function to load diagram from a Mermaid file with fallback to SVG
-  for (const diagram of diagrams) {
-    const loading = document.getElementById(diagram.loadingId);
+  // Create an array of promises for fetching diagrams
+  const fetchPromises = diagrams.map(async (diagram) => {
+    // Function to load diagram from a Mermaid file with fallback to SVG
+    const skeleton = document.getElementById(diagram.loadingId);
     try {
       const response = await fetch(diagram.mmdPath);
       if (!response.ok) {
@@ -243,14 +243,18 @@ document.addEventListener("DOMContentLoaded", async function () {
       const text = await response.text();
       document.getElementById(diagram.id).textContent = text;
       mermaid.init(undefined, `#${diagram.id}`);
+      console.log(`${diagram.id} loaded and rendered successfully.`);
     } catch (error) {
       console.error("Mermaid file not loaded, falling back to SVG:", error);
       document.getElementById(
         diagram.id
       ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
     } finally {
-      loading.style.display = "none"; // Hide loading indicator on success
+      skeleton.style.display = "none"; // Hide skeleton indicator on success
       updateLoadingProgress(diagram);
     }
-  }
+  });
+
+  // Execute all fetch requests simultaneously
+  await Promise.all(fetchPromises);
 });
