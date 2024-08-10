@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch((error) => {
       console.error("Error loading checkedData.json:", error);
+      const checkboxes = document.querySelectorAll("input[type='checkbox']");
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      console.log("All keys set to false");
     });
 });
 
@@ -100,91 +105,109 @@ document.addEventListener("DOMContentLoaded", async function () {
       id: "softwareArchitectureDiagram",
       mmdPath: "../newClassesDesign/SoftwareArchitectureDiagram.mmd",
       loadingId: "loadingSoftwareArchitecture",
+      svgPath: "../newClassesDesign/SoftwareArchitectureDiagram.svg",
     },
     {
       id: "userFlowDiagram",
       mmdPath: "../newClassesDesign/UserFlow.mmd",
       loadingId: "loadingUserFlow",
+      svgPath: "../newClassesDesign/UserFlow.svg",
     },
     {
       id: "userCreateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/create.mmd",
       loadingId: "loadingUserCreate",
+      svgPath: "../newClassesDesign/UserManagement/create.svg",
     },
     {
       id: "userReadDiagram",
       mmdPath: "../newClassesDesign/UserManagement/read.mmd",
       loadingId: "loadingUserRead",
+      svgPath: "../newClassesDesign/UserManagement/read.svg",
     },
     {
       id: "userUpdateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/update.mmd",
       loadingId: "loadingUserUpdate",
+      svgPath: "../newClassesDesign/UserManagement/update.svg",
     },
     {
       id: "userDeleteDiagram",
       mmdPath: "../newClassesDesign/UserManagement/delete.mmd",
       loadingId: "loadingUserDelete",
+      svgPath: "../newClassesDesign/UserManagement/delete.svg",
     },
     {
       id: "bankAddDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/add.mmd",
       loadingId: "loadingBankAdd",
+      svgPath: "../newClassesDesign/BankAccountManagement/add.svg",
     },
     {
       id: "bankReadAllDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadAll.mmd",
       loadingId: "loadingBankReadAll",
+      svgPath: "../newClassesDesign/BankAccountManagement/ReadAll.svg",
     },
     {
       id: "bankReadOneDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadOne.mmd",
       loadingId: "loadingBankReadOne",
+      svgPath: "../newClassesDesign/BankAccountManagement/ReadOne.svg",
     },
     {
       id: "bankUpdateDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/update.mmd",
       loadingId: "loadingBankUpdate",
+      svgPath: "../newClassesDesign/BankAccountManagement/update.svg",
     },
     {
       id: "bankDeleteDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/Delete.mmd",
       loadingId: "loadingBankDelete",
+      svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
       id: "tCreateDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
       loadingId: "loadingTCreate",
+      svgPath: "../newClassesDesign/TransactionManagement/t-create.svg",
     },
     {
       id: "tDeleteDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-delete.mmd",
       loadingId: "loadingTDelete",
+      svgPath: "../newClassesDesign/TransactionManagement/t-delete.svg",
     },
     {
       id: "tReadAllDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-readAll.mmd",
       loadingId: "loadingTReadAll",
+      svgPath: "../newClassesDesign/TransactionManagement/t-readAll.svg",
     },
     {
       id: "tReadOneDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-readOne.mmd",
       loadingId: "loadingTReadOne",
+      svgPath: "../newClassesDesign/TransactionManagement/t-readOne.svg",
     },
     {
       id: "tUpdateDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
       loadingId: "loadingTUpdate",
+      svgPath: "../newClassesDesign/TransactionManagement/t-update.svg",
     },
     {
       id: "quotaCheckDiagram",
       mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
       loadingId: "loadingQuotaCheck",
+      svgPath: "../newClassesDesign/api/QuotaCheck.svg",
     },
     {
       id: "slipDataDiagram",
       mmdPath: "../newClassesDesign/api/SlipData.mmd",
       loadingId: "loadingSlipData",
+      svgPath: "../newClassesDesign/api/SlipData.svg",
     },
   ];
 
