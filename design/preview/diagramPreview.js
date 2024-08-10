@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 //NOTE - Load the Mermaid diagrams
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   // Initialize Mermaid
   mermaid.initialize({ startOnLoad: false });
   if (typeof mermaid !== "object") {
@@ -187,31 +187,47 @@ document.addEventListener("DOMContentLoaded", function () {
       loadingId: "loadingSlipData",
     },
   ];
-  
-  //NOTE - Function to load diagram from a Mermaid file with fallback to SVG
+
+  const totalDiagrams = diagrams.length;
+  let loadedDiagrams = 0;
+
+  // Show all loading indicators first
   diagrams.forEach((diagram) => {
     const loading = document.getElementById(diagram.loadingId);
-
-    // Show loading indicator
+    // show loading indicator
     loading.style.display = "flex";
-    fetch(diagram.mmdPath)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch Mermaid file.");
-        }
-        return response.text();
-      })
-      .then((text) => {
-        document.getElementById(diagram.id).textContent = text;
-        mermaid.init(undefined, `#${diagram.id}`);
-        console.log(`${diagram.id} loaded and rendered successfully.`);
-        loading.style.display = "none"; // Hide loading indicator on success
-      })
-      .catch((error) => {
-        console.error("Mermaid file not loaded, falling back to SVG:", error);
-        document.getElementById(
-          diagram.id
-        ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
-      });
   });
+
+  // Function to update loading progress
+  function updateLoadingProgress(diagram) {
+    loadedDiagrams++;
+    const progress = (loadedDiagrams / totalDiagrams) * 100;
+    document.getElementById("loadingBar").style.width = `${progress}%`;
+    document.getElementById("loadingText").textContent = `${Math.round(progress)}% ${diagram.id} loaded and rendered successfully.`;
+    if (loadedDiagrams === totalDiagrams) {
+      document.getElementById("loadingProgress").style.display = "none";
+    }
+  }
+
+  // Function to load diagram from a Mermaid file with fallback to SVG
+  for (const diagram of diagrams) {
+    const loading = document.getElementById(diagram.loadingId);
+    try {
+      const response = await fetch(diagram.mmdPath);
+      if (!response.ok) {
+        throw new Error("Failed to fetch Mermaid file.");
+      }
+      const text = await response.text();
+      document.getElementById(diagram.id).textContent = text;
+      mermaid.init(undefined, `#${diagram.id}`);
+    } catch (error) {
+      console.error("Mermaid file not loaded, falling back to SVG:", error);
+      document.getElementById(
+        diagram.id
+      ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
+    } finally {
+      loading.style.display = "none"; // Hide loading indicator on success
+      updateLoadingProgress(diagram);
+    }
+  }
 });

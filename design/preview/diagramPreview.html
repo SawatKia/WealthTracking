@@ -106,24 +106,29 @@
                 <input type="checkbox" id="tUpdate_check">
                 <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
             </li>
-        <h3>3. Other Systems (3rd-party API)</h3>
-        <ul>
-            <li>
-                <a href="#quotaCheck">Quota Check</a>
-                <input type="checkbox" id="quotaCheck_check">
-                <label for="quotaCheck_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#slipData">Slip Data</a>
-                <input type="checkbox" id="slipData_check">
-                <label for="slipData_check"><span class="verified-text">code verified</span></label>
-            </li>
-        </ul>
-        <button id="saveButton" onclick="saveData()">Save</button>
+            <h3>3. Other Systems (3rd-party API)</h3>
+            <ul>
+                <li>
+                    <a href="#quotaCheck">Quota Check</a>
+                    <input type="checkbox" id="quotaCheck_check">
+                    <label for="quotaCheck_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#slipData">Slip Data</a>
+                    <input type="checkbox" id="slipData_check">
+                    <label for="slipData_check"><span class="verified-text">code verified</span></label>
+                </li>
+            </ul>
+            <button id="saveButton" onclick="saveData()">Save</button>
     </div>
 
     <div id="content">
-        <h1 id="officialProjectName">Development of web application for recording personal income and expenses, debts and bank
+        <div id="loadingProgress">
+            <div id="loadingBar"></div>
+            <span id="loadingText">0%</span>
+        </div>
+        <h1 id="officialProjectName">Development of web application for recording personal income and expenses, debts
+            and bank
             accounts</h1>
         <h2 id="header">Diagrams for WealthTrack web application a 4th Year Project</h2>
         <p id="description">These diagrams preview presents sequence diagrams, and system architecture for the
@@ -145,7 +150,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="section" id="ourSystem">
             <h2>2. Our System</h2>
             <div id="userManagement">
@@ -241,9 +246,9 @@
                     </div>
                 </div>
             </div>
-            
+
         </div>
-        
+
         <div class="section" id="otherSystems">
             <h2>3. Other Systems (3rd-party API)</h2>
             <div id="quotaCheck">
@@ -259,7 +264,7 @@
                 </div>
             </div>
         </div>
-        
+
 
     </div>
 
