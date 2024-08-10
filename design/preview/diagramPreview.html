@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://img.icons8.com/color-glass/48/flow-chart.png" type="image/png">
+    <title>newClassesDesign Preview</title>
+
+    <link rel="stylesheet" href="diagramPreview.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+
+<body>
+    <button id="menu-toggle">☰</button>
+    <div id="menu">
+        <h3>1. High-level Design</h3>
+        <ul>
+            <li>
+                <a href="#softwareArchitecture">Software Architecture</a>
+                <input type="checkbox" id="softwareArchitecture_check">
+                <label for="softwareArchitecture_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userFlow">User Flow</a>
+                <input type="checkbox" id="userFlow_check">
+                <label for="userFlow_check"><span class="verified-text">code verified</span></label>
+            </li>
+        </ul>
+        <h3>2. Our System</h3>
+        <h4>User Management</h4>
+        <ul>
+            <li>
+                <a href="#userCreate">Create</a>
+                <input type="checkbox" id="userCreate_check">
+                <label for="userCreate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userRead">Read</a>
+                <input type="checkbox" id="userRead_check">
+                <label for="userRead_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userUpdate">Update</a>
+                <input type="checkbox" id="userUpdate_check">
+                <label for="userUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#userDelete">Delete</a>
+                <input type="checkbox" id="userDelete_check">
+                <label for="userDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
+        </ul>
+        <h4>Bank Account Management</h4>
+        <ul>
+            <li>
+                <a href="#bankAdd">Add</a>
+                <input type="checkbox" id="bankAdd_check">
+                <label for="bankAdd_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankReadAll">Read All</a>
+                <input type="checkbox" id="bankReadAll_check">
+                <label for="bankReadAll_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankReadOne">Read One</a>
+                <input type="checkbox" id="bankReadOne_check">
+                <label for="bankReadOne_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankUpdate">Update</a>
+                <input type="checkbox" id="bankUpdate_check">
+                <label for="bankUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#bankDelete">Delete</a>
+                <input type="checkbox" id="bankDelete_check">
+                <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
+        </ul>
+        <h4>Transaction Management</h4>
+        <ul>
+            <li>
+                <a href="#tCreate">Create</a>
+                <input type="checkbox" id="tCreate_check">
+                <label for="tCreate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tDelete">Delete</a>
+                <input type="checkbox" id="tDelete_check">
+                <label for="tDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tReadAll">Read All</a>
+                <input type="checkbox" id="tReadAll_check">
+                <label for="tReadAll_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tReadOne">Read One</a>
+                <input type="checkbox" id="tReadOne_check">
+                <label for="tReadOne_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#tUpdate">Update</a>
+                <input type="checkbox" id="tUpdate_check">
+                <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+        <h3>3. Other Systems (3rd-party API)</h3>
+        <ul>
+            <li>
+                <a href="#quotaCheck">Quota Check</a>
+                <input type="checkbox" id="quotaCheck_check">
+                <label for="quotaCheck_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#slipData">Slip Data</a>
+                <input type="checkbox" id="slipData_check">
+                <label for="slipData_check"><span class="verified-text">code verified</span></label>
+            </li>
+        </ul>
+        <button id="saveButton" onclick="saveData()">Save</button>
+    </div>
+
+    <div id="content">
+        <h1 id="officialProjectName">Development of web application for recording personal income and expenses, debts and bank
+            accounts</h1>
+        <h2 id="header">Diagrams for WealthTrack web application a 4th Year Project</h2>
+        <p id="description">These diagrams preview presents sequence diagrams, and system architecture for the
+            WealthTrack project. WealthTrack is a web application designed to track personal income, expenses, debts,
+            and bank accounts, developed as part of the Computer Engineering 4th Year curriculum for Project1.
+        </p>
+        <div class="section" id="highLevelDesign">
+            <h2>1. High-level Design</h2>
+            <div id="softwareArchitecture">
+                <h3>Software Architecture</h3>
+                <div class="mermaid" id="softwareArchitectureDiagram">
+                    <div class="loading" id="loadingSoftwareArchitecture">Loading Software Architecture...</div>
+                </div>
+            </div>
+            <div id="userFlow">
+                <h3>User Flow</h3>
+                <div class="mermaid" id="userFlowDiagram">
+                    <div class="loading" id="loadingUserFlow">Loading User Flow...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="ourSystem">
+            <h2>2. Our System</h2>
+            <div id="userManagement">
+                <h3>User Management</h3>
+                <div id="userCreate">
+                    <h4>Create</h4>
+                    <div class="mermaid" id="userCreateDiagram">
+                        <div class="loading" id="loadingUserCreate">Loading Create User...</div>
+                    </div>
+                </div>
+                <div id="userRead">
+                    <h4>Read</h4>
+                    <div class="mermaid" id="userReadDiagram">
+                        <div class="loading" id="loadingUserRead">Loading Read User...</div>
+                    </div>
+                </div>
+                <div id="userUpdate">
+                    <h4>Update</h4>
+                    <div class="mermaid" id="userUpdateDiagram">
+                        <div class="loading" id="loadingUserUpdate">Loading Update User...</div>
+                    </div>
+                </div>
+                <div id="userDelete">
+                    <h4>Delete</h4>
+                    <div class="mermaid" id="userDeleteDiagram">
+                        <div class="loading" id="loadingUserDelete">Loading Delete User...</div>
+                    </div>
+                </div>
+            </div>
+            <div id="bankAccountManagement">
+                <h3>Bank Account Management</h3>
+                <div id="bankAdd">
+                    <h4>Add</h4>
+                    <div class="mermaid" id="bankAddDiagram">
+                        <div class="loading" id="loadingBankAdd">Loading Add Bank Account...</div>
+                    </div>
+                </div>
+                <div id="bankReadAll">
+                    <h4>Read All</h4>
+                    <div class="mermaid" id="bankReadAllDiagram">
+                        <div class="loading" id="loadingBankReadAll">Loading Read All Bank Accounts...</div>
+                    </div>
+                </div>
+                <div id="bankReadOne">
+                    <h4>Read One</h4>
+                    <div class="mermaid" id="bankReadOneDiagram">
+                        <div class="loading" id="loadingBankReadOne">Loading Read One Bank Account...</div>
+                    </div>
+                </div>
+                <div id="bankUpdate">
+                    <h4>Update</h4>
+                    <div class="mermaid" id="bankUpdateDiagram">
+                        <div class="loading" id="loadingBankUpdate">Loading Update Bank Account...</div>
+                    </div>
+                </div>
+                <div id="bankDelete">
+                    <h4>Delete</h4>
+                    <div class="mermaid" id="bankDeleteDiagram">
+                        <div class="loading" id="loadingBankDelete">Loading Delete Bank Account...</div>
+                    </div>
+                </div>
+            </div>
+            <div id="transactionManagement">
+                <h3>4. Transaction Management</h3>
+                <div id="tCreate">
+                    <h4>Create</h4>
+                    <div class="mermaid" id="tCreateDiagram">
+                        <div class="loading" id="loadingTCreate">Loading Create Transaction...</div>
+                    </div>
+                </div>
+                <div id="tDelete">
+                    <h4>Delete</h4>
+                    <div class="mermaid" id="tDeleteDiagram">
+                        <div class="loading" id="loadingTDelete">Loading Delete Transaction...</div>
+                    </div>
+                </div>
+                <div id="tReadAll">
+                    <h4>Read All</h4>
+                    <div class="mermaid" id="tReadAllDiagram">
+                        <div class="loading" id="loadingTReadAll">Loading Read All Transactions...</div>
+                    </div>
+                </div>
+                <div id="tReadOne">
+                    <h4>Read One</h4>
+                    <div class="mermaid" id="tReadOneDiagram">
+                        <div class="loading" id="loadingTReadOne">Loading Read One Transaction...</div>
+                    </div>
+                </div>
+                <div id="tUpdate">
+                    <h4>Update</h4>
+                    <div class="mermaid" id="tUpdateDiagram">
+                        <div class="loading" id="loadingTUpdate">Loading Update Transaction...</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="section" id="otherSystems">
+            <h2>3. Other Systems (3rd-party API)</h2>
+            <div id="quotaCheck">
+                <h3>Quota Check</h3>
+                <div class="mermaid" id="quotaCheckDiagram">
+                    <div class="loading" id="loadingQuotaCheck">Loading Quota Check...</div>
+                </div>
+            </div>
+            <div id="slipData">
+                <h3>Slip Data</h3>
+                <div class="mermaid" id="slipDataDiagram">
+                    <div class="loading" id="loadingSlipData">Loading Slip Data...</div>
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+
+    <button id="backToTop" title="Back to Top">↑</button>
+    <script src="./diagramPreview.js"></script>
+</body>
+
+</html>

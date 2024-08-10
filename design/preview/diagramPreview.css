@@ -1,0 +1,335 @@
+/* General Body Styling */
+body {
+  font-family: system-ui;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* Menu Styling */
+#menu {
+  margin: 0;
+  width: 250px;
+  height: 100vh;
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 20px;
+  overflow-y: auto;
+  position: fixed;
+  left: -300px;
+  top: 0;
+  transition: left 0.5s ease-in-out;
+  z-index: 1000;
+}
+
+#menu.expanded {
+  left: 0;
+}
+
+#menu.expanded + #content {
+  margin-left: 300px;
+  width: calc(100% - 250px);
+}
+
+#menu h2,
+#menu h3,
+#menu h4 {
+  margin-top: 0;
+  color: #007bff;
+}
+
+#menu ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+#menu ul li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+#menu ul li a {
+  flex-grow: 1;
+}
+
+#menu li {
+  margin-bottom: 10px;
+}
+
+#menu a {
+  text-decoration: none;
+  color: #007bff;
+  transition: color 0.3s;
+}
+
+#menu a:hover {
+  color: #0056b3;
+  background-color: #f0f0f0;
+}
+
+#menu input[type="checkbox"] {
+  margin-left: 10px;
+}
+
+#menu .verified-text {
+  color: green;
+  font-weight: bold;
+}
+
+/* Menu Toggle Button */
+#menu-toggle {
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  width: 50px;
+  height: 50px;
+  color: #007bff;
+  background-color: #f0f0f0;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  z-index: 1001;
+  transition: left 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+/* Content Styling */
+#content {
+  margin-left: 50px;
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Header Styling */
+#officialProjectName {
+  color: #222;
+  font-size: 2em; 
+  font-weight: 700; 
+  text-align: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #ffffff; 
+}
+
+#header {
+  color: #333;
+  font-size: 1.5em; 
+  font-weight: 500;
+  text-align: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f0f0f0;
+}
+
+#description {
+  color: #555;
+  font-size: 1em;
+  font-weight: 400;
+  text-align: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+@media (max-width: 600px) {
+  #header {
+    font-size: 1.2em;
+    padding: 8px;
+  }
+
+  #officialProjectName {
+    font-size: 1.5em;
+    padding: 8px;
+  }
+
+  #description {
+    font-size: 0.9em;
+    padding: 8px;
+  }
+}
+
+/* Section Styling */
+.section {
+  margin-bottom: 40px;
+}
+
+.section h2 {
+  color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  font-weight: bolder;
+  padding: 10px 0 5px 10px;
+  border-left: 5px solid #007bff;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
+
+.section h3 {
+  color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 40px; /* Adjust this value as needed */
+  z-index: 9;
+  font-weight: normal;
+  padding: 10px 0 5px 20px;
+  border-left: 5px solid #28a745;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
+
+.section h4 {
+  color: #333;
+  background-color: #ffffff;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 80px; /* Adjust this value as needed */
+  z-index: 8;
+  font-weight: 200;
+  padding: 10px 0 5px 40px;
+  border-left: 5px solid #ffc107;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
+
+.section img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding-top: 60px;
+}
+
+.loading {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em; /* Adjust font size as needed */
+  z-index: 1000;
+  display: none; /* Hide by default */
+}
+
+
+/* Back to Top Button */
+#backToTop {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.7);
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.5s;
+  transform: translateY(20px);
+}
+
+#backToTop:hover {
+  background-color: #0056b3;
+}
+
+#backToTop.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Checkbox Styling */
+input[type="checkbox"] {
+  line-height: 2.1ex;
+}
+
+input[type="checkbox"] {
+  position: absolute;
+  left: -999em;
+}
+
+input[type="checkbox"] + label {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: "SExtralight";
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+input[type="checkbox"] + label::before {
+  content: "";
+  display: inline-block;
+  vertical-align: -25%;
+  height: 2ex;
+  width: 2ex;
+  background-color: white;
+  border: 1px solid rgb(166, 166, 166);
+  border-radius: 4px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+  margin-right: 0.5em;
+}
+
+input[type="checkbox"]:checked + label::after {
+  content: "";
+  position: absolute;
+  width: 1.2ex;
+  height: 0.4ex;
+  background: rgba(0, 0, 0, 0);
+  top: 0.9ex;
+  left: 0.4ex;
+  border: 3px solid rgb(24, 211, 108);
+  border-top: none;
+  border-right: none;
+  -webkit-transform: rotate(-45deg);
+  -moz-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+}
+
+input[type="checkbox"]:checked + label .verified-text {
+  display: inline-block;
+}
+
+/* Verified Text */
+.verified-text {
+  display: none;
+  margin-left: 0.5em;
+  color: green;
+  font-size: 12px;
+}
+
+/* Save Button */
+#saveButton {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s;
+}
+
+#saveButton:hover {
+  background-color: #0056b3;
+}

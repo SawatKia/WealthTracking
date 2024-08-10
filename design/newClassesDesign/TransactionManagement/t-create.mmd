@@ -13,14 +13,14 @@
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router as BankRouter
+    participant Router as TransactionRouter
     participant BaseCont as BaseController
-    participant Cont as BankAccountController extends BaseController
-    participant MongoObject
+    participant Cont as TransactionController extends BaseController
+    participant MongoObject as MongoObject
     participant BaseModel as BaseModel extends MongoObject
-    participant Model as BankAccountModel extends BaseModel
+    participant Model as TransactionModel extends BaseModel
 
-    Client->>+Router: POST /banks/ (create Bank Account)
+    Client->>+Router: POST /transactions
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -50,9 +50,8 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: createBankAccount(req, res, next)
-    Cont->>Cont: Destructuring req.body
-    Note over Cont: requiredFields = ['displayName', 'accountName', 'accountNumber', 'bankName', 'accountType', 'initialBalance']
+    Router->>+Cont: createBankTransaction(req, res, next)
+    Note over Cont, BaseCont: requiredFields = ['bankAccountId', 'transactionDate', 'transactionType', 'amount', 'note']
     Cont->>+BaseCont: verifyBody(req.body, requiredFields)
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
@@ -67,8 +66,8 @@ sequenceDiagram
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 404, "User not found"
     end
-    Cont->>Cont: Create new bank account data object with user._id
-    Cont->>+Model: create(newBankAccount)
+    Cont->>Cont: create new transaction with userId and bankAccountId
+    Cont->>+Model: createTransaction(req.body)
     Model->>+BaseModel: create(data)
     BaseModel->>BaseModel: validate()
     opt missing required field
@@ -94,8 +93,12 @@ sequenceDiagram
             Router-->>Client: 500, "something went wrong"
         end
     end
-    BaseModel->>-Model: Save account to database
-    Model->>-Cont: created account object
+    BaseModel->>-Model: Save transaction to database
+    Model->>-Cont: created transaction object
     Cont->>Cont: formatResponse(201, 'Bank account created successfully', { bankAccountId })
     Cont-->>-Router: Formatted response
     Router-->>-Client: 201, { status: 201, message: "Bank account created successfully", data: { bankAccountId } }
+    
+
+
+    

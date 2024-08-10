@@ -21,11 +21,12 @@ router.get('/', (req, res) => {
     logger.info('request to /api/v1/bank-account/ endpoint');
     res.status(200).json(formatResponse(200, 'you are connected to the BankAccountRoutes'));
 });
-router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont), responseHandler);
-router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont), responseHandler);
-router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont), responseHandler);
-router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont), responseHandler);
+router.post('/:userId', BankAccountCont.addBankAccount.bind(BankAccountCont));
+router.get('/:accountId', BankAccountCont.getBankAccountById.bind(BankAccountCont));
+router.get('/user/:userId', BankAccountCont.getBankAccountsByUserId.bind(BankAccountCont));
+router.patch('/:accountId', BankAccountCont.updateBankAccount.bind(BankAccountCont));
 
+router.use(responseHandler);
 router.use(errorHandler);
 
 module.exports = router;

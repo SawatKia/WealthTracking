@@ -2,7 +2,7 @@ const UserModel = require("../Models/UserModel");
 const BaseController = require("./BaseController");
 const Logging = require("../configs/logger");
 const formatResponse = require('../utils/responseFormatter');
-const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError, DuplicateError } = require('../utils/error');
+const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, ConflictError, PasswordError, UserDuplicateError } = require('../utils/error');
 const { default: mongoose } = require("mongoose");
 
 const logger = new Logging('UserController');
@@ -88,7 +88,7 @@ class UserController extends BaseController {
             logger.error(`Error creating user: ${JSON.stringify(error)}`);
             if (error.code === 11000) {
                 // Duplicate key error
-                next(new DuplicateError());
+                next(new UserDuplicateError());
             } else if (error instanceof mongoose.Error.ValidationError) {
                 next(new BadRequestError(error.errors[Object.keys(error.errors)[0]].message));
             }
@@ -234,7 +234,7 @@ class UserController extends BaseController {
             logger.error(`Error updating user: ${error.message}`);
             if (error.code === 11000) {
                 // Duplicate key error
-                next(new DuplicateError());
+                next(new UserDuplicateError());
             } else if (error instanceof mongoose.Error.ValidationError) {
                 next(new BadRequestError(error.errors[Object.keys(error.errors)[0]].message));
             }

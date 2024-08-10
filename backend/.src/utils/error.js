@@ -50,7 +50,7 @@ class PasswordError extends AppError {
     }
 }
 
-class DuplicateError extends AppError {
+class UserDuplicateError extends AppError {
     constructor() {
         super('Username or email already exists', 409);
     }
@@ -65,5 +65,5 @@ module.exports = {
     MethodNotAllowedError,
     ConflictError,
     PasswordError,
-    DuplicateError
+    UserDuplicateError
 };

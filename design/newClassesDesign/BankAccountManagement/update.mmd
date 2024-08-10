@@ -2,7 +2,6 @@
     init: {
         "theme":"base",
         "themeVariables": {
-            "fontFamily": "system-ui",
             'labelBoxBorderColor': '#ff0000'
         },
         "sequence": { 
@@ -64,6 +63,10 @@ sequenceDiagram
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: User data
+    opt user not found
+        Cont-->>Router: throw NotFoundError('User not found')
+        Router-->>Client: 404, "User not found"
+    end
     Cont->>+Model: findById(bankAccountId)
     Model->>+BaseModel: pass call
     BaseModel->>+Mongo: isValidObjectId(bankAccountId)
