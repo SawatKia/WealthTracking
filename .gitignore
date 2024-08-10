@@ -4,6 +4,8 @@ settings.json
 # Database data
 data/*
 
+#build
+build/
 # Local History for Visual Studio Code
 .history/
 
