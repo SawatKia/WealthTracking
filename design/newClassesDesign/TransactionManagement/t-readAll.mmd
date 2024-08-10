@@ -69,17 +69,15 @@ sequenceDiagram
     end
     Cont->>+Model: finds({userId, bankAccountId})
     Model->>+BaseModel: pass call
-    loop validate by loop through ids
-        BaseModel->>+Mongo: isValidObjectId(userId)
-        opt invalid userId or bankAccountId
-            Mongo-->>BaseModel: false
-            BaseModel-->>Model: throw Error('Invalid <id>')
-            Model-->>Cont: pass error
-            Cont-->>Router: next(BadRequestError('Invalid <id>'))
-            Router-->>Client: 400, "Invalid <id>"
-        end
-        Mongo-->>-BaseModel: true
+    BaseModel->>+Mongo: isValidObjectId(transactionId)
+    opt invalid transactionId 
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: throw Error('Invalid transactionId')
+        Model-->>Cont: pass error
+        Cont-->>Router: next(BadRequestError('Invalid transactionId'))
+        Router-->>Client: 400, "Invalid transactionId"
     end
+    Mongo-->>-BaseModel: true
     opt transaction not found
         BaseModel-->>Model: return null
         Model-->>Cont: pass result
