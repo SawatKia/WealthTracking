@@ -20,7 +20,7 @@ sequenceDiagram
     participant BaseModel as BaseModel extends MongoObject
     participant Model as BankAccountModel extends BaseModel
 
-    Client->>+Router: DELETE /bank/delete
+    Client->>+Router: DELETE /banks/delete
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -92,7 +92,7 @@ sequenceDiagram
     BaseModel->>-Model: return bank account object
     Model-->>-Cont: pass result
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
-    opt Bank account user id does not match current user id
+    opt Bank account's user id does not match current user id
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
         Router-->>Client: 403, "You are not allowed to access this resource"

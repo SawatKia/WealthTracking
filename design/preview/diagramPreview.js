@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch((error) => {
       console.error("Error loading checkedData.json:", error);
+      const checkboxes = document.querySelectorAll("input[type='checkbox']");
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      console.log("All keys set to false");
     });
 });
 
@@ -86,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 //NOTE - Load the Mermaid diagrams
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   // Initialize Mermaid
   mermaid.initialize({ startOnLoad: false });
   if (typeof mermaid !== "object") {
@@ -100,118 +105,156 @@ document.addEventListener("DOMContentLoaded", function () {
       id: "softwareArchitectureDiagram",
       mmdPath: "../newClassesDesign/SoftwareArchitectureDiagram.mmd",
       loadingId: "loadingSoftwareArchitecture",
+      svgPath: "../newClassesDesign/SoftwareArchitectureDiagram.svg",
     },
     {
       id: "userFlowDiagram",
       mmdPath: "../newClassesDesign/UserFlow.mmd",
       loadingId: "loadingUserFlow",
+      svgPath: "../newClassesDesign/UserFlow.svg",
     },
     {
       id: "userCreateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/create.mmd",
       loadingId: "loadingUserCreate",
+      svgPath: "../newClassesDesign/UserManagement/create.svg",
     },
     {
       id: "userReadDiagram",
       mmdPath: "../newClassesDesign/UserManagement/read.mmd",
       loadingId: "loadingUserRead",
+      svgPath: "../newClassesDesign/UserManagement/read.svg",
     },
     {
       id: "userUpdateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/update.mmd",
       loadingId: "loadingUserUpdate",
+      svgPath: "../newClassesDesign/UserManagement/update.svg",
     },
     {
       id: "userDeleteDiagram",
       mmdPath: "../newClassesDesign/UserManagement/delete.mmd",
       loadingId: "loadingUserDelete",
+      svgPath: "../newClassesDesign/UserManagement/delete.svg",
     },
     {
       id: "bankAddDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/add.mmd",
       loadingId: "loadingBankAdd",
+      svgPath: "../newClassesDesign/BankAccountManagement/add.svg",
     },
     {
       id: "bankReadAllDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadAll.mmd",
       loadingId: "loadingBankReadAll",
+      svgPath: "../newClassesDesign/BankAccountManagement/ReadAll.svg",
     },
     {
       id: "bankReadOneDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadOne.mmd",
       loadingId: "loadingBankReadOne",
+      svgPath: "../newClassesDesign/BankAccountManagement/ReadOne.svg",
     },
     {
       id: "bankUpdateDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/update.mmd",
       loadingId: "loadingBankUpdate",
+      svgPath: "../newClassesDesign/BankAccountManagement/update.svg",
     },
     {
       id: "bankDeleteDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/Delete.mmd",
       loadingId: "loadingBankDelete",
+      svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
       id: "tCreateDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
       loadingId: "loadingTCreate",
+      svgPath: "../newClassesDesign/TransactionManagement/t-create.svg",
     },
     {
       id: "tDeleteDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-delete.mmd",
       loadingId: "loadingTDelete",
+      svgPath: "../newClassesDesign/TransactionManagement/t-delete.svg",
     },
     {
       id: "tReadAllDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-readAll.mmd",
       loadingId: "loadingTReadAll",
+      svgPath: "../newClassesDesign/TransactionManagement/t-readAll.svg",
     },
     {
       id: "tReadOneDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-readOne.mmd",
       loadingId: "loadingTReadOne",
+      svgPath: "../newClassesDesign/TransactionManagement/t-readOne.svg",
     },
     {
       id: "tUpdateDiagram",
       mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
       loadingId: "loadingTUpdate",
+      svgPath: "../newClassesDesign/TransactionManagement/t-update.svg",
     },
     {
       id: "quotaCheckDiagram",
       mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
       loadingId: "loadingQuotaCheck",
+      svgPath: "../newClassesDesign/api/QuotaCheck.svg",
     },
     {
       id: "slipDataDiagram",
       mmdPath: "../newClassesDesign/api/SlipData.mmd",
       loadingId: "loadingSlipData",
+      svgPath: "../newClassesDesign/api/SlipData.svg",
     },
   ];
-  
-  //NOTE - Function to load diagram from a Mermaid file with fallback to SVG
-  diagrams.forEach((diagram) => {
-    const loading = document.getElementById(diagram.loadingId);
 
-    // Show loading indicator
-    loading.style.display = "flex";
-    fetch(diagram.mmdPath)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch Mermaid file.");
-        }
-        return response.text();
-      })
-      .then((text) => {
-        document.getElementById(diagram.id).textContent = text;
-        mermaid.init(undefined, `#${diagram.id}`);
-        console.log(`${diagram.id} loaded and rendered successfully.`);
-        loading.style.display = "none"; // Hide loading indicator on success
-      })
-      .catch((error) => {
-        console.error("Mermaid file not loaded, falling back to SVG:", error);
-        document.getElementById(
-          diagram.id
-        ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
-      });
+  const totalDiagrams = diagrams.length;
+  let loadedDiagrams = 0;
+
+  // Show all loading indicators first
+  diagrams.forEach((diagram) => {
+    const skeleton = document.getElementById(diagram.loadingId);
+    skeleton.style.display = "flex";
   });
+
+  // Function to update loading progress
+  function updateLoadingProgress(diagram) {
+    loadedDiagrams++;
+    const progress = (loadedDiagrams / totalDiagrams) * 100;
+    document.getElementById("loadingBar").style.width = `${progress}%`;
+    document.getElementById("loadingText").textContent = `${Math.round(progress)}% ${diagram.id} loaded and rendered successfully.`;
+    if (loadedDiagrams === totalDiagrams) {
+      document.getElementById("loadingProgress").style.display = "none";
+    }
+  }
+
+  // Create an array of promises for fetching diagrams
+  const fetchPromises = diagrams.map(async (diagram) => {
+    // Function to load diagram from a Mermaid file with fallback to SVG
+    const skeleton = document.getElementById(diagram.loadingId);
+    try {
+      const response = await fetch(diagram.mmdPath);
+      if (!response.ok) {
+        throw new Error("Failed to fetch Mermaid file.");
+      }
+      const text = await response.text();
+      document.getElementById(diagram.id).textContent = text;
+      mermaid.init(undefined, `#${diagram.id}`);
+      console.log(`${diagram.id} loaded and rendered successfully.`);
+    } catch (error) {
+      console.error("Mermaid file not loaded, falling back to SVG:", error);
+      document.getElementById(
+        diagram.id
+      ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
+    } finally {
+      skeleton.style.display = "none"; // Hide skeleton indicator on success
+      updateLoadingProgress(diagram);
+    }
+  });
+
+  // Execute all fetch requests simultaneously
+  await Promise.all(fetchPromises);
 });
