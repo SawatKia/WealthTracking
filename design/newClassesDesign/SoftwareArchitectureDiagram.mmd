@@ -1,0 +1,55 @@
+graph TD
+    Client[Client] -->|HTTP/HTTPS| LoadBalancer[Load Balancer]
+    LoadBalancer --> Express[Express.js Web Server]
+    
+    subgraph "Middleware Layer"
+        Express --> RateLimit[Rate Limiter]
+        RateLimit --> Logging
+        Logging --> Auth[Authentication]
+        Auth --> APIGateway[API Gateway /api/v1]
+    end
+    
+    subgraph "View Layer"
+        Express --> StaticFiles[Static File Serving]
+    end
+    StaticFiles --> Express
+    
+    subgraph "Routing Layer"
+    APIGateway --> UsersRouter
+    APIGateway --> BankAccountsRouter
+    APIGateway --> BankAccountsTransactionsRouter
+    APIGateway --> IncomesExpensesRouter
+    APIGateway --> DebtsRouter
+    APIGateway --> ThirdPartyAPIRouter
+    end
+
+    subgraph "Controller Layer"
+    UsersRouter --> UserController
+    BankAccountsRouter --> BankAccountController
+    BankAccountsTransactionsRouter --> TransactionController
+    IncomesExpensesRouter --> IncomesExpensesController
+    DebtsRouter --> DebtController
+    ThirdPartyAPIRouter --> ThirdPartyAPIController
+    end
+    
+    subgraph "Model Layer"
+    UserController --> UserModel
+    BankAccountController --> BankAccountModel
+    TransactionController --> TransactionModel
+    IncomesExpensesController --> IncomesExpensesModel
+    DebtController --> DebtModel
+    end
+
+    ThirdPartyAPIRouter -.Note.-Note{{the generic names, to keep the architecture diagram\n flexible and maintain a higher level of abstraction}}
+
+    
+    UserModel --> MongoDB[(MongoDB)]
+    BankAccountModel --> MongoDB[(MongoDB)]
+    TransactionModel --> MongoDB[(MongoDB)]
+    IncomesExpensesModel --> MongoDB[(MongoDB)]
+    DebtModel --> MongoDB[(MongoDB)]
+    
+    ThirdPartyAPIController --> ExternalAPIService[External API Service]
+    ExternalAPIService -->|HTTP/HTTPS| ThirdPartyAPI[EasySlip Api]
+    
+    Logging --> LogFiles[Log Files]

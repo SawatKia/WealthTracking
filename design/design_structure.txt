@@ -1,0 +1,153 @@
+Folder PATH listing for volume H-Data
+Volume serial number is 307E-F514
+D:.
+|   build.py
+|   design_structure.txt
+|   json_grid_visualizer.html
+|   readme.md
+|   
++---build
+|   |   diagramPreview.min.css
+|   |   diagramPreview.min.html
+|   |   diagramPreview.min.js
+|   |   SoftwareArchitectureDiagram.mmd
+|   |   SoftwareArchitectureDiagram.svg
+|   |   UserFlow.mmd
+|   |   UserFlow.svg
+|   |   
+|   +---api
+|   |       QuotaCheck.mmd
+|   |       QuotaCheck.svg
+|   |       SlipData.mmd
+|   |       SlipData.svg
+|   |       
+|   +---BankAccountManagement
+|   |       add.mmd
+|   |       add.svg
+|   |       Delete.mmd
+|   |       Delete.svg
+|   |       ReadAll.mmd
+|   |       ReadAll.svg
+|   |       ReadOne.mmd
+|   |       ReadOne.svg
+|   |       update.mmd
+|   |       update.svg
+|   |       
+|   +---newClassesDesign
+|   |   |   SoftwareArchitectureDiagram.mmd
+|   |   |   SoftwareArchitectureDiagram.svg
+|   |   |   UserFlow.mmd
+|   |   |   UserFlow.svg
+|   |   |   
+|   |   +---api
+|   |   |       QuotaCheck.mmd
+|   |   |       QuotaCheck.svg
+|   |   |       SlipData.mmd
+|   |   |       SlipData.svg
+|   |   |       
+|   |   +---BankAccountManagement
+|   |   |       add.mmd
+|   |   |       add.svg
+|   |   |       Delete.mmd
+|   |   |       Delete.svg
+|   |   |       ReadAll.mmd
+|   |   |       ReadAll.svg
+|   |   |       ReadOne.mmd
+|   |   |       ReadOne.svg
+|   |   |       update.mmd
+|   |   |       update.svg
+|   |   |       
+|   |   +---IncomeExpenseManagement
+|   |   +---TransactionManagement
+|   |   |       t-create.mmd
+|   |   |       t-delete.mmd
+|   |   |       t-readAll.mmd
+|   |   |       t-readOne.mmd
+|   |   |       t-update.mmd
+|   |   |       
+|   |   \---UserManagement
+|   |           create.mmd
+|   |           create.svg
+|   |           delete.mmd
+|   |           delete.svg
+|   |           read.mmd
+|   |           read.svg
+|   |           update.mmd
+|   |           update.svg
+|   |           
+|   +---TransactionManagement
+|   |       t-create.mmd
+|   |       t-delete.mmd
+|   |       t-readAll.mmd
+|   |       t-readOne.mmd
+|   |       t-update.mmd
+|   |       
+|   \---UserManagement
+|           create.mmd
+|           create.svg
+|           delete.mmd
+|           delete.svg
+|           read.mmd
+|           read.svg
+|           update.mmd
+|           update.svg
+|           
++---Data
+|       BankAccounts.json
+|       BankAccountTransactions.json
+|       Debts.json
+|       FI_CODE.csv
+|       Notifications.json
+|       Setting.json
+|       Users.json
+|       UserTransactions.json
+|       
++---newClassesDesign
+|   |   SoftwareArchitectureDiagram.mmd
+|   |   SoftwareArchitectureDiagram.svg
+|   |   UserFlow.mmd
+|   |   UserFlow.svg
+|   |   
+|   +---api
+|   |       QuotaCheck.mmd
+|   |       QuotaCheck.svg
+|   |       SlipData.mmd
+|   |       SlipData.svg
+|   |       
+|   +---BankAccountManagement
+|   |       add.mmd
+|   |       add.svg
+|   |       Delete.mmd
+|   |       Delete.svg
+|   |       ReadAll.mmd
+|   |       ReadAll.svg
+|   |       ReadOne.mmd
+|   |       ReadOne.svg
+|   |       update.mmd
+|   |       update.svg
+|   |       
+|   +---IncomeExpenseManagement
+|   +---TransactionManagement
+|   |       t-create.mmd
+|   |       t-delete.mmd
+|   |       t-readAll.mmd
+|   |       t-readOne.mmd
+|   |       t-update.mmd
+|   |       
+|   \---UserManagement
+|           create.mmd
+|           create.svg
+|           delete.mmd
+|           delete.svg
+|           read.mmd
+|           read.svg
+|           update.mmd
+|           update.svg
+|           
+\---preview
+        checkedData.json
+        diagramPreview.css
+        diagramPreview.html
+        diagramPreview.js
+        Sequence diagrams.pdf
+        

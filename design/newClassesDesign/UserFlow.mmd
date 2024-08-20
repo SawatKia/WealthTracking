@@ -1,0 +1,55 @@
+sequenceDiagram
+    actor User
+    participant Home
+    participant Bank as BankLists
+    participant BankAccountsForm
+    participant IncomeExpensesMenu
+    participant IncomeExpensesForm
+    participant DebtList
+    participant DebtForm
+    participant PaymentForm
+    actor Ocr as Slip extraction service
+
+    User->>+Home: register/login
+    opt In case of new user
+        loop add BankAccounts
+            Home->>+Bank: goto bankLists menu
+            Bank->>+BankAccountsForm: create a new bank account
+            BankAccountsForm->>BankAccountsForm: fills a new bank account information
+            Note right of BankAccountsForm: Form details:<br>1.ชื่อบัญชี<br>2.เลขบัญชี(ใช้เป็น id ของบัญชี)<br>3.ชื่อที่ใช้แสดง<br>4.ธนาคาร<br>5.ยอดเงินคงเหลือในบัญชีล่าสุด
+            BankAccountsForm-->>-Bank: back to bankLists menu
+            Bank-->>-Home: back to home page
+        end
+    end
+    alt add new Income or Expense
+        Home->>+IncomeExpensesMenu: goto Income-Expense menu
+        IncomeExpensesMenu->>+IncomeExpensesForm: add record income/expenses
+        alt Manully fill the fields
+            Note right of IncomeExpensesForm: Form details:<br>1.วันที่และเวลา<br>2.ประเภท(รายรับ/รายจ่าย)<br>3.หมวดหมู่(หมวดหมู่รายรับ เงินเดือน ดอกเบี้ย ปันผล กำไร ค่าเช่า อื่นๆ<br>หมวดหมู่รายจ่าย ค่าอาหาร ค่าเดินทาง บัตรเครดิต สาธารณูปโภค หนี้ อื่นๆ)<br>3.รายละเอียด(ถ้ามี)<br>4.จำนวนเงิน<br>5.บัญชีที่ใช้จ่าย/บัญชีที่รับเงิน
+            IncomeExpensesForm->>IncomeExpensesForm: fill a new income or expenses
+        else use Banking slip
+            IncomeExpensesForm->>+Ocr: upload banking slip
+            Ocr-->>-IncomeExpensesForm:fill the form with data frim banking slip
+            IncomeExpensesForm->>IncomeExpensesForm:Validate and modify data correctness
+        end
+        IncomeExpensesForm-->>-IncomeExpensesMenu: add new transaction successful
+        IncomeExpensesMenu-->>-Home: back to home page
+    else add a debt
+        Home->>+DebtList: goto to DebtList Menu
+        DebtList->>+DebtForm: create a new Debt List
+        Note right of DebtForm: Form details:<br>1.ชื่อหนี้<br>2.หมวดหมู่(บัตรเครดิต สินเชื่อส่วนบุคคล บ้าน รถ)<br>3.จำนวนหนี้ทั้งหมด<br>4.จำนวนหนี้ที่เหลือ
+        DebtForm->>DebtForm: fill new debt list fields
+        DebtForm-->>-DebtList: add new debt successful
+        DebtList-->>-Home: back to home page
+        opt to add a debt payment
+            Home->>+IncomeExpensesMenu: goto Income-Expense menu
+            IncomeExpensesMenu->>+IncomeExpensesForm: add record income/expenses
+            IncomeExpensesForm->>IncomeExpensesForm: select expense and type of debt
+            IncomeExpensesForm->>IncomeExpensesForm: select the debt
+            IncomeExpensesForm-->>-IncomeExpensesMenu: add a new payment successful
+            IncomeExpensesMenu->>+DebtList: examine the paid debt 
+            DebtList-->>-IncomeExpensesMenu: back to IncomeExpensesMenu
+            IncomeExpensesMenu-->>-Home: back to home page
+        end
+        Home-->>-User: logout(if user desired)
+    end

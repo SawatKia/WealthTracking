@@ -1,0 +1,133 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 180 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as UserRouter
+    participant BaseCont as BaseController
+    participant Cont as UserController extends BaseController
+    participant Mongo as MongoObject
+    participant BaseModel as BaseModel extends MongoObject
+    participant Model as UserModel extends BaseModel
+
+    %% Update User
+    Client->>+Router: PATCH /users/:userId (updateUserById)
+    Note over Sec, Router: this method defined in read.mmd
+    Router->>+Sec: Verify Token(token)
+    alt if token is invalid
+    Note over Sec: the token maybe in Header or Cookies. so this method try to extract the token from the request
+        Sec->>Sec: extractToken(request)
+    end
+    Sec->>Sec: jwt.decode(token)
+    opt Token decode error
+        Note over Sec, Router: Use the same error class to ensure consistency of error messages 
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
+    opt Token expired
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
+    opt Invalid token
+        Sec-->>Router: throw CredentialsException()
+        Router-->>Client: 401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object
+    Note over Router : this method defined in create.mmd
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 401, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 405, "<method> not allowed for <path>"
+    end
+    Router->>+Cont: updateUser(req, res, next)
+    Note over Cont, BaseCont: this method defined in read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: User data
+    opt user not found
+        Cont-->>Router: throw NotFoundError('User not found')
+        Router-->>Client: 404, "User not found"
+    end
+    Cont->>Cont: Destructoring req.body
+    opt currentPassword is not in req.body
+        Cont-->>Router: throw BadRequestError('currentPassword is required')
+        Router-->>Client: 400, "currentPassword is required"
+    end
+    Note over Cont, Model: this method will use several times in the application
+    Cont->>+Model: checkPassword(user.username, currentPassword)
+    opt Invalid password
+        Model-->>Cont: return false
+        Cont-->>Router: throw PasswordError()
+        Router-->>Client: 401, "Invalid username or password"
+    end
+    Model-->>-Cont: return true
+    opt there is no field to update specified in req.body
+        Cont-->>Router: throw BadRequestError('At least one field is required to update user information')
+        Router-->>Client: 400, "At least one field is required to update user information"
+    end
+    opt newPassword != newConfirmPassword
+        Cont-->>Router: throw BadRequestError('newPassword and newConfirmPassword do not match')
+        Router-->>Client: 400, "newPassword and newConfirmPassword do not match"
+    end
+    Cont->>Cont: validateEmail(email)
+    opt Invalid email
+        Cont-->>Router: throw BadRequestError("Invalid email")
+        Router-->>Client: 400, "Invalid email"
+    end
+    Cont->>Cont: normalizeUsernameEmail(newUsername, newEmail)
+    Cont->>Cont: merge updateFields together
+    Cont->>+Model: updateUserById(user._id, updateFields)
+    opt if newPassword in updateFields
+        Model->>Model: this_hashPassword(newPassword)
+    end
+    Model->>+BaseModel: updateById(userId, data)
+    BaseModel->>+Mongo: isValidObjectId(userId)
+    opt invalid userId
+        Mongo-->>BaseModel: false
+        BaseModel-->>Model: throw Error('Invalid userId')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(BadRequestError('Invalid userId'))
+        Router-->>Client: 400, "Invalid userId"
+    end
+    Mongo-->>-BaseModel: true
+    BaseModel->>BaseModel: validate()
+    opt missing required field
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(error)
+        Router-->>Client: 400, "<field> is required"
+    end
+    opt invalid type
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: next(error)
+        Cont-->>Router: next(BadRequestError(error.message))
+        Router-->>Client: 400, <error.message>
+    end
+    BaseModel->>BaseModel: save()
+    opt if error updating user
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: throw error
+        alt error code == 11000
+            Cont-->>Router: throw UserDuplicateError()
+            Router-->>Client: 409, "Username or email already exists"
+        else any other error
+            Cont-->>Router: next(error)
+            Router-->>Client: 500, "something went wrong"
+        end
+    end
+    BaseModel-->>-Model: Updated user data
+    Model-->>-Cont: Updated user data
+    Cont->>Cont: formatResponse(200, 'User updated successfully', { updatedUser })
+    Cont-->>-Router: Formatted response
+    Router-->>-Client: 200, { status: 200, message: "User updated successfully", data: { updatedUser } }

@@ -22,21 +22,17 @@ class BaseController {
         return token;
     }
 
-    verifyParams(params, requiredFields) {
-        logger.info('Verifying params');
-        logger.debug(`Verifying params: ${JSON.stringify(params)}, required fields: ${requiredFields}`);
+    verifyBody(body, requiredFields) {
+        logger.info('Verifying body');
+        logger.debug(`Verifying body: ${JSON.stringify(body)}, required fields: ${requiredFields}`);
         try {
-            if (Object.keys(params).length !== requiredFields.length) {
-                logger.error('Invalid number of params');
-                throw new BadRequestError('Invalid number of params');
-            }
             for (const field of requiredFields) {
-                if (!params.hasOwnProperty(field) || params[field] === null || params[field] === undefined || params[field] === '') {
+                if (!body.hasOwnProperty(field) || body[field] === null || body[field] === undefined || body[field] === '') {
                     logger.error(`${field} is required`);
                     throw new BadRequestError(`${field} is required`);
                 }
             }
-            logger.info('Params verified');
+            logger.info('body verified');
             return true;
         } catch (error) {
             throw error;

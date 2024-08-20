@@ -45,8 +45,14 @@ class ConflictError extends AppError {
 }
 
 class PasswordError extends AppError {
-    constructor(data = null) {
-        super('Invalid username or password', 401, data);
+    constructor() {
+        super('Invalid username or password', 401);
+    }
+}
+
+class UserDuplicateError extends AppError {
+    constructor() {
+        super('Username or email already exists', 409);
     }
 }
 
@@ -58,5 +64,6 @@ module.exports = {
     NotFoundError,
     MethodNotAllowedError,
     ConflictError,
-    PasswordError
+    PasswordError,
+    UserDuplicateError
 };

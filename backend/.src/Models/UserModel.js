@@ -1,18 +1,50 @@
-const BaseModel = require("./BaseModel");
 const mongoose = require('mongoose');
-const Logging = require('../configs/logger');
 const bcrypt = require('bcrypt');
+
+const Logging = require('../configs/logger');
 require('dotenv').config();
+const BaseModel = require("./BaseModel");
 
 const logger = new Logging('UserModel');
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    hashedPassword: { type: String, required: true },
-    memberSince: { type: Date, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    username: {
+        type: String,
+        required: [true, 'Username is required'],
+        unique: [true, 'Username must be unique']
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: [true, 'Email must be unique']
+    },
+    hashedPassword: {
+        type: String,
+        required: [true, 'Password is required']
+    },
+    memberSince: {
+        type: Date,
+        required: [true, 'Member since date is required']
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
 });
 const saltRounds = parseInt(process.env.SALT_ROUNDS);
+
+// userSchema.pre('save', async function(next) {
+//     if (this.isModified('hashedPassword')) {
+//         try {
+//             logger.info('Hashing password before saving');
+//             this.hashedPassword = await bcrypt.hash(this.hashedPassword, saltRounds);
+//         } catch (error) {
+//             logger.error(`Error hashing password: ${error.message}`);
+//             return next(error);
+//         }
+//     }
+//     next();
+// });
 
 class UserModel extends BaseModel {
     constructor() {
@@ -36,9 +68,10 @@ class UserModel extends BaseModel {
     async checkPassword(username, password) {
         try {
             logger.info('Checking password');
+            username = username.toLowerCase();
             logger.debug(`User to check password, Username: ${username} Password: ${password}`);
-
-            const user = await this.find("username", username);
+            //TODO - test below line changed from this.find to this.findOne
+            const user = await this.findOne({ username: username });
             logger.debug(`User from find: ${JSON.stringify(user)}`);
 
             if (!user) {
@@ -91,6 +124,7 @@ class UserModel extends BaseModel {
     async getAllUsers() {
         try {
             logger.info('getting all users');
+            //FIXME - to use this.finds in BaseMOdel instead of find
             let users = await this.model.find({}).lean(); // Convert Mongoose documents to plain JS objects
             if (users.length === 0) {
                 logger.error('No users found');
@@ -109,7 +143,7 @@ class UserModel extends BaseModel {
     }
 
 
-    async updateById(id, data) {
+    async updateUserById(id, data) {
         try {
             logger.info('Updating user by id');
             logger.debug(`Updating user id: ${id} with data: ${JSON.stringify(data)}`);
@@ -118,7 +152,11 @@ class UserModel extends BaseModel {
                 delete data.password;
                 logger.info('Password hashed');
             }
-            return await this.model.findByIdAndUpdate(id, data, { new: true });
+            let updatedUser = await this.updateById(id, data);
+            updatedUser = updatedUser.toObject();
+            delete updatedUser.hashedPassword;
+            logger.info('deleted hashed password')
+            return updatedUser;
         } catch (error) {
             logger.error(`Error updating user: ${error.message}`);
             throw error;
