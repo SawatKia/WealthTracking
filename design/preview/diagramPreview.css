@@ -184,17 +184,6 @@ body {
   }
 }
 
-/* skeleton loader */
-.skeleton-loader {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 2s infinite;
-  will-change: background-position; /* Hint to the browser to optimize this property */
-}
 
 @keyframes loading {
   0% {

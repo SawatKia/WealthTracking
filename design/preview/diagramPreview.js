@@ -75,17 +75,22 @@ document.addEventListener("DOMContentLoaded", function () {
   var content = document.getElementById("content");
   var toggleButton = document.getElementById("menu-toggle");
 
-  toggleButton.addEventListener("click", function () {
+  toggleButton.addEventListener("click", function (event) {
+    event.preventDefault();
+    
     menu.classList.toggle("expanded");
     toggleButton.style.transitionDuration = "0.5s";
+    
     if (menu.classList.contains("expanded")) {
       toggleButton.textContent = "×";
       toggleButton.style.left = "260px";
       toggleButton.style.transform = "rotate(180deg)";
+      menu.style.left = "0";
     } else {
       toggleButton.textContent = "☰";
       toggleButton.style.left = "10px";
       toggleButton.style.transform = "rotate(0deg)";
+      menu.style.left = "-300px";
     }
   });
 });
@@ -168,34 +173,34 @@ document.addEventListener("DOMContentLoaded", async function () {
       svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
-      id: "tCreateDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
-      loadingId: "loadingTCreate",
-      svgPath: "../newClassesDesign/TransactionManagement/t-create.svg",
+      id: "IeCreateDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.mmd",
+      loadingId: "loadingIeCreate",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.svg",
     },
     {
-      id: "tDeleteDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-delete.mmd",
-      loadingId: "loadingTDelete",
-      svgPath: "../newClassesDesign/TransactionManagement/t-delete.svg",
+      id: "IeDeleteDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.mmd",
+      loadingId: "loadingIeDelete",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.svg",
     },
     {
-      id: "tReadAllDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-readAll.mmd",
-      loadingId: "loadingTReadAll",
-      svgPath: "../newClassesDesign/TransactionManagement/t-readAll.svg",
+      id: "IeReadAllDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.mmd",
+      loadingId: "loadingIeReadAll",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.svg",
     },
     {
-      id: "tReadOneDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-readOne.mmd",
-      loadingId: "loadingTReadOne",
-      svgPath: "../newClassesDesign/TransactionManagement/t-readOne.svg",
+      id: "IeReadOneDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.mmd",
+      loadingId: "loadingIeReadOne",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.svg",
     },
     {
-      id: "tUpdateDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
-      loadingId: "loadingTUpdate",
-      svgPath: "../newClassesDesign/TransactionManagement/t-update.svg",
+      id: "IeUpdateDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.mmd",
+      loadingId: "loadingIeUpdate",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.svg",
     },
     {
       id: "quotaCheckDiagram",
@@ -245,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       mermaid.init(undefined, `#${diagram.id}`);
       console.log(`${diagram.id} loaded and rendered successfully.`);
     } catch (error) {
-      console.error("Mermaid file not loaded, falling back to SVG:", error);
+      console.error(`Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`);
       document.getElementById(
         diagram.id
       ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
