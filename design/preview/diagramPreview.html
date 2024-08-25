@@ -15,7 +15,7 @@
     <button id="menu-toggle">☰</button>
     <div id="menu">
         <div class="full-menu">
-            <h3><span class="icon">📊</span>1. High-level Design</h3>
+            <h3><a href="#highLevelDesign"><span class="icon">📊</span>1. High-level Design</a></h3>
             <ul>
                 <li>
                     <a href="#softwareArchitecture">Software Architecture</a>
@@ -28,8 +28,8 @@
                     <label for="userFlow_check"><span class="verified-text">code verified</span></label>
                 </li>
             </ul>
-            <h3><span class="icon">🖥️</span>2. Our System</h3>
-            <h4><span class="icon">👤</span>User Management</h4>
+            <h3><a href="#ourSystem"><span class="icon">🖥️</span>2. Our System</a></h3>
+            <h4><a href="#userManagement"><span class="icon">👤</span>User Management</a></h4>
             <ul>
                 <li>
                     <a href="#userCreate">Create</a>
@@ -52,7 +52,7 @@
                     <label for="userDelete_check"><span class="verified-text">code verified</span></label>
                 </li>
             </ul>
-            <h4><span class="icon">🏦</span>Bank Account Management</h4>
+            <h4><a href="#bankAccountManagement"><span class="icon">🏦</span>Bank Account Management</a></h4>
             <ul>
                 <li>
                     <a href="#bankAdd">Add</a>
@@ -80,7 +80,7 @@
                     <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
                 </li>
             </ul>
-            <h4><span class="icon">💰</span>Income-Expense Management</h4>
+            <h4><a href="#incomeExpenseManagement"><span class="icon">💰</span>Income-Expense Management</a></h4>
             <ul>
                 <li>
                     <a href="#ieCreate">Create</a>
@@ -108,7 +108,7 @@
                     <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
                 </li>
             </ul>
-            <h3><span class="icon">🔗</span>3. Other Systems (3rd-party API)</h3>
+            <h3><a href="#otherSystems"><span class="icon">🔗</span>3. Other Systems (3rd-party API)</a></h3>
             <ul>
                 <li>
                     <a href="#quotaCheck">Quota Check</a>
@@ -124,12 +124,12 @@
             <button id="saveButton" onclick="saveData()">Save</button>
         </div>
         <div class="compact-menu">
-            <div class="icon-item" data-target="1. High-level Design">📊</div>
-            <div class="icon-item" data-target="2. Our System">🖥️</div>
-            <div class="icon-item" data-target="User Management">👤</div>
-            <div class="icon-item" data-target="Bank Account Management">🏦</div>
-            <div class="icon-item" data-target="Income-Expense Management">💰</div>
-            <div class="icon-item" data-target="3. Other Systems (3rd-party API)">🔗</div>
+            <a href="#highLevelDesign" class="icon-item">📊</a>
+            <a href="#ourSystem" class="icon-item">🖥️</a>
+            <a href="#userManagement" class="icon-item">👤</a>
+            <a href="#bankAccountManagement" class="icon-item">🏦</a>
+            <a href="#incomeExpenseManagement" class="icon-item">💰</a>
+            <a href="#otherSystems" class="icon-item">🔗</a>
         </div>
     </div>
 
@@ -148,7 +148,7 @@
                 Project 1 and Project 2.</p>
         </div>
         <div class="section" id="highLevelDesign">
-            <h2>1. High-level Design</h2>
+            <h2>1. 📊 High-level Design</h2>
             <div id="softwareArchitecture">
                 <h3>Software Architecture</h3>
                 <div class="diagram-container">
@@ -170,9 +170,9 @@
         </div>
 
         <div class="section" id="ourSystem">
-            <h2>2. Our System</h2>
+            <h2>2. 🖥️ Our System</h2>
             <div id="userManagement">
-                <h3>User Management</h3>
+                <h3>👤 User Management</h3>
                 <div id="userCreate">
                     <h4>Create</h4>
                     <div class="diagram-container">
@@ -211,7 +211,7 @@
                 </div>
             </div>
             <div id="bankAccountManagement">
-                <h3>Bank Account Management</h3>
+                <h3>🏦 Bank Account Management</h3>
                 <div id="bankAdd">
                     <h4>Add</h4>
                     <div class="diagram-container">
@@ -259,7 +259,7 @@
                 </div>
             </div>
             <div id="incomeExpenseManagement">
-                <h3>Income-Expense Management</h3>
+                <h3>💰 Income-Expense Management</h3>
                 <div id="ieCreate">
                     <h4>Create</h4>
                     <div class="diagram-container">
@@ -309,7 +309,7 @@
         </div>
 
         <div class="section" id="otherSystems">
-            <h2>3. Other System</h2>
+            <h2>3. 🔗 Other System</h2>
             <div id="EasySlip">
                 <h3>EasySlip Api</h3>
                 <div id="quotaCheck">

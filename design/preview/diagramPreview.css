@@ -11,25 +11,28 @@ body {
 /* Menu Styling */
 #menu {
   margin: 0;
-  width: 250px;
-  /* height: 100%; */
-  height: 80vh;
+  width: 60px;
+  max-height: 80vh;
   color: #222;
   background-color: #f0f0f0;
   padding: 20px;
   overflow-y: auto;
   position: fixed;
-  left: -300px;
+  left: 0; /* Start the menu from the left */
   top: 50%;
   transform: translateY(-50%);
-  transition: left 0.5s ease-in-out;
+  transition: width 0.5s ease-in-out;
   z-index: 1000;
   border-radius: 0 10px 10px 0;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 #menu.expanded {
-  left: 0;
+  width: 260px; /* Full expanded width */
+}
+
+#menu.collapsed {
+  width: 60px;
 }
 
 #menu h2,
@@ -81,7 +84,7 @@ body {
 /* Menu Toggle Button */
 #menu-toggle {
   position: fixed;
-  left: 10px;
+  left: 70px; /* Place the toggle button correctly when collapsed */
   top: 50%;
   transform: translateY(-50%);
   width: 50px;
@@ -96,6 +99,43 @@ body {
   transition: left 0.5s ease-in-out;
   border-radius: 50%;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+#menu.expanded #menu-toggle {
+  left: 270px; /* Position the toggle button correctly when expanded */
+}
+
+.full-menu {
+  display: none;
+}
+
+#menu.expanded .full-menu {
+  display: block;
+}
+
+.compact-menu {
+  display: block;
+}
+
+#menu.expanded .compact-menu {
+  display: none;
+}
+
+a.icon-item {
+  font-size: 24px;
+  text-align: center;
+  padding: 10px 0;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.icon-item:hover {
+  background-color: #e0e0e0;
+}
+
+.icon {
+  margin-right: 10px;
 }
 
 /* Loading Progress Styling */

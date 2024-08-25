@@ -74,22 +74,19 @@ document.addEventListener("DOMContentLoaded", function () {
   var menu = document.getElementById("menu");
   var toggleButton = document.getElementById("menu-toggle");
 
+  // Toggle menu between expanded and collapsed
   toggleButton.addEventListener("click", function (event) {
     event.preventDefault();
 
     menu.classList.toggle("expanded");
-    toggleButton.style.transitionDuration = "0.5s";
+    // menu.classList.toggle("collapsed");
 
     if (menu.classList.contains("expanded")) {
       toggleButton.textContent = "×";
-      toggleButton.style.left = "260px";
-      toggleButton.style.transform = "rotate(180deg)";
-      menu.style.left = "0";
+      toggleButton.style.left = "270px";
     } else {
       toggleButton.textContent = "☰";
-      toggleButton.style.left = "10px";
-      toggleButton.style.transform = "rotate(0deg)";
-      menu.style.left = "-300px";
+      toggleButton.style.left = "70px";
     }
   });
 });
