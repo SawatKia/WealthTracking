@@ -12,25 +12,24 @@ body {
 #menu {
   margin: 0;
   width: 250px;
-  height: 100%;
+  /* height: 100%; */
+  height: 80vh;
   color: #222;
   background-color: #f0f0f0;
   padding: 20px;
   overflow-y: auto;
   position: fixed;
   left: -300px;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
   transition: left 0.5s ease-in-out;
   z-index: 1000;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 #menu.expanded {
   left: 0;
-}
-
-#menu.expanded + #content {
-  margin-left: 300px;
-  width: calc(100% - 250px);
 }
 
 #menu h2,
@@ -66,8 +65,8 @@ body {
 }
 
 #menu a:hover {
-  color: #0056b3;
-  background-color: #f0f0f0;
+  color: #d5e9ff;
+  background-color: #a7a7a7;
 }
 
 #menu input[type="checkbox"] {
@@ -83,7 +82,8 @@ body {
 #menu-toggle {
   position: fixed;
   left: 10px;
-  top: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 50px;
   height: 50px;
   color: #007bff;
@@ -93,7 +93,9 @@ body {
   font-size: 24px;
   padding: 0;
   z-index: 1001;
-  transition: left 0.5s ease-in-out, transform 0.5s ease-in-out;
+  transition: left 0.5s ease-in-out;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Loading Progress Styling */
@@ -108,6 +110,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1001;
+  transition: opacity 0.5s ease-in-out;
 }
 
 #loadingBar {
@@ -117,7 +120,7 @@ body {
   height: 100%;
   width: 0;
   background-color: #007bff;
-  transition: width 0.3s ease-in-out;
+  transition: width 0.5s ease-in-out;
 }
 
 #loadingText {

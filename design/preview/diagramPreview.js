@@ -72,7 +72,6 @@ function saveData() {
 //NOTE - Toggle the menu
 document.addEventListener("DOMContentLoaded", function () {
   var menu = document.getElementById("menu");
-  var content = document.getElementById("content");
   var toggleButton = document.getElementById("menu-toggle");
 
   toggleButton.addEventListener("click", function (event) {
@@ -234,9 +233,15 @@ document.addEventListener("DOMContentLoaded", async function () {
       progress
     )}% ${diagram.id} loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
-      document.getElementById("loadingProgress").style.display = "none";
+      // Use setTimeout to delay hiding the progress bar
+      setTimeout(() => {
+        document.getElementById("loadingProgress").style.display = "none";
+      }, 500); // Delay of 500ms
     }
   }
+
+  // Add a small delay before starting to load diagrams
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Create an array of promises for fetching diagrams
   const fetchPromises = diagrams.map(async (diagram) => {
@@ -266,6 +271,12 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Execute all fetch requests simultaneously
   await Promise.all(fetchPromises);
+
+  // Ensure the progress bar reaches 100% before hiding
+  document.getElementById("loadingBar").style.width = "100%";
+  document.getElementById("loadingText").textContent =
+    "100% All diagrams loaded and rendered successfully.";
+
   initZoomableDiagrams();
 });
 

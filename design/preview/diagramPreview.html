@@ -14,99 +14,101 @@
 <body>
     <button id="menu-toggle">☰</button>
     <div id="menu">
-        <h3>1. High-level Design</h3>
-        <ul>
-            <li>
-                <a href="#softwareArchitecture">Software Architecture</a>
-                <input type="checkbox" id="softwareArchitecture_check">
-                <label for="softwareArchitecture_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#userFlow">User Flow</a>
-                <input type="checkbox" id="userFlow_check">
-                <label for="userFlow_check"><span class="verified-text">code verified</span></label>
-            </li>
-        </ul>
-        <h3>2. Our System</h3>
-        <h4>User Management</h4>
-        <ul>
-            <li>
-                <a href="#userCreate">Create</a>
-                <input type="checkbox" id="userCreate_check">
-                <label for="userCreate_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#userRead">Read</a>
-                <input type="checkbox" id="userRead_check">
-                <label for="userRead_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#userUpdate">Update</a>
-                <input type="checkbox" id="userUpdate_check">
-                <label for="userUpdate_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#userDelete">Delete</a>
-                <input type="checkbox" id="userDelete_check">
-                <label for="userDelete_check"><span class="verified-text">code verified</span></label>
-            </li>
-        </ul>
-        <h4>Bank Account Management</h4>
-        <ul>
-            <li>
-                <a href="#bankAdd">Add</a>
-                <input type="checkbox" id="bankAdd_check">
-                <label for="bankAdd_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#bankReadAll">Read All</a>
-                <input type="checkbox" id="bankReadAll_check">
-                <label for="bankReadAll_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#bankReadOne">Read One</a>
-                <input type="checkbox" id="bankReadOne_check">
-                <label for="bankReadOne_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#bankUpdate">Update</a>
-                <input type="checkbox" id="bankUpdate_check">
-                <label for="bankUpdate_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#bankDelete">Delete</a>
-                <input type="checkbox" id="bankDelete_check">
-                <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
-            </li>
-        </ul>
-        <h4>Income-Expense Management</h4>
-        <ul>
-            <li>
-                <a href="#ieCreate">Create</a>
-                <input type="checkbox" id="ieCreate_check">
-                <label for="tCreate_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#ieDelete">Delete</a>
-                <input type="checkbox" id="ieDelete_check">
-                <label for="tDelete_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#ieReadAll">Read All</a>
-                <input type="checkbox" id="ieReadAll_check">
-                <label for="tReadAll_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#ieReadOne">Read One</a>
-                <input type="checkbox" id="ieReadOne_check">
-                <label for="tReadOne_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <li>
-                <a href="#ieUpdate">Update</a>
-                <input type="checkbox" id="ieUpdate_check">
-                <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
-            </li>
-            <h3>3. Other Systems (3rd-party API)</h3>
+        <div class="full-menu">
+            <h3><span class="icon">📊</span>1. High-level Design</h3>
+            <ul>
+                <li>
+                    <a href="#softwareArchitecture">Software Architecture</a>
+                    <input type="checkbox" id="softwareArchitecture_check">
+                    <label for="softwareArchitecture_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#userFlow">User Flow</a>
+                    <input type="checkbox" id="userFlow_check">
+                    <label for="userFlow_check"><span class="verified-text">code verified</span></label>
+                </li>
+            </ul>
+            <h3><span class="icon">🖥️</span>2. Our System</h3>
+            <h4><span class="icon">👤</span>User Management</h4>
+            <ul>
+                <li>
+                    <a href="#userCreate">Create</a>
+                    <input type="checkbox" id="userCreate_check">
+                    <label for="userCreate_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#userRead">Read</a>
+                    <input type="checkbox" id="userRead_check">
+                    <label for="userRead_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#userUpdate">Update</a>
+                    <input type="checkbox" id="userUpdate_check">
+                    <label for="userUpdate_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#userDelete">Delete</a>
+                    <input type="checkbox" id="userDelete_check">
+                    <label for="userDelete_check"><span class="verified-text">code verified</span></label>
+                </li>
+            </ul>
+            <h4><span class="icon">🏦</span>Bank Account Management</h4>
+            <ul>
+                <li>
+                    <a href="#bankAdd">Add</a>
+                    <input type="checkbox" id="bankAdd_check">
+                    <label for="bankAdd_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#bankReadAll">Read All</a>
+                    <input type="checkbox" id="bankReadAll_check">
+                    <label for="bankReadAll_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#bankReadOne">Read One</a>
+                    <input type="checkbox" id="bankReadOne_check">
+                    <label for="bankReadOne_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#bankUpdate">Update</a>
+                    <input type="checkbox" id="bankUpdate_check">
+                    <label for="bankUpdate_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#bankDelete">Delete</a>
+                    <input type="checkbox" id="bankDelete_check">
+                    <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
+                </li>
+            </ul>
+            <h4><span class="icon">💰</span>Income-Expense Management</h4>
+            <ul>
+                <li>
+                    <a href="#ieCreate">Create</a>
+                    <input type="checkbox" id="ieCreate_check">
+                    <label for="tCreate_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#ieDelete">Delete</a>
+                    <input type="checkbox" id="ieDelete_check">
+                    <label for="tDelete_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#ieReadAll">Read All</a>
+                    <input type="checkbox" id="ieReadAll_check">
+                    <label for="tReadAll_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#ieReadOne">Read One</a>
+                    <input type="checkbox" id="ieReadOne_check">
+                    <label for="tReadOne_check"><span class="verified-text">code verified</span></label>
+                </li>
+                <li>
+                    <a href="#ieUpdate">Update</a>
+                    <input type="checkbox" id="ieUpdate_check">
+                    <label for="tUpdate_check"><span class="verified-text">code verified</span></label>
+                </li>
+            </ul>
+            <h3><span class="icon">🔗</span>3. Other Systems (3rd-party API)</h3>
             <ul>
                 <li>
                     <a href="#quotaCheck">Quota Check</a>
@@ -120,6 +122,15 @@
                 </li>
             </ul>
             <button id="saveButton" onclick="saveData()">Save</button>
+        </div>
+        <div class="compact-menu">
+            <div class="icon-item" data-target="1. High-level Design">📊</div>
+            <div class="icon-item" data-target="2. Our System">🖥️</div>
+            <div class="icon-item" data-target="User Management">👤</div>
+            <div class="icon-item" data-target="Bank Account Management">🏦</div>
+            <div class="icon-item" data-target="Income-Expense Management">💰</div>
+            <div class="icon-item" data-target="3. Other Systems (3rd-party API)">🔗</div>
+        </div>
     </div>
 
     <div id="content">
@@ -134,7 +145,7 @@
             <p id="description">These diagrams preview presents sequence diagrams, and system architecture for the
                 WealthTrack project. WealthTrack is a web application designed to track personal income, expenses,
                 debts, and bank accounts, developed as part of the Computer Engineering 4th Year curriculum for
-                Project1.</p>
+                Project 1 and Project 2.</p>
         </div>
         <div class="section" id="highLevelDesign">
             <h2>1. High-level Design</h2>
@@ -258,15 +269,6 @@
                         </div>
                     </div>
                 </div>
-                <div id="ieDelete">
-                    <h4>Delete</h4>
-                    <div class="diagram-container">
-                        <button class="reset-zoom">Reset Zoom</button>
-                        <div class="mermaid" id="IeDeleteDiagram">
-                            <div class="skeleton-loader" id="loadingIeDelete"> loading diagram...</div>
-                        </div>
-                    </div>
-                </div>
                 <div id="ieReadAll">
                     <h4>Read All</h4>
                     <div class="diagram-container">
@@ -291,6 +293,15 @@
                         <button class="reset-zoom">Reset Zoom</button>
                         <div class="mermaid" id="IeUpdateDiagram">
                             <div class="skeleton-loader" id="loadingIeUpdate"> loading diagram...</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ieDelete">
+                    <h4>Delete</h4>
+                    <div class="diagram-container">
+                        <button class="reset-zoom">Reset Zoom</button>
+                        <div class="mermaid" id="IeDeleteDiagram">
+                            <div class="skeleton-loader" id="loadingIeDelete"> loading diagram...</div>
                         </div>
                     </div>
                 </div>
