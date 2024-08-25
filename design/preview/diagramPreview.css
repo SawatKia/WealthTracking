@@ -194,9 +194,19 @@ body {
   }
 }
 
-.mermaid {
-  margin: 20px 0;
-}
+.loading {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.75em; /* Adjust font size as needed */
+  z-index: 1000;
+  display: none; /* Hide by default */
 
 /* Section Styling */
 .section {
@@ -244,21 +254,10 @@ body {
   padding-top: 60px;
 }
 
-.loading {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  background: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 0.75em; /* Adjust font size as needed */
-  z-index: 1000;
-  display: none; /* Hide by default */
+.mermaid {
+  margin: 20px 0;
 }
-
+}
 
 /* Back to Top Button */
 #backToTop {
