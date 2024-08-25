@@ -139,17 +139,17 @@ body {
 /* Header Styling */
 #officialProjectName {
   color: #222;
-  font-size: 2em; 
-  font-weight: 700; 
+  font-size: 2em;
+  font-weight: 700;
   text-align: center;
   margin: 20px 0;
   padding: 10px;
-  background-color: #ffffff; 
+  background-color: #ffffff;
 }
 
 #diagramsHeader {
   color: #333;
-  font-size: 1.5em; 
+  font-size: 1.5em;
   font-weight: 500;
   text-align: center;
   margin: 20px 0;
@@ -184,13 +184,12 @@ body {
   }
 }
 
-
 @keyframes loading {
   0% {
-      background-position: 200% 0;
+    background-position: 200% 0;
   }
   100% {
-      background-position: -200% 0;
+    background-position: -200% 0;
   }
 }
 
@@ -207,6 +206,7 @@ body {
   font-size: 0.75em; /* Adjust font size as needed */
   z-index: 1000;
   display: none; /* Hide by default */
+}
 
 /* Section Styling */
 .section {
@@ -232,13 +232,13 @@ body {
 }
 
 .section h3 {
-  top: 52px; 
+  top: 52px;
   padding: 10px 0 5px 20px;
   border-left: 5px solid #28a745;
 }
 
 .section h4 {
-  top: 100px; 
+  top: 100px;
   padding: 10px 0 5px 40px;
   border-left: 5px solid #ffc107;
 }
@@ -254,9 +254,46 @@ body {
   padding-top: 60px;
 }
 
+/* diagrams */
+.diagram-container {
+  position: relative;
+  width: 100%;
+  border: thick double #32a1ce;
+}
+
+.reset-zoom {
+  margin: 8px 8px;
+  position: sticky;
+  top: 100px;
+  z-index: 11;
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #646464;
+  border-radius: 8px;
+}
+
+h4 + .diagram-container > .reset-zoom {
+  margin: 8px 8px;
+  position: sticky;
+  top: 150px;
+  z-index: 11;
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #646464;
+  border-radius: 8px;
+}
+
 .mermaid {
+  width: 100%;
+  height: 100%;
   margin: 20px 0;
 }
+
+.mermaid svg {
+  width: 100%;
+  height: auto;
 }
 
 /* Back to Top Button */

@@ -77,10 +77,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   toggleButton.addEventListener("click", function (event) {
     event.preventDefault();
-    
+
     menu.classList.toggle("expanded");
     toggleButton.style.transitionDuration = "0.5s";
-    
+
     if (menu.classList.contains("expanded")) {
       toggleButton.textContent = "×";
       toggleButton.style.left = "260px";
@@ -230,7 +230,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     loadedDiagrams++;
     const progress = (loadedDiagrams / totalDiagrams) * 100;
     document.getElementById("loadingBar").style.width = `${progress}%`;
-    document.getElementById("loadingText").textContent = `${Math.round(progress)}% ${diagram.id} loaded and rendered successfully.`;
+    document.getElementById("loadingText").textContent = `${Math.round(
+      progress
+    )}% ${diagram.id} loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
       document.getElementById("loadingProgress").style.display = "none";
     }
@@ -250,7 +252,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       mermaid.init(undefined, `#${diagram.id}`);
       console.log(`${diagram.id} loaded and rendered successfully.`);
     } catch (error) {
-      console.error(`Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`);
+      console.error(
+        `Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`
+      );
       document.getElementById(
         diagram.id
       ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
@@ -262,4 +266,95 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Execute all fetch requests simultaneously
   await Promise.all(fetchPromises);
+  initZoomableDiagrams();
 });
+
+//NOTE - SVG zoomable
+function initZoomableDiagrams() {
+  const containers = document.querySelectorAll(".diagram-container");
+
+  containers.forEach((container) => {
+    const svg = container.querySelector("svg");
+    const resetButton = container.querySelector(".reset-zoom");
+
+    if (!svg) return;
+
+    let viewBox = svg.viewBox.baseVal;
+    let originalViewBox = {
+      x: viewBox.x,
+      y: viewBox.y,
+      width: viewBox.width,
+      height: viewBox.height,
+    };
+
+    let isPanning = false;
+    let startPoint = { x: 0, y: 0 };
+    let viewBoxStart = { x: 0, y: 0 };
+
+    svg.addEventListener("wheel", onWheel);
+    svg.addEventListener("mousedown", onMouseDown);
+    svg.addEventListener("mousemove", onMouseMove);
+    svg.addEventListener("mouseup", onMouseUp);
+    svg.addEventListener("mouseleave", onMouseUp);
+    resetButton.addEventListener("click", resetZoom);
+
+    function onWheel(event) {
+      event.preventDefault();
+
+      const scaleFactor = event.deltaY > 0 ? 1.1 : 0.9;
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+
+      const startPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+
+      viewBox.x += (startPoint.x - viewBox.x) * (1 - scaleFactor);
+      viewBox.y += (startPoint.y - viewBox.y) * (1 - scaleFactor);
+      viewBox.width *= scaleFactor;
+      viewBox.height *= scaleFactor;
+
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+
+    function onMouseDown(event) {
+      isPanning = true;
+      startPoint = { x: event.clientX, y: event.clientY };
+      viewBoxStart = { x: viewBox.x, y: viewBox.y };
+    }
+
+    function onMouseMove(event) {
+      if (!isPanning) return;
+
+      const dx =
+        ((event.clientX - startPoint.x) * viewBox.width) / svg.clientWidth;
+      const dy =
+        ((event.clientY - startPoint.y) * viewBox.height) / svg.clientHeight;
+
+      viewBox.x = viewBoxStart.x - dx;
+      viewBox.y = viewBoxStart.y - dy;
+
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+
+    function onMouseUp() {
+      isPanning = false;
+    }
+
+    function resetZoom() {
+      viewBox.x = originalViewBox.x;
+      viewBox.y = originalViewBox.y;
+      viewBox.width = originalViewBox.width;
+      viewBox.height = originalViewBox.height;
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+  });
+}
