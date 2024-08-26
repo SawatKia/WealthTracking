@@ -71,22 +71,19 @@ function saveData() {
 
 //NOTE - Toggle the menu
 document.addEventListener("DOMContentLoaded", function () {
-  var menu = document.getElementById("menu");
-  var toggleButton = document.getElementById("menu-toggle");
+  const toggleButton = document.getElementById("menu-toggle");
+  const fullMenu = document.querySelector(".full-menu");
+  const compactMenu = document.querySelector(".compact-menu");
 
-  // Toggle menu between expanded and collapsed
-  toggleButton.addEventListener("click", function (event) {
-    event.preventDefault();
+  toggleButton.addEventListener("click", function () {
+    fullMenu.classList.toggle("expanded");
 
-    menu.classList.toggle("expanded");
-    // menu.classList.toggle("collapsed");
-
-    if (menu.classList.contains("expanded")) {
+    if (fullMenu.classList.contains("expanded")) {
+      compactMenu.style.display = "none";
       toggleButton.textContent = "×";
-      toggleButton.style.left = "270px";
     } else {
+      compactMenu.style.display = "block";
       toggleButton.textContent = "☰";
-      toggleButton.style.left = "70px";
     }
   });
 });
