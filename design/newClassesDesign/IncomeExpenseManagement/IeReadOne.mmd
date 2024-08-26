@@ -43,12 +43,12 @@ sequenceDiagram
         Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
 
-    Router->>Cont: getOneTransaction(req, res, next)
+    Router->>+Cont: getOneTransaction(req, res, next)
     Cont->>Cont: Destructoring parameters
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
     opt missing required fields
-        BaseCont-->>Cont: throw Error('<field> is required')
+        BaseCont-->>-Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
@@ -60,9 +60,9 @@ sequenceDiagram
         Cont-->>Router: next(new NotFoundError('User not found'))
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>Redis: Check for cached transaction
+    Cont->>+Redis: Check for cached transaction
     opt cache hit
-        Redis-->>Cont: return cachedTransactionData
+        Redis-->>-Cont: return cachedTransactionData
         Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
         Cont->>+BaseCont: verifyOwnership(user, transaction.bankAccounts)
         opt bank account's user email does not match current user email
@@ -75,19 +75,16 @@ sequenceDiagram
         Cont-->>Router: return formatted response
         Router-->>Client: 🟢200, "Transaction found", cachedTransactionData
     end
-    Redis-->>Cont: Cache miss
-    Cont->>PGClient: beginTransaction()
-    PGClient-->>Cont: transaction started
     
-    Cont->>Model: findById(transactionId)
-    Model-->>Cont: return transaction object
+    Cont->>+Model: findById(transactionId)
+    Model-->>-Cont: return transaction object
     opt no transaction found
         Cont-->>Router: next(new NotFoundError('No transaction found'))
         Router-->>Client: 🔴404, "No transaction found"
     end
     
-    Cont->>ContainsModel: findByTransactionId(transactionId)
-    ContainsModel-->>Cont: return contains object
+    Cont->>+ContainsModel: findByTransactionId(transactionId)
+    ContainsModel-->>-Cont: return contains object
     opt no transaction found
         Cont-->>Router: next(new NotFoundError('No transaction detail found'))
         Router-->>Client: 🔴404, "No transaction detail found"
@@ -139,5 +136,5 @@ sequenceDiagram
     Cont-)Redis: Cache transaction details (Join tables)
     
     Cont->>Cont: formatResponse(200, 'Transaction found', combinedTransactionData)
-    Cont-->>Router: return formatted response
-    Router-->>Client: 🟢200, { status: 200, message: "Transaction found", data: combinedTransactionData }
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: combinedTransactionData }

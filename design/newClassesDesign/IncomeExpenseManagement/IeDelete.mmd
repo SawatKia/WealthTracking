@@ -20,9 +20,11 @@ sequenceDiagram
     end
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
-    participant BankModel as BankAccountModel extends BaseModel
-    participant DebtModel as DebtModel extends BaseModel
     participant Model as TransactionModel extends BaseModel
+    participant ContainsModel as ContainsModel extends BaseModel
+    participant BankAccountModel as BankAccountModel extends BaseModel
+    participant DebtModel as DebtModel extends BaseModel
+    participant Redis as RedisCache
 
     Client->>+Router: DELETE /transactions/:transactionId (Delete Transaction)
     Router->>+Sec: verifyToken(req)
@@ -49,6 +51,7 @@ sequenceDiagram
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: return User object
     opt user not found
@@ -68,8 +71,8 @@ sequenceDiagram
     PGClient-->>-Cont: Transaction started
 
     opt Transaction is expense
-        Cont->>BankModel: updateBankAccountBalance(transaction, null)
-        BankModel-->>Cont: updated balance
+        Cont->>BankAccountModel: updateBankAccountBalance(transaction, null)
+        BankAccountModel-->>Cont: updated balance
         alt debt payment involved
             Cont->>DebtModel: updateDebtBalance(transaction, null)
             DebtModel-->>Cont: updated loan balance
@@ -79,13 +82,16 @@ sequenceDiagram
     Cont->>+Model: deleteById(transactionId)
     opt SQL Error
         Model-->>Cont: throw error
-        Cont->>PGClient: rollbackTransaction()
+        Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
         Cont-->>Router: next(error)
         Router-->>Client: 🔴500, "Failed to delete transaction"
     end
     Model-->>-Cont: return success message
     
-    Cont->>PGClient: commitTransaction()
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+    
     Cont->>Cont: formatResponse(200, 'Transaction deleted successfully')
     Cont-->>Router: return formatted response
     Router-->>Client: 🟢200, { status: 200, message: "Transaction deleted successfully" }

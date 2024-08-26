@@ -137,8 +137,8 @@ sequenceDiagram
     Cont->>+Model: insertTransaction({userEmail, transactionUUID, transactionDateTime, category, type, amount, note})
     opt insert failure
         Model-->>Cont: throw error
-        Cont->>PGClient: rollback()
-        PGClient-->>Cont: transaction rolled back
+        Cont->>+PGClient: rollback()
+        PGClient-->>-Cont: transaction rolled back
         Cont-->>Router: next(new Error('Failed to store transaction'))
         Router-->>Client: 🔴500, "Failed to store transaction"
     end
@@ -148,8 +148,8 @@ sequenceDiagram
         Cont->>+ContainsModel: insertContains({senderBankAccount, transactionUUID, 'receiver'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -158,8 +158,8 @@ sequenceDiagram
         Cont->>+ContainsModel: insertContains({senderBankAccount, transactionUUID, 'sender'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -168,8 +168,8 @@ sequenceDiagram
         Cont->>+ContainsModel: insertContains({senderBankAccount, transactionUUID, 'sender'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -177,16 +177,16 @@ sequenceDiagram
         Cont->>+ContainsModel: insertContains({receiverBankAccount, transactionUUID, 'receiver'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
         ContainsModel-->>-Cont: return insertContains object (staged)
     end
 
-    Cont->>PGClient: commit()
-    PGClient-->>Cont: transaction committed
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
 
     Note over Cont, Redis: Async operation
     Cont-)+Redis: Cache transaction details (Join tables Transaction, Contains, BankAccount)

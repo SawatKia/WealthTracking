@@ -47,7 +47,7 @@ sequenceDiagram
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
     opt missing required fields
-        BaseCont-->>Cont: throw Error('<field> is required')
+        BaseCont-->>-Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
@@ -80,8 +80,8 @@ sequenceDiagram
         Cont->>+BankAccountModel: updateBalance(userEmail, updateBankAccount, (newAmount-oldAmount))
         opt update failure
             BankAccountModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(error)
             Router-->>Client: 🔴500, "Failed to update Balance"
         end
@@ -91,8 +91,8 @@ sequenceDiagram
     Cont->>+Model: updateTransaction(transactionId, updatedTransaction)
     opt SQL Error
         Model-->>Cont: throw error
-        Cont->>PGClient: rollback()
-        PGClient-->>Cont: transaction rolled back
+        Cont->>+PGClient: rollback()
+        PGClient-->>-Cont: transaction rolled back
         Cont-->>Router: next(error)
         Router-->>Client: 🔴500, "Failed to update transaction"
     end
@@ -102,8 +102,8 @@ sequenceDiagram
         Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'receiver'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -112,8 +112,8 @@ sequenceDiagram
         Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'sender'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -133,8 +133,8 @@ sequenceDiagram
         Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'sender'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -142,8 +142,8 @@ sequenceDiagram
         Cont->>+ContainsModel: updateContainsByTransactionUuid({receiverBankAccount, transactionUUID, 'receiver'})
         opt insert failure
             ContainsModel-->>Cont: throw error
-            Cont->>PGClient: rollback()
-            PGClient-->>Cont: transaction rolled back
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
             Cont-->>Router: next(new Error('Failed to store contains'))
             Router-->>Client: 🔴500, "Failed to store contains"
         end
@@ -156,5 +156,5 @@ sequenceDiagram
 
 
     Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
-    Cont-->>Router: return formatted response
-    Router-->>Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: updatedTransaction + details }
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: updatedTransaction + details }
