@@ -223,17 +223,27 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Function to update loading progress
   function updateLoadingProgress(diagram) {
+    const loadingText = document.getElementById("loadingText");
     loadedDiagrams++;
     const progress = (loadedDiagrams / totalDiagrams) * 100;
     document.getElementById("loadingBar").style.width = `${progress}%`;
-    document.getElementById("loadingText").textContent = `${Math.round(
+    loadingText.textContent = `${Math.round(
       progress
-    )}% ${diagram.id} loaded and rendered successfully.`;
+    )}% [${loadedDiagrams}/${totalDiagrams}] ${
+      diagram.id
+    } loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
+      // Ensure the progress bar reaches 100% before hiding
+      document.getElementById("loadingBar").style.width = "100%";
+      loadingText.textContent =
+        "100% All diagrams loaded and rendered successfully.";
       // Use setTimeout to delay hiding the progress bar
       setTimeout(() => {
         document.getElementById("loadingProgress").style.display = "none";
       }, 500); // Delay of 500ms
+    }
+    if (progress >= 50) {
+      loadingText.style.fontWeight = 700;
     }
   }
 
@@ -268,11 +278,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Execute all fetch requests simultaneously
   await Promise.all(fetchPromises);
-
-  // Ensure the progress bar reaches 100% before hiding
-  document.getElementById("loadingBar").style.width = "100%";
-  document.getElementById("loadingText").textContent =
-    "100% All diagrams loaded and rendered successfully.";
 
   initZoomableDiagrams();
 });
