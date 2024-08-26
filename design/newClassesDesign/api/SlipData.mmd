@@ -27,7 +27,7 @@ sequenceDiagram
     Router->>+Cont: extract_slip_data(image)
     opt image not found
         Cont-->>Router: throw error "slip image not found"
-        Router-->>Client: 400, "slip image not found"
+        Router-->>Client: 🔴400, "slip image not found"
     end
     Cont->>+ApiClient: checkSlipApiAvailability()
     opt API not available
@@ -40,17 +40,17 @@ sequenceDiagram
     ApiClient->>ApiClient: add EASYSLIP_API_KEY from .env to Header
     ApiClient->>+Api: POST /verify
     opt API unavailable
-        Api-->>ApiClient: 500, any error
+        Api-->>ApiClient: 🔴500, any error
         ApiClient-->>Cont: throw error 
         Cont-->>Router: next(ApiError(error)) 
-        Router-->>Client: 503, "API service unavailable"
+        Router-->>Client: 🔴503, "API service unavailable"
     end
     Api-->>-ApiClient: Return slip information object
     opt any error
         ApiClient-->>Cont: throw error
         Cont-->>Router: throw error 
-        Router-->>Client: 500, "internal server error"
+        Router-->>Client: 🔴500, "internal server error"
     end
     ApiClient-->>-Cont: Return slip information object
     Cont-->>-Router: formatResponse("extract slip data successful", data: {"slipInfo":slipInfoObject})
-    Router-->>-Client: 200, "extract slip data successful", data: {"slipInfo":slipInfoObject}
+    Router-->>-Client: 🟢200, "extract slip data successful", data: {"slipInfo":slipInfoObject}

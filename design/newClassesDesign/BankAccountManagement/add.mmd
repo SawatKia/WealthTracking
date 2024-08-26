@@ -14,68 +14,76 @@ sequenceDiagram
     participant Client
     participant Sec as Security
     participant Router as BankRouter
-    participant BaseCont as BaseController
-    participant Cont as BankAccountController extends BaseController
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as BankAccountController extends BaseController
+    end
     participant PGClient as PostgreSQLClient
-    participant BaseModel as BaseModel extends PGClient
+    participant BaseModel as BaseModel 
     participant Model as BankAccountModel extends BaseModel
 
     Client->>+Router: POST /bank-accounts/ (create Bank Account)
-    Note over Sec, Router: this method defined in UserController.js
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: verifyToken(req)
-    alt if token is invalid
+    alt Token decode error | Token expired | Invalid token
         Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
-        Router-->>Client: 401, "Could not validate credentials"
+        Router-->>Client: 🔴401, "Could not validate credentials"
     end
-    Sec-->>-Router: decoded user object (userId)
-    
+    Sec-->>-Router: decoded user object 
+
+    Note over Sec, Router: this method defined in UserManagement/create.mmd
     Router->>Router: MethodValidator(allowedMethods)
     opt path not available
-        Router-->>Client: 404, "<path> not available"
+        Router-->>Client: 🔴404, "<path> not available"
     end
     opt method not allowed
-        Router-->>Client: 405, "<method> not allowed for <path>"
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
     
     Router->>+Cont: createBankAccount(req, res, next)
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['bankAccountName', 'bankAccountDisplayName', 'bankAccountNumber', 'bankName', 'balance']
-    Cont->>+BaseCont: verifyBodyFields(req.body, requiredFields)
+    Cont->>+BaseCont: verifyFieldFields(req.body, requiredFields)
     opt missing required fields
-        BaseCont-->>Cont: throw new BadRequestError('<field> is required')
+        BaseCont-->>Cont: throw new Error('<field> is required')
         Cont-->>Router: next(new BadRequestError(error.message))
-        Router-->>Client: 400, "<field> is required"
+        Router-->>Client: 🔴400, "<field> is required"
     end
     BaseCont->>-Cont: return true
     
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: return User object
     opt user not found
         Cont-->>Router: next(new NotFoundError('User not found'))
-        Router-->>Client: 404, "User not found"
+        Router-->>Client: 🔴404, "User not found"
     end
     
-    Cont->>Cont: Create new bank account data object with user.id
-    Cont->>+Model: createBankAccount({ userId, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
-    Model->>+BaseModel: insert(data) 
-    BaseModel->>BaseModel: validateSchema(data)
+    Cont->>Cont: Create new bank account data object with user.email
+    Cont->>+Model: createBankAccount({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
+    Model->>+BaseModel: validateSchema(data) 
     
     opt missing required field or invalid type
         BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
         Cont-->>Router: next(new BadRequestError(error.message))
-        Router-->>Client: 400, "<error.message>"
+        Router-->>Client: 🔴400, "<error.message>"
     end
-    
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
         Model-->>Cont: throw new Error('Bank account number already exists')
         Cont-->>Router: next(new ConflictError(error.message))
-        Router-->>Client: 409, "Bank account number already exists"
+        Router-->>Client: 🔴409, "Bank account number already exists"
     end
-    
+    opt any other error
+       BaseModel-->>Model: throw error
+       Model-->>Cont: throw error
+       Cont-->>Router: next(error)
+       Router-->>Client: 🔴500, "something went wrong"
+    end
+
     BaseModel->>-Model: return new BankAccount
     Model->>-Cont: return createdBankAccount
     Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccount)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 201, { status: 201, message: "Bank account created successfully", data: createdBankAccount }
+    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccount }

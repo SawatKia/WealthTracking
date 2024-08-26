@@ -25,7 +25,7 @@ body {
   transition: left 1s ease-in-out;
   z-index: 1000;
   border-radius: 0 10px 10px 0;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
 }
 
 .full-menu.expanded {
@@ -106,7 +106,7 @@ body {
 }
 
 .full-menu.expanded + #menu-toggle {
-  left: 260px; /* Position the toggle button correctly when expanded */
+  left: 270px; /* Position the toggle button correctly when expanded */
   transform: rotate(-180deg);
   transition: transform 1s ease-in-out, left 1s ease-in-out;
 }
@@ -295,7 +295,7 @@ a.icon-item:hover {
   margin: 10px 0;
   border: 1px solid #ddd;
   border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
   padding-top: 60px;
 }
 
@@ -350,15 +350,24 @@ h4 + .diagram-container > .reset-zoom {
   color: white;
   border: none;
   border-radius: 50%;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.7);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
   width: 50px;
   height: 50px;
   font-size: 24px;
+  font-weight: 600;
   cursor: pointer;
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.3s, transform 0.5s;
   transform: translateY(20px);
+
+  /* Add these properties to center the content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Adjust line-height to ensure vertical centering */
+  line-height: 1;
 }
 
 #backToTop:hover {

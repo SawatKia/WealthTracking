@@ -13,16 +13,16 @@
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router as BankRouter
+    participant Router as TransactionRouter
     box orange Controller
         participant BaseCont as BaseController
-        participant Cont as BankAccountController extends BaseController
+        participant Cont as TransactionController extends BaseController
     end
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
-    participant Model as BankAccountModel extends BaseModel
+    participant Model as TransactionModel extends BaseModel
 
-    Client->>+Router: GET /bank-accounts/ (get all bankAccount of user)
+    Client->>+Router: GET /transactions (ReadAll Transactions)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: verifyToken(req)
     alt Token decode error | Token expired | Invalid token
@@ -39,32 +39,24 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: getBankAccounts(req)
+
+    Router->>+Cont: getTransactions(req, res, next)
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
-    BaseCont-->>-Cont: User data
-
+    BaseCont-->>-Cont: return User object
     opt user not found
-        Cont-->>Router: throw NotFoundError('User not found')
+        Cont-->>Router: next(new NotFoundError('User not found'))
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAllBankAccountsByUserKey(user.email)
-    Model->>+BaseModel: findAll()
-    opt any error occurred
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: pass error
-        Cont-->>Router: next(error)
-        Router-->>Client: 🔴500, "something went wrong"
+    Cont->>+Model: findAll(userEmail)
+    Model->>+BaseModel: pass call
+    BaseModel-->>-Model: return [Transaction1, Transaction2, ...]
+    Model-->>-Cont: return transactions array
+    opt no transactions found
+        Cont-->>Router: next(new NotFoundError('No transactions found'))
+        Router-->>Client: 🔴404, "No transactions found"
     end
-    BaseModel-->>-Model: return array of bank account objects
-    Model-->>-Cont: pass results
-
-    opt bank accounts not found
-        Cont-->>Router: throw NotFoundError('Bank accounts not found')
-        Router-->>Client: 🔴404, "Bank accounts not found"
-    end
-
     Note over Cont, BaseCont: ensure that verifyOwnership is support iteration array of object
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
     opt Bank account's user email does not match current user email
@@ -74,6 +66,6 @@ sequenceDiagram
     end
     BaseCont-->>-Cont: return true
 
-    Cont->>Cont: formatResponse(200, 'Bank accounts retrieved successfully', { bankAccounts })
+    Cont->>Cont: formatResponse(200, 'Transactions retrieved successfully', transactions)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Bank accounts retrieved successfully", data: { bankAccounts } }
+    Router-->>-Client: 🟢200, { status: 200, message: "Transactions retrieved successfully", data: [Transaction1, Transaction2, ...] }
