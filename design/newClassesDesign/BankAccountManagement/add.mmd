@@ -43,7 +43,7 @@ sequenceDiagram
     Router->>+Cont: createBankAccount(req, res, next)
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['bankAccountName', 'bankAccountDisplayName', 'bankAccountNumber', 'bankName', 'balance']
-    Cont->>+BaseCont: verifyFieldFields(req.body, requiredFields)
+    Cont->>+BaseCont: verifyField(req.body, requiredFields)
     opt missing required fields
         BaseCont-->>Cont: throw new Error('<field> is required')
         Cont-->>Router: next(new BadRequestError(error.message))
