@@ -74,6 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const toggleButton = document.getElementById("menu-toggle");
   const fullMenu = document.querySelector(".full-menu");
   const compactMenu = document.querySelector(".compact-menu");
+  const fullMenuAnchor = fullMenu.querySelectorAll("a");
 
   toggleButton.addEventListener("click", function () {
     fullMenu.classList.toggle("expanded");
@@ -85,6 +86,14 @@ document.addEventListener("DOMContentLoaded", function () {
       compactMenu.style.display = "block";
       toggleButton.textContent = "☰";
     }
+  });
+  // Collapse full menu when any link inside the full menu is clicked
+  fullMenuAnchor.forEach(function (link) {
+    link.addEventListener("click", function () {
+      fullMenu.classList.remove("expanded");
+      compactMenu.style.display = "block";
+      toggleButton.textContent = "☰"; // Change button back to menu icon
+    });
   });
 });
 
