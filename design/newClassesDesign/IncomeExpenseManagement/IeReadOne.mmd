@@ -75,7 +75,7 @@ sequenceDiagram
         Cont-->>Router: return formatted response
         Router-->>Client: 🟢200, "Transaction found", cachedTransactionData
     end
-    
+    Note over Cont, Model: for cache miss. when there are many users, Joining large 3 tables together can be time consuming. querying seprate table and merging together is faster
     Cont->>+Model: findById(transactionId)
     Model-->>-Cont: return transaction object
     opt no transaction found
