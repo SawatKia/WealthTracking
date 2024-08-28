@@ -40,14 +40,13 @@ graph TD
     DebtController --> DebtModel
     end
 
-    ThirdPartyAPIRouter -.Note.-Note{{the generic names, to keep the architecture diagram\n flexible and maintain a higher level of abstraction}}
+    %% ThirdPartyAPIRouter -.Note.-Note{{the generic names, to keep the architecture diagram\n flexible and maintain a higher level of abstraction}}
 
-    
-    UserModel --> MongoDB[(MongoDB)]
-    BankAccountModel --> MongoDB[(MongoDB)]
-    TransactionModel --> MongoDB[(MongoDB)]
-    IncomesExpensesModel --> MongoDB[(MongoDB)]
-    DebtModel --> MongoDB[(MongoDB)]
+    UserModel --> PostgreSQL[(PostgreSQL)]
+    BankAccountModel --> PostgreSQL[(PostgreSQL)]
+    TransactionModel --> PostgreSQL[(PostgreSQL)]
+    IncomesExpensesModel --> PostgreSQL[(PostgreSQL)]
+    DebtModel --> PostgreSQL[(PostgreSQL)]
     
     ThirdPartyAPIController --> ExternalAPIService[External API Service]
     ExternalAPIService -->|HTTP/HTTPS| ThirdPartyAPI[EasySlip Api]

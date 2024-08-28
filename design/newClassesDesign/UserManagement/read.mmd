@@ -32,24 +32,24 @@ sequenceDiagram
     opt Token decode error
         Note over Sec, Router: Use the same error class to ensure consistency of error messages 
         Sec-->>Router: throw CredentialsException()
-        Router-->>Client: 401, "Could not validate credentials"
+        Router-->>Client: 🔴401, "Could not validate credentials"
     end
     opt Token expired
         Sec-->>Router: throw CredentialsException()
-        Router-->>Client: 401, "Could not validate credentials"
+        Router-->>Client: 🔴401, "Could not validate credentials"
     end
     opt Invalid token
         Sec-->>Router: throw CredentialsException()
-        Router-->>Client: 401, "Could not validate credentials"
+        Router-->>Client: 🔴401, "Could not validate credentials"
     end
     Sec-->>-Router: decoded user object
     Note over Router : this method defined in create.mmd
     Router->>Router: MethodValidator(allowedMethods)
     opt path not available
-        Router-->>Client: 401, "<path> not available"
+        Router-->>Client: 🔴401, "<path> not available"
     end
     opt method not allowed
-        Router-->>Client: 405, "<method> not allowed for <path>"
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
     Router->>+Cont: getCurrentUser(req, res, next)
     Note over Cont, BaseCont: this method will use several times in the application
@@ -65,7 +65,7 @@ sequenceDiagram
         BaseModel-->>Model: throw Error('Invalid userId')
         Model-->>BaseCont: throw error
         BaseCont-->>Router: next(BadRequestError('Invalid userId'))
-        Router-->>Client: 400, "Invalid userId"
+        Router-->>Client: 🔴400, "Invalid userId"
     end
     Mongo-->>-BaseModel: true
     BaseModel->>BaseModel: findById(userId)
@@ -73,13 +73,13 @@ sequenceDiagram
         BaseModel-->>Model: null
         Model-->>BaseCont: throw Error('User not found')
         BaseCont-->>Router: next(UserNotFoundError())
-        Router-->>Client: 404, "User not found"
+        Router-->>Client: 🔴404, "User not found"
     end
     opt error finding user
         BaseModel-->>Model: throw Error('Error finding user')
         Model-->>BaseCont: throw error
         BaseCont-->>Router: next(error)
-        Router-->>Client: 500, "something went wrong"
+        Router-->>Client: 🔴500, "something went wrong"
     end
     BaseModel-->>-Model: user data object
     Model->>Model: Remove hashedPassword from user data
@@ -87,4 +87,4 @@ sequenceDiagram
     BaseCont-->>-Cont: User data
     Cont->>Cont: formatResponse(200, 'User found', { user })
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 200, { status: 200, message: "User found", data: { user } }
+    Router-->>-Client: 🟢200, { status: 200, message: "User found", data: { user } }

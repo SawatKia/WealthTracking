@@ -1,0 +1,97 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as TransactionRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as TransactionController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as TransactionModel extends BaseModel
+    participant ContainsModel as ContainsModel extends BaseModel
+    participant BankAccountModel as BankAccountModel extends BaseModel
+    participant DebtModel as DebtModel extends BaseModel
+    participant Redis as RedisCache
+
+    Client->>+Router: DELETE /transactions/:transactionId (Delete Transaction)
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object (userId)
+
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: deleteTransaction(req, res, next)
+    Cont->>Cont: Destructoring parameters
+    Note over Cont: requiredFields = ["transactionId"]
+    Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
+    opt missing required fields
+        BaseCont-->>Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Cont->>+Model: findById(transactionId)
+    opt transaction not found
+        Model-->>Cont: throw new NotFoundError('Transaction not found')
+        Cont-->>Router: next(new NotFoundError('Transaction not found'))
+        Router-->>Client: 🔴404, "Transaction not found"
+    end
+    Model-->>-Cont: return Transaction
+
+    Cont->>+PGClient: beginTransaction()
+    PGClient-->>-Cont: Transaction started
+
+    opt Transaction is expense
+        Cont->>BankAccountModel: updateBankAccountBalance(transaction, null)
+        BankAccountModel-->>Cont: updated balance
+        alt debt payment involved
+            Cont->>DebtModel: updateDebtBalance(transaction, null)
+            DebtModel-->>Cont: updated loan balance
+        end
+    end
+
+    Cont->>+Model: deleteById(transactionId)
+    opt SQL Error
+        Model-->>Cont: throw error
+        Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "Failed to delete transaction"
+    end
+    Model-->>-Cont: return success message
+    
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+    
+    Cont->>Cont: formatResponse(200, 'Transaction deleted successfully')
+    Cont-->>Router: return formatted response
+    Router-->>Client: 🟢200, { status: 200, message: "Transaction deleted successfully" }

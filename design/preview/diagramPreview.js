@@ -71,22 +71,29 @@ function saveData() {
 
 //NOTE - Toggle the menu
 document.addEventListener("DOMContentLoaded", function () {
-  var menu = document.getElementById("menu");
-  var content = document.getElementById("content");
-  var toggleButton = document.getElementById("menu-toggle");
+  const toggleButton = document.getElementById("menu-toggle");
+  const fullMenu = document.querySelector(".full-menu");
+  const compactMenu = document.querySelector(".compact-menu");
+  const fullMenuAnchor = fullMenu.querySelectorAll("a");
 
   toggleButton.addEventListener("click", function () {
-    menu.classList.toggle("expanded");
-    toggleButton.style.transitionDuration = "0.5s";
-    if (menu.classList.contains("expanded")) {
+    fullMenu.classList.toggle("expanded");
+
+    if (fullMenu.classList.contains("expanded")) {
+      compactMenu.style.display = "none";
       toggleButton.textContent = "×";
-      toggleButton.style.left = "260px";
-      toggleButton.style.transform = "rotate(180deg)";
     } else {
+      compactMenu.style.display = "block";
       toggleButton.textContent = "☰";
-      toggleButton.style.left = "10px";
-      toggleButton.style.transform = "rotate(0deg)";
     }
+  });
+  // Collapse full menu when any link inside the full menu is clicked
+  fullMenuAnchor.forEach(function (link) {
+    link.addEventListener("click", function () {
+      fullMenu.classList.remove("expanded");
+      compactMenu.style.display = "block";
+      toggleButton.textContent = "☰"; // Change button back to menu icon
+    });
   });
 });
 
@@ -168,34 +175,34 @@ document.addEventListener("DOMContentLoaded", async function () {
       svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
-      id: "tCreateDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-create.mmd",
-      loadingId: "loadingTCreate",
-      svgPath: "../newClassesDesign/TransactionManagement/t-create.svg",
+      id: "IeCreateDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.mmd",
+      loadingId: "loadingIeCreate",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.svg",
     },
     {
-      id: "tDeleteDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-delete.mmd",
-      loadingId: "loadingTDelete",
-      svgPath: "../newClassesDesign/TransactionManagement/t-delete.svg",
+      id: "IeDeleteDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.mmd",
+      loadingId: "loadingIeDelete",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.svg",
     },
     {
-      id: "tReadAllDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-readAll.mmd",
-      loadingId: "loadingTReadAll",
-      svgPath: "../newClassesDesign/TransactionManagement/t-readAll.svg",
+      id: "IeReadAllDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.mmd",
+      loadingId: "loadingIeReadAll",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.svg",
     },
     {
-      id: "tReadOneDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-readOne.mmd",
-      loadingId: "loadingTReadOne",
-      svgPath: "../newClassesDesign/TransactionManagement/t-readOne.svg",
+      id: "IeReadOneDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.mmd",
+      loadingId: "loadingIeReadOne",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.svg",
     },
     {
-      id: "tUpdateDiagram",
-      mmdPath: "../newClassesDesign/TransactionManagement/t-update.mmd",
-      loadingId: "loadingTUpdate",
-      svgPath: "../newClassesDesign/TransactionManagement/t-update.svg",
+      id: "IeUpdateDiagram",
+      mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.mmd",
+      loadingId: "loadingIeUpdate",
+      svgPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.svg",
     },
     {
       id: "quotaCheckDiagram",
@@ -222,14 +229,32 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Function to update loading progress
   function updateLoadingProgress(diagram) {
+    const loadingText = document.getElementById("loadingText");
     loadedDiagrams++;
     const progress = (loadedDiagrams / totalDiagrams) * 100;
     document.getElementById("loadingBar").style.width = `${progress}%`;
-    document.getElementById("loadingText").textContent = `${Math.round(progress)}% ${diagram.id} loaded and rendered successfully.`;
+    loadingText.textContent = `${Math.round(
+      progress
+    )}% [${loadedDiagrams}/${totalDiagrams}] ${
+      diagram.id
+    } loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
-      document.getElementById("loadingProgress").style.display = "none";
+      // Ensure the progress bar reaches 100% before hiding
+      document.getElementById("loadingBar").style.width = "100%";
+      loadingText.textContent =
+        "100% All diagrams loaded and rendered successfully.";
+      // Use setTimeout to delay hiding the progress bar
+      setTimeout(() => {
+        document.getElementById("loadingProgress").style.display = "none";
+      }, 500); // Delay of 500ms
+    }
+    if (progress >= 50) {
+      loadingText.style.fontWeight = 700;
     }
   }
+
+  // Add a small delay before starting to load diagrams
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Create an array of promises for fetching diagrams
   const fetchPromises = diagrams.map(async (diagram) => {
@@ -245,7 +270,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       mermaid.init(undefined, `#${diagram.id}`);
       console.log(`${diagram.id} loaded and rendered successfully.`);
     } catch (error) {
-      console.error("Mermaid file not loaded, falling back to SVG:", error);
+      console.error(
+        `Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`
+      );
       document.getElementById(
         diagram.id
       ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
@@ -257,4 +284,96 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Execute all fetch requests simultaneously
   await Promise.all(fetchPromises);
+
+  initZoomableDiagrams();
 });
+
+//NOTE - SVG zoomable
+function initZoomableDiagrams() {
+  const containers = document.querySelectorAll(".diagram-container");
+
+  containers.forEach((container) => {
+    const svg = container.querySelector("svg");
+    const resetButton = container.querySelector(".reset-zoom");
+
+    if (!svg) return;
+
+    let viewBox = svg.viewBox.baseVal;
+    let originalViewBox = {
+      x: viewBox.x,
+      y: viewBox.y,
+      width: viewBox.width,
+      height: viewBox.height,
+    };
+
+    let isPanning = false;
+    let startPoint = { x: 0, y: 0 };
+    let viewBoxStart = { x: 0, y: 0 };
+
+    svg.addEventListener("wheel", onWheel);
+    svg.addEventListener("mousedown", onMouseDown);
+    svg.addEventListener("mousemove", onMouseMove);
+    svg.addEventListener("mouseup", onMouseUp);
+    svg.addEventListener("mouseleave", onMouseUp);
+    resetButton.addEventListener("click", resetZoom);
+
+    function onWheel(event) {
+      event.preventDefault();
+
+      const scaleFactor = event.deltaY > 0 ? 1.1 : 0.9;
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+
+      const startPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+
+      viewBox.x += (startPoint.x - viewBox.x) * (1 - scaleFactor);
+      viewBox.y += (startPoint.y - viewBox.y) * (1 - scaleFactor);
+      viewBox.width *= scaleFactor;
+      viewBox.height *= scaleFactor;
+
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+
+    function onMouseDown(event) {
+      isPanning = true;
+      startPoint = { x: event.clientX, y: event.clientY };
+      viewBoxStart = { x: viewBox.x, y: viewBox.y };
+    }
+
+    function onMouseMove(event) {
+      if (!isPanning) return;
+
+      const dx =
+        ((event.clientX - startPoint.x) * viewBox.width) / svg.clientWidth;
+      const dy =
+        ((event.clientY - startPoint.y) * viewBox.height) / svg.clientHeight;
+
+      viewBox.x = viewBoxStart.x - dx;
+      viewBox.y = viewBoxStart.y - dy;
+
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+
+    function onMouseUp() {
+      isPanning = false;
+    }
+
+    function resetZoom() {
+      viewBox.x = originalViewBox.x;
+      viewBox.y = originalViewBox.y;
+      viewBox.width = originalViewBox.width;
+      viewBox.height = originalViewBox.height;
+      svg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+    }
+  });
+}

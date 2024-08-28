@@ -1,0 +1,160 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as TransactionRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as TransactionController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as TransactionModel extends BaseModel
+    participant ContainsModel as ContainsModel extends BaseModel
+    participant BankAccountModel as BankAccountModel extends BaseModel
+    participant DebtModel as DebtModel extends BaseModel
+    participant Redis as RedisCache
+
+    Client->>+Router: PUT /transactions/:transactionId (Update Transaction)
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object (userId)
+
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: updateTransaction(req, res, next)
+    Cont->>Cont: Destructoring parameters
+    Note over Cont: requiredFields = ["transactionId"]
+    Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
+    opt missing required fields
+        BaseCont-->>-Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Cont->>+Model: findById(transactionId)
+    Model->>+BaseModel: pass call
+    opt transaction not found
+        BaseModel-->>Model: throw error
+        Model-->>Cont: pass error
+        Cont-->>Router: next(NotFoundError('transaction Not found')
+        Router-->>Client: 🔴404, "transaction not found"
+    end
+    BaseModel-->>-Model:return transaction object
+    Model-->>-Cont: return transaction object
+
+    Cont->>Cont: combine update transaction data
+
+    Cont->>+PGClient: beginTransaction()
+    PGClient-->>-Cont: transaction started
+
+    opt Transaction type or amount changed
+        Cont->>+BankAccountModel: updateBalance(userEmail, updateBankAccount, (newAmount-oldAmount))
+        opt update failure
+            BankAccountModel-->>Cont: throw error
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+            Cont-->>Router: next(error)
+            Router-->>Client: 🔴500, "Failed to update Balance"
+        end
+        BankAccountModel-->>-Cont: return bank account object
+    end
+
+    Cont->>+Model: updateTransaction(transactionId, updatedTransaction)
+    opt SQL Error
+        Model-->>Cont: throw error
+        Cont->>+PGClient: rollback()
+        PGClient-->>-Cont: transaction rolled back
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "Failed to update transaction"
+    end
+    Model-->>-Cont: return updatedTransaction
+
+    alt transaction type is "income"
+        Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'receiver'})
+        opt insert failure
+            ContainsModel-->>Cont: throw error
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+            Cont-->>Router: next(new Error('Failed to store contains'))
+            Router-->>Client: 🔴500, "Failed to store contains"
+        end
+        ContainsModel-->>-Cont: return updated Contains object (staged)
+    else transaction type is "expense"
+        Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'sender'})
+        opt insert failure
+            ContainsModel-->>Cont: throw error
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+            Cont-->>Router: next(new Error('Failed to store contains'))
+            Router-->>Client: 🔴500, "Failed to store contains"
+        end
+        ContainsModel-->>-Cont: return updated Contains object (staged)
+        opt debt payment
+            Cont->>+DebtModel: updateLoanBalance(userEmail, debtKey, -(newAmount-oldAmount))
+            opt update failure
+                DebtModel-->>Cont: throw error
+                Cont->>+PGClient: rollback()
+                PGClient-->>-Cont: transaction rolled back
+                Cont-->>Router: next(new Error('Failed to update debt'))
+                Router-->>Client: 🔴500, "Failed to update debt"
+            end
+            DebtModel-->>-Cont: updated Loan object (staged)
+        end
+    else transaction type is "internal_transfer"
+        Cont->>+ContainsModel: updateContainsByTransactionUuid({senderBankAccount, transactionUUID, 'sender'})
+        opt insert failure
+            ContainsModel-->>Cont: throw error
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+            Cont-->>Router: next(new Error('Failed to store contains'))
+            Router-->>Client: 🔴500, "Failed to store contains"
+        end
+        ContainsModel-->>-Cont: return updated Contains object (staged)
+        Cont->>+ContainsModel: updateContainsByTransactionUuid({receiverBankAccount, transactionUUID, 'receiver'})
+        opt insert failure
+            ContainsModel-->>Cont: throw error
+            Cont->>+PGClient: rollback()
+            PGClient-->>-Cont: transaction rolled back
+            Cont-->>Router: next(new Error('Failed to store contains'))
+            Router-->>Client: 🔴500, "Failed to store contains"
+        end
+        ContainsModel-->>-Cont: return updated Contains object (staged)
+    end
+
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+
+
+
+    Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: updatedTransaction + details }
