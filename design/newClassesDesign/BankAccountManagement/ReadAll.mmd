@@ -49,8 +49,10 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAllBankAccountsByUserKey(user.email)
+    Cont->>+Model: findAllByUserKey(user.email)
     Model->>+BaseModel: findAll()
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: pass error

@@ -46,6 +46,7 @@ sequenceDiagram
     Cont->>Cont: Destructoring parameters
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
+    BaseCont->>BaseCont: escapeHtml()
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))

@@ -43,6 +43,7 @@ sequenceDiagram
     Cont->>Cont: Destructoring parameters
     Note over Cont: requiredFields = ['bankAccountId']
     Cont->>+BaseCont: verifyField({bankAccountId}, requiredFields)
+    BaseCont->>BaseCont: escapeHtml()
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
@@ -56,8 +57,10 @@ sequenceDiagram
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>+Model: findById(bankAccountId)
-    Model->>+BaseModel: pass call
+    Cont->>+Model: findBankByKey(bankAccountNumber, bankAccountName)
+    Model->>+BaseModel: findByKey(bankAccountNumber, bankAccountName)
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
 
     opt any error occurred
         BaseModel-->>Model: throw Error

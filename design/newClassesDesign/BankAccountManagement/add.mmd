@@ -44,6 +44,7 @@ sequenceDiagram
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['bankAccountName', 'bankAccountDisplayName', 'bankAccountNumber', 'bankName', 'balance']
     Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    BaseCont->>BaseCont: escapeHtml()
     opt missing required fields
         BaseCont-->>Cont: throw new Error('<field> is required')
         Cont-->>Router: next(new BadRequestError(error.message))
@@ -61,14 +62,16 @@ sequenceDiagram
     
     Cont->>Cont: Create new bank account data object with user.email
     Cont->>+Model: createBankAccount({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
-    Model->>+BaseModel: validateSchema(data) 
-    
+    Model->>+BaseModel: create(data)
+    BaseModel->>BaseModel: validateSchema(data) 
     opt missing required field or invalid type
         BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
         Cont-->>Router: next(new BadRequestError(error.message))
         Router-->>Client: 🔴400, "<error.message>"
     end
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
         Model-->>Cont: throw new Error('Bank account number already exists')
@@ -76,14 +79,13 @@ sequenceDiagram
         Router-->>Client: 🔴409, "Bank account number already exists"
     end
     opt any other error
-       BaseModel-->>Model: throw error
        Model-->>Cont: throw error
        Cont-->>Router: next(error)
        Router-->>Client: 🔴500, "something went wrong"
+    BaseModel-->>-Model: return created Id
     end
 
-    BaseModel->>-Model: return new BankAccount
-    Model->>-Cont: return createdBankAccount
-    Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccount)
+    Model->>-Cont: return created Bank Account Id
+    Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccountId)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccount }
+    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccountId }

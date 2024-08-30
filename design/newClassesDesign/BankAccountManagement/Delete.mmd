@@ -41,12 +41,14 @@ sequenceDiagram
     end
     
     Router->>+Cont: deleteBankAccount(req, res, next)
-    Note over Cont, BaseCont: requiredFields = ['bankAccountId']
-    Cont->>+BaseCont: verifyField(req.body, requiredFields)
-    opt Missing or invalid parameters
-        BaseCont-->>Cont: throw BadRequestError
-        Cont-->>Router: next(error)
-        Router-->>Client: 🔴400, "Invalid delete parameters"
+    Cont->>Cont: Destructoring parameters
+    Note over Cont: requiredFields = ['bankAccountId']
+    Cont->>+BaseCont: verifyField({bankAccountId}, requiredFields)
+    BaseCont->>BaseCont: escapeHtml()
+    opt missing required fields
+        BaseCont-->>Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
+        Router-->>Client: 🔴400, "<field> is required"
     end
     BaseCont->>-Cont: return true
     
@@ -58,15 +60,18 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findById(bankAccountId)
-    Model->>+BaseModel: pass call
+    Cont->>+Model: findBankByKey(bankAccountNumber, bankAccountName)
+    Model->>+BaseModel: findByKey(bankAccountNumber, bankAccountName)
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
+
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: pass error
         Cont-->>Router: next(error)
         Router-->>Client: 🔴500, "something went wrong"
     end
-    BaseModel->>-Model: return bank account object
+    BaseModel-->>-Model: return bank account object
     Model-->>-Cont: pass result
 
     opt bank account not found
@@ -81,8 +86,10 @@ sequenceDiagram
         Router-->>Client: 🔴403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-    Cont->>+Model: deleteById(bankAccountId)
+    Cont->>+Model: delete(bankAccountNumber, bankAccountName)
     Model->>+BaseModel: pass call
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
     opt any error
         BaseModel-->>Model: throw Error('Error deleting user')
         Model-->>Cont: pass error

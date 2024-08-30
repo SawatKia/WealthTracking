@@ -43,6 +43,7 @@ sequenceDiagram
     Cont->>Cont: Destructoring parameters
     Note over Cont, BaseCont: requiredFields = ['bankAccountNumber', 'bankAccountName']
     Cont->>+BaseCont: verifyField({req.body+bankAccountNumber+bankAccountName}, requiredFields)
+    BaseCont->>BaseCont: escapeHtml()
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
@@ -57,8 +58,11 @@ sequenceDiagram
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>+Model: findById(bankAccountNumber, bankAccountName)
-    Model->>+BaseModel: pass call
+    Cont->>+Model: findBankByKey(bankAccountNumber, bankAccountName)
+    Model->>+BaseModel: findByKey(bankAccountNumber, bankAccountName)
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
+
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: pass error
@@ -78,8 +82,16 @@ sequenceDiagram
         Router-->>Client: 🔴403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-    Cont->>+Model: updateById(bankAccountId, updateData)
+    Cont->>+Model: update(bankAccountNumber, bankAccountName, updateData)
     Model->>+BaseModel: pass call
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query()
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('Bank account number already exists')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "Bank account number already exists"
+    end
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: throw error
