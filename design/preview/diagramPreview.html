@@ -18,6 +18,7 @@
         <a href="#userManagement" class="icon-item">👤</a>
         <a href="#bankAccountManagement" class="icon-item">🏦</a>
         <a href="#transactionManagement" class="icon-item">💰</a>
+        <a href="#debtManagement" class="icon-item">🧾</a>
         <a href="#otherSystems" class="icon-item">🔗</a>
     </div>
     <div class="full-menu">
@@ -112,6 +113,34 @@
                 <a href="#ieDelete">Delete</a>
                 <input type="checkbox" id="ieDelete_check">
                 <label for="tDelete_check"><span class="verified-text">code verified</span></label>
+            </li>
+        </ul>
+        <h4><a href="debtManagement"><span class="icon">🧾</span>Debt Management</a></h4>
+        <ul>
+            <li>
+                <a href="#debtCreate">Create</a>
+                <input type="checkbox" id="debtCreate_check">
+                <label for="debtCreate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#debtReadAll">Read All</a>
+                <input type="checkbox" id="debtReadAll_check">
+                <label for="debtReadAll_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#debtReadOne">Read One</a>
+                <input type="checkbox" id="debtReadOne_check">
+                <label for="debtReadOne_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#debtUpdate">Update</a>
+                <input type="checkbox" id="debtUpdate_check">
+                <label for="debtUpdate_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="#debtDelete">Delete</a>
+                <input type="checkbox" id="debtDelete_check">
+                <label for="debtDelete_check"><span class="verified-text">code verified</span></label>
             </li>
         </ul>
         <h3><a href="#otherSystems"><span class="icon">🔗</span>3. Other Systems (3rd-party API)</a></h3>
@@ -313,6 +342,54 @@
                             <button class="reset-zoom">Reset Zoom</button>
                             <div class="mermaid" id="IeDeleteDiagram">
                                 <div class="skeleton-loader" id="loadingIeDelete"> loading diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="debtManagement">
+                    <h3>🧾 Debt Management</h3>
+                    <div id="debtCreate">
+                        <h4>Create</h4>
+                        <div class="diagram-container">
+                            <button class="reset-zoom">Reset Zoom</button>
+                            <div class="mermaid" id="debtCreateDiagram">
+                                <div class="skeleton-loader" id="loadingDebtCreate"> loading diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="debtReadAll">
+                        <h4>Read All</h4>
+                        <div class="diagram-container">
+                            <button class="reset-zoom">Reset Zoom</button>
+                            <div class="mermaid" id="debtReadAllDiagram">
+                                <div class="skeleton-loader" id="loadingDebtReadAll"> loading diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="debtReadOne">
+                        <h4>Read One</h4>
+                        <div class="diagram-container">
+                            <button class="reset-zoom">Reset Zoom</button>
+                            <div class="mermaid" id="debtReadOneDiagram">
+                                <div class="skeleton-loader" id="loadingDebtReadOne"> loading diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="debtUpdate">
+                        <h4>Update</h4>
+                        <div class="diagram-container">
+                            <button class="reset-zoom">Reset Zoom</button>
+                            <div class="mermaid" id="debtUpdateDiagram">
+                                <div class="skeleton-loader" id="loadingDebtUpdate"> loading diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="debtDelete">
+                        <h4>Delete</h4>
+                        <div class="diagram-container">
+                            <button class="reset-zoom">Reset Zoom</button>
+                            <div class="mermaid" id="debtDeleteDiagram">
+                                <div class="skeleton-loader" id="loadingDebtDelete"> loading diagram...</div>
                             </div>
                         </div>
                     </div>

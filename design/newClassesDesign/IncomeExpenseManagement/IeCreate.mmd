@@ -115,6 +115,8 @@ sequenceDiagram
     Note over BaseModel: query with prepare Statements
     BaseModel->>BaseModel: query(sql, params)
     BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade update the bankAccount's balance, debt's data and Contains table if need
+    DB->>DB: SQL trigger
     DB-->>-BaseModel: result
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
@@ -129,7 +131,7 @@ sequenceDiagram
     end
     BaseModel-->>-Model: return created Id (staged)
 
-    Note over Model, BaseModel: this method like in ReadOne but the cache is update instantly
+    Note over Model, BaseModel: this method similar in ReadOne but the cache is update instantly
     Model->>Model: chacheTransactionDetail(transactionUuid)
     Model->>+BaseModel: query(sql, params)
     BaseModel->>+DB: do operation

@@ -94,9 +94,9 @@ sequenceDiagram
     Model->>+BaseModel: query(sql, params)
     Note over BaseModel: query with prepare Statements
     BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade update the bankAccount's balance, debt's data and Contains table if need
     DB->>DB: SQL trigger
     DB-->>-BaseModel: result
-    Note over BaseModel: the DB will trigger, to cascade update the bankAccount's balance, debt's data and Contains table if need
     opt SQL Error
         Model-->>Cont: throw error
         Cont->>+PGClient: rollback()

@@ -1,0 +1,24 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as DebtRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as DebtModelController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as DebtModelModel extends BaseModel
+    participant DB as [(Database)]
