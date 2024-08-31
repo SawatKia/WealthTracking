@@ -18,7 +18,6 @@ D:.
 |       UserTransactions.json
 |       
 +---newClassesDesign
-|   |   ERD.puml
 |   |   SoftwareArchitectureDiagram.mmd
 |   |   SoftwareArchitectureDiagram.svg
 |   |   UserFlow.mmd
@@ -31,8 +30,8 @@ D:.
 |   |       SlipData.svg
 |   |       
 |   +---BankAccountManagement
-|   |       add.mmd
-|   |       add.svg
+|   |       create.mmd
+|   |       create.svg
 |   |       Delete.mmd
 |   |       Delete.svg
 |   |       ReadAll.mmd
@@ -44,10 +43,15 @@ D:.
 |   |       
 |   +---IncomeExpenseManagement
 |   |       IeCreate.mmd
+|   |       IeCreate.svg
 |   |       IeDelete.mmd
+|   |       IeDelete.svg
 |   |       IeReadAll.mmd
+|   |       IeReadAll.svg
 |   |       IeReadOne.mmd
+|   |       IeReadOne.svg
 |   |       IeUpdate.mmd
+|   |       IeUpdate.svg
 |   |       
 |   \---UserManagement
 |           create.mmd
