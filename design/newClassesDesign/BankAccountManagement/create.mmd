@@ -21,6 +21,7 @@ sequenceDiagram
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
     participant Model as BankAccountModel extends BaseModel
+    participant DB as [(Database)]
 
     Client->>+Router: POST /bank-accounts/ (create Bank Account)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
@@ -44,6 +45,7 @@ sequenceDiagram
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['bankAccountName', 'bankAccountDisplayName', 'bankAccountNumber', 'bankName', 'balance']
     Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw new Error('<field> is required')
         Cont-->>Router: next(new BadRequestError(error.message))
@@ -60,30 +62,35 @@ sequenceDiagram
     end
     
     Cont->>Cont: Create new bank account data object with user.email
-    Cont->>+Model: createBankAccount({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
-    Model->>+BaseModel: validateSchema(data) 
-    
-    opt missing required field or invalid type
+    Cont->>+Model: create({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
+    Model->>+BaseModel: pass call
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
         BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
         Cont-->>Router: next(new BadRequestError(error.message))
         Router-->>Client: 🔴400, "<error.message>"
     end
+
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
-        Model-->>Cont: throw new Error('Bank account number already exists')
+        Model-->>Cont: throw new Error('Bank account number with this name already exists')
         Cont-->>Router: next(new ConflictError(error.message))
-        Router-->>Client: 🔴409, "Bank account number already exists"
+        Router-->>Client: 🔴409, "Bank account number with this name already exists"
     end
     opt any other error
-       BaseModel-->>Model: throw error
        Model-->>Cont: throw error
        Cont-->>Router: next(error)
        Router-->>Client: 🔴500, "something went wrong"
     end
+    BaseModel-->>-Model: return created Id
 
-    BaseModel->>-Model: return new BankAccount
-    Model->>-Cont: return createdBankAccount
-    Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccount)
+    Model->>-Cont: pass result
+    Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccountId)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccount }
+    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccountId }

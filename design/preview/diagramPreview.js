@@ -105,112 +105,164 @@ document.addEventListener("DOMContentLoaded", async function () {
     console.error("Mermaid not loaded.");
   }
   console.log("Mermaid loaded successfully.");
-
   // Array of diagram paths, including fallback SVG paths
   const diagrams = [
     {
+      no: 1,
       id: "softwareArchitectureDiagram",
       mmdPath: "../newClassesDesign/SoftwareArchitectureDiagram.mmd",
       loadingId: "loadingSoftwareArchitecture",
       svgPath: "../newClassesDesign/SoftwareArchitectureDiagram.svg",
     },
     {
+      no: 2,
       id: "userFlowDiagram",
       mmdPath: "../newClassesDesign/UserFlow.mmd",
       loadingId: "loadingUserFlow",
       svgPath: "../newClassesDesign/UserFlow.svg",
     },
     {
+      no: 3,
       id: "userCreateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/create.mmd",
       loadingId: "loadingUserCreate",
       svgPath: "../newClassesDesign/UserManagement/create.svg",
     },
     {
+      no: 4,
       id: "userReadDiagram",
       mmdPath: "../newClassesDesign/UserManagement/read.mmd",
       loadingId: "loadingUserRead",
       svgPath: "../newClassesDesign/UserManagement/read.svg",
     },
     {
+      no: 5,
       id: "userUpdateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/update.mmd",
       loadingId: "loadingUserUpdate",
       svgPath: "../newClassesDesign/UserManagement/update.svg",
     },
     {
+      no: 6,
       id: "userDeleteDiagram",
       mmdPath: "../newClassesDesign/UserManagement/delete.mmd",
       loadingId: "loadingUserDelete",
       svgPath: "../newClassesDesign/UserManagement/delete.svg",
     },
     {
+      no: 7,
       id: "bankAddDiagram",
-      mmdPath: "../newClassesDesign/BankAccountManagement/add.mmd",
+      mmdPath: "../newClassesDesign/BankAccountManagement/create.mmd",
       loadingId: "loadingBankAdd",
-      svgPath: "../newClassesDesign/BankAccountManagement/add.svg",
+      svgPath: "../newClassesDesign/BankAccountManagement/create.svg",
     },
     {
+      no: 8,
       id: "bankReadAllDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadAll.mmd",
       loadingId: "loadingBankReadAll",
       svgPath: "../newClassesDesign/BankAccountManagement/ReadAll.svg",
     },
     {
+      no: 9,
       id: "bankReadOneDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadOne.mmd",
       loadingId: "loadingBankReadOne",
       svgPath: "../newClassesDesign/BankAccountManagement/ReadOne.svg",
     },
     {
+      no: 10,
       id: "bankUpdateDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/update.mmd",
       loadingId: "loadingBankUpdate",
       svgPath: "../newClassesDesign/BankAccountManagement/update.svg",
     },
     {
+      no: 11,
       id: "bankDeleteDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/Delete.mmd",
       loadingId: "loadingBankDelete",
       svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
+      no: 12,
       id: "IeCreateDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.mmd",
       loadingId: "loadingIeCreate",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.svg",
     },
     {
+      no: 13,
       id: "IeDeleteDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.mmd",
       loadingId: "loadingIeDelete",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.svg",
     },
     {
+      no: 14,
       id: "IeReadAllDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.mmd",
       loadingId: "loadingIeReadAll",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.svg",
     },
     {
+      no: 15,
       id: "IeReadOneDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.mmd",
       loadingId: "loadingIeReadOne",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.svg",
     },
     {
+      no: 16,
       id: "IeUpdateDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.mmd",
       loadingId: "loadingIeUpdate",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.svg",
     },
     {
+      no: 17,
+      id: "debtCreateDiagram",
+      mmdPath: "../newClassesDesign/DebtManagement/Create.mmd",
+      loadingId: "loadingDebtCreate",
+      svgPath: "../newClassesDesign/DebtManagement/Create.svg",
+    },
+    {
+      no: 18,
+      id: "debtReadAllDiagram",
+      mmdPath: "../newClassesDesign/DebtManagement/ReadAll.mmd",
+      loadingId: "loadingDebtReadAll",
+      svgPath: "../newClassesDesign/DebtManagement/ReadAll.svg",
+    },
+    {
+      no: 19,
+      id: "debtReadOneDiagram",
+      mmdPath: "../newClassesDesign/DebtManagement/ReadOne.mmd",
+      loadingId: "loadingDebtReadOne",
+      svgPath: "../newClassesDesign/DebtManagement/ReadOne.svg",
+    },
+    {
+      no: 20,
+      id: "debtUpdateDiagram",
+      mmdPath: "../newClassesDesign/DebtManagement/Update.mmd",
+      loadingId: "loadingDebtUpdate",
+      svgPath: "../newClassesDesign/DebtManagement/Update.svg",
+    },
+    {
+      no: 21,
+      id: "debtDeleteDiagram",
+      mmdPath: "../newClassesDesign/DebtManagement/Delete.mmd",
+      loadingId: "loadingDebtDelete",
+      svgPath: "../newClassesDesign/DebtManagement/Delete.svg",
+    },
+    {
+      no: 22,
       id: "quotaCheckDiagram",
       mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
       loadingId: "loadingQuotaCheck",
       svgPath: "../newClassesDesign/api/QuotaCheck.svg",
     },
     {
+      no: 23,
       id: "slipDataDiagram",
       mmdPath: "../newClassesDesign/api/SlipData.mmd",
       loadingId: "loadingSlipData",
@@ -268,7 +320,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       const text = await response.text();
       document.getElementById(diagram.id).textContent = text;
       mermaid.init(undefined, `#${diagram.id}`);
-      console.log(`${diagram.id} loaded and rendered successfully.`);
+      console.log(
+        `${diagram.no})${diagram.id} loaded and rendered successfully.`
+      );
     } catch (error) {
       console.error(
         `Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`
@@ -290,6 +344,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 //NOTE - SVG zoomable
 function initZoomableDiagrams() {
+  //TODO - add zoomable for mobile in one hand
   const containers = document.querySelectorAll(".diagram-container");
 
   containers.forEach((container) => {

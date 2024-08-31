@@ -21,6 +21,7 @@ sequenceDiagram
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
     participant Model as BankAccountModel extends BaseModel
+    participant DB as [(Database)]
 
     Client->>+Router: GET /bank-accounts/ (get all bankAccount of user)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
@@ -49,8 +50,21 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAllBankAccountsByUserKey(user.email)
-    Model->>+BaseModel: findAll()
+    Cont->>+Model: findAll([user.email])
+    Model->>+BaseModel: pass call
+    Note over BaseModel: this method defined in BankAccountManagement/create.mmd
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: pass error

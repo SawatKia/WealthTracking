@@ -14,14 +14,17 @@ sequenceDiagram
     participant Client
     participant Sec as Security
     participant Router as UserRouter
-    participant BaseCont as BaseController
-    participant Cont as UserController extends BaseController
-    participant Mongo as MongoObject
-    participant BaseModel as BaseModel extends MongoObject
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as UserController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
     participant Model as UserModel extends BaseModel
+    participant DB as [(Database)]
 
     %% Update User
-    Client->>+Router: PATCH /users/:userId (updateUserById)
+    Client->>+Router: PATCH /users (updateUser)
     Note over Sec, Router: this method defined in read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -59,13 +62,18 @@ sequenceDiagram
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>Cont: Destructoring req.body
-    opt currentPassword is not in req.body
-        Cont-->>Router: throw BadRequestError('currentPassword is required')
-        Router-->>Client: 🔴400, "currentPassword is required"
+    Cont->>Cont: Destructuring req.body
+    Note over Cont: requiredFields = ['password']
+    Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
+    opt missing required fields
+        BaseCont-->>Cont: throw BadRequestError('<field> is required')
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴400, "<field> is required"
     end
+    BaseCont->>-Cont: return true
     Note over Cont, Model: this method will use several times in the application
-    Cont->>+Model: checkPassword(user.username, currentPassword)
+    Cont->>+Model: checkPassword(user.email, currentPassword)
     opt Invalid password
         Model-->>Cont: return false
         Cont-->>Router: throw PasswordError()
@@ -87,46 +95,37 @@ sequenceDiagram
     end
     Cont->>Cont: normalizeUsernameEmail(newUsername, newEmail)
     Cont->>Cont: merge updateFields together
-    Cont->>+Model: updateUserById(user._id, updateFields)
+
+    Cont->>+Model: updateUserById(user.email, updateFields)
     opt if newPassword in updateFields
         Model->>Model: this_hashPassword(newPassword)
     end
-    Model->>+BaseModel: updateById(userId, data)
-    BaseModel->>+Mongo: isValidObjectId(userId)
-    opt invalid userId
-        Mongo-->>BaseModel: false
-        BaseModel-->>Model: throw Error('Invalid userId')
+    Model->>+BaseModel: pass call
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
-        Cont-->>Router: next(BadRequestError('Invalid userId'))
-        Router-->>Client: 🔴400, "Invalid userId"
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
     end
-    Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: validate()
-    opt missing required field
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('User email already in use')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "User email already in use"
+    end
+    opt any error occurred
         BaseModel-->>Model: throw Error
-        Model-->>Cont: next(error)
+        Model-->>Cont: throw error
         Cont-->>Router: next(error)
-        Router-->>Client: 🔴400, "<field> is required"
+        Router-->>Client: 🔴500, "something went wrong"
     end
-    opt invalid type
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(BadRequestError(error.message))
-        Router-->>Client: 🔴400, <error.message>
-    end
-    BaseModel->>BaseModel: save()
-    opt if error updating user
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: throw error
-        alt error code == 11000
-            Cont-->>Router: throw UserDuplicateError()
-            Router-->>Client: 🔴409, "Username or email already exists"
-        else any other error
-            Cont-->>Router: next(error)
-            Router-->>Client: 🔴500, "something went wrong"
-        end
-    end
-    BaseModel-->>-Model: Updated user data
+    BaseModel-->>-Model: updated user object
     Model-->>-Cont: Updated user data
     Cont->>Cont: formatResponse(200, 'User updated successfully', { updatedUser })
     Cont-->>-Router: Formatted response

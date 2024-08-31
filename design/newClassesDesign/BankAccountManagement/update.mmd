@@ -13,7 +13,7 @@
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router
+    participant Router as BankRouter
     box orange Controller
         participant BaseCont as BaseController
         participant Cont as BankAccountController extends BaseController
@@ -21,6 +21,7 @@ sequenceDiagram
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
     participant Model as BankAccountModel extends BaseModel
+    participant DB as [(Database)]
 
     Client->>+Router: PATCH /banks/:bankAccountNumber/:bankAccountName (update Bank Account by bankAccountId)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
@@ -43,6 +44,7 @@ sequenceDiagram
     Cont->>Cont: Destructoring parameters
     Note over Cont, BaseCont: requiredFields = ['bankAccountNumber', 'bankAccountName']
     Cont->>+BaseCont: verifyField({req.body+bankAccountNumber+bankAccountName}, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
@@ -57,20 +59,15 @@ sequenceDiagram
         Cont-->>Router: throw NotFoundError('User not found')
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>+Model: findById(bankAccountNumber, bankAccountName)
-    Model->>+BaseModel: pass call
-    opt any error occurred
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: pass error
-        Cont-->>Router: next(error)
-        Router-->>Client: 🔴500, "something went wrong"
-    end
-    BaseModel-->>-Model: return bank account object
+
+    Note over Cont, Model: this method defined in BankAccountManagement/ReadOne.mmd
+    Cont->>+Model: findOne([bankAccountNumber, bankAccountName])
     Model-->>-Cont: pass result
     opt bank account not found
         Cont-->>Router: throw NotFoundError('Bank account not found')
         Router-->>Client: 🔴404, "Bank account not found"
     end
+
     Cont->>+BaseCont: verifyOwnership(user, bankAccount)
     opt Bank account's user email does not match current user email
         BaseCont-->>Cont: return false
@@ -78,8 +75,26 @@ sequenceDiagram
         Router-->>Client: 🔴403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-    Cont->>+Model: updateById(bankAccountId, updateData)
+    Cont->>+Model: update([bankAccountNumber, bankAccountName], updateData)
     Model->>+BaseModel: pass call
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('Bank account number already exists')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "Bank account number already exists"
+    end
     opt any error occurred
         BaseModel-->>Model: throw Error
         Model-->>Cont: throw error
