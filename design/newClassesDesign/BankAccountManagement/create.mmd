@@ -44,7 +44,7 @@ sequenceDiagram
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['bankAccountName', 'bankAccountDisplayName', 'bankAccountNumber', 'bankName', 'balance']
     Cont->>+BaseCont: verifyField(req.body, requiredFields)
-    BaseCont->>BaseCont: escapeHtml()
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw new Error('<field> is required')
         Cont-->>Router: next(new BadRequestError(error.message))
@@ -64,14 +64,16 @@ sequenceDiagram
     Cont->>+Model: createBankAccount({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
     Model->>+BaseModel: create(data)
     BaseModel->>BaseModel: validateSchema(data) 
-    opt missing required field or invalid type
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
         BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
         Cont-->>Router: next(new BadRequestError(error.message))
         Router-->>Client: 🔴400, "<error.message>"
     end
+
     Note over BaseModel: query with prepare Statements
-    BaseModel->>BaseModel: query()
+    BaseModel->>BaseModel: query(sql, params)
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
         Model-->>Cont: throw new Error('Bank account number already exists')
