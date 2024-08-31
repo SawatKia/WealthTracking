@@ -22,7 +22,7 @@ body {
   left: -300px;
   top: 50%;
   transform: translateY(-50%);
-  transition: left 1s ease-in-out;
+  transition: left 250ms ease-in-out;
   z-index: 1000;
   border-radius: 0 10px 10px 0;
   box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
@@ -31,7 +31,7 @@ body {
 .full-menu.expanded {
   left: 0;
   display: block;
-  transition: left 1s ease-in-out;
+  transition: left 250ms ease-in-out;
 }
 
 .full-menu h2,
@@ -96,8 +96,8 @@ body {
   padding: 0;
   z-index: 1001;
   transform: rotate(180deg);
-  transition: transform 1s ease-in-out, left 1s ease-in-out,
-    opacity 1s ease-in-out;
+  transition: transform 250ms ease-in-out, left 250ms ease-in-out,
+    opacity 250ms ease-in-out;
   border-radius: 50%;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
@@ -109,19 +109,21 @@ body {
 .full-menu.expanded + #menu-toggle {
   left: 270px; /* Position the toggle button correctly when expanded */
   transform: rotate(-180deg);
-  transition: transform 1s ease-in-out, left 1s ease-in-out;
+  transition: transform 250ms ease-in-out, left 250ms ease-in-out;
 }
 
 .compact-menu {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding: 0 10px;
+  /* padding-left: 10px;
+  padding-right: 10px; */
   position: fixed; /* Change from absolute to fixed */
   left: 0;
-  width: 60px;
-  height: auto; /* Change from 100% to auto */
+  width: 50px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  height: 100%; /* Change from 100% to auto */
   display: block; /* Ensure it's displayed by default */
   z-index: 999; /* Add z-index to ensure it's above other content */
-  transition: opacity 1s;
+  transition: opacity 250ms;
 }
 
 a.icon-item {
@@ -175,7 +177,7 @@ a.icon-item:hover {
 
 /* Content Styling */
 #content {
-  margin-left: 50px;
+  margin-left: 70px;
   padding: 20px;
   box-sizing: border-box;
   width: 100%;
