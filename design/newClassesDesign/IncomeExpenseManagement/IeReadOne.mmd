@@ -82,9 +82,15 @@ sequenceDiagram
         Note over BaseModel: query with prepare Statements
         BaseModel->>+DB: do operation
         DB-->>-BaseModel: result
+        opt transaction not found
+            BaseModel-->>Model: throw new Error("transaction not found")
+            Model-->>Cont: throw error
+            Cont-->>Router: next(error)
+            Router-->>Client: 🔴404, "transaction not found"
+        end
         opt any error occurred
             BaseModel-->>Model: throw Error
-            Model-->>Cont: pass error
+            Model-->>Cont: throw error
             Cont-->>Router: next(error)
             Router-->>Client: 🔴500, "something went wrong"
         end

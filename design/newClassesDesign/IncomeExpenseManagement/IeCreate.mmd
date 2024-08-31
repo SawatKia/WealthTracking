@@ -118,9 +118,9 @@ sequenceDiagram
     DB-->>-BaseModel: result
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
-        Model-->>Cont: throw new Error('Bank account number already exists')
+        Model-->>Cont: throw new Error('transaction Uuid already exists')
         Cont-->>Router: next(new ConflictError(error.message))
-        Router-->>Client: 🔴409, "Bank account number already exists"
+        Router-->>Client: 🔴409, "transaction Uuid already exists"
     end
     opt any other error
        Model-->>Cont: throw error

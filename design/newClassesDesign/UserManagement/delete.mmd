@@ -14,14 +14,17 @@ sequenceDiagram
     participant Client
     participant Sec as Security
     participant Router as UserRouter
-    participant BaseCont as BaseController
-    participant Cont as UserController extends<br> BaseController
-    participant Mongo as MongoObject
-    participant BaseModel as BaseModel extends<br> MongoObject
-    participant Model as UserModel extends<br> BaseModel
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as UserController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as UserModel extends BaseModel
+    participant DB as [(Database)]
 
     %% Delete User
-    Client->>+Router: DELETE /users/:userId (deleteUserById)
+    Client->>+Router: DELETE /users
     Note over Sec, Router: this method defined in read.mmd
     Router->>+Sec: Verify Token(token)
     alt if token is invalid
@@ -64,32 +67,35 @@ sequenceDiagram
         Cont-->>Router: throw BadRequestError('currentPassword is required')
         Router-->>Client: 🔴400, "currentPassword is required"
     end
-    Cont->>+Model: checkPassword(user.username, currentPassword)
+    Cont->>+Model: checkPassword(user.email, currentPassword)
     opt Invalid password
         Model-->>Cont: return false
         Cont-->>Router: throw PasswordError()
         Router-->>Client: 🔴401, "Invalid username or password"
     end
     Model-->>-Cont: return true
-    Cont->>+Model: deleteById(userId)
+    Cont->>+Model: delete([userEmail])
     Model->>+BaseModel: pass call
-    BaseModel->>+Mongo: isValidObjectId(userId)
-    opt invalid userId
-        Mongo-->>BaseModel: false
-        BaseModel-->>Model: throw Error('Invalid ObjectId')
-        Model-->>Cont: pass error
-        Cont-->>Router: next(BadRequestError('Invalid ObjectId'))
-        Router-->>Client: 🔴400, "Invalid ObjectId"
+    Note over BaseModel: this method defined in BankAccountManagement/create.mmd
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
     end
-    Mongo-->>-BaseModel: true
-    BaseModel->>BaseModel: findByIdAndDelete(userId)
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
     opt any error
         BaseModel-->>Model: throw Error('Error deleting user')
         Model-->>Cont: pass error
         Cont-->>Router: next(error)
         Router-->>Client: 🔴500, "something went wrong"
     end
-    BaseModel-->>-Model: Deleted user
+    BaseModel-->>-Model: return true
     Model-->>-Cont: pass result
     Cont->>Cont: formatResponse(200, 'User deleted successfully', { userId: deletedUser._id })
     Cont-->>-Router: Formatted response
