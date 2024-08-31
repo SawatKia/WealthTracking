@@ -33,7 +33,7 @@ sequenceDiagram
     opt API not available
         ApiClient-->>Cont: return false
         Cont-->>Router: throw error "slipApi is out of service. Please try again later."
-        Router-->>Client: 429, "slipApi is out of service. Please try again later."
+        Router-->>Client: 🔴429, "slipApi is out of service. Please try again later."
     end
     ApiClient-->>-Cont: return true
     Cont->>+ApiClient: verifySlip(base64Image)

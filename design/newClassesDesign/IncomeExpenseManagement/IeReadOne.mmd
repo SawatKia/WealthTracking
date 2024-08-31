@@ -21,9 +21,10 @@ sequenceDiagram
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel
     participant Model as TransactionModel extends BaseModel
-    participant ContainsModel as ContainsModel extends BaseModel
-    participant BankAccountModel as BankAccountModel extends BaseModel
+    %% participant ContainsModel as ContainsModel extends BaseModel
+    %% participant BankAccountModel as BankAccountModel extends BaseModel
     participant Redis as RedisCache
+    participant DB as [(Database)]
 
     Client->>+Router: GET /transactions/:transactionId (ReadOne Transaction)
      Note over Sec, Router: this method defined in UserManagement/read.mmd
@@ -47,7 +48,7 @@ sequenceDiagram
     Cont->>Cont: Destructoring parameters
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
-    BaseCont->>BaseCont: escapeHtml()
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>-Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
@@ -61,69 +62,38 @@ sequenceDiagram
         Cont-->>Router: next(new NotFoundError('User not found'))
         Router-->>Client: 🔴404, "User not found"
     end
-    Cont->>+Redis: Check for cached transaction
-    opt cache hit
-        Redis-->>-Cont: return cachedTransactionData
-        Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
-        Cont->>+BaseCont: verifyOwnership(user, transaction.bankAccounts)
-        opt bank account's user email does not match current user email
-            BaseCont-->>Cont: return false
-            Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
-            Router-->>Client: 🔴403, "You are not allowed to access this resource"
-        end
-        BaseCont-->>-Cont: return true
-        Cont->>Cont: formatResponse(200, 'Transaction found', cachedTransactionData)
-        Cont-->>Router: return formatted response
-        Router-->>Client: 🟢200, "Transaction found", cachedTransactionData
+
+    Cont->>+Model: findTransactionDetail[transactionUuid])
+
+    Model->>+BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
     end
-    Note over Cont, Model: for cache miss. when there are many users, Joining large 3 tables together can be time consuming. querying seprate table and merging together is faster
-    Cont->>+Model: findById(transactionId)
-    Model-->>-Cont: return transaction object
-    opt no transaction found
-        Cont-->>Router: next(new NotFoundError('No transaction found'))
-        Router-->>Client: 🔴404, "No transaction found"
+    BaseModel-->>-Model: return true
+
+    Model->>+Redis: Check if required transaction Uuid was cached
+    Redis-->>-Model: return cachedTransactionData
+    opt if cache miss
+        Model->>+BaseModel: query(sql, params)
+        Note over BaseModel: query with prepare Statements
+        BaseModel->>+DB: do operation
+        DB-->>-BaseModel: result
+        opt any error occurred
+            BaseModel-->>Model: throw Error
+            Model-->>Cont: pass error
+            Cont-->>Router: next(error)
+            Router-->>Client: 🔴500, "something went wrong"
+        end
+        BaseModel-->>-Model: return the detail of given transaction Uuid 
+        Note over Model, Redis: Async operation
+        Model-)Redis: add transaction details with transaction Uuid as a key
     end
-    
-    Cont->>+ContainsModel: findByTransactionId(transactionId)
-    ContainsModel-->>-Cont: return contains object
-    opt no transaction found
-        Cont-->>Router: next(new NotFoundError('No transaction detail found'))
-        Router-->>Client: 🔴404, "No transaction detail found"
-    end
-    
-    alt transaction type is "income"
-        Note over Cont, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findById(receiverBankAccount)
-        BankAccountModel-->>-Cont: return ReceiverBankAccount
-        opt receiver bank account not found
-            Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
-            Router-->>Client: 🔴404, "Receiver bank account not found"
-        end
-    else transaction type is "expense"
-        Note over Cont, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findById(senderBankAccount)
-        BankAccountModel-->>-Cont: return SenderBankAccount
-        opt sender bank account not found
-            Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
-            Router-->>Client: 🔴404, "Sender bank account not found"
-        end
-    else transaction type is "internal-transfer"
-        Note over Cont, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findById(receiverBankAccount)
-        BankAccountModel-->>-Cont: return ReceiverBankAccount
-        opt receiver bank account not found
-            Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
-            Router-->>Client: 🔴404, "Receiver bank account not found"
-        end
-        Note over Cont, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findById(senderBankAccount)
-        BankAccountModel-->>-Cont: return SenderBankAccount
-        opt sender bank account not found
-            Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
-            Router-->>Client: 🔴404, "Sender bank account not found"
-        end
-    end
-    Cont->>Cont: join data together
+    Model->>-Cont: return the detail of given transaction Uuid
+
     Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
     Cont->>+BaseCont: verifyOwnership(user, transaction.bankAccounts)
     opt bank account's user email does not match current user email
@@ -132,10 +102,7 @@ sequenceDiagram
         Router-->>Client: 🔴403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-
-    Note over Cont, Redis: Async operation
-    Cont-)Redis: Cache transaction details (Join tables)
     
-    Cont->>Cont: formatResponse(200, 'Transaction found', combinedTransactionData)
+    Cont->>Cont: formatResponse(200, 'Transaction found', TransactionDetail)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: combinedTransactionData }
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: TransactionDetail }

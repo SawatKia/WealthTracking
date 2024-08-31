@@ -21,6 +21,7 @@ sequenceDiagram
     participant PGClient as PostgreSQLClient
     participant BaseModel as BaseModel 
     participant Model as BankAccountModel extends BaseModel
+    participant DB as [(Database)]
 
     Client->>+Router: POST /bank-accounts/ (create Bank Account)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
@@ -61,8 +62,8 @@ sequenceDiagram
     end
     
     Cont->>Cont: Create new bank account data object with user.email
-    Cont->>+Model: createBankAccount({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
-    Model->>+BaseModel: create(data)
+    Cont->>+Model: create({ userEmail, bankAccountName, bankAccountDisplayName, bankName, bankAccountNumber, balance })
+    Model->>+BaseModel: pass call
     BaseModel->>BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match
@@ -74,6 +75,8 @@ sequenceDiagram
 
     Note over BaseModel: query with prepare Statements
     BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')
         Model-->>Cont: throw new Error('Bank account number already exists')
@@ -84,10 +87,10 @@ sequenceDiagram
        Model-->>Cont: throw error
        Cont-->>Router: next(error)
        Router-->>Client: 🔴500, "something went wrong"
-    BaseModel-->>-Model: return created Id
     end
+    BaseModel-->>-Model: return created Id
 
-    Model->>-Cont: return created Bank Account Id
+    Model->>-Cont: pass result
     Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccountId)
     Cont-->>-Router: return formatted response
     Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccountId }

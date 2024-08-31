@@ -34,6 +34,7 @@ sequenceDiagram
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['username', 'email', 'password', 'confirmPassword']
     Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw BadRequestError('<field> is required')
         Cont-->>Router: next(error)
