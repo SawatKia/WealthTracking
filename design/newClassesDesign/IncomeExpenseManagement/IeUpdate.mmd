@@ -110,8 +110,15 @@ sequenceDiagram
         Router-->>Client: 🔴500, "something went wrong"
     end
     BaseModel-->>-Model: return the detail of given transaction Uuid 
-    Note over Model, Redis: Async operation
-    Model-)Redis: update transaction details with correspond transaction Uuid 
+    Model->>+Redis: Check if required transaction Uuid was cached
+    Redis-->>-Model: return cachedTransactionData
+    alt cache not found
+        Note over Model, Redis: Async operation
+        Model-)Redis: add transaction details with transaction Uuid as a key
+    else cache found
+        Note over Model, Redis: Async operation
+        Model-)Redis: update transaction details with correspond transaction Uuid 
+    end
 
     Model-->>-Cont: pass result
 

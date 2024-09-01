@@ -72,7 +72,7 @@ sequenceDiagram
         Router-->>Client: 🔴400, "<field> is required"
     end
     BaseCont->>-Cont: return true
-    Cont->>+Model: checkPassword(user.email, currentPassword)
+    Cont->>+Model: checkPassword([user.email], currentPassword)
     opt Invalid password
         Model-->>Cont: return false
         Cont-->>Router: throw PasswordError()

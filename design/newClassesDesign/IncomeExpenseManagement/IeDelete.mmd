@@ -59,7 +59,7 @@ sequenceDiagram
     end
 
     Note over Cont, Model: this method defined in IncomeExpenseManagement/IeReadOne
-    Cont->>+Model: findTransactionDetail(transactionUuid)
+    Cont->>+Model: findTransactionDetail([transactionUuid])
     Model->>-Cont: return the detail of given transaction Uuid
     opt transaction not found
         Cont-->>Router: next(new NotFoundError('Transaction not found'))
@@ -81,7 +81,7 @@ sequenceDiagram
     %%     BankAccountModel-->>-Cont: updated balance
     %% end
 
-    Cont->>+Model: deleteTransaction(transactionId)
+    Cont->>+Model: deleteTransaction([transactionId])
     Model->>+BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match

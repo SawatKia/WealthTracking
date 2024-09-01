@@ -43,7 +43,7 @@ sequenceDiagram
     Router->>+Cont: updateBankAccount(req, res, next)
     Cont->>Cont: Destructoring parameters
     Note over Cont, BaseCont: requiredFields = ['bankAccountNumber', 'bankAccountName']
-    Cont->>+BaseCont: verifyField({req.body+bankAccountNumber+bankAccountName}, requiredFields)
+    Cont->>+BaseCont: verifyField({bankAccountNumber+bankAccountName}, requiredFields)
     Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')

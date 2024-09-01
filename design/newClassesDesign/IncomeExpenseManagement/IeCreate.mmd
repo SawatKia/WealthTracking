@@ -66,7 +66,7 @@ sequenceDiagram
     Note over Cont, BankAccountModel: verifying selected bank is exist
     alt transaction type is "income"
         Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findOne(receiveBankAccountNumber, receiveBccountName)
+        Cont->>+BankAccountModel: findOne([receiveBankAccountNumber, receiveBccountName])
         BankAccountModel-->>-Cont: return ReceiverBankAccount
         opt receiver bank account not found
             Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
@@ -74,7 +74,7 @@ sequenceDiagram
         end
     else transaction type is "expense"
         Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findOne(senderBankAccountNumber, senderBankAccountName)
+        Cont->>+BankAccountModel: findOne([senderBankAccountNumber, senderBankAccountName])
         BankAccountModel-->>-Cont: return SenderBankAccount
         opt sender bank account not found
             Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
@@ -82,14 +82,14 @@ sequenceDiagram
         end
     else transaction type is "internal-transfer"
         Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findOne(receiveBankAccountNumber, receiveBccountName)
+        Cont->>+BankAccountModel: findOne([receiveBankAccountNumber, receiveBccountName])
         BankAccountModel-->>-Cont: return ReceiverBankAccount
         opt receiver bank account not found
             Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
             Router-->>Client: 🔴404, "Receiver bank account not found"
         end
         Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
-        Cont->>+BankAccountModel: findOne(senderBankAccountNumber, senderBankAccountName)
+        Cont->>+BankAccountModel: findOne([senderBankAccountNumber, senderBankAccountName])
         BankAccountModel-->>-Cont: return SenderBankAccount
         opt sender bank account not found
             Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
@@ -144,8 +144,12 @@ sequenceDiagram
         Router-->>Client: 🔴500, "something went wrong"
     end
     BaseModel-->>-Model: return the detail of given transaction Uuid 
-    Note over Model, Redis: Async operation
-    Model-)Redis: add transaction details with transaction Uuid as a key
+    Model->>+Redis: Check if required transaction Uuid was cached
+    Redis-->>-Model: return cachedTransactionData
+    opt cache not found
+        Note over Model, Redis: Async operation
+        Model-)Redis: add transaction details with transaction Uuid as a key
+    end
     Model-->>-Cont: pass result
 
     %% Note over Cont, BankAccountModel: cascading update balance

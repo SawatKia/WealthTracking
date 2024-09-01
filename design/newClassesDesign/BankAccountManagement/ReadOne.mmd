@@ -23,7 +23,7 @@ sequenceDiagram
     participant Model as BankAccountModel extends BaseModel
     participant DB as [(Database)]
 
-    Client->>+Router: GET /bank-accounts/:bankAccountId (get Bank Account by bankAccountId)
+    Client->>+Router: GET /banks/:bankAccountNumber/:bankAccountName (get Bank Account by bankAccountId)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: verifyToken(req)
     alt Token decode error | Token expired | Invalid token
@@ -42,15 +42,16 @@ sequenceDiagram
     end
     Router->>+Cont: getOneBankAccount(req, res, next)
     Cont->>Cont: Destructoring parameters
-    Note over Cont: requiredFields = ['bankAccountId']
-    Cont->>+BaseCont: verifyField({bankAccountId}, requiredFields)
+    Note over Cont, BaseCont: requiredFields = ['bankAccountNumber', 'bankAccountName']
+    Cont->>+BaseCont: verifyField({bankAccountNumber+bankAccountName}, requiredFields)
     Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
-    BaseCont->>-Cont: return true
+    BaseCont-->>-Cont: return true
+    
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: User data

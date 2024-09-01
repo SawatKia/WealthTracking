@@ -50,7 +50,7 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAll(user.email)
+    Cont->>+Model: findAll([user.email])
     Model->>+BaseModel: pass call
 
     BaseModel->>BaseModel: validateSchema(data) 

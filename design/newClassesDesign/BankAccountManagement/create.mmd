@@ -23,7 +23,7 @@ sequenceDiagram
     participant Model as BankAccountModel extends BaseModel
     participant DB as [(Database)]
 
-    Client->>+Router: POST /bank-accounts/ (create Bank Account)
+    Client->>+Router: POST /banks/ (create Bank Account)
     Note over Sec, Router: this method defined in UserManagement/read.mmd
     Router->>+Sec: verifyToken(req)
     alt Token decode error | Token expired | Invalid token
