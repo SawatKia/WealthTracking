@@ -76,7 +76,7 @@ sequenceDiagram
     Model-->>-Cont: pass results
 
     Note over Cont, BaseCont: ensure that verifyOwnership is support iteration array of object
-    Cont->>+BaseCont: verifyOwnership(user, bankAccount)
+    Cont->>+BaseCont: verifyOwnership(user, [bankAccounts])
     opt Bank account's user email does not match current user email
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')

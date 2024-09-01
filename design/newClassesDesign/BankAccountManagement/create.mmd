@@ -93,4 +93,4 @@ sequenceDiagram
     Model->>-Cont: pass result
     Cont->>Cont: formatResponse(201, 'Bank account created successfully', createdBankAccountId)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: createdBankAccountId }
+    Router-->>-Client: 🟢201, { status: 201, message: "Bank account created successfully", data: {createdBankAccountId} }

@@ -101,7 +101,7 @@ sequenceDiagram
     Model->>-Cont: return the detail of given transaction Uuid
 
     Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
-    Cont->>+BaseCont: verifyOwnership(user, transaction.bankAccounts)
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
     opt bank account's user email does not match current user email
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
@@ -111,4 +111,4 @@ sequenceDiagram
     
     Cont->>Cont: formatResponse(200, 'Transaction found', TransactionDetail)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: TransactionDetail }
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: {TransactionDetail} }

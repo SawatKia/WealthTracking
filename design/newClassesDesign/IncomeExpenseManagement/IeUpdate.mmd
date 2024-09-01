@@ -67,6 +67,15 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Transaction not found"
     end
 
+    Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
+    opt bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+
     Cont->>Cont: combine update transaction data
 
     Cont->>+PGClient: beginTransaction()
@@ -203,4 +212,4 @@ sequenceDiagram
 
     Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: updatedTransaction + details }
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: {updatedTransaction + details} }

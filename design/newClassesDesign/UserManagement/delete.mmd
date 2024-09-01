@@ -102,6 +102,6 @@ sequenceDiagram
     end
     BaseModel-->>-Model: return true
     Model-->>-Cont: pass result
-    Cont->>Cont: formatResponse(200, 'User deleted successfully', { userId: deletedUser._id })
+    Cont->>Cont: formatResponse(200, 'User deleted successfully')
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "User deleted successfully", data: { userId: deletedUser._id } }
+    Router-->>-Client: 🟢200, { status: 200, message: "User deleted successfully"}

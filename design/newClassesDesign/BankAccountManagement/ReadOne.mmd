@@ -88,13 +88,13 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Bank account not found"
     end
 
-    Cont->>+BaseCont: verifyOwnership(user, bankAccount)
+    Cont->>+BaseCont: verifyOwnership(user, [bankAccount])
     opt Bank account's user email does not match current user email
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
         Router-->>Client: 🔴403, "You are not allowed to access this resource"
     end
     BaseCont-->>-Cont: return true
-    Cont->>Cont: formatResponse(200, 'Search successful', { bankAccount })
+    Cont->>Cont: formatResponse(200, '"Bank account retrieved successfully"', { bankAccount })
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Search successful", data: { bankAccount } }
+    Router-->>-Client: 🟢200, { status: 200, message: "Bank account retrieved successfully", data: { bankAccount } }

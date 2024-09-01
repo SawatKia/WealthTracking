@@ -158,9 +158,9 @@ sequenceDiagram
     Cont->>+PGClient: commit()
     PGClient-->>-Cont: transaction committed
 
-    Cont->>Cont: formatResponse(201, 'Transaction successful', createTransaction object)
+    Cont->>Cont: formatResponse(201, 'create Transaction successful', createTransactionId)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢201, "Transaction successful", insertedTransaction object
+    Router-->>-Client: 🟢201, { status: 201, message: "Transaction created successfully", data: {createTransactionId} }
 
     %% Note over Cont, BankAccountModel: cascading update balance
     %% alt transaction type is "income"

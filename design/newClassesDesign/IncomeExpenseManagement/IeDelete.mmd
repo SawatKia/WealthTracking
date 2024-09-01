@@ -66,6 +66,15 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Transaction not found"
     end
 
+    Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
+    opt bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+    
     Cont->>+PGClient: beginTransaction()
     PGClient-->>-Cont: Transaction started
 

@@ -68,7 +68,7 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Bank account not found"
     end
 
-    Cont->>+BaseCont: verifyOwnership(user, bankAccount)
+    Cont->>+BaseCont: verifyOwnership(user, [bankAccount])
     opt Bank account's user email does not match current user email
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
@@ -88,6 +88,7 @@ sequenceDiagram
     Note over BaseModel: query with prepare Statements
     BaseModel->>BaseModel: query(sql, params)
     BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade updating the transaction's fk that refer to the modified bank account
     DB-->>-BaseModel: result
     opt SQL unique violation
         BaseModel-->>Model: throw new Error('duplicate key value')

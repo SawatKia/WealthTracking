@@ -23,4 +23,86 @@ sequenceDiagram
     participant Model as DebtModelModel extends BaseModel
     participant DB as [(Database)]
 
-    Client->>Router: DELETE
+    Client->>+Router: DELETE /debts/:debtName (delete debt)
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object 
+
+    Note over Sec, Router: this method defined in UserManagement/create.mmd
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+    
+    Router->>+Cont: deleteDebt(req, res, next)
+   Cont->>Cont: Destructoring parameters
+
+    Note over Cont, BaseCont: requiredFields = ['debtName']
+    Cont->>+BaseCont: verifyField({debtName}, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
+    opt missing required fields
+        BaseCont-->>Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+    BaseCont-->>-Cont: return true
+  
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: User data
+    opt user not found
+        Cont-->>Router: throw NotFoundError('User not found')
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Note over Cont, Model: this method defined in DebtManagement/ReadOne.mmd
+    Cont->>+Model: findOne([debtName, userEmail])
+    Model-->>-Cont: pass result
+    opt Debt not found
+        Cont-->>Router: throw NotFoundError('Debt not found')
+        Router-->>Client: 🔴404, "Debt not found"
+    end
+
+    Cont->>+BaseCont: verifyOwnership(user, [debt])
+    opt debt's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+
+    Cont->>+Model: delete([debtName, userEmail])
+    Model->>+BaseModel: pass call
+    Note over BaseModel: this method defined in BankAccountManagement/create.mmd
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade nulling the transaction's fk marks as debt payment
+    DB-->>-BaseModel: result
+    opt any error
+        BaseModel-->>Model: throw Error('Error deleting user')
+        Model-->>Cont: pass error
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return true
+    Model-->>-Cont: pass result
+
+    Cont->>Cont: formatResponse(200, 'Bank account deleted successfully')
+    Cont-->>-Router: Formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Bank account deleted successfully" }
