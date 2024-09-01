@@ -78,17 +78,7 @@ sequenceDiagram
     Cont->>+PGClient: beginTransaction()
     PGClient-->>-Cont: Transaction started
 
-    %% alt Transaction is expense
-    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
-    %%     BankAccountModel-->>-Cont: updated balance
-    %%     alt debt payment involved
-    %%         Cont->>+DebtModel: updateDebtBalance(transaction, null)
-    %%         DebtModel-->>-Cont: updated loan balance
-    %%     end
-    %% else Transaction is income
-    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
-    %%     BankAccountModel-->>-Cont: updated balance
-    %% end
+    %% update bank acount balance if need
 
     Cont->>+Model: deleteTransaction([transactionId])
     Model->>+BaseModel: validateSchema(data) 
@@ -123,3 +113,15 @@ sequenceDiagram
     Cont->>Cont: formatResponse(200, 'Transaction deleted successfully')
     Cont-->>-Router: return formatted response
     Router-->>-Client: 🟢200, { status: 200, message: "Transaction deleted successfully" }
+
+    %% alt Transaction is expense
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %%     alt debt payment involved
+    %%         Cont->>+DebtModel: updateDebtBalance(transaction, null)
+    %%         DebtModel-->>-Cont: updated loan balance
+    %%     end
+    %% else Transaction is income
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %% end

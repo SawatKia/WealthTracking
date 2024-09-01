@@ -1,0 +1,126 @@
+classDiagram
+    class AppError {
+        +AppError(message: string)
+    }
+
+    class BadRequestError {
+        +BadRequestError(message: string)
+    }
+
+    class UnauthorizedError {
+        +UnauthorizedError(message: string)
+    }
+
+    class ForbiddenError {
+        +ForbiddenError(message: string)
+    }
+
+    class NotFoundError {
+        +NotFoundError(message: string)
+    }
+
+    class ConflictError {
+        +ConflictError(message: string)
+    }
+
+    class PasswordError {
+        +PasswordError()
+    }
+
+    class UserDuplicateError {
+        +UserDuplicateError()
+    }
+
+    class MethodValidator {
+        +validate(req: Request, res: Response, next: NextFunction)
+    }
+
+    class AdminMiddleware {
+        +checkAdmin(req: Request, res: Response, next: NextFunction)
+    }
+
+    class BaseController {
+        +verifyFields(objectToVerify,requiredFieldsArray) boolean
+        +getCurrentUser(requestObject) UserObject
+        +verifyOwnership(userObject, dataArray) boolean
+    }
+
+    class BaseModel {
+        +create(data)
+        +findAll(query)
+        +findOne([key])
+        +updateById(id, data)
+        +deleteById(id)
+    }
+
+    class UserController {
+        +createUser(req, res)
+        +getAllUsers(req, res)
+        +getUserById(req, res)
+        +updateUserById(req, res)
+        +deleteUserById(req, res)
+    }
+
+    class UserModel {
+        +createUser(data)
+        +findAllUsers(query)
+        +findUserById(id)
+        +updateUserById(id, data)
+        +deleteUserById(id)
+    }
+
+    class BankAccountController {
+        +createBankAccount(req, res)
+        +getAllBankAccounts(req, res)
+        +getBankAccountById(req, res)
+        +updateBankAccountById(req, res)
+        +deleteBankAccountById(req, res)
+    }
+
+    class BankAccountModel {
+        +createBankAccount(data)
+        +findAllBankAccounts(query)
+        +findBankAccountById(id)
+        +updateBankAccountById(id, data)
+        +deleteBankAccountById(id)
+    }
+
+    class DebtController {
+        +createDebt(req, res)
+        +getAllDebts(req, res)
+        +getDebtById(req, res)
+        +updateDebtById(req, res)
+        +deleteDebtById(req, res)
+    }
+
+    class DebtModel {
+        +createDebt(data)
+        +findAllDebts(query)
+        +findDebtById(id)
+        +updateDebtById(id, data)
+        +deleteDebtById(id)
+    }
+
+    class IncomeExpenseController {
+        +createIncomeExpense(req, res)
+        +getAllIncomeExpenses(req, res)
+        +getIncomeExpenseById(req, res)
+        +updateIncomeExpenseById(req, res)
+        +deleteIncomeExpenseById(req, res)
+    }
+
+    class IncomeExpenseModel {
+        +createIncomeExpense(data)
+        +findAllIncomeExpenses(query)
+        +findIncomeExpenseById(id)
+        +updateIncomeExpenseById(id, data)
+        +deleteIncomeExpenseById(id)
+    }
+
+    AppError <|-- BadRequestError
+    AppError <|-- UnauthorizedError
+    AppError <|-- ForbiddenError
+    AppError <|-- NotFoundError
+    AppError <|-- ConflictError
+    AppError <|-- PasswordError
+    AppError <|-- UserDuplicateError

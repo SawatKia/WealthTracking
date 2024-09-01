@@ -152,8 +152,8 @@ sequenceDiagram
     end
     Model-->>-Cont: pass result
 
-    %% Note over Cont, BankAccountModel: cascading update balance
-    %% Note over Cont, ContainsModel: add relation ship for 2 tables
+    %% Note over Cont, BankAccountModel: cascading update balance if need
+    %% Note over Cont, ContainsModel: add relation ship for 2 tables if need
 
     Cont->>+PGClient: commit()
     PGClient-->>-Cont: transaction committed

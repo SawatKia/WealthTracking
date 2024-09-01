@@ -131,8 +131,16 @@ sequenceDiagram
 
     Model-->>-Cont: pass result
 
-    %% opt amount changed
-    %% Note over Cont, ContainsModel: update relationship for 2 tables, update by transactionUUID
+    %% update bank acount balance if need
+    %% Note over Cont, ContainsModel: update relationship for 2 tables, update by transactionUUID if need
+
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+
+    Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: {updatedTransaction + details} }
+
 
     %% opt amount changed
     %%     Cont->>+BankAccountModel: updateBalance(userEmail, updateBankAccount, (newAmount-oldAmount))
@@ -207,9 +215,4 @@ sequenceDiagram
     %%     ContainsModel-->>-Cont: pass result
     %% end
 
-    Cont->>+PGClient: commit()
-    PGClient-->>-Cont: transaction committed
 
-    Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
-    Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: {updatedTransaction + details} }
