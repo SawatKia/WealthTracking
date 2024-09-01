@@ -75,6 +75,7 @@ sequenceDiagram
     Note over BaseModel: query with prepare Statements
     BaseModel->>BaseModel: query(sql, params)
     BaseModel->>+DB: do operation
+    Note over DB: DB also query all payments of query debt
     DB-->>-BaseModel: result
     opt any error occurred
         BaseModel-->>Model: throw Error

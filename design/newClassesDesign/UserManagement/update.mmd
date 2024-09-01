@@ -100,7 +100,7 @@ sequenceDiagram
     opt if newPassword in updateFields
         Model->>Model: this_hashPassword(newPassword)
     end
-    Model->>+BaseModel: pass call
+    Model->>+BaseModel: update()
     BaseModel->>BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match

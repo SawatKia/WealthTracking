@@ -46,14 +46,16 @@ sequenceDiagram
 
     Router->>+Cont: getOneTransaction(req, res, next)
     Cont->>Cont: Destructoring parameters
+    
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
     Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
-        BaseCont-->>-Cont: throw Error('<field> is required')
+        BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
+    BaseCont-->>-Cont: return true
 
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
