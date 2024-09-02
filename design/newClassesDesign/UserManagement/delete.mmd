@@ -72,14 +72,14 @@ sequenceDiagram
         Router-->>Client: 🔴400, "<field> is required"
     end
     BaseCont->>-Cont: return true
-    Cont->>+Model: checkPassword([user.email], currentPassword)
+    Cont->>+Model: checkPassword(userEmail, currentPassword)
     opt Invalid password
         Model-->>Cont: return false
         Cont-->>Router: throw PasswordError()
         Router-->>Client: 🔴401, "Invalid username or password"
     end
     Model-->>-Cont: return true
-    Cont->>+Model: delete([userEmail])
+    Cont->>+Model: delete(userEmail)
     Model->>+BaseModel: pass call
     Note over BaseModel: this method defined in BankAccountManagement/create.mmd
     BaseModel->>BaseModel: validateSchema(data) 

@@ -61,9 +61,9 @@ sequenceDiagram
     Sec->>Sec: jwt.decode(token)
     Sec-->>-BaseCont: decoded user object
 
-    BaseCont->>+Model: findUser([decoded.userEmail])
+    BaseCont->>+Model: findUser(decoded.userEmail)
     Note over Model, BaseModel: this method defined in BankAccountManagement/ReadOne.mmd, please reference from that diagram
-    Model->>+BaseModel: findOne([userEmail])
+    Model->>+BaseModel: findOne(userEmail)
     BaseModel->>BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match

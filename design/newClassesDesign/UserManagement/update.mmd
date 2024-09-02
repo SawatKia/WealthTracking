@@ -73,7 +73,7 @@ sequenceDiagram
     end
     BaseCont->>-Cont: return true
     Note over Cont, Model: this method will use several times in the application
-    Cont->>+Model: checkPassword([user.email], currentPassword)
+    Cont->>+Model: checkPassword(userEmail, currentPassword)
     opt Invalid password
         Model-->>Cont: return false
         Cont-->>Router: throw PasswordError()
@@ -96,7 +96,7 @@ sequenceDiagram
     Cont->>Cont: normalizeUsernameEmail(newUsername, newEmail)
     Cont->>Cont: merge updateFields together
 
-    Cont->>+Model: updateUser([user.email], updateFields)
+    Cont->>+Model: updateUser(userEmail, updateFields)
     opt if newPassword in updateFields
         Model->>Model: this_hashPassword(newPassword)
     end

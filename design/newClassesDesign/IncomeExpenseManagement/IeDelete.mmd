@@ -59,7 +59,7 @@ sequenceDiagram
     end
 
     Note over Cont, Model: this method defined in IncomeExpenseManagement/IeReadOne
-    Cont->>+Model: findTransactionDetail([transactionUuid])
+    Cont->>+Model: findTransactionDetail(transactionUuid)
     Model->>-Cont: return the detail of given transaction Uuid
     opt transaction not found
         Cont-->>Router: next(new NotFoundError('Transaction not found'))

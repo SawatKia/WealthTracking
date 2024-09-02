@@ -122,6 +122,13 @@ document.addEventListener("DOMContentLoaded", async function () {
       svgPath: "../newClassesDesign/UserFlow.svg",
     },
     {
+      no: 24,
+      id: "UMLDiagram",
+      mmdPath: "../newClassesDesign/Classes.mmd",
+      loadingId: "loadingUML",
+      svgPath: "../newClassesDesign/Classes.svg",
+    },
+    {
       no: 3,
       id: "userCreateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/create.mmd",

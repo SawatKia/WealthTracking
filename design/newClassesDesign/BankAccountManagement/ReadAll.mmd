@@ -40,7 +40,7 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: getBankAccounts(req)
+    Router->>+Cont: getAllBankAccounts(req, res, next)
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: User data
@@ -50,7 +50,7 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAll([user.email])
+    Cont->>+Model: findAll(userEmail)
     Model->>+BaseModel: pass call
     Note over BaseModel: this method defined in BankAccountManagement/create.mmd
     BaseModel->>BaseModel: validateSchema(data) 

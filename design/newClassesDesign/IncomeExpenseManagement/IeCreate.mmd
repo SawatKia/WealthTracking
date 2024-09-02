@@ -101,8 +101,8 @@ sequenceDiagram
     PGClient-->>-Cont: transaction started
 
     Note over Cont, Model: create the transaction
-    Cont->>+Model: create({userEmail, transactionUUID, transactionDateTime, category, type, amount, note})
-    Model->>+BaseModel: pass call
+    Cont->>+Model: createTransaction(userEmail, { transactionUUID, transactionDateTime, category, type, amount, note})
+    Model->>+BaseModel: create(userEmail, { transactionUUID, transactionDateTime, category, type, amount, note})
     BaseModel->>BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match

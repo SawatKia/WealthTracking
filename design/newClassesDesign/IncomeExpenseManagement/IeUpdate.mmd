@@ -83,7 +83,7 @@ sequenceDiagram
     Cont->>+PGClient: beginTransaction()
     PGClient-->>-Cont: transaction started
 
-    Cont->>+Model: updateTransaction([transactionUuid], updatedTransaction)
+    Cont->>+Model: updateTransaction(transactionUuid, updatedTransaction)
     Model->>+BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match

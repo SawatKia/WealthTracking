@@ -17,7 +17,7 @@
         <a href="#ourSystem" class="icon-item">🖥️</a>
         <a href="#userManagement" class="icon-item">👤</a>
         <a href="#bankAccountManagement" class="icon-item">🏦</a>
-        <a href="#transactionManagement" class="icon-item">💰</a>
+        <a href="#transactionManagement" class="icon-item">💸</a>
         <a href="#debtManagement" class="icon-item">🧾</a>
         <a href="#otherSystems" class="icon-item">🔗</a>
     </div>
@@ -34,6 +34,22 @@
                 <input type="checkbox" id="userFlow_check">
                 <label for="userFlow_check"><span class="verified-text">code verified</span></label>
             </li>
+            <li>
+                <a href="ERD">ERD</a>
+                <input type="checkbox" id="ERD_check">
+                <label for="ERD_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="useCase">Use Case</a>
+                <input type="checkbox" id="useCase_check">
+                <label for="useCase_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
+                <a href="UML">class diagram</a>
+                <input type="checkbox" id="UML_check">
+                <label for="UML_check"><span class="verified-text">code verified</span></label>
+            </li>
+
         </ul>
         <h3><a href="#ourSystem"><span class="icon">🖥️</span>2. Our System</a></h3>
         <h4><a href="#userManagement"><span class="icon">👤</span>User Management</a></h4>
@@ -87,7 +103,7 @@
                 <label for="bankDelete_check"><span class="verified-text">code verified</span></label>
             </li>
         </ul>
-        <h4><a href="#transactionManagement"><span class="icon">💰</span>Transaction Management</a></h4>
+        <h4><a href="#transactionManagement"><span class="icon">💸</span>Transaction Management</a></h4>
         <ul>
             <li>
                 <a href="#ieCreate">Create</a>
@@ -204,226 +220,231 @@
             </div>
             <div id="useCase">
                 <h3>Use Case</h3>
-                <div class="diagram-container">
-                    <img src="../Use_Case.png">
+                <button class="reset-zoom">Reset Zoom</button>
+                <img src="../Use_Case.png" </div>
+                <div id="UML">
+                    <h3>class diagram</h3>
+                    <button class="reset-zoom">Reset Zoom</button>
+                    <div class="mermaid" id="UMLDiagram">
+                        <div class="skeleton-loader" id="loadingUML"> loading diagram...</div>
+                    </div>
+                </div>
+
+                <div class="section" id="ourSystem">
+                    <h2>2. 🖥️ Our System</h2>
+                    <div id="userManagement">
+                        <h3>👤 User Management</h3>
+                        <div id="userCreate">
+                            <h4>Create</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="userCreateDiagram">
+                                    <div class="skeleton-loader" id="loadingUserCreate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="userRead">
+                            <h4>Read</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="userReadDiagram">
+                                    <div class="skeleton-loader" id="loadingUserRead"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="userUpdate">
+                            <h4>Update</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="userUpdateDiagram">
+                                    <div class="skeleton-loader" id="loadingUserUpdate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="userDelete">
+                            <h4>Delete</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="userDeleteDiagram">
+                                    <div class="skeleton-loader" id="loadingUserDelete"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="bankAccountManagement">
+                        <h3>🏦 Bank Account Management</h3>
+                        <div id="bankAdd">
+                            <h4>Add</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="bankAddDiagram">
+                                    <div class="skeleton-loader" id="loadingBankAdd"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="bankReadAll">
+                            <h4>Read All</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="bankReadAllDiagram">
+                                    <div class="skeleton-loader" id="loadingBankReadAll"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="bankReadOne">
+                            <h4>Read One</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="bankReadOneDiagram">
+                                    <div class="skeleton-loader" id="loadingBankReadOne"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="bankUpdate">
+                            <h4>Update</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="bankUpdateDiagram">
+                                    <div class="skeleton-loader" id="loadingBankUpdate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="bankDelete">
+                            <h4>Delete</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="bankDeleteDiagram">
+                                    <div class="skeleton-loader" id="loadingBankDelete"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="transactionManagement">
+                        <h3>💸 Transaction Management</h3>
+                        <div id="ieCreate">
+                            <h4>Create</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="IeCreateDiagram">
+                                    <div class="skeleton-loader" id="loadingIeCreate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ieReadAll">
+                            <h4>Read All</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="IeReadAllDiagram">
+                                    <div class="skeleton-loader" id="loadingIeReadAll"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ieReadOne">
+                            <h4>Read One</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="IeReadOneDiagram">
+                                    <div class="skeleton-loader" id="loadingIeReadOne"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ieUpdate">
+                            <h4>Update</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="IeUpdateDiagram">
+                                    <div class="skeleton-loader" id="loadingIeUpdate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ieDelete">
+                            <h4>Delete</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="IeDeleteDiagram">
+                                    <div class="skeleton-loader" id="loadingIeDelete"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="debtManagement">
+                        <h3>🧾 Debt Management</h3>
+                        <div id="debtCreate">
+                            <h4>Create</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="debtCreateDiagram">
+                                    <div class="skeleton-loader" id="loadingDebtCreate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="debtReadAll">
+                            <h4>Read All</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="debtReadAllDiagram">
+                                    <div class="skeleton-loader" id="loadingDebtReadAll"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="debtReadOne">
+                            <h4>Read One</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="debtReadOneDiagram">
+                                    <div class="skeleton-loader" id="loadingDebtReadOne"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="debtUpdate">
+                            <h4>Update</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="debtUpdateDiagram">
+                                    <div class="skeleton-loader" id="loadingDebtUpdate"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="debtDelete">
+                            <h4>Delete</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="debtDeleteDiagram">
+                                    <div class="skeleton-loader" id="loadingDebtDelete"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="otherSystems">
+                    <h2>3. 🔗 Other System</h2>
+                    <div id="EasySlip">
+                        <h3>EasySlip Api</h3>
+                        <div id="quotaCheck">
+                            <h4>Quota Check</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="quotaCheckDiagram">
+                                    <div class="skeleton-loader" id="loadingQuotaCheck"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="slipData">
+                            <h4>Slip Data</h4>
+                            <div class="diagram-container">
+                                <button class="reset-zoom">Reset Zoom</button>
+                                <div class="mermaid" id="slipDataDiagram">
+                                    <div class="skeleton-loader" id="loadingSlipData"> loading diagram...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="section" id="ourSystem">
-                <h2>2. 🖥️ Our System</h2>
-                <div id="userManagement">
-                    <h3>👤 User Management</h3>
-                    <div id="userCreate">
-                        <h4>Create</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="userCreateDiagram">
-                                <div class="skeleton-loader" id="loadingUserCreate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="userRead">
-                        <h4>Read</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="userReadDiagram">
-                                <div class="skeleton-loader" id="loadingUserRead"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="userUpdate">
-                        <h4>Update</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="userUpdateDiagram">
-                                <div class="skeleton-loader" id="loadingUserUpdate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="userDelete">
-                        <h4>Delete</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="userDeleteDiagram">
-                                <div class="skeleton-loader" id="loadingUserDelete"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="bankAccountManagement">
-                    <h3>🏦 Bank Account Management</h3>
-                    <div id="bankAdd">
-                        <h4>Add</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="bankAddDiagram">
-                                <div class="skeleton-loader" id="loadingBankAdd"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="bankReadAll">
-                        <h4>Read All</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="bankReadAllDiagram">
-                                <div class="skeleton-loader" id="loadingBankReadAll"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="bankReadOne">
-                        <h4>Read One</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="bankReadOneDiagram">
-                                <div class="skeleton-loader" id="loadingBankReadOne"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="bankUpdate">
-                        <h4>Update</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="bankUpdateDiagram">
-                                <div class="skeleton-loader" id="loadingBankUpdate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="bankDelete">
-                        <h4>Delete</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="bankDeleteDiagram">
-                                <div class="skeleton-loader" id="loadingBankDelete"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="transactionManagement">
-                    <h3>💰 Transaction Management</h3>
-                    <div id="ieCreate">
-                        <h4>Create</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="IeCreateDiagram">
-                                <div class="skeleton-loader" id="loadingIeCreate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="ieReadAll">
-                        <h4>Read All</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="IeReadAllDiagram">
-                                <div class="skeleton-loader" id="loadingIeReadAll"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="ieReadOne">
-                        <h4>Read One</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="IeReadOneDiagram">
-                                <div class="skeleton-loader" id="loadingIeReadOne"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="ieUpdate">
-                        <h4>Update</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="IeUpdateDiagram">
-                                <div class="skeleton-loader" id="loadingIeUpdate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="ieDelete">
-                        <h4>Delete</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="IeDeleteDiagram">
-                                <div class="skeleton-loader" id="loadingIeDelete"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="debtManagement">
-                    <h3>🧾 Debt Management</h3>
-                    <div id="debtCreate">
-                        <h4>Create</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="debtCreateDiagram">
-                                <div class="skeleton-loader" id="loadingDebtCreate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="debtReadAll">
-                        <h4>Read All</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="debtReadAllDiagram">
-                                <div class="skeleton-loader" id="loadingDebtReadAll"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="debtReadOne">
-                        <h4>Read One</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="debtReadOneDiagram">
-                                <div class="skeleton-loader" id="loadingDebtReadOne"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="debtUpdate">
-                        <h4>Update</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="debtUpdateDiagram">
-                                <div class="skeleton-loader" id="loadingDebtUpdate"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="debtDelete">
-                        <h4>Delete</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="debtDeleteDiagram">
-                                <div class="skeleton-loader" id="loadingDebtDelete"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section" id="otherSystems">
-                <h2>3. 🔗 Other System</h2>
-                <div id="EasySlip">
-                    <h3>EasySlip Api</h3>
-                    <div id="quotaCheck">
-                        <h4>Quota Check</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="quotaCheckDiagram">
-                                <div class="skeleton-loader" id="loadingQuotaCheck"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="slipData">
-                        <h4>Slip Data</h4>
-                        <div class="diagram-container">
-                            <button class="reset-zoom">Reset Zoom</button>
-                            <div class="mermaid" id="slipDataDiagram">
-                                <div class="skeleton-loader" id="loadingSlipData"> loading diagram...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <button id="backToTop" title="Back to Top">↑</button>
-        <script src="./diagramPreview.js"></script>
+            <button id="backToTop" title="Back to Top">↑</button>
+            <script src="./diagramPreview.js"></script>
 </body>
 
 </html>

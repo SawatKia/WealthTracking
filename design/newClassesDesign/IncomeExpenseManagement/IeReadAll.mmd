@@ -41,7 +41,7 @@ sequenceDiagram
         Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
 
-    Router->>+Cont: getTransactions(req, res, next)
+    Router->>+Cont: getAllTransactions(req, res, next)
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
     BaseCont-->>-Cont: return User object
@@ -50,7 +50,7 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findAll([user.email])
+    Cont->>+Model: findAll(userEmail)
     Model->>+BaseModel: pass call
 
     BaseModel->>BaseModel: validateSchema(data) 

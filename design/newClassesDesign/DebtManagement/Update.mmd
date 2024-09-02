@@ -40,7 +40,7 @@ sequenceDiagram
     opt method not allowed
         Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
-    Router->>+Cont: updateBankAccount(req, res, next)
+    Router->>+Cont: updateDebt(req, res, next)
     Cont->>Cont: Destructoring parameters
 
     Note over Cont, BaseCont: requiredFields = ['debtName']
