@@ -364,9 +364,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   initZoomableDiagrams();
 });
 
-//NOTE - SVG zoomable
+// NOTE - SVG zoomable with mobile fullscreen support
 function initZoomableDiagrams() {
-  //TODO - add zoomable for mobile in one hand
   const containers = document.querySelectorAll(".diagram-container");
 
   containers.forEach((container) => {
@@ -374,6 +373,9 @@ function initZoomableDiagrams() {
     const resetButton = container.querySelector(".reset-zoom");
 
     if (!svg) return;
+
+    // Apply white background to the diagram
+    svg.style.backgroundColor = "#ffffff";
 
     let viewBox = svg.viewBox.baseVal;
     let originalViewBox = {
@@ -392,7 +394,11 @@ function initZoomableDiagrams() {
     svg.addEventListener("mousemove", onMouseMove);
     svg.addEventListener("mouseup", onMouseUp);
     svg.addEventListener("mouseleave", onMouseUp);
+
     resetButton.addEventListener("click", resetZoom);
+
+    // Fullscreen logic
+    svg.addEventListener("click", enterFullscreen);
 
     function onWheel(event) {
       event.preventDefault();
@@ -451,6 +457,38 @@ function initZoomableDiagrams() {
         "viewBox",
         `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
       );
+    }
+
+    function enterFullscreen() {
+      const fullscreenOverlay = document.createElement("div");
+      fullscreenOverlay.classList.add("fullscreen-overlay");
+
+      const fullscreenSvg = svg.cloneNode(true);
+      fullscreenSvg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+      fullscreenSvg.style.backgroundColor = "#ffffff"; // Set white background
+
+      const closeButton = document.createElement("button");
+      closeButton.classList.add("close-fullscreen");
+      closeButton.innerText = "Close";
+
+      fullscreenOverlay.appendChild(fullscreenSvg);
+      fullscreenOverlay.appendChild(closeButton);
+      document.body.appendChild(fullscreenOverlay);
+
+      closeButton.addEventListener("click", () => {
+        document.body.removeChild(fullscreenOverlay);
+      });
+
+      fullscreenOverlay.addEventListener("click", (e) => {
+        if (e.target === fullscreenOverlay) {
+          document.body.removeChild(fullscreenOverlay);
+        }
+      });
+
+      initZoomableDiagrams(); // Reinitialize zoom for the fullscreen SVG
     }
   });
 }
