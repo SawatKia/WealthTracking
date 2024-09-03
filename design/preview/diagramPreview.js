@@ -397,8 +397,10 @@ function initZoomableDiagrams() {
 
     resetButton.addEventListener("click", resetZoom);
 
-    // Fullscreen logic
-    svg.addEventListener("click", enterFullscreen);
+    if (window.innerWidth <= 768) {
+      // Adjust 768 to your desired breakpoint
+      svg.addEventListener("click", enterFullscreen);
+    }
 
     function onWheel(event) {
       event.preventDefault();
