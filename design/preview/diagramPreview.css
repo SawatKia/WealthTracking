@@ -354,8 +354,18 @@ a.icon-item:hover {
   border-radius: 8px;
 }
 
-h4 + .diagram-container > .reset-zoom,
-.download-diagram {
+h4 + .diagram-container > .reset-zoom {
+  margin: 8px 8px;
+  position: sticky;
+  top: 150px;
+  z-index: 11;
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #646464;
+  border-radius: 8px;
+}
+h4 + .diagram-container > .download-diagram {
   margin: 8px 8px;
   position: sticky;
   top: 150px;
