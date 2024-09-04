@@ -349,9 +349,17 @@ a.icon-item:hover {
   z-index: 11;
   cursor: pointer;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #646464;
   border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.reset-zoom {
+  background-color: #00b33c;
+  border: 1px solid #00b33c;
+}
+
+.reset-zoom:hover {
+  background-color: #009b3e;
 }
 
 h4 + .diagram-container > .reset-zoom {
@@ -361,10 +369,19 @@ h4 + .diagram-container > .reset-zoom {
   z-index: 11;
   cursor: pointer;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #646464;
   border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
+
+.download-diagram {
+  background-color: #ff9900;
+  border: 1px solid #ff9900;
+}
+
+.download-diagram:hover {
+  background-color: #ff7a00;
+}
+
 h4 + .diagram-container > .download-diagram {
   margin: 8px 8px;
   position: sticky;
@@ -372,9 +389,8 @@ h4 + .diagram-container > .download-diagram {
   z-index: 11;
   cursor: pointer;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #646464;
   border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .mermaid {
