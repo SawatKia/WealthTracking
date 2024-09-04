@@ -120,7 +120,7 @@ body {
   left: 0;
   width: 50px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  height: 100%; /* Change from 100% to auto */
+  height: 100dvh; /* Change from 100% to auto */
   display: block; /* Ensure it's displayed by default */
   z-index: 999; /* Add z-index to ensure it's above other content */
   transition: opacity 250ms;
@@ -155,7 +155,7 @@ a.icon-item:hover {
   align-items: center;
   justify-content: center;
   z-index: 1001;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 1s ease-in-out;
 }
 
 #loadingBar {
@@ -165,7 +165,7 @@ a.icon-item:hover {
   height: 100%;
   width: 0;
   background-color: #007bff;
-  transition: width 0.5s ease-in-out;
+  transition: loading 0.5s ease-out;
 }
 
 #loadingText {
@@ -173,6 +173,15 @@ a.icon-item:hover {
   z-index: 1002;
   color: #333;
   font-size: 0.8em;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Content Styling */
@@ -232,16 +241,7 @@ a.icon-item:hover {
   }
 }
 
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.loading {
+/* .loading {
   position: relative;
   width: 100%;
   height: 100%;
@@ -251,10 +251,10 @@ a.icon-item:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.75em; /* Adjust font size as needed */
+  font-size: 0.75em; /* Adjust font size as needed 
   z-index: 1000;
-  display: none; /* Hide by default */
-}
+  display: none; /* Hide by default 
+} */
 
 /* Section Styling */
 .section {
@@ -309,16 +309,57 @@ a.icon-item:hover {
   border: thick double #007bff;
 }
 
-.reset-zoom {
+.diagram-container img {
+  box-shadow: none;
+  border: none;
+  display: block; /* Ensure the image is treated as a block-level element */
+  margin: auto;
+}
+
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.close-fullscreen {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #646464;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.reset-zoom,
+.download-diagram {
   margin: 8px 8px;
   position: sticky;
   top: 100px;
   z-index: 11;
   cursor: pointer;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #646464;
   border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.reset-zoom {
+  background-color: #00b33c;
+  border: 1px solid #00b33c;
+}
+
+.reset-zoom:hover {
+  background-color: #009b3e;
 }
 
 h4 + .diagram-container > .reset-zoom {
@@ -328,9 +369,28 @@ h4 + .diagram-container > .reset-zoom {
   z-index: 11;
   cursor: pointer;
   padding: 5px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #646464;
   border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.download-diagram {
+  background-color: #ff9900;
+  border: 1px solid #ff9900;
+}
+
+.download-diagram:hover {
+  background-color: #ff7a00;
+}
+
+h4 + .diagram-container > .download-diagram {
+  margin: 8px 8px;
+  position: sticky;
+  top: 150px;
+  z-index: 11;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .mermaid {

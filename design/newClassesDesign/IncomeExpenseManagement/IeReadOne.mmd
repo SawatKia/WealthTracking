@@ -46,14 +46,16 @@ sequenceDiagram
 
     Router->>+Cont: getOneTransaction(req, res, next)
     Cont->>Cont: Destructoring parameters
+    
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
     Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
-        BaseCont-->>-Cont: throw Error('<field> is required')
+        BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
+    BaseCont-->>-Cont: return true
 
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
@@ -63,7 +65,7 @@ sequenceDiagram
         Router-->>Client: 🔴404, "User not found"
     end
 
-    Cont->>+Model: findTransactionDetail[transactionUuid])
+    Cont->>+Model: findTransactionDetail(transactionUuid)
 
     Model->>+BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
@@ -101,7 +103,7 @@ sequenceDiagram
     Model->>-Cont: return the detail of given transaction Uuid
 
     Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
-    Cont->>+BaseCont: verifyOwnership(user, transaction.bankAccounts)
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
     opt bank account's user email does not match current user email
         BaseCont-->>Cont: return false
         Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
@@ -111,4 +113,4 @@ sequenceDiagram
     
     Cont->>Cont: formatResponse(200, 'Transaction found', TransactionDetail)
     Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: TransactionDetail }
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction found", data: {TransactionDetail} }

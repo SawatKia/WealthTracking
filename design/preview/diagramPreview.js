@@ -69,6 +69,48 @@ function saveData() {
   anchor.click();
 }
 
+function saveDiagram(topic, diagramId) {
+  const diagramContainer = document.getElementById(diagramId).parentElement;
+  let targetElement =
+    diagramContainer.querySelector("svg") ||
+    diagramContainer.querySelector("img");
+
+  if (!targetElement) {
+    console.error("No SVG or IMG element found for download");
+    return;
+  }
+
+  // If it's an SVG element, convert it to PNG using dom-to-image
+  if (targetElement.tagName.toLowerCase() === "svg") {
+    const viewBox = targetElement.getAttribute("viewBox").split(" ");
+    const width = parseInt(viewBox[2]);
+    const height = parseInt(viewBox[3]);
+
+    domtoimage
+      .toPng(targetElement, {
+        width: width,
+        height: height,
+      })
+      .then(function (dataUrl) {
+        const anchor = document.createElement("a");
+        anchor.href = dataUrl;
+        anchor.download = `${topic}_${diagramId}.png`;
+        anchor.click();
+      })
+      .catch(function (error) {
+        console.error("Error generating image:", error);
+      });
+
+    // If it's an IMG element, just download the image directly
+  } else if (targetElement.tagName.toLowerCase() === "img") {
+    const imgSrc = targetElement.src;
+    const anchor = document.createElement("a");
+    anchor.href = imgSrc;
+    anchor.download = `${topic}_${diagramId}.png`;
+    anchor.click();
+  }
+}
+
 //NOTE - Toggle the menu
 document.addEventListener("DOMContentLoaded", function () {
   const toggleButton = document.getElementById("menu-toggle");
@@ -123,146 +165,153 @@ document.addEventListener("DOMContentLoaded", async function () {
     },
     {
       no: 3,
+      id: "UMLDiagram",
+      mmdPath: "../newClassesDesign/Classes.mmd",
+      loadingId: "loadingUML",
+      svgPath: "../newClassesDesign/Classes.svg",
+    },
+    {
+      no: 4,
       id: "userCreateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/create.mmd",
       loadingId: "loadingUserCreate",
       svgPath: "../newClassesDesign/UserManagement/create.svg",
     },
     {
-      no: 4,
+      no: 5,
       id: "userReadDiagram",
       mmdPath: "../newClassesDesign/UserManagement/read.mmd",
       loadingId: "loadingUserRead",
       svgPath: "../newClassesDesign/UserManagement/read.svg",
     },
     {
-      no: 5,
+      no: 6,
       id: "userUpdateDiagram",
       mmdPath: "../newClassesDesign/UserManagement/update.mmd",
       loadingId: "loadingUserUpdate",
       svgPath: "../newClassesDesign/UserManagement/update.svg",
     },
     {
-      no: 6,
+      no: 7,
       id: "userDeleteDiagram",
       mmdPath: "../newClassesDesign/UserManagement/delete.mmd",
       loadingId: "loadingUserDelete",
       svgPath: "../newClassesDesign/UserManagement/delete.svg",
     },
     {
-      no: 7,
+      no: 8,
       id: "bankAddDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/create.mmd",
       loadingId: "loadingBankAdd",
       svgPath: "../newClassesDesign/BankAccountManagement/create.svg",
     },
     {
-      no: 8,
+      no: 9,
       id: "bankReadAllDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadAll.mmd",
       loadingId: "loadingBankReadAll",
       svgPath: "../newClassesDesign/BankAccountManagement/ReadAll.svg",
     },
     {
-      no: 9,
+      no: 10,
       id: "bankReadOneDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/ReadOne.mmd",
       loadingId: "loadingBankReadOne",
       svgPath: "../newClassesDesign/BankAccountManagement/ReadOne.svg",
     },
     {
-      no: 10,
+      no: 11,
       id: "bankUpdateDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/update.mmd",
       loadingId: "loadingBankUpdate",
       svgPath: "../newClassesDesign/BankAccountManagement/update.svg",
     },
     {
-      no: 11,
+      no: 12,
       id: "bankDeleteDiagram",
       mmdPath: "../newClassesDesign/BankAccountManagement/Delete.mmd",
       loadingId: "loadingBankDelete",
       svgPath: "../newClassesDesign/BankAccountManagement/Delete.svg",
     },
     {
-      no: 12,
+      no: 13,
       id: "IeCreateDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.mmd",
       loadingId: "loadingIeCreate",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeCreate.svg",
     },
     {
-      no: 13,
+      no: 14,
       id: "IeDeleteDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.mmd",
       loadingId: "loadingIeDelete",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeDelete.svg",
     },
     {
-      no: 14,
+      no: 15,
       id: "IeReadAllDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.mmd",
       loadingId: "loadingIeReadAll",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadAll.svg",
     },
     {
-      no: 15,
+      no: 16,
       id: "IeReadOneDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.mmd",
       loadingId: "loadingIeReadOne",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeReadOne.svg",
     },
     {
-      no: 16,
+      no: 17,
       id: "IeUpdateDiagram",
       mmdPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.mmd",
       loadingId: "loadingIeUpdate",
       svgPath: "../newClassesDesign/IncomeExpenseManagement/IeUpdate.svg",
     },
     {
-      no: 17,
+      no: 18,
       id: "debtCreateDiagram",
       mmdPath: "../newClassesDesign/DebtManagement/Create.mmd",
       loadingId: "loadingDebtCreate",
       svgPath: "../newClassesDesign/DebtManagement/Create.svg",
     },
     {
-      no: 18,
+      no: 19,
       id: "debtReadAllDiagram",
       mmdPath: "../newClassesDesign/DebtManagement/ReadAll.mmd",
       loadingId: "loadingDebtReadAll",
       svgPath: "../newClassesDesign/DebtManagement/ReadAll.svg",
     },
     {
-      no: 19,
+      no: 20,
       id: "debtReadOneDiagram",
       mmdPath: "../newClassesDesign/DebtManagement/ReadOne.mmd",
       loadingId: "loadingDebtReadOne",
       svgPath: "../newClassesDesign/DebtManagement/ReadOne.svg",
     },
     {
-      no: 20,
+      no: 21,
       id: "debtUpdateDiagram",
       mmdPath: "../newClassesDesign/DebtManagement/Update.mmd",
       loadingId: "loadingDebtUpdate",
       svgPath: "../newClassesDesign/DebtManagement/Update.svg",
     },
     {
-      no: 21,
+      no: 22,
       id: "debtDeleteDiagram",
       mmdPath: "../newClassesDesign/DebtManagement/Delete.mmd",
       loadingId: "loadingDebtDelete",
       svgPath: "../newClassesDesign/DebtManagement/Delete.svg",
     },
     {
-      no: 22,
+      no: 23,
       id: "quotaCheckDiagram",
       mmdPath: "../newClassesDesign/api/QuotaCheck.mmd",
       loadingId: "loadingQuotaCheck",
       svgPath: "../newClassesDesign/api/QuotaCheck.svg",
     },
     {
-      no: 23,
+      no: 24,
       id: "slipDataDiagram",
       mmdPath: "../newClassesDesign/api/SlipData.mmd",
       loadingId: "loadingSlipData",
@@ -282,6 +331,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Function to update loading progress
   function updateLoadingProgress(diagram) {
     const loadingText = document.getElementById("loadingText");
+    const loadingBar = document.getElementById("loadingBar");
     loadedDiagrams++;
     const progress = (loadedDiagrams / totalDiagrams) * 100;
     document.getElementById("loadingBar").style.width = `${progress}%`;
@@ -292,7 +342,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     } loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
       // Ensure the progress bar reaches 100% before hiding
-      document.getElementById("loadingBar").style.width = "100%";
+      loadingBar.style.width = "100%";
       loadingText.textContent =
         "100% All diagrams loaded and rendered successfully.";
       // Use setTimeout to delay hiding the progress bar
@@ -342,9 +392,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   initZoomableDiagrams();
 });
 
-//NOTE - SVG zoomable
+// NOTE - SVG zoomable with mobile fullscreen support
 function initZoomableDiagrams() {
-  //TODO - add zoomable for mobile in one hand
   const containers = document.querySelectorAll(".diagram-container");
 
   containers.forEach((container) => {
@@ -352,6 +401,9 @@ function initZoomableDiagrams() {
     const resetButton = container.querySelector(".reset-zoom");
 
     if (!svg) return;
+
+    // Apply white background to the diagram
+    svg.style.backgroundColor = "#ffffff";
 
     let viewBox = svg.viewBox.baseVal;
     let originalViewBox = {
@@ -370,7 +422,13 @@ function initZoomableDiagrams() {
     svg.addEventListener("mousemove", onMouseMove);
     svg.addEventListener("mouseup", onMouseUp);
     svg.addEventListener("mouseleave", onMouseUp);
+
     resetButton.addEventListener("click", resetZoom);
+
+    if (window.innerWidth <= 768) {
+      // Adjust 768 to your desired breakpoint
+      svg.addEventListener("click", enterFullscreen);
+    }
 
     function onWheel(event) {
       event.preventDefault();
@@ -429,6 +487,38 @@ function initZoomableDiagrams() {
         "viewBox",
         `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
       );
+    }
+
+    function enterFullscreen() {
+      const fullscreenOverlay = document.createElement("div");
+      fullscreenOverlay.classList.add("fullscreen-overlay");
+
+      const fullscreenSvg = svg.cloneNode(true);
+      fullscreenSvg.setAttribute(
+        "viewBox",
+        `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+      );
+      fullscreenSvg.style.backgroundColor = "#ffffff"; // Set white background
+
+      const closeButton = document.createElement("button");
+      closeButton.classList.add("close-fullscreen");
+      closeButton.innerText = "Close";
+
+      fullscreenOverlay.appendChild(fullscreenSvg);
+      fullscreenOverlay.appendChild(closeButton);
+      document.body.appendChild(fullscreenOverlay);
+
+      closeButton.addEventListener("click", () => {
+        document.body.removeChild(fullscreenOverlay);
+      });
+
+      fullscreenOverlay.addEventListener("click", (e) => {
+        if (e.target === fullscreenOverlay) {
+          document.body.removeChild(fullscreenOverlay);
+        }
+      });
+
+      initZoomableDiagrams(); // Reinitialize zoom for the fullscreen SVG
     }
   });
 }

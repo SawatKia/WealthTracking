@@ -66,22 +66,21 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Transaction not found"
     end
 
+    Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
+    opt bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+    
     Cont->>+PGClient: beginTransaction()
     PGClient-->>-Cont: Transaction started
 
-    %% alt Transaction is expense
-    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
-    %%     BankAccountModel-->>-Cont: updated balance
-    %%     alt debt payment involved
-    %%         Cont->>+DebtModel: updateDebtBalance(transaction, null)
-    %%         DebtModel-->>-Cont: updated loan balance
-    %%     end
-    %% else Transaction is income
-    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
-    %%     BankAccountModel-->>-Cont: updated balance
-    %% end
+    %% update bank acount balance if need
 
-    Cont->>+Model: deleteTransaction(transactionId)
+    Cont->>+Model: deleteTransaction([transactionId])
     Model->>+BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match
@@ -114,3 +113,15 @@ sequenceDiagram
     Cont->>Cont: formatResponse(200, 'Transaction deleted successfully')
     Cont-->>-Router: return formatted response
     Router-->>-Client: 🟢200, { status: 200, message: "Transaction deleted successfully" }
+
+    %% alt Transaction is expense
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %%     alt debt payment involved
+    %%         Cont->>+DebtModel: updateDebtBalance(transaction, null)
+    %%         DebtModel-->>-Cont: updated loan balance
+    %%     end
+    %% else Transaction is income
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %% end

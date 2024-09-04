@@ -42,14 +42,16 @@ sequenceDiagram
 
     Router->>+Cont: updateTransaction(req, res, next)
     Cont->>Cont: Destructoring parameters
+
     Note over Cont: requiredFields = ["transactionId"]
     Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
     Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
-        BaseCont-->>-Cont: throw Error('<field> is required')
+        BaseCont-->>Cont: throw Error('<field> is required')
         Cont-->>Router: next(BadRequestError(error))
         Router-->>Client: 🔴400, "<field> is required"
     end
+    BaseCont-->>-Cont: return true
 
     Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
     Cont->>+BaseCont: getCurrentUser(req)
@@ -67,12 +69,21 @@ sequenceDiagram
         Router-->>Client: 🔴404, "Transaction not found"
     end
 
+    Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
+    opt bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+
     Cont->>Cont: combine update transaction data
 
     Cont->>+PGClient: beginTransaction()
     PGClient-->>-Cont: transaction started
 
-    Cont->>+Model: updateTransaction([transactionUuid], updatedTransaction)
+    Cont->>+Model: updateTransaction(transactionUuid, updatedTransaction)
     Model->>+BaseModel: validateSchema(data) 
     Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
     opt missing required field || invalid type || RegEx does not match
@@ -110,13 +121,28 @@ sequenceDiagram
         Router-->>Client: 🔴500, "something went wrong"
     end
     BaseModel-->>-Model: return the detail of given transaction Uuid 
-    Note over Model, Redis: Async operation
-    Model-)Redis: update transaction details with correspond transaction Uuid 
+    Model->>+Redis: Check if required transaction Uuid was cached
+    Redis-->>-Model: return cachedTransactionData
+    alt cache not found
+        Note over Model, Redis: Async operation
+        Model-)Redis: add transaction details with transaction Uuid as a key
+    else cache found
+        Note over Model, Redis: Async operation
+        Model-)Redis: update transaction details with correspond transaction Uuid 
+    end
 
     Model-->>-Cont: pass result
 
-    %% opt amount changed
-    %% Note over Cont, ContainsModel: update relationship for 2 tables, update by transactionUUID
+    %% update bank acount balance if need
+    %% Note over Cont, ContainsModel: update relationship for 2 tables, update by transactionUUID if need
+
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+
+    Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: {updatedTransaction + details} }
+
 
     %% opt amount changed
     %%     Cont->>+BankAccountModel: updateBalance(userEmail, updateBankAccount, (newAmount-oldAmount))
@@ -191,9 +217,4 @@ sequenceDiagram
     %%     ContainsModel-->>-Cont: pass result
     %% end
 
-    Cont->>+PGClient: commit()
-    PGClient-->>-Cont: transaction committed
 
-    Cont->>Cont: formatResponse(200, 'Transaction updated successfully', updatedTransaction + details)
-    Cont-->>-Router: return formatted response
-    Router-->>-Client: 🟢200, { status: 200, message: "Transaction updated successfully", data: updatedTransaction + details }

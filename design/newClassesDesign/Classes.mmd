@@ -1,0 +1,149 @@
+classDiagram
+    direction RL
+    class Errors {
+        +AppError
+        +BadRequestError
+        +UnauthorizedError
+        +ForbiddenError
+        +NotFoundError
+        +ConflictError
+        +PasswordError
+        +UserDuplicateError
+    }
+
+    class Error {
+        <<JS built-in>>
+    }
+
+    Error <|-- Errors
+
+    class Middleware {
+        +methodValidator(req: Request, res: Response, next: NextFunction) void
+        +checkAdmin(req: Request, res: Response, next: NextFunction) boolean
+        +errorHandler(err: Error, req: Request, res: Response, next: NextFunction) void
+        +responseHandler(req: Request, res: Response, next: NextFunction) void
+        +formatResponse(status_code, message, data) Object
+    }
+
+    class BaseController {
+        +verifyFields(data: Object, requiredFields[]: string) boolean
+        +getCurrentUser(req: Request) User
+        +verifyOwnership(user: User, data[]: Object) boolean
+    }
+
+    class BaseModel {
+        -tableName: string
+        +BaseModel(tableName: string) 
+        +validateSchema(data: Object) boolean
+        +create(userEmail: string, data: Object) string
+        +findAll(userEmail: string) Object[]
+        +findOne(key[]: string) Object
+        +update(key[]: string, Data: Object) Object
+        +delete(key[]: string) boolean
+    }
+
+    class PgClient{
+        -pool
+        -client 
+        -transactionStarted 
+        +PgClient()
+        +connect()
+        +isConnect()
+        +beginTransaction()
+        +commitTransaction()
+        +rollbackTransaction()
+        +query(sql: string, params[]) string
+        +release()
+    }
+
+    class Redis{
+        +Redis()
+        +set(key: string, value: string) void
+        +get(key: string) string
+    }
+
+    class UserController {
+        +register(req: Request, res: Response, next: NextFunction) void
+        +getUser(req: Request, res: Response, next: NextFunction) void
+        +updateUser(req: Request, res: Response, next: NextFunction) void
+        +deleteUser(req: Request, res: Response, next: NextFunction) void
+    }
+    class UserModel {
+        +UserModel()
+        -hashPassword(plainPassword: string) string
+        +checkPassword(userEmail: string, EnteredPassword: string) boolean
+        +createUser(userData: Object) string
+        +findUser(userEmail: string) Object
+        +updateUser(userEmail: string, userData: Object) Object
+    }
+
+    class BankAccountController {
+        +createBankAccount(req: Request, res: Response, next: NextFunction) void
+        +getAllBankAccounts(req: Request, res: Response, next: NextFunction) void
+        +getOneBankAccount(req: Request, res: Response, next: NextFunction) void
+        +updateBankAccount(req: Request, res: Response, next: NextFunction) void
+        +deleteBankAccount(req: Request, res: Response, next: NextFunction) void
+    }
+    class BankAccountModel {
+        %% remove all method as it don't need to show the constructor
+        +BankAccountModel()
+    }
+
+    class TransactionController {
+        +createTransaction(req: Request, res: Response, next: NextFunction) void
+        +getAllTransactions(req: Request, res: Response, next: NextFunction) void
+        +getOneTransaction(req: Request, res: Response, next: NextFunction) void
+        +updateTransaction(req: Request, res: Response, next: NextFunction) void
+        +deleteTransaction(req: Request, res: Response, next: NextFunction) void
+    }
+    class TransactionModel {
+        +TransactionModel()
+        -cacheTransactionDetail(transactionUuid: string) void
+        +createTransaction(userEmail: string, data: Object) string
+        +findTransactionDetail(transactionUuid: string) Object
+        +updateTransaction(transactionUuid: string,  data: Object) Object
+        +deleteTransaction(transactionUuid: string) boolean
+    }
+
+    class DebtController {
+        +createDebt(req: Request, res: Response, next: NextFunction) void
+        +getAllDebts(req: Request, res: Response, next: NextFunction) void
+        +getOneDebt(req: Request, res: Response, next: NextFunction) void
+        +updateDebt(req: Request, res: Response, next: NextFunction) void
+        +deleteDebt(req: Request, res: Response, next: NextFunction) void
+    }
+    class DebtModel {
+        %% remove all method as it don't need to show the constructor
+        +DebtModel()
+    }
+
+    BaseController <|-- UserController
+    BaseController <|-- BankAccountController
+    BaseController <|-- TransactionController
+    BaseController <|-- DebtController
+
+    BaseModel <|-- UserModel
+    BaseModel <|-- BankAccountModel
+    BaseModel <|-- TransactionModel
+    BaseModel <|-- DebtModel
+
+    UserController *-- UserModel
+    BankAccountController *-- BankAccountModel
+    TransactionController *-- TransactionModel
+    DebtController *-- DebtModel
+
+    PgClient <|-- BaseModel
+    TransactionController *-- PgClient
+
+    UserController o-- Middleware
+    BankAccountController o-- Middleware
+    TransactionController o-- Middleware
+    DebtController o-- Middleware
+
+    UserController o-- Errors
+    BankAccountController o-- Errors
+    TransactionController o-- Errors
+    DebtController o-- Errors
+
+    TransactionModel *-- Redis
+    BankAccountModel *-- TransactionModel
