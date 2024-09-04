@@ -165,7 +165,7 @@ a.icon-item:hover {
   height: 100%;
   width: 0;
   background-color: #007bff;
-  transition: width 0.5s ease-out;
+  transition: loading 0.5s ease-out;
 }
 
 #loadingText {
@@ -241,7 +241,7 @@ a.icon-item:hover {
   }
 }
 
-.loading {
+/* .loading {
   position: relative;
   width: 100%;
   height: 100%;
@@ -251,10 +251,10 @@ a.icon-item:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.75em; /* Adjust font size as needed */
+  font-size: 0.75em; /* Adjust font size as needed 
   z-index: 1000;
-  display: none; /* Hide by default */
-}
+  display: none; /* Hide by default 
+} */
 
 /* Section Styling */
 .section {
@@ -341,7 +341,8 @@ a.icon-item:hover {
   cursor: pointer;
 }
 
-.reset-zoom {
+.reset-zoom,
+.download-diagram {
   margin: 8px 8px;
   position: sticky;
   top: 100px;
@@ -353,7 +354,8 @@ a.icon-item:hover {
   border-radius: 8px;
 }
 
-h4 + .diagram-container > .reset-zoom {
+h4 + .diagram-container > .reset-zoom,
+.download-diagram {
   margin: 8px 8px;
   position: sticky;
   top: 150px;
