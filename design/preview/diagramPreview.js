@@ -289,6 +289,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Function to update loading progress
   function updateLoadingProgress(diagram) {
     const loadingText = document.getElementById("loadingText");
+    const loadingBar = document.getElementById("loadingBar");
     loadedDiagrams++;
     const progress = (loadedDiagrams / totalDiagrams) * 100;
     document.getElementById("loadingBar").style.width = `${progress}%`;
@@ -299,7 +300,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     } loaded and rendered successfully.`;
     if (loadedDiagrams === totalDiagrams) {
       // Ensure the progress bar reaches 100% before hiding
-      document.getElementById("loadingBar").style.width = "100%";
+      loadingBar.style.width = "100%";
       loadingText.textContent =
         "100% All diagrams loaded and rendered successfully.";
       // Use setTimeout to delay hiding the progress bar
@@ -320,21 +321,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Function to load diagram from a Mermaid file with fallback to SVG
     const skeleton = document.getElementById(diagram.loadingId);
     try {
-      // const stats = statSync(diagram.mmdPath);
-      // const lastModified = stats.mtime.toISOString();
-      // const savedLastModified = localStorage.getItem(diagram.mmdPath);
-      // if (lastModified == savedLastModified) {
-      //   // diagram doesn't modified
-      //   mermaid.init(undefined, `#${diagram.id}`);
-      // } else {
-      //   const data = readfile(diagram.mmdPath, "utf8", (err, data) => {
-      //     throw err;
-      //   });
-      //   document.getElementById(diagram.id).textContent = data;
-      //   mermaid.init(undefined, `#${diagram.id}`);
-      //   // Save the last modified time in localStorage
-      //   localStorage.setItem(diagram.mmdPath, lastModified);
-      // }
       const response = await fetch(diagram.mmdPath);
       if (!response.ok) {
         throw new Error("Failed to fetch Mermaid file.");
