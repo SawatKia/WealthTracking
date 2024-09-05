@@ -3,9 +3,11 @@ Volume serial number is 307E-F514
 D:.
 |   build.py
 |   design_structure.txt
-|   eiam.txt
+|   ERD.png
+|   ERD_HighRes.png
 |   json_grid_visualizer.html
 |   readme.md
+|   Use_Case.png
 |   
 +---Data
 |       BankAccounts.json
@@ -18,6 +20,8 @@ D:.
 |       UserTransactions.json
 |       
 +---newClassesDesign
+|   |   Classes.mmd
+|   |   Classes.svg
 |   |   SoftwareArchitectureDiagram.mmd
 |   |   SoftwareArchitectureDiagram.svg
 |   |   UserFlow.mmd
@@ -40,6 +44,18 @@ D:.
 |   |       ReadOne.svg
 |   |       update.mmd
 |   |       update.svg
+|   |       
+|   +---DebtManagement
+|   |       Create.mmd
+|   |       Create.svg
+|   |       Delete.mmd
+|   |       delete.svg
+|   |       ReadAll.mmd
+|   |       ReadAll.svg
+|   |       ReadOne.mmd
+|   |       ReadOne.svg
+|   |       Update.mmd
+|   |       Update.svg
 |   |       
 |   +---IncomeExpenseManagement
 |   |       IeCreate.mmd
@@ -64,8 +80,45 @@ D:.
 |           update.svg
 |           
 \---preview
-        checkedData.json
-        diagramPreview.css
-        diagramPreview.html
-        diagramPreview.js
-        
+    |   checkedData.json
+    |   diagramPreview.css
+    |   diagramPreview.html
+    |   diagramPreview.js
+    |   
+    \---png
+        +---Api
+        |       QuotaCheck.png
+        |       SlipData.png
+        |       
+        +---Bank
+        |       create.png
+        |       Delete.png
+        |       ReadAll.png
+        |       ReadOne.png
+        |       update.png
+        |       
+        +---Debt
+        |       Create.png
+        |       delete.png
+        |       ReadAll.png
+        |       ReadOne.png
+        |       Update.png
+        |       
+        +---HighLevel
+        |       softwareArchitectureDiagram.png
+        |       UML.png
+        |       UserFlow.png
+        |       
+        +---Transaction
+        |       IeCreate.png
+        |       IeDelete.png
+        |       IeReadAll.png
+        |       IeReadOne.png
+        |       IeUpdate.png
+        |       
+        \---User
+                create.png
+                delete.png
+                read.png
+                update.png
+                
