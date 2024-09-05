@@ -48,7 +48,7 @@ graph TD
     IncomesExpensesModel --> PostgreSQL[(PostgreSQL)]
     DebtModel --> PostgreSQL[(PostgreSQL)]
     
-    ThirdPartyAPIController --> ExternalAPIService[External API Service]
-    ExternalAPIService -->|HTTP/HTTPS| ThirdPartyAPI[EasySlip Api]
+    ThirdPartyAPIController --> EasySlipService[External API Service]
+    EasySlipService -->|HTTP/HTTPS| ThirdPartyAPI[EasySlip Api]
     
     Logging --> LogFiles[Log Files]

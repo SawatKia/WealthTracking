@@ -14,8 +14,8 @@ preview_dir = Path('preview')
 subdirs = [
     'newClassesDesign/api',
     'newClassesDesign/BankAccountManagement',
+    'newClassesDesign/DebtManagement',
     'newClassesDesign/IncomeExpenseManagement',
-    'newClassesDesign/TransactionManagement',
     'newClassesDesign/UserManagement'
 ]
 
@@ -31,7 +31,7 @@ shutil.copy(preview_dir / 'diagramPreview.js', build_dir)
 
 # Copy .mmd and .svg files to the build directory, maintaining folder structure
 for file in source_dir.glob('**/*'):
-    if file.suffix in {'.mmd', '.svg'}:
+    if file.suffix in {'.mmd', '.svg', '.png'}:
         relative_path = file.relative_to(source_dir)
         target_path = build_dir / relative_path
         target_path.parent.mkdir(parents=True, exist_ok=True)
