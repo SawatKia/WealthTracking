@@ -177,15 +177,6 @@ a.icon-item:hover {
   font-size: 0.8em;
 }
 
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
 /* Content Styling */
 #content {
   margin-left: 70px;
