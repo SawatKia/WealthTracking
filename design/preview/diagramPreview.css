@@ -151,10 +151,12 @@ a.icon-item:hover {
   width: 100%;
   height: 30px;
   background-color: #f3f3f3;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
+  opacity: 1;
   transition: opacity 1s ease-in-out;
 }
 
@@ -165,7 +167,7 @@ a.icon-item:hover {
   height: 100%;
   width: 0;
   background-color: #007bff;
-  transition: loading 0.5s ease-out;
+  transition: width 0.5s ease-out;
 }
 
 #loadingText {
@@ -173,15 +175,6 @@ a.icon-item:hover {
   z-index: 1002;
   color: #333;
   font-size: 0.8em;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
 }
 
 /* Content Styling */
