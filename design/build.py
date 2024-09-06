@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from csscompressor import compress as compress_css
-from jsmin import jsmin
+from rjsmin import jsmin
 from htmlmin import minify
 
 def print_directory_structure(path, prefix=""):
