@@ -332,24 +332,39 @@ document.addEventListener("DOMContentLoaded", async function () {
   function updateLoadingProgress(diagram) {
     const loadingText = document.getElementById("loadingText");
     const loadingBar = document.getElementById("loadingBar");
+    const loadingProgress = document.getElementById("loadingProgress");
     loadedDiagrams++;
+
+    // Calculate progress
     const progress = (loadedDiagrams / totalDiagrams) * 100;
-    document.getElementById("loadingBar").style.width = `${progress}%`;
+    loadingBar.style.width = `${progress}%`;
+
+    // Update loading text
     loadingText.textContent = `${Math.round(
       progress
     )}% [${loadedDiagrams}/${totalDiagrams}] ${
       diagram.id
     } loaded and rendered successfully.`;
+
+    // Check if all diagrams are loaded
     if (loadedDiagrams === totalDiagrams) {
-      // Ensure the progress bar reaches 100% before hiding
+      // Ensure the progress bar reaches 100%
       loadingBar.style.width = "100%";
       loadingText.textContent =
         "100% All diagrams loaded and rendered successfully.";
-      // Use setTimeout to delay hiding the progress bar
+
+      // Add a delay before starting the fade-out animation
       setTimeout(() => {
-        document.getElementById("loadingProgress").style.display = "none";
-      }, 500); // Delay of 500ms
+        loadingProgress.style.opacity = "0"; // Trigger the fade-out
+
+        // After the opacity transition (1 second), hide the element
+        setTimeout(() => {
+          loadingProgress.style.display = "none";
+        }, 1000); // Matches the CSS transition duration (1s)
+      }, 500); // Delay before starting fade-out (500ms to show the final progress)
     }
+
+    // Change the font weight of the loading text after 50% progress
     if (progress >= 50) {
       loadingText.style.fontWeight = 700;
     }
