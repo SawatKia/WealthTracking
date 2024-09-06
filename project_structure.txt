@@ -1,7 +1,10 @@
-Folder PATH listing for volume H-Data
-Volume serial number is 307E-F514
+Folder PATH listing for volume Data
+Volume serial number is 4294-1FC7
 D:.
+|   .env
 |   .gitignore
+|   docker-compose.dev.yml
+|   docker-compose.prod.yml
 |   docker-compose.yml
 |   old_readme.md
 |   project_structure.txt
@@ -14,50 +17,62 @@ D:.
 |       tasks.json
 |       
 +---backend
-|   |   backend_structure.txt
-|   |   Dockerfile
-|   |   package-lock.json
-|   |   package.json
-|   |   
-|   \---.src
-|       |   index.js
+|   +---V0.1
+|   |   |   backend_structure.txt
+|   |   |   Dockerfile
+|   |   |   package-lock.json
+|   |   |   package.json
+|   |   |   
+|   |   +---.src
+|   |   |   |   index.js
+|   |   |   |   
+|   |   |   +---configs
+|   |   |   |       database.js
+|   |   |   |       logger.js
+|   |   |   |       
+|   |   |   +---Controllers
+|   |   |   |       BankAccountController.js
+|   |   |   |       BaseController.js
+|   |   |   |       Security.js
+|   |   |   |       UserControlller.js
+|   |   |   |       
+|   |   |   +---middleware
+|   |   |   |       adminMiddleware.js
+|   |   |   |       errorHandler.js
+|   |   |   |       Indexmiddleware.js
+|   |   |   |       methodValidator.js
+|   |   |   |       responseHandler.js
+|   |   |   |       
+|   |   |   +---Models
+|   |   |   |   |   BankAccountModel.js
+|   |   |   |   |   BaseModel.js
+|   |   |   |   |   MongoObject.js
+|   |   |   |   |   UserModel.js
+|   |   |   |   |   
+|   |   |   |   \---__tests__
+|   |   |   |           UserModel.test.js
+|   |   |   |           
+|   |   |   +---routes
+|   |   |   |       BankAccountRoutes.js
+|   |   |   |       UserRoutes.js
+|   |   |   |       
+|   |   |   \---utils
+|   |   |           error.js
+|   |   |           responseFormatter.js
+|   |   |           
+|   |               
+|   \---V0.2
+|       |   dockerfile
+|       |   package-lock.json
+|       |   package.json
 |       |   
-|       +---configs
-|       |       database.js
-|       |       logger.js
-|       |       
-|       +---Controllers
-|       |       BankAccountController.js
-|       |       BaseController.js
-|       |       Security.js
-|       |       UserControlller.js
-|       |       
-|       +---middleware
-|       |       adminMiddleware.js
-|       |       errorHandler.js
-|       |       Indexmiddleware.js
-|       |       methodValidator.js
-|       |       responseHandler.js
-|       |       
-|       +---Models
-|       |   |   BankAccountModel.js
-|       |   |   BaseModel.js
-|       |   |   MongoObject.js
-|       |   |   UserModel.js
-|       |   |   
-|       |   \---__tests__
-|       |           UserModel.test.js
-|       |           
-|       +---routes
-|       |       BankAccountRoutes.js
-|       |       UserRoutes.js
-|       |       
-|       \---utils
-|               error.js
-|               responseFormatter.js
-|               
+|       +---.src
+|       |       index.js
+|                   
 +---design
+|   |   build.py
 |   |   design_structure.txt
+|   |   ERD.png
 |   |   json_grid_visualizer.html
 |   |   readme.md
 |   |   
@@ -72,12 +87,14 @@ D:.
 |   |       UserTransactions.json
 |   |       
 |   +---newClassesDesign
-|   |   |   GeneralFlow.mmd
-|   |   |   GeneralFlow.svg
+|   |   |   Classes.mmd
+|   |   |   Classes.svg
+|   |   |   ERD_HighRes.png
 |   |   |   SoftwareArchitectureDiagram.mmd
 |   |   |   SoftwareArchitectureDiagram.svg
 |   |   |   UserFlow.mmd
 |   |   |   UserFlow.svg
+|   |   |   Use_Case.png
 |   |   |   
 |   |   +---api
 |   |   |       QuotaCheck.mmd
@@ -86,8 +103,8 @@ D:.
 |   |   |       SlipData.svg
 |   |   |       
 |   |   +---BankAccountManagement
-|   |   |       add.mmd
-|   |   |       add.svg
+|   |   |       create.mmd
+|   |   |       create.svg
 |   |   |       Delete.mmd
 |   |   |       Delete.svg
 |   |   |       ReadAll.mmd
@@ -97,13 +114,31 @@ D:.
 |   |   |       update.mmd
 |   |   |       update.svg
 |   |   |       
+|   |   +---BankAccountTransaction
+|   |   +---DebtManagement
+|   |   |       Create.mmd
+|   |   |       Create.svg
+|   |   |       Delete.mmd
+|   |   |       delete.svg
+|   |   |       ReadAll.mmd
+|   |   |       ReadAll.svg
+|   |   |       ReadOne.mmd
+|   |   |       ReadOne.svg
+|   |   |       Update.mmd
+|   |   |       Update.svg
+|   |   |       
+|   |   +---Debts
 |   |   +---IncomeExpenseManagement
-|   |   +---TransactionManagement
-|   |   |       t-create.mmd
-|   |   |       t-delete.mmd
-|   |   |       t-readAll.mmd
-|   |   |       t-readOne.mmd
-|   |   |       t-update.mmd
+|   |   |       IeCreate.mmd
+|   |   |       IeCreate.svg
+|   |   |       IeDelete.mmd
+|   |   |       IeDelete.svg
+|   |   |       IeReadAll.mmd
+|   |   |       IeReadAll.svg
+|   |   |       IeReadOne.mmd
+|   |   |       IeReadOne.svg
+|   |   |       IeUpdate.mmd
+|   |   |       IeUpdate.svg
 |   |   |       
 |   |   \---UserManagement
 |   |           create.mmd
@@ -116,17 +151,77 @@ D:.
 |   |           update.svg
 |   |           
 |   \---preview
-|           checkedData.json
-|           diagramPreview.css
-|           diagramPreview.html
-|           diagramPreview.js
-|           
+|       |   checkedData.json
+|       |   diagramPreview.css
+|       |   diagramPreview.html
+|       |   diagramPreview.js
+|       |   
+|       \---png
+|           +---Api
+|           |       QuotaCheck.png
+|           |       SlipData.png
+|           |       
+|           +---Bank
+|           |       create.png
+|           |       Delete.png
+|           |       ReadAll.png
+|           |       ReadOne.png
+|           |       update.png
+|           |       
+|           +---Debt
+|           |       Create.png
+|           |       delete.png
+|           |       ReadAll.png
+|           |       ReadOne.png
+|           |       Update.png
+|           |       
+|           +---HighLevel
+|           |       softwareArchitectureDiagram.png
+|           |       UML.png
+|           |       UserFlow.png
+|           |       
+|           +---Transaction
+|           |       IeCreate.png
+|           |       IeDelete.png
+|           |       IeReadAll.png
+|           |       IeReadOne.png
+|           |       IeUpdate.png
+|           |       
+|           \---User
+|                   create.png
+|                   delete.png
+|                   read.png
+|                   update.png
+|                   
 \---frontend
     |   .gitignore
     |   package-lock.json
     |   package.json
     |   tsconfig.json
     |   
+    +---build
+    |   |   asset-manifest.json
+    |   |   favicon.ico
+    |   |   index.html
+    |   |   logo192.png
+    |   |   logo512.png
+    |   |   manifest.json
+    |   |   robots.txt
+    |   |   service-worker.js
+    |   |   service-worker.js.map
+    |   |   
+    |   \---static
+    |       +---css
+    |       |       main.f855e6bc.css
+    |       |       main.f855e6bc.css.map
+    |       |       
+    |       \---js
+    |               453.8ab44547.chunk.js
+    |               453.8ab44547.chunk.js.map
+    |               main.d624b840.js
+    |               main.d624b840.js.LICENSE.txt
+    |               main.d624b840.js.map
+    |               
     +---public
     |       favicon.ico
     |       index.html
@@ -147,3 +242,4 @@ D:.
             service-worker.ts
             serviceWorkerRegistration.ts
             setupTests.ts
+            

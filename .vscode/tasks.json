@@ -14,19 +14,13 @@
         {
             "label": "docker-compose down",
             "type": "shell",
-            "command": "docker-compose down",
-            "problemMatcher": []
-        },
-        {
-            "label": "docker-compose build",
-            "type": "shell",
-            "command": "docker-compose build",
+            "command": "docker compose down",
             "problemMatcher": []
         },
         {
             "label": "docker-compose up",
             "type": "shell",
-            "command": "docker-compose up -d",
+            "command": "docker compose up -d",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down"
@@ -35,16 +29,16 @@
         {
             "label": "docker-compose up with docker-rebuild",
             "type": "shell",
-            "command": "docker-compose up -d --build",
+            "command": "docker compose up -d --build",
             "problemMatcher": [],
             "dependsOn": [
-                "docker-compose down",
+                "docker-compose down"
             ]
         },
         {
             "label": "docker-compose up with full-rebuild",
             "type": "shell",
-            "command": "docker-compose up -d --build",
+            "command": "docker compose up -d --build",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down",
