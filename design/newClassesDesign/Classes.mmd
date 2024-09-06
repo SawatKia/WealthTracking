@@ -23,7 +23,15 @@ classDiagram
         +checkAdmin(req: Request, res: Response, next: NextFunction) boolean
         +errorHandler(err: Error, req: Request, res: Response, next: NextFunction) void
         +responseHandler(req: Request, res: Response, next: NextFunction) void
-        +formatResponse(status_code, message, data) Object
+    }
+
+    class ExpressApplication {
+        <<module>>
+        +use(middleware: function)
+        +get(path: string, handler: function)
+        +post(path: string, handler: function)
+        +put(path: string, handler: function)
+        +delete(path: string, handler: function)
     }
 
     class BaseController {
@@ -130,6 +138,21 @@ classDiagram
         +verifySlip(base64Image: string) Promise~Object~
     }
 
+    class Utils{
+        +formatResponse(status_code: number, message: string, data: Object) Object
+        +logger(moduleName: string) Logger~instant~
+    }
+    class Logger{
+        +constructor(moduleName: string)
+        +log(message: string)
+        +info(message: string)
+        +warn(message: string)
+        +error(message: string)
+        +debug(message: string)
+        +silly(message: string)
+        +verbose(message: string)
+    }
+
     BaseController <|-- UserController
     BaseController <|-- BankAccountController
     BaseController <|-- TransactionController
@@ -145,26 +168,34 @@ classDiagram
     BankAccountController *-- BankAccountModel
     TransactionController *-- TransactionModel
     DebtController *-- DebtModel
+    ThirdPartyAPIController *-- EasySlipService
 
     PgClient <|-- BaseModel
     TransactionController *-- PgClient
 
-    UserController o-- Middleware
-    BankAccountController o-- Middleware
-    TransactionController o-- Middleware
-    DebtController o-- Middleware
-    ThirdPartyAPIController o-- Middleware
+    ExpressApplication o-- Middleware
+    ExpressApplication ..> UserController : routes to
+    ExpressApplication ..> BankAccountController : routes to
+    ExpressApplication ..> TransactionController : routes to
+    ExpressApplication ..> DebtController : routes to
+    ExpressApplication ..> ThirdPartyAPIController : routes to
 
-    UserController o-- Errors
-    BankAccountController o-- Errors
-    TransactionController o-- Errors
-    DebtController o-- Errors
-    ThirdPartyAPIController o-- Errors
+    UserController *-- Errors
+    BankAccountController *-- Errors
+    TransactionController *-- Errors
+    DebtController *-- Errors
+    ThirdPartyAPIController *-- Errors
+
+    UserController *-- Utils
+    BankAccountController *-- Utils
+    TransactionController *-- Utils
+    DebtController *-- Utils
+    ThirdPartyAPIController *-- Utils
 
     TransactionModel *-- Redis
     TransactionModel *-- BankAccountModel
 
-    ThirdPartyAPIController *-- EasySlipService
+    Utils *-- Logger
 
     UserModel "1" -- "many" BankAccountModel : manages
     UserModel "1" -- "many" DebtModel : owns
