@@ -1,7 +1,7 @@
 version: "3"
 services:
   node-server:
-    build: # ตำแหน่ง dockerfile
+    build:
       context: ./backend/V0.2
       args:
         NODE_ENV: development
@@ -9,7 +9,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${PORT}:${PORT}" # outside:inside
+      - "${APP_PORT}:${APP_PORT}"
       - "9229:9229"
     volumes:
       - ./frontend/build:/usr/src/app/frontend_build
@@ -22,6 +22,9 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    restart: always
+    networks:
+      - app_network
 
   postgres:
     image: postgres:15
@@ -32,6 +35,28 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      retries: 5
+    restart: always
+    networks:
+      - app_network
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "5050:80"
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
+
+networks:
+  app_network:
+    driver: bridge

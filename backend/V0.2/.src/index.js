@@ -1,27 +1,77 @@
 const express = require('express');
-const { rateLimit } = require('express-rate-limit')
+const path = require('path');
 require('dotenv').config();
+const Utils = require('./utilities/Utils');
+const PgClient = require('./models/PgClient');
+const routes = require('./routes');
+const mdw = require('./middlewares/Middlewares');
 
+const logger = Utils.Logger('index');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.APP_PORT || 3000;
 const isDev = process.env.NODE_ENV === 'development';
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // limit each IP to 100 requests per windowMs
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    message: 'Too many requests from this IP, please try again later.',
 
-    handler: (req, res, next, options) => {
-        logger.warn(`Rate limit exceeded for IP ${req.ip}`);
-        res.status(options.statusCode).json(formatResponse(options.statusCode, options.message));
-    },
-})
-!isDev && app.use(limiter);
+// Middleware to parse JSON
 app.use(express.json());
 app.disable('x-powered-by');
-app.get('/', (req, res) => {
-    res.send('Hello World!!!!!');
-})
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+/**
+ * Apply rate limiter in production
+ */
+if (!isDev) {
+    app.use(mdw.rateLimiter(15 * 60 * 1000, 100));  // Apply rate limiter with default values
+}
+
+/**
+ * Request logger middleware
+ */
+app.use((req, res, next) => {
+    const { ip, method, path: requestPath, body } = req;
+
+    logger.info(`Incoming Request: ${ip} => ${method} ${requestPath} with body: ${JSON.stringify(body || 'empty')}`);
+    res.on('finish', () => {
+        logger.info(`Outgoing Response: ${requestPath} => ${res.statusCode} ${res.statusMessage} => ${ip}`);
+        logger.debug('');
+    });
+    next();
+});
+
+
+// Serve static files from the frontend build directory
+app.use('/', express.static(path.join(__dirname, './frontend_build')));
+
+// API Routes
+app.use('/api/v0.2', routes);
+app.get('/api', (req, res) => {
+    res.send('You are connected to the /api');
+});
+
+// Global response handler
+app.use(mdw.responseHandler);
+
+// Error handling middleware
+app.use(mdw.errorHandler);
+
+/**
+ * Function to start the server
+ */
+const startServer = async () => {
+    logger.info('Starting server...');
+    try {
+        logger.info('Connecting to database...');
+        const pgClient = new PgClient();
+        await pgClient.init();
+
+        // Start Express server after database connection is established
+        app.listen(PORT, '0.0.0.0', () => {
+            logger.info(`App is listening on port ${PORT}`);
+            logger.info(isDev ? 'Starting server in development mode...' : 'Starting server in production mode...');
+        });
+    } catch (error) {
+        logger.error('Failed to start the server:', error.message);
+        process.exit(1); // Exit process if server fails to start
+    }
+};
+
+// Initialize server
+startServer();

@@ -2,7 +2,7 @@ extensions.json
 settings.json
 
 # Database data
-data/*
+postgres_data/*
 
 #build
 build/
