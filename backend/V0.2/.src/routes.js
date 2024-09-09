@@ -1,4 +1,7 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const fs = require("fs")
+const YAML = require('yaml')
 require('dotenv').config();
 
 const Utils = require('./utilities/Utils');
@@ -10,6 +13,8 @@ const { formatResponse } = Utils.formatResponse;
 const router = express.Router();
 const UserController = new userController();
 const isDev = process.env.NODE_ENV === 'development';
+const file = fs.readFileSync('./swagger.yaml', 'utf8')
+const swaggerDocument = YAML.parse(file)
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['POST'],
@@ -17,9 +22,12 @@ const allowedMethods = {
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE']
 }
+
 if (isDev) {
     allowedMethods['/users/check'] = ['POST'];
 }
+router.use('/docs', swaggerUi.serve);
+router.get('/docs', swaggerUi.setup(swaggerDocument));
 
 router.use((req, res, next) => {
     logger.info(`entering the routing for ${req.method} ${req.url}`);

@@ -73,6 +73,13 @@ class UserModel extends BaseModel {
         }
     }
 
+    /**
+     * Check if the provided password matches the user's password.
+     * @param {string} email The user's email.
+     * @param {string} password The user's password.
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the password matches.
+     * @throws {Error} If the user is not found or if there is an error checking the password.
+     */
     async checkPassword(email, password) {
         try {
             logger.info('Checking password');
