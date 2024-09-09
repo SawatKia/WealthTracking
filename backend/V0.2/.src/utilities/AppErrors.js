@@ -1,3 +1,10 @@
+class ValidationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
+
 class AppError extends Error {
     constructor(message, statusCode, data = null) {
         super(message);
@@ -46,17 +53,18 @@ class ConflictError extends AppError {
 
 class PasswordError extends AppError {
     constructor() {
-        super('Invalid username or password', 401);
+        super('Invalid email or password', 401);
     }
 }
 
 class UserDuplicateError extends AppError {
     constructor() {
-        super('Username or email already exists', 409);
+        super('national_id already exists', 409);
     }
 }
 
 module.exports = {
+    ValidationError,
     AppError,
     BadRequestError,
     UnauthorizedError,

@@ -82,19 +82,59 @@ class UserController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Error registering user: ${error.message}`);
-
-            // Handle specific validation errors
-            if (error.message === 'invalid national_id length') {
-                next(new BadRequestError('National ID length is invalid'));
-            } else if (error.message === 'duplicate key value') {
-                next(new UserDuplicateError());
-            } else {
-                // For all other errors
-                next(error);
+            if (error.message.includes('Missing required field: ')) {
+                next(new BadRequestError(error.message));
             }
+            if (error.message === 'duplicate key value') {
+                next(new UserDuplicateError());
+            }
+            if (error.name === 'ValidationError') {
+                // next(new BadRequestError('invalid input'));
+                next(new BadRequestError(error.message));
+            }
+            // Handle specific validation errors
+            // if (error.message === 'invalid national_id length' ||
+            //     error.message === 'National ID must be 13 characters long.' ||
+            //     error.message === 'National ID should contain only numbers.') {
+            //     next(new BadRequestError('National ID length is invalid'));
+            // } else if (error.message === 'duplicate key value') {
+            //     next(new UserDuplicateError());
+            // } else if (error.message === 'Username cannot contain special characters.') {
+            //     next(new BadRequestError('username invalid'));
+            // } else if (error.message === 'Role cannot contain special characters.') {
+            //     next(new BadRequestError('role invalid'));
+            // }
+            // else {
+            //     next(error);
+            // }
+
+            next(error);
         }
     };
 
+    checkPassword = async (req, res, next) => {
+        try {
+            const { email, password } = req.body;
+            logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
+            super.verifyField(req.body, ['email', 'password']);
+            const normalizedEmail = this.normalizeUsernameEmail(null, email);
+            const result = await this.User.checkPassword(normalizedEmail['email'], password);
+            logger.debug(`Password check result: ${result}`);
+            if (!result) throw new PasswordError();
+            req.formattedResponse = formatResponse(200, 'Password check successful', result);
+            next();
+        }
+        catch (error) {
+            if (error.message.includes('Missing required field: ')) {
+                next(new BadRequestError(error.message));
+            }
+            if (error.name === 'ValidationError') {
+                // next(new BadRequestError('invalid input'));
+                next(new BadRequestError(error.message));
+            }
+            next(error);
+        }
+    }
 }
 
 module.exports = UserController;

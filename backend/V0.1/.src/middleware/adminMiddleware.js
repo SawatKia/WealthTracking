@@ -1,4 +1,4 @@
-const { ForbiddenError, UnauthorizedError } = require('../utils/error');
+wwwwconst { ForbiddenError, UnauthorizedError } = require('../utils/error');
 
 const adminMiddleware = async (req, res, next) => {
     try {

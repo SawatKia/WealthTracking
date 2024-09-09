@@ -12,9 +12,13 @@ const UserController = new userController();
 const isDev = process.env.NODE_ENV === 'development';
 const allowedMethods = {
     '/': ['GET'],
-    '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
+    '/users': ['POST'],
+    '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE']
+}
+if (isDev) {
+    allowedMethods['/users/check'] = ['POST'];
 }
 
 router.use((req, res, next) => {
@@ -26,7 +30,7 @@ router.get('/', (req, res) => {
     res.send('you are connect to the api/v0.2')
 })
 router.post('/users', UserController.registerUser);
-
+router.post('/users/check', UserController.checkPassword);
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
 

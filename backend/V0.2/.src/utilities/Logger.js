@@ -40,7 +40,7 @@ class Logger {
                 format: winston.format.combine(
                     winston.format.colorize(),
                     winston.format.printf(info => {
-                        return ` [${info.caller ? `${info.caller}` : 'Unknown'}] ${info.level}: ${info.message}`; // specify log format for console
+                        return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`; // specify log format for console
                     })
                 )
             }));

@@ -22,6 +22,7 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    restart: always
     networks:
       - app_network
 
@@ -38,6 +39,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       retries: 5
+    restart: always
     networks:
       - app_network
 

@@ -40,11 +40,29 @@ class PgClient {
         return this.transactionStarted;
     }
 
+
+    /**
+     * Execute a PostgreSQL query. This method will automatically handle connecting
+     * to the database and logging the query and its parameters. If the query fails,
+     * the error will be re-thrown.
+     * @param {string} sql - The SQL query to execute.
+     * @param {Array} params - The parameters to substitute into the query.
+     * @returns {Promise<QueryResult>} - A promise that resolves to the result of the query.
+     */
     async query(sql, params) {
         if (!this.client) await this.init();
         logger.debug(`Query: ${sql}, params: ${JSON.stringify(params)}`);
         return this.client.query(sql, params);
     }
+    /**
+     * Start a PostgreSQL transaction. This will allow you to execute multiple queries
+     * in a single, atomic unit of work. If any of the queries fail, the entire
+     * transaction will be rolled back.
+     *
+     * @throws {Error} If the database is not connected.
+     * @throws {Error} If a transaction is already started.
+     * @returns {Promise<void>}
+     */
 
     async beginTransaction() {
         if (!this.client) throw new Error('Database not connected');
@@ -54,6 +72,13 @@ class PgClient {
         logger.debug('Transaction started');
     }
 
+    /**
+     * Commit the current PostgreSQL transaction. This will make the effects of any
+     * queries executed since the transaction was started permanent.
+     *
+     * @throws {Error} If no transaction is started.
+     * @returns {Promise<void>}
+     */
     async commit() {
         if (this.transactionStarted) {
             await this.client.query('COMMIT');
@@ -62,6 +87,15 @@ class PgClient {
         }
     }
 
+
+    /**
+     * Roll back the current PostgreSQL transaction. This will undo any changes
+     * made in the current transaction, and will release any locks that were
+     * acquired during the transaction.
+     *
+     * @throws {Error} If no transaction is started.
+     * @returns {Promise<void>}
+     */
     async rollback() {
         if (this.transactionStarted) {
             await this.client.query('ROLLBACK');
@@ -70,6 +104,13 @@ class PgClient {
         }
     }
 
+    /**
+     * Release the PostgreSQL client connection back to the connection pool.
+     * This is important to do after you are done using the client, as it
+     * will allow other users to use the same connection.
+     *
+     * @returns {Promise<void>}
+     */
     async release() {
         if (this.client) {
             this.client.release();
