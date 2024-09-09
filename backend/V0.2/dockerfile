@@ -17,4 +17,5 @@ COPY ./.src ./
 EXPOSE ${PORT}
 
 # Default command for starting the app
-CMD ["node", "index.js"]
+# CMD ["node", "index.js"]
+CMD ["npm", "run", "dev"]

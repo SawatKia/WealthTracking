@@ -1,7 +1,7 @@
 version: "3"
 services:
   node-server:
-    build: # ตำแหน่ง dockerfile
+    build:
       context: ./backend/V0.2
       args:
         NODE_ENV: development
@@ -9,7 +9,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}" # outside:inside
+      - "${APP_PORT}:${APP_PORT}"
       - "9229:9229"
     volumes:
       - ./frontend/build:/usr/src/app/frontend_build
@@ -17,7 +17,6 @@ services:
     depends_on:
       - postgres
     command: npm run dev
-    #heakthcheck in production
     logging:
       driver: "json-file"
       options:
@@ -52,11 +51,10 @@ services:
       - "5050:80"
     networks:
       - app_network
-      
 
 volumes:
   postgres_data:
 
 networks:
   app_network:
-      driver: bridge
+    driver: bridge
