@@ -23,6 +23,7 @@ class BaseModel extends PgClient {
      */
     async validateSchema(data, operation = 'create') {
         logger.info('Validating schema...');
+        logger.debug(`Data to be validate: ${JSON.stringify(data)}`);
 
         try {
             // Validate data using the Joi schema and appropriate context (operation)
