@@ -92,21 +92,6 @@ class UserController extends BaseController {
                 // next(new BadRequestError('invalid input'));
                 next(new BadRequestError(error.message));
             }
-            // Handle specific validation errors
-            // if (error.message === 'invalid national_id length' ||
-            //     error.message === 'National ID must be 13 characters long.' ||
-            //     error.message === 'National ID should contain only numbers.') {
-            //     next(new BadRequestError('National ID length is invalid'));
-            // } else if (error.message === 'duplicate key value') {
-            //     next(new UserDuplicateError());
-            // } else if (error.message === 'Username cannot contain special characters.') {
-            //     next(new BadRequestError('username invalid'));
-            // } else if (error.message === 'Role cannot contain special characters.') {
-            //     next(new BadRequestError('role invalid'));
-            // }
-            // else {
-            //     next(error);
-            // }
 
             next(error);
         }
