@@ -14,7 +14,8 @@ const {
 } = require('../utilities/AppErrors')
 require('dotenv').config();
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const NODE_ENV = process.env.NODE_ENV;
+const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
 class Middlewares {
     /**
@@ -27,6 +28,7 @@ class Middlewares {
             const { method, path } = req;
             logger.info('Validating request method and path');
             logger.debug(`Request: Method=${method}, Path=${path}`);
+            logger.debug(`Environment: ${NODE_ENV}`);
 
             // Check if the path exists in allowedMethods
             if (!allowedMethods[path]) {
@@ -37,7 +39,7 @@ class Middlewares {
             const methods = allowedMethods[path];
             if (!methods.includes(method)) {
                 logger.error(`Method ${method} not allowed for ${path}`);
-                const errorMessage = process.env.NODE_ENV === 'development'
+                const errorMessage = isDevelopment
                     ? `${method} method not allowed for ${path}`
                     : 'Method not allowed';
                 return next(new MethodNotAllowedError(errorMessage));
