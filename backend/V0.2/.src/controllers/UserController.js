@@ -53,7 +53,7 @@ class UserController extends BaseController {
 
             // Check if passwords match
             if (password !== confirm_password) {
-                throw new BadRequestError('Password and confirm password do not match');
+                throw new BadRequestError('Passwords do not match');
             }
             logger.info('password and confirm password match');
 
