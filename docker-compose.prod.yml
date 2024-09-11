@@ -1,0 +1,91 @@
+version: "3"
+services:
+  node-server:
+    build:
+      context: ./backend/V0.2
+      args:
+        NODE_ENV: production # Set production mode
+    container_name: node-container
+    env_file: 
+      - ./.env
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+      - "9229:9229"
+    volumes:
+      - ./frontend/build:/usr/src/app/frontend_build
+      - /usr/src/app/node_modules
+    depends_on:
+      - postgres
+    command: npm run start # Production command
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${APP_PORT} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"  # Limit to half a CPU
+          memory: "512M" # Limit to 512MB of RAM
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    env_file: 
+      - ./.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "512M"
+    networks:
+      - app_network
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+      - "5050:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "256M"
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
