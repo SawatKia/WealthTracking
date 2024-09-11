@@ -8,13 +8,19 @@ const Utils = require('./utilities/Utils');
 const mdw = require('./middlewares/Middlewares')
 const userController = require('./controllers/UserController');
 
+const NODE_ENV = process.env.NODE_ENV;
 const logger = Utils.Logger('Routes');
-const { formatResponse } = Utils.formatResponse;
+const { formatResponse } = Utils;
 const router = express.Router();
 const UserController = new userController();
-const isDev = process.env.NODE_ENV === 'development';
-const file = fs.readFileSync('./swagger.yaml', 'utf8')
-const swaggerDocument = YAML.parse(file)
+const isDev = NODE_ENV === 'development' || NODE_ENV === 'test';
+
+if (NODE_ENV != 'test') {
+    const file = fs.readFileSync('./swagger.yaml', 'utf8');
+    const swaggerDocument = YAML.parse(file)
+    router.use('/docs', swaggerUi.serve);
+    router.get('/docs', swaggerUi.setup(swaggerDocument));
+}
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['POST'],
@@ -26,16 +32,15 @@ const allowedMethods = {
 if (isDev) {
     allowedMethods['/users/check'] = ['POST'];
 }
-router.use('/docs', swaggerUi.serve);
-router.get('/docs', swaggerUi.setup(swaggerDocument));
 
 router.use((req, res, next) => {
     logger.info(`entering the routing for ${req.method} ${req.url}`);
     next();
 })
 router.use(mdw.methodValidator(allowedMethods));
-router.get('/', (req, res) => {
-    res.send('you are connect to the api/v0.2')
+router.get('/', (req, res, next) => {
+    req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2', null);
+    next();
 })
 router.post('/users', UserController.registerUser);
 router.post('/users/check', UserController.checkPassword);
