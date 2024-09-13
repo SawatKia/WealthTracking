@@ -50,7 +50,11 @@ class UserController extends BaseController {
 
             // Verify all required fields
             super.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
-
+            // Check if password length is at least 8 characters
+            if (password.length < 8) {
+                throw new BadRequestError('Password must be at least 8 characters long');
+            }
+            logger.info('password length is at least 8 characters');
             // Check if passwords match
             if (password !== confirm_password) {
                 throw new BadRequestError('Passwords do not match');
@@ -103,8 +107,8 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
             super.verifyField(req.body, ['email', 'password']);
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
-            const result = await this.User.checkPassword(normalizedEmail['email'], password);
-            logger.debug(`Password check result: ${result}`);
+            const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
+            logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw new PasswordError();
             req.formattedResponse = formatResponse(200, 'Password check successful', result);
             next();
