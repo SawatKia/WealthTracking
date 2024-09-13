@@ -103,21 +103,21 @@ class UserModel extends BaseModel {
             const validationResult = await super.validateSchema({ email }, 'check');
             if (validationResult instanceof Error) throw validationResult;
 
-            const user = await super.findOne({ email });
-            if (!user) {
+            const userObject = await super.findOne({ email });
+            if (!userObject) {
                 logger.error('User not found');
-                return false;
+                return { result: false, user: null };
             }
 
-            logger.debug(`User found: ${JSON.stringify(user)}`);
-            const passwordMatch = await bcrypt.compare(password, user.hashed_password);
+            logger.debug(`User found: ${JSON.stringify(userObject)}`);
+            const passwordMatch = await bcrypt.compare(password, userObject.hashed_password);
             if (!passwordMatch) {
                 logger.info('Password does not match');
-                return false;
+                return { result: false, user: null };
             }
 
             logger.info('Password match');
-            return true;
+            return { result: true, user: userObject };
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);
             throw error;
@@ -137,6 +137,12 @@ class UserModel extends BaseModel {
             const validationResult = await super.validateSchema(newUserData);
             logger.debug(`validation result: ${validationResult}`);
             if (validationResult instanceof Error) throw validationResult;
+            // verify if there is a user with this national_id or email
+            const userObject = await super.findOne({ national_id: newUserData.national_id }) || await super.findOne({ email: newUserData.email });
+            if (userObject) {
+                logger.error('User with this national_id or email already exists');
+                throw new Error('duplicate key value');
+            }
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
             let createdResult = await super.create(newUserData);
             createdResult = {
