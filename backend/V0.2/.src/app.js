@@ -7,6 +7,7 @@ const routes = require('./routes');
 const mdw = require('./middlewares/Middlewares');
 
 const NODE_ENV = process.env.NODE_ENV;
+const { formatResponse } = Utils;
 const logger = Utils.Logger('index');
 const app = express();
 const isDev = NODE_ENV === 'development';
@@ -28,7 +29,7 @@ if (!isDev) {
 app.use((req, res, next) => {
     const { ip, method, path: requestPath, body } = req;
 
-    logger.info(`Incoming Request: ${ip} => ${method} ${requestPath} with body: ${JSON.stringify(body || 'empty')}`);
+    logger.info(`Incoming Request: ${ip} => ${method} ${requestPath} with body: ${body ? JSON.stringify(body) : 'empty'}`);
     res.on('finish', () => {
         logger.info(`Outgoing Response: ${requestPath} => ${res.statusCode} ${res.statusMessage} => ${ip}`);
         logger.debug('');
@@ -42,8 +43,9 @@ app.use('/', express.static(path.join(__dirname, './frontend_build')));
 
 // API Routes
 app.use('/api/v0.2', routes);
-app.get('/api', (req, res) => {
-    res.send('You are connected to the /api');
+app.get('/api', (req, res, next) => {
+    req.formattedResponse = formatResponse(200, 'you are connected to the /api, running in Environment: ' + NODE_ENV, null);
+    next();
 });
 
 // Global response handler
