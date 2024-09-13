@@ -66,19 +66,50 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  data:
+                    type: object
+                    properties:
+                      national_id:
+                        type: string
+                        example: "1234567890123"
+                      email:
+                        type: string
+                        example: "johndoe@example.com"
         "400":
-          description: Bad request due to invalid input.
+          description: Bad request due to missing required fields, invalid email address, or password mismatch.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: username"
         "409":
           description: Conflict due to duplicate user.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 409
+                  message:
+                    type: string
+                    example: "national_id or email are already taken"
+
   /users/check:
     post:
       summary: Check user password (Development Mode Only)
@@ -112,6 +143,9 @@ paths:
               schema:
                 type: object
                 properties:
+                  status_code:
+                    type: integer
+                    example: 200
                   message:
                     type: string
                     example: "Password check successful"
@@ -119,17 +153,32 @@ paths:
                     type: boolean
                     example: true
         "400":
-          description: Bad request due to invalid input.
+          description: Bad request due to missing required fields or invalid email address.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
         "401":
-          description: Unauthorized due to incorrect credentials.
+          description: Unauthorized due to incorrect password.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+
   /users/{national_id}:
     get:
       summary: Get user by National ID (NOT Implemented)

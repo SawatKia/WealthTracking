@@ -50,10 +50,14 @@ class UserController extends BaseController {
 
             // Verify all required fields
             super.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
-
+            // Check if password length is at least 8 characters
+            if (password.length < 8) {
+                throw new BadRequestError('Password must be at least 8 characters long');
+            }
+            logger.info('password length is at least 8 characters');
             // Check if passwords match
             if (password !== confirm_password) {
-                throw new BadRequestError('Password and confirm password do not match');
+                throw new BadRequestError('Passwords do not match');
             }
             logger.info('password and confirm password match');
 
@@ -92,21 +96,6 @@ class UserController extends BaseController {
                 // next(new BadRequestError('invalid input'));
                 next(new BadRequestError(error.message));
             }
-            // Handle specific validation errors
-            // if (error.message === 'invalid national_id length' ||
-            //     error.message === 'National ID must be 13 characters long.' ||
-            //     error.message === 'National ID should contain only numbers.') {
-            //     next(new BadRequestError('National ID length is invalid'));
-            // } else if (error.message === 'duplicate key value') {
-            //     next(new UserDuplicateError());
-            // } else if (error.message === 'Username cannot contain special characters.') {
-            //     next(new BadRequestError('username invalid'));
-            // } else if (error.message === 'Role cannot contain special characters.') {
-            //     next(new BadRequestError('role invalid'));
-            // }
-            // else {
-            //     next(error);
-            // }
 
             next(error);
         }
@@ -118,8 +107,8 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
             super.verifyField(req.body, ['email', 'password']);
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
-            const result = await this.User.checkPassword(normalizedEmail['email'], password);
-            logger.debug(`Password check result: ${result}`);
+            const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
+            logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw new PasswordError();
             req.formattedResponse = formatResponse(200, 'Password check successful', result);
             next();

@@ -3,6 +3,8 @@ const path = require('path');
 const { format } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
+const NODE_ENV = process.env.NODE_ENV;
+
 require('dotenv').config();
 const timezoned = () => {
     return new Date().toLocaleString('en-GB', {
@@ -22,7 +24,7 @@ const getCaller = () => {
 
 class Logger {
     constructor(moduleName) {
-        const isDevelopment = process.env.NODE_ENV === 'development';
+        const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
         const transports = [
             new DailyRotateFile({

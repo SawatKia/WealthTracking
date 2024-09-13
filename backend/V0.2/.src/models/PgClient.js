@@ -1,12 +1,17 @@
-const { development } = require('../configs/dbConfigs');
+const { development, test, production } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
 const Pool = require('pg-pool');
 const logger = Utils.Logger('PgClient');
 
+require('dotenv').config();
+const NODE_ENV = process.env.NODE_ENV;
+
 class PgClient {
-    constructor() {
+    constructor(config = NODE_ENV === 'development' ? development : NODE_ENV === 'test' ? test : production) {
         logger.info('Initializing PgClient');
-        this.pool = new Pool(development);
+        logger.debug(`running Environment: ${NODE_ENV}`);
+        logger.debug(`Config: ${JSON.stringify(config)}`);
+        this.pool = new Pool(config);
         this.transactionStarted = false;
 
         // Handle pool errors

@@ -59,7 +59,7 @@ class PasswordError extends AppError {
 
 class UserDuplicateError extends AppError {
     constructor() {
-        super('national_id already exists', 409);
+        super('national_id or email are already taken', 409);
     }
 }
 
