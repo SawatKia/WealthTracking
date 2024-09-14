@@ -90,7 +90,7 @@ class UserModel extends BaseModel {
     /**
      * Checks if the provided password matches the one stored for the user
      * @param {string} email - The email of the user to check
-     * @param {string} password - The password to check
+     * @param {string} password - The plain text password to check
      * @returns {Promise<boolean>} - The result of the check
      * @throws {Error} - If there is an issue with the check
      */
