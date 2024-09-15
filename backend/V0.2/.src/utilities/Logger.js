@@ -26,18 +26,25 @@ class Logger {
     constructor(moduleName) {
         const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
-        const transports = [
-            new DailyRotateFile({
+        const transports = [];
+        if (!isDevelopment) {
+            transports.push(new DailyRotateFile({
                 filename: 'log/error-%DATE%.log',
                 datePattern: 'YYYY-MM-DD',
                 level: 'error',
                 zippedArchive: true,
                 maxSize: '20m',
                 maxFiles: '7d'
-            })
-        ];
+            }));
 
-        if (isDevelopment) {
+            transports.push(new DailyRotateFile({
+                filename: 'log/combined-%DATE%.log',
+                datePattern: 'YYYY-MM-DD',
+                zippedArchive: true,
+                maxSize: '20m',
+                maxFiles: '14d'
+            }));
+        } else {
             transports.push(new winston.transports.Console({
                 format: winston.format.combine(
                     winston.format.colorize(),
@@ -45,14 +52,6 @@ class Logger {
                         return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`; // specify log format for console
                     })
                 )
-            }));
-        } else {
-            transports.push(new DailyRotateFile({
-                filename: 'log/combined-%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '14d'
             }));
         }
 

@@ -4,7 +4,6 @@ const Joi = require('joi');
 const BaseModel = require('./BaseModel');
 require('dotenv').config();
 const Utils = require('../utilities/Utils');
-const { ValidationError } = require('../utilities/AppErrors');
 
 const logger = Utils.Logger('UserModel');
 

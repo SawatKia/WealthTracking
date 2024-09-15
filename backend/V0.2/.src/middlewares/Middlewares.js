@@ -1,17 +1,8 @@
 const Utils = require('../utilities/Utils');
 const logger = Utils.Logger('Middlewares');
 const { formatResponse } = Utils;
-const {
-    AppError,
-    BadRequestError,
-    UnauthorizedError,
-    ForbiddenError,
-    NotFoundError,
-    MethodNotAllowedError,
-    ConflictError,
-    PasswordError,
-    UserDuplicateError
-} = require('../utilities/AppErrors')
+
+const MyAppErrors = require('../utilities/MyAppErrors');
 require('dotenv').config();
 
 const NODE_ENV = process.env.NODE_ENV;
@@ -33,7 +24,7 @@ class Middlewares {
             // Check if the path exists in allowedMethods
             if (!allowedMethods[path]) {
                 logger.error(`Path ${path} not found`);
-                return next(new NotFoundError(`${path} not available`));
+                return next(MyAppErrors.notFound(`${path} not available`));
             }
 
             const methods = allowedMethods[path];
@@ -42,7 +33,7 @@ class Middlewares {
                 const errorMessage = isDevelopment
                     ? `${method} method not allowed for ${path}`
                     : 'Method not allowed';
-                return next(new MethodNotAllowedError(errorMessage));
+                return next(MyAppErrors.methodNotAllowed(errorMessage));
             }
 
             logger.info(`Method ${method} is allowed for ${path}`);
@@ -70,9 +61,8 @@ class Middlewares {
     errorHandler(err, req, res, next) {
         if (!res.headersSent) {
             logger.info('Handling error');
-            if (err instanceof AppError) {
-                const errorMessage = isDevelopment ? err.stack : err.message;
-                logger.error(`AppError: ${errorMessage}`);
+            if (err instanceof MyAppErrors) {
+                logger.error(`MyAppError: ${err.message}`);
                 res.status(err.statusCode).json(formatResponse(err.statusCode, err.message));
             } else {
                 logger.error(`Unhandled error: ${err}`);

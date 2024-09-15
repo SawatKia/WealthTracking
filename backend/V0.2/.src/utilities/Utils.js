@@ -1,5 +1,4 @@
 const Logger = require('./Logger');
-const AppError = require('./AppErrors')
 
 class Utils {
     static formatResponse(status_code, message, data) {

@@ -4,8 +4,12 @@ settings.json
 # Database data
 postgres_data/*
 
+# Ignore the report folder and all its subfolders and files
+report/
+
 #build
 build/
+
 # Local History for Visual Studio Code
 .history/
 

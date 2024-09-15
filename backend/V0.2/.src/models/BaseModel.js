@@ -3,7 +3,7 @@ const Joi = require('joi');
 
 const PgClient = require('./PgClient');
 const Utils = require('../utilities/Utils');
-const { ValidationError } = require('../utilities/AppErrors')
+const { ValidationError } = require('../utilities/ValidationErrors')
 
 const logger = Utils.Logger('BaseModel');
 

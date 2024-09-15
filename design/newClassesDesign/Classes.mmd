@@ -1,22 +1,25 @@
 %%{init: {'themeVariables': {'lineColor': '#ff0000', 'dashedLineColor': '#00ff00'}}}%%
 classDiagram
     direction RL
-    class Errors {
-        +AppError(message: string)
-        +BadRequestError(message: string)
-        +UnauthorizedError(message: string)
-        +ForbiddenError(message: string)
-        +NotFoundError(message: string)
-        +ConflictError(message: string)
-        +PasswordError()
-        +UserDuplicateError()
+    
+    class MyAppErrors {
+        +statusCode: number
+        +data: Object
+        +constructor(message: string, statusCode: number, data: Object) void
+        +BadRequestError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +UnauthorizedError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ForbiddenError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +NotFoundError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ConflictError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +PasswordError() MyAppErrors$
+        +UserDuplicateError() MyAppErrors$
     }
 
     class Error {
         <<JS built-in>>
     }
 
-    Error <|-- Errors
+    Error <|-- MyAppErrors
 
     class Middleware {
         +methodValidator(req: Request, res: Response, next: NextFunction) void
@@ -25,13 +28,25 @@ classDiagram
         +responseHandler(req: Request, res: Response, next: NextFunction) void
     }
 
-    class ExpressApplication {
+    class ExpressRouter {
         <<module>>
         +use(middleware: function)
         +get(path: string, handler: function)
         +post(path: string, handler: function)
         +put(path: string, handler: function)
         +delete(path: string, handler: function)
+    }
+
+    class UserController {
+        +register(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getUser(req: Request, res: Response, next: NextFunction) Promise~void~
+        +updateUser(req: Request, res: Response, next: NextFunction) Promise~void~
+        +deleteUser(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class AuthController{
+        +login(req: Request, res: Response, next: NextFunction) Promise~void~
+        +refreshToken(req: Request, res: Response, next: NextFunction) Promise~void~
     }
 
     class BaseController {
@@ -71,12 +86,11 @@ classDiagram
         +get(key: string) Promise~string~
     }
 
-    class UserController {
-        +register(req: Request, res: Response, next: NextFunction) Promise~void~
-        +getUser(req: Request, res: Response, next: NextFunction) Promise~void~
-        +updateUser(req: Request, res: Response, next: NextFunction) Promise~void~
-        +deleteUser(req: Request, res: Response, next: NextFunction) Promise~void~
+    class AuthMiddleware {
+        +verifyCredentials(req: Request, res: Response, next: NextFunction) void
+        +checkIsAdmin(req: Request, res: Response, next: NextFunction) boolean
     }
+
     class UserModel {
         +constructor()
         -hashPassword(plainPassword: string) Promise~string~
@@ -93,6 +107,7 @@ classDiagram
         +updateBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
         +deleteBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
     }
+
     class BankAccountModel {
         +constructor()
     }
@@ -104,6 +119,7 @@ classDiagram
         +updateTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
         +deleteTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
     }
+
     class TransactionModel {
         +constructor()
         -cacheTransactionDetail(transactionUuid: string) Promise~void~
@@ -120,8 +136,16 @@ classDiagram
         +updateDebt(req: Request, res: Response, next: NextFunction) Promise~void~
         +deleteDebt(req: Request, res: Response, next: NextFunction) Promise~void~
     }
+
     class DebtModel {
         +constructor()
+    }
+
+    class JWTUtils {
+        +createAccessToken(user: Object) string
+        +createRefreshToken(user: Object) string
+        +createTokenResponse(user: Object) Object
+        +decodeToken(token: string) Object
     }
 
     class ThirdPartyAPIController {
@@ -142,6 +166,7 @@ classDiagram
         +formatResponse(status_code: number, message: string, data: Object) Object
         +logger(moduleName: string) Logger~instant~
     }
+    
     class Logger{
         +constructor(moduleName: string)
         +log(message: string)
@@ -173,18 +198,21 @@ classDiagram
     PgClient <|-- BaseModel
     TransactionController *-- PgClient
 
-    ExpressApplication o-- Middleware
-    ExpressApplication ..> UserController : routes to
-    ExpressApplication ..> BankAccountController : routes to
-    ExpressApplication ..> TransactionController : routes to
-    ExpressApplication ..> DebtController : routes to
-    ExpressApplication ..> ThirdPartyAPIController : routes to
+    ExpressRouter o-- Middleware
+    ExpressRouter o-- AuthMiddleware
+    ExpressRouter ..> UserController : routes to
+    ExpressRouter ..> BankAccountController : routes to
+    ExpressRouter ..> TransactionController : routes to
+    ExpressRouter ..> DebtController : routes to
+    ExpressRouter ..> AuthController : routes to
+    ExpressRouter ..> ThirdPartyAPIController : routes to
 
-    UserController *-- Errors
-    BankAccountController *-- Errors
-    TransactionController *-- Errors
-    DebtController *-- Errors
-    ThirdPartyAPIController *-- Errors
+    UserController *-- MyAppErrors
+    BankAccountController *-- MyAppErrors
+    TransactionController *-- MyAppErrors
+    DebtController *-- MyAppErrors
+    ThirdPartyAPIController *-- MyAppErrors
+    AuthController *-- MyAppErrors
 
     UserController *-- Utils
     BankAccountController *-- Utils
@@ -194,6 +222,12 @@ classDiagram
 
     TransactionModel *-- Redis
     TransactionModel *-- BankAccountModel
+
+    AuthController o-- JWTUtils
+    AuthMiddleware o-- JWTUtils
+
+    AuthController *-- UserModel
+    AuthMiddleware *-- MyAppErrors
 
     Utils *-- Logger
 
