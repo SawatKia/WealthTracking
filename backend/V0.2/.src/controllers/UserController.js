@@ -3,16 +3,7 @@ const Utils = require('../utilities/Utils');
 const User = require('../models/UserModel');
 const BaseController = require('./BaseController');
 const logger = Utils.Logger('UserController');
-const {
-    BadRequestError,
-    UnauthorizedError,
-    ForbiddenError,
-    NotFoundError,
-    MethodNotAllowedError,
-    ConflictError,
-    PasswordError,
-    UserDuplicateError
-} = require('../utilities/AppErrors');
+const MyAppErrors = require('../utilities/MyAppErrors')
 const { formatResponse } = Utils;
 
 class UserController extends BaseController {
@@ -52,18 +43,18 @@ class UserController extends BaseController {
             super.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
-                throw new BadRequestError('Password must be at least 8 characters long');
+                throw MyAppErrors.badRequest('Password must be at least 8 characters long');
             }
             logger.info('password length is at least 8 characters');
             // Check if passwords match
             if (password !== confirm_password) {
-                throw new BadRequestError('Passwords do not match');
+                throw MyAppErrors.badRequest('Passwords do not match');
             }
             logger.info('password and confirm password match');
 
             // Validate email format
             if (!this.validateEmail(email)) {
-                throw new BadRequestError('Invalid email address');
+                throw MyAppErrors.badRequest('Invalid email address');
             }
 
             // Normalize data
@@ -87,14 +78,14 @@ class UserController extends BaseController {
         } catch (error) {
             logger.error(`Error registering user: ${error.message}`);
             if (error.message.includes('Missing required field: ')) {
-                next(new BadRequestError(error.message));
+                next(MyAppErrors.badRequest(error.message));
             }
             if (error.message === 'duplicate key value') {
-                next(new UserDuplicateError());
+                next(MyAppErrors.userDuplicateError());
             }
             if (error.name === 'ValidationError') {
                 // next(new BadRequestError('invalid input'));
-                next(new BadRequestError(error.message));
+                next(MyAppErrors.badRequest(error.message));
             }
 
             next(error);
@@ -109,17 +100,17 @@ class UserController extends BaseController {
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
             const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
-            if (!result) throw new PasswordError();
+            if (!result) throw MyAppErrors.passwordError();
             req.formattedResponse = formatResponse(200, 'Password check successful', result);
             next();
         }
         catch (error) {
             if (error.message.includes('Missing required field: ')) {
-                next(new BadRequestError(error.message));
+                next(MyAppErrors.badRequest(error.message));
             }
             if (error.name === 'ValidationError') {
                 // next(new BadRequestError('invalid input'));
-                next(new BadRequestError(error.message));
+                next(MyAppErrors.badRequest(error.message));
             }
             next(error);
         }

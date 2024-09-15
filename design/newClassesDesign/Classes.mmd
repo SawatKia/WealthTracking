@@ -2,22 +2,24 @@
 classDiagram
     direction RL
     
-    class Errors {
-        +AppError(message: string)
-        +BadRequestError(message: string)
-        +UnauthorizedError(message: string)
-        +ForbiddenError(message: string)
-        +NotFoundError(message: string)
-        +ConflictError(message: string)
-        +PasswordError()
-        +UserDuplicateError()
+    class MyAppErrors {
+        +statusCode: number
+        +data: Object
+        +constructor(message: string, statusCode: number, data: Object) void
+        +BadRequestError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +UnauthorizedError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ForbiddenError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +NotFoundError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ConflictError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +PasswordError() MyAppErrors$
+        +UserDuplicateError() MyAppErrors$
     }
 
     class Error {
         <<JS built-in>>
     }
 
-    Error <|-- Errors
+    Error <|-- MyAppErrors
 
     class Middleware {
         +methodValidator(req: Request, res: Response, next: NextFunction) void
@@ -205,12 +207,12 @@ classDiagram
     ExpressRouter ..> AuthController : routes to
     ExpressRouter ..> ThirdPartyAPIController : routes to
 
-    UserController *-- Errors
-    BankAccountController *-- Errors
-    TransactionController *-- Errors
-    DebtController *-- Errors
-    ThirdPartyAPIController *-- Errors
-    AuthController *-- Errors
+    UserController *-- MyAppErrors
+    BankAccountController *-- MyAppErrors
+    TransactionController *-- MyAppErrors
+    DebtController *-- MyAppErrors
+    ThirdPartyAPIController *-- MyAppErrors
+    AuthController *-- MyAppErrors
 
     UserController *-- Utils
     BankAccountController *-- Utils
@@ -225,7 +227,7 @@ classDiagram
     AuthMiddleware o-- JWTUtils
 
     AuthController *-- UserModel
-    AuthMiddleware *-- Errors
+    AuthMiddleware *-- MyAppErrors
 
     Utils *-- Logger
 
