@@ -3,10 +3,8 @@ Volume serial number is 4294-1FC7
 D:.
 |   .env
 |   .gitignore
-|   docker-compose.dev.yml
 |   docker-compose.prod.yml
 |   docker-compose.yml
-|   old_readme.md
 |   project_structure.txt
 |   readme.md
 |   
@@ -59,139 +57,12 @@ D:.
 |   |   |   \---utils
 |   |   |           error.js
 |   |   |           responseFormatter.js
-|   |   |           
-|   |               
-|   \---V0.2
-|       |   dockerfile
-|       |   package-lock.json
-|       |   package.json
-|       |   
-|       +---.src
-|       |       index.js
-|                   
+|       |           
+|       \---Requests
+|               api.http
+|               User.http
+|               
 +---design
-|   |   build.py
-|   |   design_structure.txt
-|   |   ERD.png
-|   |   json_grid_visualizer.html
-|   |   readme.md
-|   |   
-|   +---Data
-|   |       BankAccounts.json
-|   |       BankAccountTransactions.json
-|   |       Debts.json
-|   |       FI_CODE.csv
-|   |       Notifications.json
-|   |       Setting.json
-|   |       Users.json
-|   |       UserTransactions.json
-|   |       
-|   +---newClassesDesign
-|   |   |   Classes.mmd
-|   |   |   Classes.svg
-|   |   |   ERD_HighRes.png
-|   |   |   SoftwareArchitectureDiagram.mmd
-|   |   |   SoftwareArchitectureDiagram.svg
-|   |   |   UserFlow.mmd
-|   |   |   UserFlow.svg
-|   |   |   Use_Case.png
-|   |   |   
-|   |   +---api
-|   |   |       QuotaCheck.mmd
-|   |   |       QuotaCheck.svg
-|   |   |       SlipData.mmd
-|   |   |       SlipData.svg
-|   |   |       
-|   |   +---BankAccountManagement
-|   |   |       create.mmd
-|   |   |       create.svg
-|   |   |       Delete.mmd
-|   |   |       Delete.svg
-|   |   |       ReadAll.mmd
-|   |   |       ReadAll.svg
-|   |   |       ReadOne.mmd
-|   |   |       ReadOne.svg
-|   |   |       update.mmd
-|   |   |       update.svg
-|   |   |       
-|   |   +---BankAccountTransaction
-|   |   +---DebtManagement
-|   |   |       Create.mmd
-|   |   |       Create.svg
-|   |   |       Delete.mmd
-|   |   |       delete.svg
-|   |   |       ReadAll.mmd
-|   |   |       ReadAll.svg
-|   |   |       ReadOne.mmd
-|   |   |       ReadOne.svg
-|   |   |       Update.mmd
-|   |   |       Update.svg
-|   |   |       
-|   |   +---Debts
-|   |   +---IncomeExpenseManagement
-|   |   |       IeCreate.mmd
-|   |   |       IeCreate.svg
-|   |   |       IeDelete.mmd
-|   |   |       IeDelete.svg
-|   |   |       IeReadAll.mmd
-|   |   |       IeReadAll.svg
-|   |   |       IeReadOne.mmd
-|   |   |       IeReadOne.svg
-|   |   |       IeUpdate.mmd
-|   |   |       IeUpdate.svg
-|   |   |       
-|   |   \---UserManagement
-|   |           create.mmd
-|   |           create.svg
-|   |           delete.mmd
-|   |           delete.svg
-|   |           read.mmd
-|   |           read.svg
-|   |           update.mmd
-|   |           update.svg
-|   |           
-|   \---preview
-|       |   checkedData.json
-|       |   diagramPreview.css
-|       |   diagramPreview.html
-|       |   diagramPreview.js
-|       |   
-|       \---png
-|           +---Api
-|           |       QuotaCheck.png
-|           |       SlipData.png
-|           |       
-|           +---Bank
-|           |       create.png
-|           |       Delete.png
-|           |       ReadAll.png
-|           |       ReadOne.png
-|           |       update.png
-|           |       
-|           +---Debt
-|           |       Create.png
-|           |       delete.png
-|           |       ReadAll.png
-|           |       ReadOne.png
-|           |       Update.png
-|           |       
-|           +---HighLevel
-|           |       softwareArchitectureDiagram.png
-|           |       UML.png
-|           |       UserFlow.png
-|           |       
-|           +---Transaction
-|           |       IeCreate.png
-|           |       IeDelete.png
-|           |       IeReadAll.png
-|           |       IeReadOne.png
-|           |       IeUpdate.png
-|           |       
-|           \---User
-|                   create.png
-|                   delete.png
-|                   read.png
-|                   update.png
 |                   
 \---frontend
     |   .gitignore
@@ -221,7 +92,7 @@ D:.
     |               main.d624b840.js
     |               main.d624b840.js.LICENSE.txt
     |               main.d624b840.js.map
-    |               
+    |                          
     +---public
     |       favicon.ico
     |       index.html
