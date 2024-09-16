@@ -1,11 +1,11 @@
 const app = require('./app');
 const Utils = require('./utilities/Utils');
-require('dotenv').config();
+const appConfigs = require('./configs/AppConfigs');
 
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = appConfigs.environment;
 const logger = Utils.Logger('index');
 const PgClient = require('./models/PgClient');
-const PORT = process.env.APP_PORT || 3000;
+const PORT = appConfigs.appPort || 3000;
 /**
  * Function to start the server
  */

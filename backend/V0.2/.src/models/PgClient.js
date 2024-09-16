@@ -2,9 +2,9 @@ const { development, test, production } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
 const Pool = require('pg-pool');
 const logger = Utils.Logger('PgClient');
+const appConfigs = require('../configs/AppConfigs')
 
-require('dotenv').config();
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = appConfigs.environment;
 
 class PgClient {
     constructor() {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --coverage(=true)",
+    "test": "cross-env NODE_ENV=test jest --coverage",
     "dev": "nodemon index.js",
     "debug": "node --inspect=0.0.0.0:9229 .src/index.js"
   },
@@ -33,6 +33,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.12.0",
     "pg-pool": "^3.6.2",
     "request-to-curl": "^0.1.6",

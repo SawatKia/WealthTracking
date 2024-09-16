@@ -1,12 +1,11 @@
 const express = require('express');
 const path = require('path');
-require('dotenv').config();
 const Utils = require('./utilities/Utils');
-const PgClient = require('./models/PgClient');
 const routes = require('./routes');
 const mdw = require('./middlewares/Middlewares');
+const appConfigs = require('./configs/AppConfigs')
 
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = appConfigs.environment;
 const { formatResponse } = Utils;
 const logger = Utils.Logger('index');
 const app = express();
