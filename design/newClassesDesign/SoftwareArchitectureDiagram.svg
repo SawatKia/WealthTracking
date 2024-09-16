@@ -1,1 +1,1095 @@
-<svg aria-roledescription="flowchart-v2" role="graphics-document document" viewBox="-8 -8 1836.21484375 1237.5810546875" style="max-width: 1836.21px; background-color: rgb(255, 255, 255);" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="100%" id="mermaid-1722954648778"><style>#mermaid-1722954648778{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#333;}#mermaid-1722954648778 .error-icon{fill:#552222;}#mermaid-1722954648778 .error-text{fill:#552222;stroke:#552222;}#mermaid-1722954648778 .edge-thickness-normal{stroke-width:2px;}#mermaid-1722954648778 .edge-thickness-thick{stroke-width:3.5px;}#mermaid-1722954648778 .edge-pattern-solid{stroke-dasharray:0;}#mermaid-1722954648778 .edge-pattern-dashed{stroke-dasharray:3;}#mermaid-1722954648778 .edge-pattern-dotted{stroke-dasharray:2;}#mermaid-1722954648778 .marker{fill:#333333;stroke:#333333;}#mermaid-1722954648778 .marker.cross{stroke:#333333;}#mermaid-1722954648778 svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#mermaid-1722954648778 .label{font-family:"trebuchet ms",verdana,arial,sans-serif;color:#333;}#mermaid-1722954648778 .cluster-label text{fill:#333;}#mermaid-1722954648778 .cluster-label span,#mermaid-1722954648778 p{color:#333;}#mermaid-1722954648778 .label text,#mermaid-1722954648778 span,#mermaid-1722954648778 p{fill:#333;color:#333;}#mermaid-1722954648778 .node rect,#mermaid-1722954648778 .node circle,#mermaid-1722954648778 .node ellipse,#mermaid-1722954648778 .node polygon,#mermaid-1722954648778 .node path{fill:#ECECFF;stroke:#9370DB;stroke-width:1px;}#mermaid-1722954648778 .flowchart-label text{text-anchor:middle;}#mermaid-1722954648778 .node .label{text-align:center;}#mermaid-1722954648778 .node.clickable{cursor:pointer;}#mermaid-1722954648778 .arrowheadPath{fill:#333333;}#mermaid-1722954648778 .edgePath .path{stroke:#333333;stroke-width:2.0px;}#mermaid-1722954648778 .flowchart-link{stroke:#333333;fill:none;}#mermaid-1722954648778 .edgeLabel{background-color:#e8e8e8;text-align:center;}#mermaid-1722954648778 .edgeLabel rect{opacity:0.5;background-color:#e8e8e8;fill:#e8e8e8;}#mermaid-1722954648778 .labelBkg{background-color:rgba(232, 232, 232, 0.5);}#mermaid-1722954648778 .cluster rect{fill:#ffffde;stroke:#aaaa33;stroke-width:1px;}#mermaid-1722954648778 .cluster text{fill:#333;}#mermaid-1722954648778 .cluster span,#mermaid-1722954648778 p{color:#333;}#mermaid-1722954648778 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:12px;background:hsl(80, 100%, 96.2745098039%);border:1px solid #aaaa33;border-radius:2px;pointer-events:none;z-index:100;}#mermaid-1722954648778 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#333;}#mermaid-1722954648778 :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g><marker orient="auto" markerHeight="12" markerWidth="12" markerUnits="userSpaceOnUse" refY="5" refX="10" viewBox="0 0 10 10" class="marker flowchart" id="flowchart-pointEnd"><path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 0 L 10 5 L 0 10 z"/></marker><marker orient="auto" markerHeight="12" markerWidth="12" markerUnits="userSpaceOnUse" refY="5" refX="0" viewBox="0 0 10 10" class="marker flowchart" id="flowchart-pointStart"><path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 5 L 10 10 L 10 0 z"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="11" viewBox="0 0 10 10" class="marker flowchart" id="flowchart-circleEnd"><circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="-1" viewBox="0 0 10 10" class="marker flowchart" id="flowchart-circleStart"><circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="12" viewBox="0 0 11 11" class="marker cross flowchart" id="flowchart-crossEnd"><path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 1,1 l 9,9 M 10,1 l -9,9"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="-1" viewBox="0 0 11 11" class="marker cross flowchart" id="flowchart-crossStart"><path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 1,1 l 9,9 M 10,1 l -9,9"/></marker><g class="root"><g class="clusters"><g id="subGraph4" class="cluster default flowchart-label"><rect height="83.5" width="1097.21484375" y="1007" x="15.06640625" ry="0" rx="0" style=""/><g transform="translate(520.443359375, 1007)" class="cluster-label"><foreignObject height="18.5" width="86.4609375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Model Layer</span></div></foreignObject></g></g><g id="subGraph3" class="cluster default flowchart-label"><rect height="102" width="1362.34765625" y="855" x="0" ry="0" rx="0" style=""/><g transform="translate(622.876953125, 855)" class="cluster-label"><foreignObject height="18.5" width="116.59375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Controller Layer</span></div></foreignObject></g></g><g id="subGraph2" class="cluster default flowchart-label"><rect height="83.5" width="1666.908203125" y="703" x="9.3359375" ry="0" rx="0" style=""/><g transform="translate(793.8720703125, 703)" class="cluster-label"><foreignObject height="18.5" width="97.8359375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Routing Layer</span></div></foreignObject></g></g><g id="subGraph1" class="cluster default flowchart-label"><rect height="83.5" width="214.1328125" y="102" x="1031.845703125" ry="0" rx="0" style=""/><g transform="translate(1099.677734375, 102)" class="cluster-label"><foreignObject height="18.5" width="78.46875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">View Layer</span></div></foreignObject></g></g><g id="subGraph0" class="cluster default flowchart-label"><rect height="417.5" width="1497.84765625" y="235.5" x="27.306640625" ry="0" rx="0" style=""/><g transform="translate(712.92578125, 235.5)" class="cluster-label"><foreignObject height="18.5" width="126.609375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Middleware Layer</span></div></foreignObject></g></g></g><g class="edgePaths"><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Client LE-LoadBalancer" id="L-Client-LoadBalancer-0" d="M67.306640625,33.5L67.306640625,39.208333333333336C67.306640625,44.916666666666664,67.306640625,56.333333333333336,67.306640625,67.75C67.306640625,79.16666666666667,67.306640625,90.58333333333333,67.306640625,100.45833333333333C67.306640625,110.33333333333333,67.306640625,118.66666666666667,67.306640625,122.83333333333333L67.306640625,127"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-LoadBalancer LE-Express" id="L-LoadBalancer-Express-0" d="M67.306640625,160.5L67.306640625,164.66666666666666C67.306640625,168.83333333333334,67.306640625,177.16666666666666,67.306640625,185.5C67.306640625,193.83333333333334,67.306640625,202.16666666666666,67.306640625,210.5C67.306640625,218.83333333333334,67.306640625,227.16666666666666,214.8828125,237.67495356242537C362.458984375,248.1832404581841,657.611328125,260.8664809163682,805.1875,267.2081011454602L952.763671875,273.54972137455223"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Express LE-RateLimit" id="L-Express-RateLimit-0" d="M1038.873046875,294L1038.873046875,298.1666666666667C1038.873046875,302.3333333333333,1038.873046875,310.6666666666667,1038.873046875,319C1038.873046875,327.3333333333333,1038.873046875,335.6666666666667,1038.873046875,339.8333333333333L1038.873046875,344"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-RateLimit LE-Logging" id="L-RateLimit-Logging-0" d="M1038.873046875,377.5L1038.873046875,381.6666666666667C1038.873046875,385.8333333333333,1038.873046875,394.1666666666667,1038.873046875,402.5C1038.873046875,410.8333333333333,1038.873046875,419.1666666666667,1038.873046875,423.3333333333333L1038.873046875,427.5"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Logging LE-Auth" id="L-Logging-Auth-0" d="M1004.330078125,448.29593100349587L950.6790364583334,454.5799425029132C897.0279947916666,460.86395400233056,789.7259114583334,473.43197700116525,736.0748697916666,483.8826551672493C682.423828125,494.3333333333333,682.423828125,502.6666666666667,682.423828125,506.8333333333333L682.423828125,511"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Auth LE-APIGateway" id="L-Auth-APIGateway-0" d="M682.423828125,544.5L682.423828125,548.6666666666666C682.423828125,552.8333333333334,682.423828125,561.1666666666666,682.423828125,569.5C682.423828125,577.8333333333334,682.423828125,586.1666666666666,682.423828125,590.3333333333334L682.423828125,594.5"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Express LE-StaticFiles" id="L-Express-StaticFiles-0" d="M1096.4738959580839,260.5L1110.8024653817365,256.3333333333333C1125.1310348053892,252.16666666666666,1153.7881736526945,243.83333333333334,1168.1167430763473,235.5C1182.4453125,227.16666666666666,1182.4453125,218.83333333333334,1182.4453125,210.5C1182.4453125,202.16666666666666,1182.4453125,193.83333333333334,1178.1006814496006,185.5C1173.7560503992015,177.16666666666666,1165.0667882984033,168.83333333333334,1160.722157248004,164.66666666666666L1156.3775261976048,160.5"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-StaticFiles LE-Express" id="L-StaticFiles-Express-0" d="M1125.4586686002995,160.5L1122.1120415419161,164.66666666666666C1118.765414483533,168.83333333333334,1112.0721603667664,177.16666666666666,1108.7255333083833,185.5C1105.37890625,193.83333333333334,1105.37890625,202.16666666666666,1105.37890625,210.5C1105.37890625,218.83333333333334,1105.37890625,227.16666666666666,1098.7415949351298,235.5C1092.1042836202596,243.83333333333334,1078.829660990519,252.16666666666666,1072.1923496756488,256.3333333333333L1065.5550383607786,260.5"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-UsersRouter" id="L-APIGateway-UsersRouter-0" d="M600.001953125,617.1041196641403L515.7705078125,623.0867663867836C431.5390625,629.0694131094268,263.076171875,641.0347065547135,178.8447265625,651.1840199440234C94.61328125,661.3333333333334,94.61328125,669.6666666666666,94.61328125,678C94.61328125,686.3333333333334,94.61328125,694.6666666666666,94.61328125,703C94.61328125,711.3333333333334,94.61328125,719.6666666666666,94.61328125,723.8333333333334L94.61328125,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-BankAccountsRouter" id="L-APIGateway-BankAccountsRouter-0" d="M600.001953125,620.107478973008L548.9892578125,625.5895658108401C497.9765625,631.071652648672,395.951171875,642.035826324336,344.9384765625,651.6845798288347C293.92578125,661.3333333333334,293.92578125,669.6666666666666,293.92578125,678C293.92578125,686.3333333333334,293.92578125,694.6666666666666,293.92578125,703C293.92578125,711.3333333333334,293.92578125,719.6666666666666,293.92578125,723.8333333333334L293.92578125,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-BankAccountsTransactionsRouter" id="L-APIGateway-BankAccountsTransactionsRouter-0" d="M628.8380894461078,628L615.5083037050898,632.1666666666666C602.1785179640718,636.3333333333334,575.518946482036,644.6666666666666,562.189160741018,653C548.859375,661.3333333333334,548.859375,669.6666666666666,548.859375,678C548.859375,686.3333333333334,548.859375,694.6666666666666,548.859375,703C548.859375,711.3333333333334,548.859375,719.6666666666666,548.859375,723.8333333333334L548.859375,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-IncomesExpensesRouter" id="L-APIGateway-IncomesExpensesRouter-0" d="M736.0095668038922,628L749.3393525449101,632.1666666666666C762.669138285928,636.3333333333334,789.328709767964,644.6666666666666,802.658495508982,653C815.98828125,661.3333333333334,815.98828125,669.6666666666666,815.98828125,678C815.98828125,686.3333333333334,815.98828125,694.6666666666666,815.98828125,703C815.98828125,711.3333333333334,815.98828125,719.6666666666666,815.98828125,723.8333333333334L815.98828125,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-DebtsRouter" id="L-APIGateway-DebtsRouter-0" d="M764.845703125,621.1011576934475L809.3271484375,626.4176314112062C853.80859375,631.734105128965,942.771484375,642.3670525644825,987.2529296875,651.8501929489079C1031.734375,661.3333333333334,1031.734375,669.6666666666666,1031.734375,678C1031.734375,686.3333333333334,1031.734375,694.6666666666666,1031.734375,703C1031.734375,711.3333333333334,1031.734375,719.6666666666666,1031.734375,723.8333333333334L1031.734375,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-APIGateway LE-ThirdPartyAPIRouter" id="L-APIGateway-ThirdPartyAPIRouter-0" d="M764.845703125,615.7648551894505L878.1380208333334,621.9707126578754C991.4303385416666,628.1765701263004,1218.0149739583333,640.5882850631501,1331.3072916666667,650.9608091982417C1444.599609375,661.3333333333334,1444.599609375,669.6666666666666,1444.599609375,678C1444.599609375,686.3333333333334,1444.599609375,694.6666666666666,1444.599609375,703C1444.599609375,711.3333333333334,1444.599609375,719.6666666666666,1444.599609375,723.8333333333334L1444.599609375,728"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-UsersRouter LE-UserController" id="L-UsersRouter-UserController-0" d="M94.61328125,761.5L94.61328125,765.6666666666666C94.61328125,769.8333333333334,94.61328125,778.1666666666666,94.61328125,788.0416666666666C94.61328125,797.9166666666666,94.61328125,809.3333333333334,94.61328125,820.75C94.61328125,832.1666666666666,94.61328125,843.5833333333334,94.61328125,855C94.61328125,866.4166666666666,94.61328125,877.8333333333334,94.61328125,883.5416666666666L94.61328125,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-BankAccountsRouter LE-BankAccountController" id="L-BankAccountsRouter-BankAccountController-0" d="M293.92578125,761.5L293.92578125,765.6666666666666C293.92578125,769.8333333333334,293.92578125,778.1666666666666,293.92578125,788.0416666666666C293.92578125,797.9166666666666,293.92578125,809.3333333333334,293.92578125,820.75C293.92578125,832.1666666666666,293.92578125,843.5833333333334,293.92578125,855C293.92578125,866.4166666666666,293.92578125,877.8333333333334,293.92578125,883.5416666666666L293.92578125,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-BankAccountsTransactionsRouter LE-TransactionController" id="L-BankAccountsTransactionsRouter-TransactionController-0" d="M548.859375,761.5L548.859375,765.6666666666666C548.859375,769.8333333333334,548.859375,778.1666666666666,548.859375,788.0416666666666C548.859375,797.9166666666666,548.859375,809.3333333333334,548.859375,820.75C548.859375,832.1666666666666,548.859375,843.5833333333334,548.859375,855C548.859375,866.4166666666666,548.859375,877.8333333333334,548.859375,883.5416666666666L548.859375,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-IncomesExpensesRouter LE-IncomesExpensesController" id="L-IncomesExpensesRouter-IncomesExpensesController-0" d="M815.98828125,761.5L815.98828125,765.6666666666666C815.98828125,769.8333333333334,815.98828125,778.1666666666666,815.98828125,788.0416666666666C815.98828125,797.9166666666666,815.98828125,809.3333333333334,815.98828125,820.75C815.98828125,832.1666666666666,815.98828125,843.5833333333334,815.98828125,855C815.98828125,866.4166666666666,815.98828125,877.8333333333334,815.98828125,883.5416666666666L815.98828125,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-DebtsRouter LE-DebtController" id="L-DebtsRouter-DebtController-0" d="M1031.734375,761.5L1031.734375,765.6666666666666C1031.734375,769.8333333333334,1031.734375,778.1666666666666,1031.734375,788.0416666666666C1031.734375,797.9166666666666,1031.734375,809.3333333333334,1031.734375,820.75C1031.734375,832.1666666666666,1031.734375,843.5833333333334,1031.734375,855C1031.734375,866.4166666666666,1031.734375,877.8333333333334,1031.734375,883.5416666666666L1031.734375,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-ThirdPartyAPIRouter LE-ThirdPartyAPIController" id="L-ThirdPartyAPIRouter-ThirdPartyAPIController-0" d="M1364.673828125,760.6587975938842L1343.0361328125,764.96566466157C1321.3984375,769.2725317292561,1278.123046875,777.8862658646281,1256.4853515625,787.9014662656473C1234.84765625,797.9166666666666,1234.84765625,809.3333333333334,1234.84765625,820.75C1234.84765625,832.1666666666666,1234.84765625,843.5833333333334,1234.84765625,855C1234.84765625,866.4166666666666,1234.84765625,877.8333333333334,1234.84765625,883.5416666666666L1234.84765625,889.25"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-UserController LE-UserModel" id="L-UserController-UserModel-0" d="M94.61328125,922.75L94.61328125,928.4583333333334C94.61328125,934.1666666666666,94.61328125,945.5833333333334,94.61328125,955.4583333333334C94.61328125,965.3333333333334,94.61328125,973.6666666666666,94.61328125,982C94.61328125,990.3333333333334,94.61328125,998.6666666666666,94.61328125,1007C94.61328125,1015.3333333333334,94.61328125,1023.6666666666666,94.61328125,1027.8333333333333L94.61328125,1032"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-BankAccountController LE-BankAccountModel" id="L-BankAccountController-BankAccountModel-0" d="M293.92578125,922.75L293.92578125,928.4583333333334C293.92578125,934.1666666666666,293.92578125,945.5833333333334,293.92578125,955.4583333333334C293.92578125,965.3333333333334,293.92578125,973.6666666666666,293.92578125,982C293.92578125,990.3333333333334,293.92578125,998.6666666666666,293.92578125,1007C293.92578125,1015.3333333333334,293.92578125,1023.6666666666666,293.92578125,1027.8333333333333L293.92578125,1032"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-TransactionController LE-TransactionModel" id="L-TransactionController-TransactionModel-0" d="M548.859375,922.75L548.859375,928.4583333333334C548.859375,934.1666666666666,548.859375,945.5833333333334,548.859375,955.4583333333334C548.859375,965.3333333333334,548.859375,973.6666666666666,548.859375,982C548.859375,990.3333333333334,548.859375,998.6666666666666,548.859375,1007C548.859375,1015.3333333333334,548.859375,1023.6666666666666,548.859375,1027.8333333333333L548.859375,1032"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-IncomesExpensesController LE-IncomesExpensesModel" id="L-IncomesExpensesController-IncomesExpensesModel-0" d="M815.98828125,922.75L815.98828125,928.4583333333334C815.98828125,934.1666666666666,815.98828125,945.5833333333334,815.98828125,955.4583333333334C815.98828125,965.3333333333334,815.98828125,973.6666666666666,815.98828125,982C815.98828125,990.3333333333334,815.98828125,998.6666666666666,815.98828125,1007C815.98828125,1015.3333333333334,815.98828125,1023.6666666666666,815.98828125,1027.8333333333333L815.98828125,1032"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-DebtController LE-DebtModel" id="L-DebtController-DebtModel-0" d="M1031.734375,922.75L1031.734375,928.4583333333334C1031.734375,934.1666666666666,1031.734375,945.5833333333334,1031.734375,955.4583333333334C1031.734375,965.3333333333334,1031.734375,973.6666666666666,1031.734375,982C1031.734375,990.3333333333334,1031.734375,998.6666666666666,1031.734375,1007C1031.734375,1015.3333333333334,1031.734375,1023.6666666666666,1031.734375,1027.8333333333333L1031.734375,1032"/><path style="fill:none;stroke-width:2px;stroke-dasharray:3;" class="edge-thickness-normal edge-pattern-dotted flowchart-link LS-ThirdPartyAPIRouter LE-Note" id="L-ThirdPartyAPIRouter-Note-0" d="M1510.4688903443114,761.5L1526.8542836202596,765.6666666666666C1543.2396768962074,769.8333333333334,1576.0104634481038,778.1666666666666,1592.3958567240518,788.0416666666666C1608.78125,797.9166666666666,1608.78125,809.3333333333334,1608.78125,820.75C1608.78125,832.1666666666666,1608.78125,843.5833333333334,1608.8645833333333,853.5416666666666C1608.9479166666667,863.5,1609.1145833333333,872,1609.1979166666667,876.25L1609.28125,880.5"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-UserModel LE-MongoDB" id="L-UserModel-MongoDB-0" d="M94.61328125,1065.5L94.61328125,1069.6666666666667C94.61328125,1073.8333333333333,94.61328125,1082.1666666666667,94.61328125,1092.0416666666667C94.61328125,1101.9166666666667,94.61328125,1113.3333333333333,167.521484375,1129.0587084043648C240.4296875,1144.7840834753965,386.24609375,1164.818166950793,459.154296875,1174.8352086884913L532.0625,1184.8522504261896"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-BankAccountModel LE-MongoDB" id="L-BankAccountModel-MongoDB-0" d="M293.92578125,1065.5L293.92578125,1069.6666666666667C293.92578125,1073.8333333333333,293.92578125,1082.1666666666667,293.92578125,1092.0416666666667C293.92578125,1101.9166666666667,293.92578125,1113.3333333333333,333.615234375,1128.4082204628937C373.3046875,1143.483107592454,452.68359375,1162.2162151849082,492.373046875,1171.5827689811351L532.0625,1180.949322777362"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-TransactionModel LE-MongoDB" id="L-TransactionModel-MongoDB-0" d="M548.859375,1065.5L548.859375,1069.6666666666667C548.859375,1073.8333333333333,548.859375,1082.1666666666667,548.859375,1092.0416666666667C548.859375,1101.9166666666667,548.859375,1113.3333333333333,550.8438764372564,1124.8122105810037C552.828377874513,1136.2910878286743,556.7973807490259,1147.8321756573487,558.7818821862824,1153.6027195716858L560.7663836235389,1159.373263486023"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-IncomesExpensesModel LE-MongoDB" id="L-IncomesExpensesModel-MongoDB-0" d="M815.98828125,1065.5L815.98828125,1069.6666666666667C815.98828125,1073.8333333333333,815.98828125,1082.1666666666667,815.98828125,1092.0416666666667C815.98828125,1101.9166666666667,815.98828125,1113.3333333333333,781.861328125,1128.1955674288345C747.734375,1143.0578015243357,679.48046875,1161.3656030486711,645.353515625,1170.5195038108388L611.2265625,1179.6734045730068"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-DebtModel LE-MongoDB" id="L-DebtModel-MongoDB-0" d="M1031.734375,1065.5L1031.734375,1069.6666666666667C1031.734375,1073.8333333333333,1031.734375,1082.1666666666667,1031.734375,1092.0416666666667C1031.734375,1101.9166666666667,1031.734375,1113.3333333333333,961.6497395833334,1129.0253337539214C891.5651041666666,1144.717334174509,751.3958333333334,1164.6846683490182,681.3111979166666,1174.6683354362729L611.2265625,1184.6520025235272"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-ThirdPartyAPIController LE-ExternalAPIService" id="L-ThirdPartyAPIController-ExternalAPIService-0" d="M1234.84765625,922.75L1234.84765625,928.4583333333334C1234.84765625,934.1666666666666,1234.84765625,945.5833333333334,1234.84765625,955.4583333333334C1234.84765625,965.3333333333334,1234.84765625,973.6666666666666,1234.84765625,982C1234.84765625,990.3333333333334,1234.84765625,998.6666666666666,1234.84765625,1007C1234.84765625,1015.3333333333334,1234.84765625,1023.6666666666666,1234.84765625,1027.8333333333333L1234.84765625,1032"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-ExternalAPIService LE-ThirdPartyAPI" id="L-ExternalAPIService-ThirdPartyAPI-0" d="M1234.84765625,1065.5L1234.84765625,1069.6666666666667C1234.84765625,1073.8333333333333,1234.84765625,1082.1666666666667,1234.84765625,1092.0416666666667C1234.84765625,1101.9166666666667,1234.84765625,1113.3333333333333,1234.84765625,1127.173420906067C1234.84765625,1141.0135084788005,1234.84765625,1157.2770169576008,1234.84765625,1165.4087711970012L1234.84765625,1173.5405254364014"/><path marker-end="url(#flowchart-pointEnd)" style="fill:none;" class="edge-thickness-normal edge-pattern-solid flowchart-link LS-Logging LE-LogFiles" id="L-Logging-LogFiles-0" d="M1073.416015625,447.7190324732678L1136.9466145833333,454.09919372772316C1200.4772135416667,460.47935498217856,1327.5384114583333,473.23967749108925,1408.6614583333333,484.71103562990874C1489.7845052083333,496.18239376872816,1524.9694010416667,506.36478753745627,1542.5618489583333,511.45598442182035L1560.154296875,516.5471813061844"/></g><g class="edgeLabels"><g transform="translate(67.306640625, 67.75)" class="edgeLabel"><g transform="translate(-46.01171875, -9.25)" class="label"><foreignObject height="18.5" width="92.0234375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel">HTTP/HTTPS</span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g transform="translate(1608.78125, 820.75)" class="edgeLabel"><g transform="translate(-16.93359375, -9.25)" class="label"><foreignObject height="18.5" width="33.8671875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel">Note</span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g><g transform="translate(1234.84765625, 1124.75)" class="edgeLabel"><g transform="translate(-46.01171875, -9.25)" class="label"><foreignObject height="18.5" width="92.0234375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel">HTTP/HTTPS</span></div></foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span></div></foreignObject></g></g></g><g class="nodes"><g transform="translate(94.61328125, 1048.75)" id="flowchart-UserModel-658" class="node default default flowchart-label"><rect height="33.5" width="89.09375" y="-16.75" x="-44.546875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-37.046875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="74.09375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">UserModel</span></div></foreignObject></g></g><g transform="translate(293.92578125, 1048.75)" id="flowchart-BankAccountModel-660" class="node default default flowchart-label"><rect height="33.5" width="149.265625" y="-16.75" x="-74.6328125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-67.1328125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="134.265625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">BankAccountModel</span></div></foreignObject></g></g><g transform="translate(548.859375, 1048.75)" id="flowchart-TransactionModel-662" class="node default default flowchart-label"><rect height="33.5" width="139.234375" y="-16.75" x="-69.6171875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-62.1171875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="124.234375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">TransactionModel</span></div></foreignObject></g></g><g transform="translate(815.98828125, 1048.75)" id="flowchart-IncomesExpensesModel-664" class="node default default flowchart-label"><rect height="33.5" width="180.1328125" y="-16.75" x="-90.06640625" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-82.56640625, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="165.1328125"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">IncomesExpensesModel</span></div></foreignObject></g></g><g transform="translate(1031.734375, 1048.75)" id="flowchart-DebtModel-666" class="node default default flowchart-label"><rect height="33.5" width="91.09375" y="-16.75" x="-45.546875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-38.046875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="76.09375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">DebtModel</span></div></foreignObject></g></g><g transform="translate(94.61328125, 906)" id="flowchart-UserController-646" class="node default default flowchart-label"><rect height="33.5" width="119.2265625" y="-16.75" x="-59.61328125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-52.11328125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="104.2265625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">UserController</span></div></foreignObject></g></g><g transform="translate(293.92578125, 906)" id="flowchart-BankAccountController-648" class="node default default flowchart-label"><rect height="33.5" width="179.3984375" y="-16.75" x="-89.69921875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-82.19921875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="164.3984375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">BankAccountController</span></div></foreignObject></g></g><g transform="translate(548.859375, 906)" id="flowchart-TransactionController-650" class="node default default flowchart-label"><rect height="33.5" width="169.3671875" y="-16.75" x="-84.68359375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-77.18359375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="154.3671875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">TransactionController</span></div></foreignObject></g></g><g transform="translate(815.98828125, 906)" id="flowchart-IncomesExpensesController-652" class="node default default flowchart-label"><rect height="33.5" width="210.265625" y="-16.75" x="-105.1328125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-97.6328125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="195.265625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">IncomesExpensesController</span></div></foreignObject></g></g><g transform="translate(1031.734375, 906)" id="flowchart-DebtController-654" class="node default default flowchart-label"><rect height="33.5" width="121.2265625" y="-16.75" x="-60.61328125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-53.11328125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="106.2265625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">DebtController</span></div></foreignObject></g></g><g transform="translate(1234.84765625, 906)" id="flowchart-ThirdPartyAPIController-656" class="node default default flowchart-label"><rect height="33.5" width="185" y="-16.75" x="-92.5" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-85, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="170"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">ThirdPartyAPIController</span></div></foreignObject></g></g><g transform="translate(94.61328125, 744.75)" id="flowchart-UsersRouter-634" class="node default default flowchart-label"><rect height="33.5" width="100.5546875" y="-16.75" x="-50.27734375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-42.77734375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="85.5546875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">UsersRouter</span></div></foreignObject></g></g><g transform="translate(293.92578125, 744.75)" id="flowchart-BankAccountsRouter-636" class="node default default flowchart-label"><rect height="33.5" width="160.7265625" y="-16.75" x="-80.36328125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-72.86328125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="145.7265625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">BankAccountsRouter</span></div></foreignObject></g></g><g transform="translate(548.859375, 744.75)" id="flowchart-BankAccountsTransactionsRouter-638" class="node default default flowchart-label"><rect height="33.5" width="249.140625" y="-16.75" x="-124.5703125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-117.0703125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="234.140625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">BankAccountsTransactionsRouter</span></div></foreignObject></g></g><g transform="translate(815.98828125, 744.75)" id="flowchart-IncomesExpensesRouter-640" class="node default default flowchart-label"><rect height="33.5" width="185.1171875" y="-16.75" x="-92.55859375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-85.05859375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="170.1171875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">IncomesExpensesRouter</span></div></foreignObject></g></g><g transform="translate(1031.734375, 744.75)" id="flowchart-DebtsRouter-642" class="node default default flowchart-label"><rect height="33.5" width="102.5546875" y="-16.75" x="-51.27734375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-43.77734375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="87.5546875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">DebtsRouter</span></div></foreignObject></g></g><g transform="translate(1444.599609375, 744.75)" id="flowchart-ThirdPartyAPIRouter-644" class="node default default flowchart-label"><rect height="33.5" width="159.8515625" y="-16.75" x="-79.92578125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-72.42578125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="144.8515625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">ThirdPartyAPIRouter</span></div></foreignObject></g></g><g transform="translate(1138.912109375, 143.75)" id="flowchart-StaticFiles-630" class="node default default flowchart-label"><rect height="33.5" width="144.1328125" y="-16.75" x="-72.06640625" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-64.56640625, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="129.1328125"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Static File Serving</span></div></foreignObject></g></g><g transform="translate(1038.873046875, 360.75)" id="flowchart-RateLimit-622" class="node default default flowchart-label"><rect height="33.5" width="104.40625" y="-16.75" x="-52.203125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-44.703125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="89.40625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Rate Limiter</span></div></foreignObject></g></g><g transform="translate(1038.873046875, 277.25)" id="flowchart-Express-620" class="node default default flowchart-label"><rect height="33.5" width="172.21875" y="-16.75" x="-86.109375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-78.609375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="157.21875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Express.js Web Server</span></div></foreignObject></g></g><g transform="translate(1038.873046875, 444.25)" id="flowchart-Logging-624" class="node default default flowchart-label"><rect height="33.5" width="69.0859375" y="-16.75" x="-34.54296875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-27.04296875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="54.0859375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Logging</span></div></foreignObject></g></g><g transform="translate(682.423828125, 527.75)" id="flowchart-Auth-626" class="node default default flowchart-label"><rect height="33.5" width="121.203125" y="-16.75" x="-60.6015625" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-53.1015625, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="106.203125"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Authentication</span></div></foreignObject></g></g><g transform="translate(682.423828125, 611.25)" id="flowchart-APIGateway-628" class="node default default flowchart-label"><rect height="33.5" width="164.84375" y="-16.75" x="-82.421875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-74.921875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="149.84375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">API Gateway /api/v1</span></div></foreignObject></g></g><g transform="translate(67.306640625, 16.75)" id="flowchart-Client-617" class="node default default flowchart-label"><rect height="33.5" width="57.6640625" y="-16.75" x="-28.83203125" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-21.33203125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="42.6640625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Client</span></div></foreignObject></g></g><g transform="translate(67.306640625, 143.75)" id="flowchart-LoadBalancer-618" class="node default default flowchart-label"><rect height="33.5" width="116.0234375" y="-16.75" x="-58.01171875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-50.51171875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="101.0234375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Load Balancer</span></div></foreignObject></g></g><g transform="translate(1608.78125, 906)" id="flowchart-Note-668" class="node default default flowchart-label"><polygon style="" transform="translate(-211.43359375,26)" class="label-container" points="13,0 409.8671875,0 422.8671875,-26 409.8671875,-52 13,-52 0,-26"/><g transform="translate(-190.93359375, -18.5)" style="" class="label"><rect/><foreignObject height="37" width="381.8671875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">the generic names, to keep the architecture diagram<br /> flexible and maintain a higher level of abstraction</span></div></foreignObject></g></g><g transform="translate(571.64453125, 1190.2905254364014)" id="flowchart-MongoDB-670" class="node default default flowchart-label"><path transform="translate(-39.58203125,-31.29052347606475)" d="M 0,9.693682317376497 a 39.58203125,9.693682317376497 0,0,0 79.1640625 0 a 39.58203125,9.693682317376497 0,0,0 -79.1640625 0 l 0,43.1936823173765 a 39.58203125,9.693682317376497 0,0,0 79.1640625 0 l 0,-43.1936823173765" style=""/><g transform="translate(-32.08203125, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="64.1640625"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">MongoDB</span></div></foreignObject></g></g><g transform="translate(1234.84765625, 1048.75)" id="flowchart-ExternalAPIService-680" class="node default default flowchart-label"><rect height="33.5" width="158" y="-16.75" x="-79" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-71.5, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="143"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">External API Service</span></div></foreignObject></g></g><g transform="translate(1234.84765625, 1190.2905254364014)" id="flowchart-ThirdPartyAPI-682" class="node default default flowchart-label"><rect height="33.5" width="99.0859375" y="-16.75" x="-49.54296875" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-42.04296875, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="84.0859375"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">EasySlip Api</span></div></foreignObject></g></g><g transform="translate(1598.865234375, 527.75)" id="flowchart-LogFiles-684" class="node default default flowchart-label"><rect height="33.5" width="77.421875" y="-16.75" x="-38.7109375" ry="0" rx="0" style="" class="basic label-container"/><g transform="translate(-31.2109375, -9.25)" style="" class="label"><rect/><foreignObject height="18.5" width="62.421875"><div style="display: inline-block; white-space: nowrap;" xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">Log Files</span></div></foreignObject></g></g></g></g></g></svg>
+<svg aria-roledescription="flowchart-v2" role="graphics-document document"
+    viewBox="0 0 1894.71484375 1425.2178955078125" style="max-width: 1894.71px; background-color: rgb(255, 255, 255);"
+    class="flowchart" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="100%"
+    id="mermaid-1725450011928">
+    <style>
+        #mermaid-1725450011928 {
+            font-family: "trebuchet ms", verdana, arial, sans-serif;
+            font-size: 16px;
+            fill: #333;
+        }
+
+        #mermaid-1725450011928 .error-icon {
+            fill: #552222;
+        }
+
+        #mermaid-1725450011928 .error-text {
+            fill: #552222;
+            stroke: #552222;
+        }
+
+        #mermaid-1725450011928 .edge-thickness-normal {
+            stroke-width: 1px;
+        }
+
+        #mermaid-1725450011928 .edge-thickness-thick {
+            stroke-width: 3.5px;
+        }
+
+        #mermaid-1725450011928 .edge-pattern-solid {
+            stroke-dasharray: 0;
+        }
+
+        #mermaid-1725450011928 .edge-thickness-invisible {
+            stroke-width: 0;
+            fill: none;
+        }
+
+        #mermaid-1725450011928 .edge-pattern-dashed {
+            stroke-dasharray: 3;
+        }
+
+        #mermaid-1725450011928 .edge-pattern-dotted {
+            stroke-dasharray: 2;
+        }
+
+        #mermaid-1725450011928 .marker {
+            fill: #333333;
+            stroke: #333333;
+        }
+
+        #mermaid-1725450011928 .marker.cross {
+            stroke: #333333;
+        }
+
+        #mermaid-1725450011928 svg {
+            font-family: "trebuchet ms", verdana, arial, sans-serif;
+            font-size: 16px;
+        }
+
+        #mermaid-1725450011928 p {
+            margin: 0;
+        }
+
+        #mermaid-1725450011928 .label {
+            font-family: "trebuchet ms", verdana, arial, sans-serif;
+            color: #333;
+        }
+
+        #mermaid-1725450011928 .cluster-label text {
+            fill: #333;
+        }
+
+        #mermaid-1725450011928 .cluster-label span {
+            color: #333;
+        }
+
+        #mermaid-1725450011928 .cluster-label span p {
+            background-color: transparent;
+        }
+
+        #mermaid-1725450011928 .label text,
+        #mermaid-1725450011928 span {
+            fill: #333;
+            color: #333;
+        }
+
+        #mermaid-1725450011928 .node rect,
+        #mermaid-1725450011928 .node circle,
+        #mermaid-1725450011928 .node ellipse,
+        #mermaid-1725450011928 .node polygon,
+        #mermaid-1725450011928 .node path {
+            fill: #ECECFF;
+            stroke: #9370DB;
+            stroke-width: 1px;
+        }
+
+        #mermaid-1725450011928 .rough-node .label text,
+        #mermaid-1725450011928 .node .label text {
+            text-anchor: middle;
+        }
+
+        #mermaid-1725450011928 .node .katex path {
+            fill: #000;
+            stroke: #000;
+            stroke-width: 1px;
+        }
+
+        #mermaid-1725450011928 .node .label {
+            text-align: center;
+        }
+
+        #mermaid-1725450011928 .node.clickable {
+            cursor: pointer;
+        }
+
+        #mermaid-1725450011928 .arrowheadPath {
+            fill: #333333;
+        }
+
+        #mermaid-1725450011928 .edgePath .path {
+            stroke: #333333;
+            stroke-width: 2.0px;
+        }
+
+        #mermaid-1725450011928 .flowchart-link {
+            stroke: #333333;
+            fill: none;
+        }
+
+        #mermaid-1725450011928 .edgeLabel {
+            background-color: rgba(232, 232, 232, 0.8);
+            text-align: center;
+        }
+
+        #mermaid-1725450011928 .edgeLabel p {
+            background-color: rgba(232, 232, 232, 0.8);
+        }
+
+        #mermaid-1725450011928 .edgeLabel rect {
+            opacity: 0.5;
+            background-color: rgba(232, 232, 232, 0.8);
+            fill: rgba(232, 232, 232, 0.8);
+        }
+
+        #mermaid-1725450011928 .labelBkg {
+            background-color: rgba(232, 232, 232, 0.5);
+        }
+
+        #mermaid-1725450011928 .cluster rect {
+            fill: #ffffde;
+            stroke: #aaaa33;
+            stroke-width: 1px;
+        }
+
+        #mermaid-1725450011928 .cluster text {
+            fill: #333;
+        }
+
+        #mermaid-1725450011928 .cluster span {
+            color: #333;
+        }
+
+        #mermaid-1725450011928 div.mermaidTooltip {
+            position: absolute;
+            text-align: center;
+            max-width: 200px;
+            padding: 2px;
+            font-family: "trebuchet ms", verdana, arial, sans-serif;
+            font-size: 12px;
+            background: hsl(80, 100%, 96.2745098039%);
+            border: 1px solid #aaaa33;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #mermaid-1725450011928 .flowchartTitleText {
+            text-anchor: middle;
+            font-size: 18px;
+            fill: #333;
+        }
+
+        #mermaid-1725450011928 :root {
+            --mermaid-font-family: "trebuchet ms", verdana, arial, sans-serif;
+        }
+    </style>
+    <g>
+        <marker orient="auto" markerHeight="8" markerWidth="8" markerUnits="userSpaceOnUse" refY="5" refX="5"
+            viewBox="0 0 10 10" class="marker flowchart-v2" id="mermaid-1725450011928_flowchart-v2-pointEnd">
+            <path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 0 L 10 5 L 0 10 z" />
+        </marker>
+        <marker orient="auto" markerHeight="8" markerWidth="8" markerUnits="userSpaceOnUse" refY="5" refX="4.5"
+            viewBox="0 0 10 10" class="marker flowchart-v2" id="mermaid-1725450011928_flowchart-v2-pointStart">
+            <path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 5 L 10 10 L 10 0 z" />
+        </marker>
+        <marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="11"
+            viewBox="0 0 10 10" class="marker flowchart-v2" id="mermaid-1725450011928_flowchart-v2-circleEnd">
+            <circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5" />
+        </marker>
+        <marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="-1"
+            viewBox="0 0 10 10" class="marker flowchart-v2" id="mermaid-1725450011928_flowchart-v2-circleStart">
+            <circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5" />
+        </marker>
+        <marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="12"
+            viewBox="0 0 11 11" class="marker cross flowchart-v2" id="mermaid-1725450011928_flowchart-v2-crossEnd">
+            <path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath"
+                d="M 1,1 l 9,9 M 10,1 l -9,9" />
+        </marker>
+        <marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="-1"
+            viewBox="0 0 11 11" class="marker cross flowchart-v2" id="mermaid-1725450011928_flowchart-v2-crossStart">
+            <path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath"
+                d="M 1,1 l 9,9 M 10,1 l -9,9" />
+        </marker>
+        <g class="root">
+            <g class="clusters">
+                <g data-look="classic" id="subGraph4" class="cluster">
+                    <rect height="104" width="1322.234375" y="1168" x="225.09375" style="" />
+                    <g transform="translate(842.9765625, 1168)" class="cluster-label">
+                        <foreignObject height="24" width="86.46875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Model Layer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g data-look="classic" id="subGraph3" class="cluster">
+                    <rect height="104" width="1632.375" y="1014" x="210.0234375" style="" />
+                    <g transform="translate(967.9140625, 1014)" class="cluster-label">
+                        <foreignObject height="24" width="116.59375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Controller Layer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g data-look="classic" id="subGraph2" class="cluster">
+                    <rect height="104" width="1610.46875" y="860" x="219.359375" style="" />
+                    <g transform="translate(975.671875, 860)" class="cluster-label">
+                        <foreignObject height="24" width="97.84375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Routing Layer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g data-look="classic" id="subGraph1" class="cluster">
+                    <rect height="104" width="259.140625" y="369" x="8" style="" />
+                    <g transform="translate(98.3359375, 369)" class="cluster-label">
+                        <foreignObject height="24" width="78.46875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>View Layer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g data-look="classic" id="subGraph0" class="cluster">
+                    <rect height="570" width="1442.15234375" y="240" x="287.140625" style="" />
+                    <g transform="translate(944.912109375, 240)" class="cluster-label">
+                        <foreignObject height="24" width="126.609375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Middleware Layer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+            </g>
+            <g class="edgePaths">
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Client_LoadBalancer_0"
+                    d="M641.074,62L641.074,68.167C641.074,74.333,641.074,86.667,641.074,95.917C641.074,105.167,641.074,111.333,641.074,116.833C641.074,122.333,641.074,127.167,641.074,129.583L641.074,132" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_LoadBalancer_Express_1"
+                    d="M641.074,190L641.074,194.167C641.074,198.333,641.074,206.667,641.074,215C641.074,223.333,641.074,231.667,641.074,237.917C641.074,244.167,641.074,248.333,641.074,251.833C641.074,255.333,641.074,258.167,641.074,259.583L641.074,261" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Express_RateLimit_2"
+                    d="M749.684,306.248L797.647,312.54C845.611,318.832,941.538,331.416,989.501,341.875C1037.465,352.333,1037.465,360.667,1037.465,366.917C1037.465,373.167,1037.465,377.333,1037.465,380.833C1037.465,384.333,1037.465,387.167,1037.465,388.583L1037.465,390" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_RateLimit_Logging_3"
+                    d="M1037.465,448L1037.465,452.167C1037.465,456.333,1037.465,464.667,1037.465,473C1037.465,481.333,1037.465,489.667,1037.465,495.917C1037.465,502.167,1037.465,506.333,1037.465,509.833C1037.465,513.333,1037.465,516.167,1037.465,517.583L1037.465,519" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Logging_Auth_4"
+                    d="M1032.273,577L1031.471,581.167C1030.67,585.333,1029.067,593.667,1028.266,599.917C1027.465,606.167,1027.465,610.333,1027.465,613.833C1027.465,617.333,1027.465,620.167,1027.465,621.583L1027.465,623" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Auth_APIGateway_5"
+                    d="M1027.465,681L1027.465,685.167C1027.465,689.333,1027.465,697.667,1027.465,703.917C1027.465,710.167,1027.465,714.333,1027.465,717.833C1027.465,721.333,1027.465,724.167,1027.465,725.583L1027.465,727" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Express_StaticFiles_6"
+                    d="M532.465,312.754L505.212,317.961C477.958,323.169,423.452,333.585,396.199,342.959C368.945,352.333,368.945,360.667,357.545,367.395C346.145,374.124,323.344,379.249,301.193,384.227C279.043,389.205,257.543,394.037,246.793,396.453L236.043,398.869" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_StaticFiles_Express_7"
+                    d="M232.141,404.78L266.909,398.816C301.677,392.853,371.214,380.927,405.982,370.797C440.75,360.667,440.75,352.333,448.776,346.083C456.802,339.833,472.853,335.667,488.26,331.668C503.666,327.668,518.427,323.837,525.808,321.921L533.188,320.005" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_UsersRouter_8"
+                    d="M922.543,765.791L823.309,773.159C724.076,780.527,525.608,795.264,426.374,806.798C327.141,818.333,327.141,826.667,327.141,835C327.141,843.333,327.141,851.667,327.141,857.917C327.141,864.167,327.141,868.333,327.141,871.833C327.141,875.333,327.141,878.167,327.141,879.583L327.141,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_BankAccountsRouter_9"
+                    d="M922.543,769.965L864.029,776.637C805.516,783.31,688.488,796.655,629.975,807.494C571.461,818.333,571.461,826.667,571.461,835C571.461,843.333,571.461,851.667,571.461,857.917C571.461,864.167,571.461,868.333,571.461,871.833C571.461,875.333,571.461,878.167,571.461,879.583L571.461,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_BankAccountsTransactionsRouter_10"
+                    d="M946.43,785L933.925,789.167C921.42,793.333,896.409,801.667,883.904,810C871.398,818.333,871.398,826.667,871.398,835C871.398,843.333,871.398,851.667,871.398,857.917C871.398,864.167,871.398,868.333,871.398,871.833C871.398,875.333,871.398,878.167,871.398,879.583L871.398,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_IncomesExpensesRouter_11"
+                    d="M1108.499,785L1121.005,789.167C1133.51,793.333,1158.521,801.667,1171.026,810C1183.531,818.333,1183.531,826.667,1183.531,835C1183.531,843.333,1183.531,851.667,1183.531,857.917C1183.531,864.167,1183.531,868.333,1183.531,871.833C1183.531,875.333,1183.531,878.167,1183.531,879.583L1183.531,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_DebtsRouter_12"
+                    d="M1132.387,771.09L1184.369,777.575C1236.352,784.06,1340.316,797.03,1392.299,807.682C1444.281,818.333,1444.281,826.667,1444.281,835C1444.281,843.333,1444.281,851.667,1444.281,857.917C1444.281,864.167,1444.281,868.333,1444.281,871.833C1444.281,875.333,1444.281,878.167,1444.281,879.583L1444.281,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_APIGateway_ThirdPartyAPIRouter_13"
+                    d="M1132.387,766.205L1225.722,773.504C1319.057,780.803,1505.728,795.402,1599.063,806.868C1692.398,818.333,1692.398,826.667,1692.398,835C1692.398,843.333,1692.398,851.667,1692.398,857.917C1692.398,864.167,1692.398,868.333,1692.398,871.833C1692.398,875.333,1692.398,878.167,1692.398,879.583L1692.398,881" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_UsersRouter_UserController_14"
+                    d="M327.141,939L327.141,943.167C327.141,947.333,327.141,955.667,327.141,964C327.141,972.333,327.141,980.667,327.141,989C327.141,997.333,327.141,1005.667,327.141,1011.917C327.141,1018.167,327.141,1022.333,327.141,1025.833C327.141,1029.333,327.141,1032.167,327.141,1033.583L327.141,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_BankAccountsRouter_BankAccountController_15"
+                    d="M571.461,939L571.461,943.167C571.461,947.333,571.461,955.667,571.461,964C571.461,972.333,571.461,980.667,571.461,989C571.461,997.333,571.461,1005.667,571.461,1011.917C571.461,1018.167,571.461,1022.333,571.461,1025.833C571.461,1029.333,571.461,1032.167,571.461,1033.583L571.461,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_BankAccountsTransactionsRouter_TransactionController_16"
+                    d="M871.398,939L871.398,943.167C871.398,947.333,871.398,955.667,871.398,964C871.398,972.333,871.398,980.667,871.398,989C871.398,997.333,871.398,1005.667,871.398,1011.917C871.398,1018.167,871.398,1022.333,871.398,1025.833C871.398,1029.333,871.398,1032.167,871.398,1033.583L871.398,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_IncomesExpensesRouter_IncomesExpensesController_17"
+                    d="M1183.531,939L1183.531,943.167C1183.531,947.333,1183.531,955.667,1183.531,964C1183.531,972.333,1183.531,980.667,1183.531,989C1183.531,997.333,1183.531,1005.667,1183.531,1011.917C1183.531,1018.167,1183.531,1022.333,1183.531,1025.833C1183.531,1029.333,1183.531,1032.167,1183.531,1033.583L1183.531,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_DebtsRouter_DebtController_18"
+                    d="M1444.281,939L1444.281,943.167C1444.281,947.333,1444.281,955.667,1444.281,964C1444.281,972.333,1444.281,980.667,1444.281,989C1444.281,997.333,1444.281,1005.667,1444.281,1011.917C1444.281,1018.167,1444.281,1022.333,1444.281,1025.833C1444.281,1029.333,1444.281,1032.167,1444.281,1033.583L1444.281,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_ThirdPartyAPIRouter_ThirdPartyAPIController_19"
+                    d="M1692.398,939L1692.398,943.167C1692.398,947.333,1692.398,955.667,1692.398,964C1692.398,972.333,1692.398,980.667,1692.398,989C1692.398,997.333,1692.398,1005.667,1692.398,1011.917C1692.398,1018.167,1692.398,1022.333,1692.398,1025.833C1692.398,1029.333,1692.398,1032.167,1692.398,1033.583L1692.398,1035" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_UserController_UserModel_20"
+                    d="M327.141,1093L327.141,1097.167C327.141,1101.333,327.141,1109.667,327.141,1118C327.141,1126.333,327.141,1134.667,327.141,1143C327.141,1151.333,327.141,1159.667,327.141,1165.917C327.141,1172.167,327.141,1176.333,327.141,1179.833C327.141,1183.333,327.141,1186.167,327.141,1187.583L327.141,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_BankAccountController_BankAccountModel_21"
+                    d="M571.461,1093L571.461,1097.167C571.461,1101.333,571.461,1109.667,571.461,1118C571.461,1126.333,571.461,1134.667,571.461,1143C571.461,1151.333,571.461,1159.667,571.461,1165.917C571.461,1172.167,571.461,1176.333,571.461,1179.833C571.461,1183.333,571.461,1186.167,571.461,1187.583L571.461,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_TransactionController_TransactionModel_22"
+                    d="M871.398,1093L871.398,1097.167C871.398,1101.333,871.398,1109.667,871.398,1118C871.398,1126.333,871.398,1134.667,871.398,1143C871.398,1151.333,871.398,1159.667,871.398,1165.917C871.398,1172.167,871.398,1176.333,871.398,1179.833C871.398,1183.333,871.398,1186.167,871.398,1187.583L871.398,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_IncomesExpensesController_IncomesExpensesModel_23"
+                    d="M1183.531,1093L1183.531,1097.167C1183.531,1101.333,1183.531,1109.667,1183.531,1118C1183.531,1126.333,1183.531,1134.667,1183.531,1143C1183.531,1151.333,1183.531,1159.667,1183.531,1165.917C1183.531,1172.167,1183.531,1176.333,1183.531,1179.833C1183.531,1183.333,1183.531,1186.167,1183.531,1187.583L1183.531,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_DebtController_DebtModel_24"
+                    d="M1444.281,1093L1444.281,1097.167C1444.281,1101.333,1444.281,1109.667,1444.281,1118C1444.281,1126.333,1444.281,1134.667,1444.281,1143C1444.281,1151.333,1444.281,1159.667,1444.281,1165.917C1444.281,1172.167,1444.281,1176.333,1444.281,1179.833C1444.281,1183.333,1444.281,1186.167,1444.281,1187.583L1444.281,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_UserModel_PostgreSQL_25"
+                    d="M327.141,1247L327.141,1251.167C327.141,1255.333,327.141,1263.667,327.141,1274C327.141,1284.333,327.141,1296.667,369.979,1308.376C412.818,1320.086,498.496,1331.172,583.513,1342.173C668.529,1353.173,752.885,1364.088,795.062,1369.546L837.24,1375.003" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_BankAccountModel_PostgreSQL_26"
+                    d="M571.461,1247L571.461,1251.167C571.461,1255.333,571.461,1263.667,571.461,1274C571.461,1284.333,571.461,1296.667,593.94,1307.985C616.419,1319.303,661.376,1329.606,705.684,1339.76C749.992,1349.914,793.65,1359.919,815.479,1364.922L837.308,1369.925" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_TransactionModel_PostgreSQL_27"
+                    d="M871.398,1247L871.398,1251.167C871.398,1255.333,871.398,1263.667,871.398,1274C871.398,1284.333,871.398,1296.667,872.116,1305.931C872.833,1315.195,874.268,1321.389,875.553,1326.934C876.837,1332.479,877.971,1337.375,878.538,1339.823L879.105,1342.271" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_IncomesExpensesModel_PostgreSQL_28"
+                    d="M1183.531,1247L1183.531,1251.167C1183.531,1255.333,1183.531,1263.667,1183.531,1274C1183.531,1284.333,1183.531,1296.667,1162.852,1307.919C1142.173,1319.171,1100.814,1329.343,1060.102,1339.355C1019.391,1349.368,979.327,1359.221,959.295,1364.147L939.263,1369.074" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_DebtModel_PostgreSQL_29"
+                    d="M1444.281,1247L1444.281,1251.167C1444.281,1255.333,1444.281,1263.667,1444.281,1274C1444.281,1284.333,1444.281,1296.667,1401.873,1308.372C1359.464,1320.077,1274.647,1331.153,1190.491,1342.144C1106.335,1353.134,1022.84,1364.038,981.093,1369.49L939.345,1374.942" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_ThirdPartyAPIController_ExternalAPIService_30"
+                    d="M1692.398,1093L1692.398,1097.167C1692.398,1101.333,1692.398,1109.667,1692.398,1118C1692.398,1126.333,1692.398,1134.667,1692.398,1143C1692.398,1151.333,1692.398,1159.667,1692.398,1165.917C1692.398,1172.167,1692.398,1176.333,1692.398,1179.833C1692.398,1183.333,1692.398,1186.167,1692.398,1187.583L1692.398,1189" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_ExternalAPIService_ThirdPartyAPI_31"
+                    d="M1692.398,1247L1692.398,1251.167C1692.398,1255.333,1692.398,1263.667,1692.398,1274C1692.398,1284.333,1692.398,1296.667,1692.398,1306.634C1692.398,1316.601,1692.398,1324.203,1692.398,1331.138C1692.398,1338.073,1692.398,1344.341,1692.398,1347.475L1692.398,1350.609" />
+                <path marker-end="url(#mermaid-1725450011928_flowchart-v2-pointEnd)" style=""
+                    class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link"
+                    id="L_Logging_LogFiles_32"
+                    d="M1094.512,554.863L1186.674,562.719C1278.837,570.575,1463.163,586.288,1565.059,596.987C1666.956,607.687,1686.423,613.373,1705.251,618.873C1724.078,624.373,1742.266,629.685,1751.36,632.342L1760.453,634.998" />
+            </g>
+            <g class="edgeLabels">
+                <g transform="translate(641.07421875, 99)" class="edgeLabel">
+                    <g transform="translate(-46.015625, -12)" class="label">
+                        <foreignObject height="24" width="92.03125">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel">
+                                    <p>HTTP/HTTPS</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1692.3984375, 1309)" class="edgeLabel">
+                    <g transform="translate(-46.015625, -12)" class="label">
+                        <foreignObject height="24" width="92.03125">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel">
+                                    <p>HTTP/HTTPS</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel">
+                    <g transform="translate(0, 0)" class="label">
+                        <foreignObject height="0" width="0">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                class="labelBkg" xmlns="http://www.w3.org/1999/xhtml"><span class="edgeLabel"></span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+            </g>
+            <g class="nodes">
+                <g transform="translate(641.07421875, 35)" id="flowchart-Client-264" class="node default">
+                    <rect height="54" width="102.671875" y="-27" x="-51.3359375" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-21.3359375, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="42.671875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Client</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(641.07421875, 163)" id="flowchart-LoadBalancer-265" class="node default">
+                    <rect height="54" width="161.03125" y="-27" x="-80.515625" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-50.515625, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="101.03125">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Load Balancer</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(641.07421875, 292)" id="flowchart-Express-267" class="node default">
+                    <rect height="54" width="217.21875" y="-27" x="-108.609375" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-78.609375, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="157.21875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Express.js Web Server</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1037.46484375, 421)" id="flowchart-RateLimit-269" class="node default">
+                    <rect height="54" width="149.40625" y="-27" x="-74.703125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-44.703125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="89.40625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Rate Limiter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1037.46484375, 550)" id="flowchart-Logging-271" class="node default">
+                    <rect height="54" width="114.09375" y="-27" x="-57.046875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-27.046875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="54.09375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Logging</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1027.46484375, 654)" id="flowchart-Auth-273" class="node default">
+                    <rect height="54" width="166.203125" y="-27" x="-83.1015625" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-53.1015625, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="106.203125">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Authentication</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1027.46484375, 758)" id="flowchart-APIGateway-275" class="node default">
+                    <rect height="54" width="209.84375" y="-27" x="-104.921875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-74.921875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="149.84375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>API Gateway /api/v1</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(137.5703125, 421)" id="flowchart-StaticFiles-277" class="node default">
+                    <rect height="54" width="189.140625" y="-27" x="-94.5703125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-64.5703125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="129.140625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Static File Serving</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(327.140625, 912)" id="flowchart-UsersRouter-281" class="node default">
+                    <rect height="54" width="145.5625" y="-27" x="-72.78125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-42.78125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="85.5625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>UsersRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(571.4609375, 912)" id="flowchart-BankAccountsRouter-283" class="node default">
+                    <rect height="54" width="205.734375" y="-27" x="-102.8671875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-72.8671875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="145.734375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>BankAccountsRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(871.3984375, 912)" id="flowchart-BankAccountsTransactionsRouter-285"
+                    class="node default">
+                    <rect height="54" width="294.140625" y="-27" x="-147.0703125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-117.0703125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="234.140625">
+                            <div style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>BankAccountsTransactionsRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1183.53125, 912)" id="flowchart-IncomesExpensesRouter-287" class="node default">
+                    <rect height="54" width="230.125" y="-27" x="-115.0625" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-85.0625, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="170.125">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>IncomesExpensesRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1444.28125, 912)" id="flowchart-DebtsRouter-289" class="node default">
+                    <rect height="54" width="147.5625" y="-27" x="-73.78125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-43.78125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="87.5625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>DebtsRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1692.3984375, 912)" id="flowchart-ThirdPartyAPIRouter-291" class="node default">
+                    <rect height="54" width="204.859375" y="-27" x="-102.4296875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-72.4296875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="144.859375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>ThirdPartyAPIRouter</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(327.140625, 1066)" id="flowchart-UserController-293" class="node default">
+                    <rect height="54" width="164.234375" y="-27" x="-82.1171875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-52.1171875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="104.234375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>UserController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(571.4609375, 1066)" id="flowchart-BankAccountController-295"
+                    class="node default">
+                    <rect height="54" width="224.40625" y="-27" x="-112.203125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-82.203125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="164.40625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>BankAccountController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(871.3984375, 1066)" id="flowchart-TransactionController-297"
+                    class="node default">
+                    <rect height="54" width="214.375" y="-27" x="-107.1875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-77.1875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="154.375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>TransactionController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1183.53125, 1066)" id="flowchart-IncomesExpensesController-299"
+                    class="node default">
+                    <rect height="54" width="255.265625" y="-27" x="-127.6328125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-97.6328125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="195.265625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>IncomesExpensesController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1444.28125, 1066)" id="flowchart-DebtController-301" class="node default">
+                    <rect height="54" width="166.234375" y="-27" x="-83.1171875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-53.1171875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="106.234375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>DebtController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1692.3984375, 1066)" id="flowchart-ThirdPartyAPIController-303"
+                    class="node default">
+                    <rect height="54" width="230" y="-27" x="-115" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-85, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="170">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>ThirdPartyAPIController</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(327.140625, 1220)" id="flowchart-UserModel-305" class="node default">
+                    <rect height="54" width="134.09375" y="-27" x="-67.046875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-37.046875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="74.09375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>UserModel</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(571.4609375, 1220)" id="flowchart-BankAccountModel-307" class="node default">
+                    <rect height="54" width="194.265625" y="-27" x="-97.1328125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-67.1328125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="134.265625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>BankAccountModel</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(871.3984375, 1220)" id="flowchart-TransactionModel-309" class="node default">
+                    <rect height="54" width="184.234375" y="-27" x="-92.1171875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-62.1171875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="124.234375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>TransactionModel</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1183.53125, 1220)" id="flowchart-IncomesExpensesModel-311" class="node default">
+                    <rect height="54" width="225.140625" y="-27" x="-112.5703125" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-82.5703125, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="165.140625">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>IncomesExpensesModel</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1444.28125, 1220)" id="flowchart-DebtModel-313" class="node default">
+                    <rect height="54" width="136.09375" y="-27" x="-68.046875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-38.046875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="76.09375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>DebtModel</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(888.29296875, 1381.6089706420898)" id="flowchart-PostgreSQL-315"
+                    class="node default">
+                    <path transform="translate(-47.0859375, -35.61267555428816)" style="" class="basic label-container"
+                        d="M0,10.741783702858772 a47.0859375,10.741783702858772 0,0,0 94.171875,0 a47.0859375,10.741783702858772 0,0,0 -94.171875,0 l0,49.74178370285877 a47.0859375,10.741783702858772 0,0,0 94.171875,0 l0,-49.74178370285877" />
+                    <g transform="translate(-39.5859375, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="79.171875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>PostgreSQL</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1692.3984375, 1220)" id="flowchart-ExternalAPIService-325" class="node default">
+                    <rect height="54" width="203" y="-27" x="-101.5" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-71.5, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="143">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>External API Service</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1692.3984375, 1381.6089706420898)" id="flowchart-ThirdPartyAPI-327"
+                    class="node default">
+                    <rect height="54" width="144.09375" y="-27" x="-72.046875" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-42.046875, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="84.09375">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>EasySlip Api</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g transform="translate(1825.50390625, 654)" id="flowchart-LogFiles-329" class="node default">
+                    <rect height="54" width="122.421875" y="-27" x="-61.2109375" data-et="node" data-id="abc" style=""
+                        class="basic label-container" />
+                    <g transform="translate(-31.2109375, -12)" style="" class="label">
+                        <rect />
+                        <foreignObject height="24" width="62.421875">
+                            <div style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+                                xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">
+                                    <p>Log Files</p>
+                                </span></div>
+                        </foreignObject>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

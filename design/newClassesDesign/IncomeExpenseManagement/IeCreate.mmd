@@ -1,0 +1,269 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as BankRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as TransactionController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as TransactionModel extends BaseModel
+    participant BankAccountModel as BankAccountModel extends BaseModel
+    participant Redis as RedisCache
+    participant DB as [(Database)]
+    
+    Client->>+Router: POST /transactions/ (create Transaction)
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object 
+
+    Note over Sec, Router: this method defined in UserManagement/create.mmd
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: createTransaction(req, res, next)
+    Cont->>Cont: Destructuring req.body
+    Note over Cont: requiredFields = ['transactionDateTime', 'type', 'amount', 'category', 'senderBankAccount', 'receiverBankAccount']
+    Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
+    opt missing required fields
+        BaseCont-->>Cont: throw new Error('<field> is required')
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+    BaseCont->>-Cont: return true
+
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Note over Cont, BankAccountModel: verifying selected bank is exist
+    alt transaction type is "income"
+        Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
+        Cont->>+BankAccountModel: findOne([receiveBankAccountNumber, receiveBccountName])
+        BankAccountModel-->>-Cont: return ReceiverBankAccount
+        opt receiver bank account not found
+            Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
+            Router-->>Client: 🔴404, "Receiver bank account not found"
+        end
+    else transaction type is "expense"
+        Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
+        Cont->>+BankAccountModel: findOne([senderBankAccountNumber, senderBankAccountName])
+        BankAccountModel-->>-Cont: return SenderBankAccount
+        opt sender bank account not found
+            Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
+            Router-->>Client: 🔴404, "Sender bank account not found"
+        end
+    else transaction type is "internal-transfer"
+        Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
+        Cont->>+BankAccountModel: findOne([receiveBankAccountNumber, receiveBccountName])
+        BankAccountModel-->>-Cont: return ReceiverBankAccount
+        opt receiver bank account not found
+            Cont-->>Router: next(new NotFoundError('Receiver bank account not found'))
+            Router-->>Client: 🔴404, "Receiver bank account not found"
+        end
+        Note over PGClient, BankAccountModel: this method defined in BankAccountManagement/ReadOne.mmd
+        Cont->>+BankAccountModel: findOne([senderBankAccountNumber, senderBankAccountName])
+        BankAccountModel-->>-Cont: return SenderBankAccount
+        opt sender bank account not found
+            Cont-->>Router: next(new NotFoundError('Sender bank account not found'))
+            Router-->>Client: 🔴404, "Sender bank account not found"
+        end
+    end
+
+    Cont->>+PGClient: beginTransaction()
+    PGClient-->>-Cont: transaction started
+
+    Note over Cont, Model: create the transaction
+    Cont->>+Model: createTransaction(userEmail, { transactionUUID, transactionDateTime, category, type, amount, note})
+    Model->>+BaseModel: create(userEmail, { transactionUUID, transactionDateTime, category, type, amount, note})
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade update the bankAccount's balance, debt's data and Contains table if need
+    DB->>DB: SQL trigger
+    DB-->>-BaseModel: result
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('transaction Uuid already exists')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "transaction Uuid already exists"
+    end
+    opt any other error
+       Model-->>Cont: throw error
+       Cont-->>Router: next(error)
+       Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return created Id (staged)
+
+    Note over Model, BaseModel: this method similar in ReadOne but the cache is update instantly
+    Model->>Model: chacheTransactionDetail(transactionUuid)
+    Model->>+BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
+    Note over BaseModel: query with prepare Statements
+    opt any error occurred
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: pass error
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return the detail of given transaction Uuid 
+    Model->>+Redis: Check if required transaction Uuid was cached
+    Redis-->>-Model: return cachedTransactionData
+    opt cache not found
+        Note over Model, Redis: Async operation
+        Model-)Redis: add transaction details with transaction Uuid as a key
+    end
+    Model-->>-Cont: pass result
+
+    %% Note over Cont, BankAccountModel: cascading update balance if need
+    %% Note over Cont, ContainsModel: add relation ship for 2 tables if need
+
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+
+    Cont->>Cont: formatResponse(201, 'create Transaction successful', createTransactionId)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢201, { status: 201, message: "Transaction created successfully", data: {createTransactionId} }
+
+    %% Note over Cont, BankAccountModel: cascading update balance
+    %% alt transaction type is "income"
+    %%     Cont->>+BankAccountModel: updateBalance(userEmail, receiverBankAccount, +amount)
+    %%     BankAccountModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt update failure
+    %%         BaseModel-->>BankAccountModel: throw error
+    %%         BankAccountModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to update receiver balance'))
+    %%         Router-->>Client: 🔴500, "Failed to update receiver balance"
+    %%     end
+    %%     BaseModel-->>-BankAccountModel: return updated BankAccount object (staged)
+    %%     BankAccountModel-->>-Cont: pass result
+    %% else transaction type is "expense"
+    %%     Cont->>+BankAccountModel: updateBalance(userEmail, senderBankAccount, -amount)
+    %%     BankAccountModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt update failure
+    %%         BaseModel-->>BankAccountModel: throw error
+    %%         BankAccountModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to update sender balance'))
+    %%         Router-->>Client: 🔴500, "Failed to update sender balance"
+    %%     end
+    %%     BaseModel-->>-BankAccountModel: return updated BankAccount object (staged)
+    %%     BankAccountModel-->>-Cont: pass result
+    %%     opt debt payment
+    %%         Cont->>+DebtModel: updateLoanBalance(userEmail, debtKey, -amount)
+    %%         DebtModel->>+BaseModel: query(sql, params)
+    %%         Note over BaseModel: query with prepare Statements
+    %%         opt update failure
+    %%             BaseModel-->>DebtModel: throw error
+    %%             DebtModel-->>Cont: throw error
+    %%             Cont->>+PGClient: rollback()
+    %%             PGClient-->>-Cont: transaction rolled back
+    %%             Cont-->>Router: next(new Error('Failed to update debt'))
+    %%             Router-->>Client: 🔴500, "Failed to update debt"
+    %%         end
+    %%         BaseModel-->>-DebtModel: return updated Loan object (staged)
+    %%         DebtModel-->>-Cont: pass result
+    %%     end
+    %% end
+
+    %% Note over Cont, ContainsModel: add relation ship for 2 tables
+    %% alt transaction type is "income"
+    %%     Cont->>+ContainsModel: addContains(receiverBankAccount, transactionUUID, 'receiver')
+    %%     ContainsModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt added failure
+    %%         BaseModel-->>ContainsModel: throw error
+    %%         ContainsModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to store contains'))
+    %%         Router-->>Client: 🔴500, "Failed to store contains"
+    %%     end
+    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
+    %%     ContainsModel-->>-Cont: pass result
+    %% else transaction type is "expense"
+    %%     Cont->>+ContainsModel: addContains(senderBankAccount, transactionUUID, 'sender')
+    %%     ContainsModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt added failure
+    %%         BaseModel-->>ContainsModel: throw error
+    %%         ContainsModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to store contains'))
+    %%         Router-->>Client: 🔴500, "Failed to store contains"
+    %%     end
+    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
+    %%     ContainsModel-->>-Cont: pass result
+    %% else transaction type is "internal_transfer"
+    %%     Cont->>+ContainsModel: addContains(receiverBankAccount, transactionUUID, 'receiver')
+    %%     ContainsModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt added failure
+    %%         BaseModel-->>ContainsModel: throw error
+    %%         ContainsModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to store contains'))
+    %%         Router-->>Client: 🔴500, "Failed to store contains"
+    %%     end
+    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
+    %%     ContainsModel-->>-Cont: pass result
+    %%     Cont->>+ContainsModel: addContains(senderBankAccount, transactionUUID, 'sender')
+    %%     ContainsModel->>+BaseModel: query(sql, params)
+    %%     Note over BaseModel: query with prepare Statements
+    %%     opt added failure
+    %%         BaseModel-->>ContainsModel: throw error
+    %%         ContainsModel-->>Cont: throw error
+    %%         Cont->>+PGClient: rollback()
+    %%         PGClient-->>-Cont: transaction rolled back
+    %%         Cont-->>Router: next(new Error('Failed to store contains'))
+    %%         Router-->>Client: 🔴500, "Failed to store contains"
+    %%     end
+    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
+    %%     ContainsModel-->>-Cont: pass result
+    %% end
+
+    

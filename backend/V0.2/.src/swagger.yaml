@@ -1,0 +1,355 @@
+openapi: 3.0.0
+info:
+  title: WealthTack API
+  description: API for user registration and check password.
+  version: "0.2"
+servers:
+  - url: "http://localhost:3000/api/v0.2"
+    description: Development server
+paths:
+  /:
+    get:
+      summary: API Root
+      description: Returns a welcome message to confirm API connectivity.
+      responses:
+        "200":
+          description: Successful response with a welcome message.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "You are connected to the api/v0.2"
+  /users:
+    post:
+      summary: Register a new user
+      description: Creates a new user with the provided information.
+      requestBody:
+        description: User registration data.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - national_id
+                - username
+                - email
+                - password
+                - confirm_password
+              properties:
+                national_id:
+                  type: string
+                  description: National ID (13 numeric characters).
+                  example: "1234567890123"
+                username:
+                  type: string
+                  description: Username (alphanumeric, no special characters).
+                  example: "johndoe"
+                email:
+                  type: string
+                  format: email
+                  description: Valid email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: Password (minimum 8 characters).
+                  example: "securePassword123"
+                confirm_password:
+                  type: string
+                  format: password
+                  description: Password confirmation (must match password).
+                  example: "securePassword123"
+      responses:
+        "201":
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  data:
+                    type: object
+                    properties:
+                      national_id:
+                        type: string
+                        example: "1234567890123"
+                      email:
+                        type: string
+                        example: "johndoe@example.com"
+        "400":
+          description: Bad request due to missing required fields, invalid email address, or password mismatch.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: username"
+        "409":
+          description: Conflict due to duplicate user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 409
+                  message:
+                    type: string
+                    example: "national_id or email are already taken"
+
+  /users/check:
+    post:
+      summary: Check user password (Development Mode Only)
+      description: Validates user's email and password.
+      requestBody:
+        description: User login data.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: User's password.
+                  example: "securePassword123"
+      responses:
+        "200":
+          description: Password check successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password check successful"
+                  data:
+                    type: boolean
+                    example: true
+        "400":
+          description: Bad request due to missing required fields or invalid email address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
+        "401":
+          description: Unauthorized due to incorrect password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+
+  /users/{national_id}:
+    get:
+      summary: Get user by National ID (NOT Implemented)
+      description: Retrieves user information based on National ID.
+      parameters:
+        - in: path
+          name: national_id
+          schema:
+            type: string
+            length: 13
+          required: true
+          description: National ID of the user.
+      responses:
+        "200":
+          description: User retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Bad request due to invalid National ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update user by National ID (NOT Implemented)
+      description: Updates user information.
+      parameters:
+        - in: path
+          name: national_id
+          schema:
+            type: string
+            length: 13
+          required: true
+          description: National ID of the user.
+      requestBody:
+        description: Fields to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: New username.
+                email:
+                  type: string
+                  format: email
+                  description: New email address.
+                password:
+                  type: string
+                  format: password
+                  description: New password.
+      responses:
+        "200":
+          description: User updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Bad request due to invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete user by National ID (NOT Implemented)
+      description: Deletes a user from the system.
+      parameters:
+        - in: path
+          name: national_id
+          schema:
+            type: string
+            length: 13
+          required: true
+          description: National ID of the user.
+      responses:
+        "204":
+          description: User deleted successfully. No content returned.
+        "400":
+          description: Bad request due to invalid National ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example: "johndoe@example.com"
+            role:
+              type: string
+              description: Role assigned to the user.
+              example: "user"
+            member_since:
+              type: string
+              format: date-time
+              description: Date and time when the user was registered.
+              example: "2024-09-09T10:25:22.650Z"
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        national_id:
+          type: string
+          description: National ID of the user (13 characters).
+          example: "1234567890123"
+        username:
+          type: string
+          description: Username of the user.
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          description: Email address of the user.
+          example: "johndoe@example.com"
+        password:
+          type: string
+          format: password
+          description: Password (this is client-side input only, hashed on the server side).
+          example: "securePassword123"
+        confirm_password:
+          type: string
+          format: password
+          description: Password confirmation (must match the password).
+          example: "securePassword123"
+        role:
+          type: string
+          description: Role assigned to the user (auto-assigned, not client-specified).
+          example: "user"
+        member_since:
+          type: string
+          format: date-time
+          description: Date and time when the user was registered (auto-assigned).
+          example: "2024-09-09T10:25:22.650Z"
+      required:
+        - national_id
+        - username
+        - email
+        - password
+        - confirm_password
+    UserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation successful"
+        data:
+          $ref: "#/components/schemas/User"
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message detailing the cause of the error.
+          example: "Invalid input data"

@@ -1,0 +1,127 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as TransactionRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as TransactionController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as TransactionModel extends BaseModel
+    participant Redis as RedisCache
+    participant DB as [(Database)]
+
+    Client->>+Router: DELETE /transactions/:transactionId (Delete Transaction)
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object (userId)
+
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: deleteTransaction(req, res, next)
+    Cont->>Cont: Destructoring parameters
+    Note over Cont: requiredFields = ["transactionId"]
+    Cont->>+BaseCont: verifyField({transactionId}, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
+    opt missing required fields
+        BaseCont-->>Cont: throw Error('<field> is required')
+        Cont-->>Router: next(BadRequestError(error))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Note over Cont, Model: this method defined in IncomeExpenseManagement/IeReadOne
+    Cont->>+Model: findTransactionDetail(transactionUuid)
+    Model->>-Cont: return the detail of given transaction Uuid
+    opt transaction not found
+        Cont-->>Router: next(new NotFoundError('Transaction not found'))
+        Router-->>Client: 🔴404, "Transaction not found"
+    end
+
+    Note over Cont, BaseCont: verify that the current user owns the bank accounts involved
+    Cont->>+BaseCont: verifyOwnership(user, [transaction])
+    opt bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+    
+    Cont->>+PGClient: beginTransaction()
+    PGClient-->>-Cont: Transaction started
+
+    %% update bank acount balance if need
+
+    Cont->>+Model: deleteTransaction([transactionId])
+    Model->>+BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+    BaseModel-->>-Model: return true
+    Model->>+BaseModel: query(sql, params)
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>+DB: do operation
+    Note over DB: the DB will trigger, to cascade update the bankAccount's balance, debt's data and Contains table if need
+    DB->>DB: SQL trigger
+    DB-->>-BaseModel: result
+    opt SQL Error
+        Model-->>Cont: throw error
+        Cont->>+PGClient: rollback()
+        PGClient-->>-Cont: transaction rolled back
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "Failed to update transaction"
+    end
+    BaseModel-->>-Model: return result
+    Model-)Redis: reomve the correspond transactionUUID from cache
+    Model-->>-Cont: return true
+    
+    Cont->>+PGClient: commit()
+    PGClient-->>-Cont: transaction committed
+    
+    Cont->>Cont: formatResponse(200, 'Transaction deleted successfully')
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "Transaction deleted successfully" }
+
+    %% alt Transaction is expense
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %%     alt debt payment involved
+    %%         Cont->>+DebtModel: updateDebtBalance(transaction, null)
+    %%         DebtModel-->>-Cont: updated loan balance
+    %%     end
+    %% else Transaction is income
+    %%     Cont->>+BankAccountModel: updateBankAccountBalance(transaction, null)
+    %%     BankAccountModel-->>-Cont: updated balance
+    %% end

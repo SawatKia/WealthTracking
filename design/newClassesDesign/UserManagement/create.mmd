@@ -14,40 +14,44 @@ sequenceDiagram
     participant Client
     participant Sec as Security
     participant Router as UserRouter
-    participant BaseCont as BaseController
-    participant Cont as UserController extends BaseController
-    participant MongoObject as MongoObject
-    participant BaseModel as BaseModel extends MongoObject
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as UserController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
     participant Model as UserModel extends BaseModel
+    participant DB as [(Database)]
 
     %% Create User
     Client->>+Router: POST /users/ (create User)
     Note over Router: this method will be used in several places in the application
     Router->>Router: MethodValidator(allowedMethods)
     opt path not available
-        Router-->>Client: 401, "<path> not available"
+        Router-->>Client: 🔴401, "<path> not available"
     end
     opt method not allowed
-        Router-->>Client: 405, "<method> not allowed for <path>"
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
     end
     Router->>+Cont: register(req, res, next)
     Cont->>Cont: Destructuring req.body
     Note over Cont: requiredFields = ['username', 'email', 'password', 'confirmPassword']
-    Cont->>+BaseCont: verifyBody(req.body, requiredFields)
+    Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
     opt missing required fields
         BaseCont-->>Cont: throw BadRequestError('<field> is required')
         Cont-->>Router: next(error)
-        Router-->>Client: 400, "<field> is required"
+        Router-->>Client: 🔴400, "<field> is required"
     end
     BaseCont->>-Cont: return true
     opt Passwords don't match
         Cont-->>Router: throw BadRequestError("Password don't match")
-        Router-->>Client: 400, "Password don't match"
+        Router-->>Client: 🔴400, "Password don't match"
     end
     Cont->>Cont: validateEmail(email)
     opt Invalid email
         Cont-->>Router: throw BadRequestError("Invalid email")
-        Router-->>Client: 400, "Invalid email"
+        Router-->>Client: 🔴400, "Invalid email"
     end
     Cont->>Cont: normalizeUsernameEmail(username, email)
     Cont->>+Model: createUser(newUserData)
@@ -55,35 +59,37 @@ sequenceDiagram
     opt error hashing password
         Model-->>Cont: throw Error('Error hashing password')
         Cont-->>Router: next(error)
-        Router-->>Client: 500, "something went wrong"
+        Router-->>Client: 🔴500, "something went wrong"
     end
+    Note over Model, BaseModel: this method defined in BankAccountManagement/create.mmd, please reference to that diagram
     Model->>+BaseModel: create(data)
-    BaseModel->>BaseModel: validate()
-    opt missing required field
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(error)
-        Router-->>Client: 400, "<field> is required"
-    end
-    opt invalid type
-        BaseModel-->>Model: throw Error
-        Model-->>Cont: next(error)
-        Cont-->>Router: next(BadRequestError(error.message))
-        Router-->>Client: 400, <error.message>
-    end
-    opt if error creating user
-        BaseModel-->>Model: throw Error
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
         Model-->>Cont: throw error
-        alt error code == 11000
-            Cont-->>Router: throw UserDuplicateError()
-            Router-->>Client: 409, "Username or email already exists"
-        else any other error
-            Cont-->>Router: next(error)
-            Router-->>Client: 500, "something went wrong"
-        end
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
     end
-    BaseModel->>-Model: Save user to database
+
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('User email already in use')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "User email already in use"
+    end
+    opt any other error
+       Model-->>Cont: throw error
+       Cont-->>Router: next(error)
+       Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return created Id
+
     Model-->>-Cont: Created user
     Cont->>Cont: formatResponse(201, 'User created successfully', { createdId })
     Cont-->>-Router: Formatted response
-    Router-->>-Client: 201, { status: 201, message: "User created successfully", data: { createdId } }
+    Router-->>-Client: 🟢201, { status: 201, message: "User created successfully", data: { createdId } }

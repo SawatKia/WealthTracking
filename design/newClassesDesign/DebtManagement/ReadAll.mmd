@@ -1,0 +1,89 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as DebtRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as DebtModelController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as DebtModelModel extends BaseModel
+    participant DB as [(Database)]
+
+    Client->>+Router: GET /debts (ReadAll debts)
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object 
+
+    Note over Sec, Router: this method defined in UserManagement/create.mmd
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: getAllDebts(req, res, next)
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Cont->>+Model: findAll(userEmail)
+    Model->>+BaseModel: pass call
+
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB-->>-BaseModel: result
+    opt any error occurred
+        BaseModel-->>Model: throw Error
+        Model-->>Cont: pass error
+        Cont-->>Router: next(error)
+        Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return array of debt objects
+    Model-->>-Cont: pass results
+
+    Note over Cont, BaseCont: ensure that verifyOwnership is support iteration array of object
+    Cont->>+BaseCont: verifyOwnership(user, [debts])
+    opt Bank account's user email does not match current user email
+        BaseCont-->>Cont: return false
+        Cont-->>Router: throw ForbiddenError('You are not allowed to access this resource')
+        Router-->>Client: 🔴403, "You are not allowed to access this resource"
+    end
+    BaseCont-->>-Cont: return true
+
+    Cont->>Cont: formatResponse(200, 'debts retrieved successfully', debts)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢200, { status: 200, message: "debts retrieved successfully", data: [debt1, debt2, ...] }

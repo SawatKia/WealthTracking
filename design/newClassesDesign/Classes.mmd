@@ -1,0 +1,238 @@
+%%{init: {'themeVariables': {'lineColor': '#ff0000', 'dashedLineColor': '#00ff00'}}}%%
+classDiagram
+    direction RL
+    
+    class MyAppErrors {
+        +statusCode: number
+        +data: Object
+        +constructor(message: string, statusCode: number, data: Object) void
+        +BadRequestError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +UnauthorizedError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ForbiddenError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +NotFoundError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +ConflictError(message: string, statusCode: number, data: Object) MyAppErrors$
+        +PasswordError() MyAppErrors$
+        +UserDuplicateError() MyAppErrors$
+    }
+
+    class Error {
+        <<JS built-in>>
+    }
+
+    Error <|-- MyAppErrors
+
+    class Middleware {
+        +methodValidator(req: Request, res: Response, next: NextFunction) void
+        +checkAdmin(req: Request, res: Response, next: NextFunction) boolean
+        +errorHandler(err: Error, req: Request, res: Response, next: NextFunction) void
+        +responseHandler(req: Request, res: Response, next: NextFunction) void
+    }
+
+    class ExpressRouter {
+        <<module>>
+        +use(middleware: function)
+        +get(path: string, handler: function)
+        +post(path: string, handler: function)
+        +put(path: string, handler: function)
+        +delete(path: string, handler: function)
+    }
+
+    class UserController {
+        +register(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getUser(req: Request, res: Response, next: NextFunction) Promise~void~
+        +updateUser(req: Request, res: Response, next: NextFunction) Promise~void~
+        +deleteUser(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class AuthController{
+        +login(req: Request, res: Response, next: NextFunction) Promise~void~
+        +refreshToken(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class BaseController {
+        +verifyFields(data: Object, requiredFields[]: string) boolean
+        +getCurrentUser(req: Request) User
+        +verifyOwnership(user: User, data[]: Object) boolean
+    }
+
+    class BaseModel {
+        -tableName: string
+        +constructor(tableName: string)
+        +validateSchema(data: Object) boolean
+        +create(userEmail: string, data: Object) Promise~string~
+        +findAll(userEmail: string) Promise~Object[]~
+        +findOne(key[]: string) Promise~Object~
+        +update(key[]: string, Data: Object) Promise~Object~
+        +delete(key[]: string) Promise~boolean~
+    }
+
+    class PgClient{
+        -pool
+        -client 
+        -transactionStarted 
+        +constructor()
+        +connect() Promise~void~
+        +isConnect() boolean
+        +beginTransaction() Promise~void~
+        +commitTransaction() Promise~void~
+        +rollbackTransaction() Promise~void~
+        +query(sql: string, params[]) Promise~QueryResult~
+        +release() void
+    }
+
+    class Redis{
+        +constructor()
+        +set(key: string, value: string) Promise~void~
+        +get(key: string) Promise~string~
+    }
+
+    class AuthMiddleware {
+        +verifyCredentials(req: Request, res: Response, next: NextFunction) void
+        +checkIsAdmin(req: Request, res: Response, next: NextFunction) boolean
+    }
+
+    class UserModel {
+        +constructor()
+        -hashPassword(plainPassword: string) Promise~string~
+        +checkPassword(userEmail: string, EnteredPassword: string) Promise~boolean~
+        +createUser(userData: Object) Promise~string~
+        +findUser(userEmail: string) Promise~Object~
+        +updateUser(userEmail: string, userData: Object) Promise~Object~
+    }
+
+    class BankAccountController {
+        +createBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getAllBankAccounts(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getOneBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
+        +updateBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
+        +deleteBankAccount(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class BankAccountModel {
+        +constructor()
+    }
+
+    class TransactionController {
+        +createTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getAllTransactions(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getOneTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
+        +updateTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
+        +deleteTransaction(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class TransactionModel {
+        +constructor()
+        -cacheTransactionDetail(transactionUuid: string) Promise~void~
+        +createTransaction(userEmail: string, data: Object) Promise~string~
+        +findTransactionDetail(transactionUuid: string) Promise~Object~
+        +updateTransaction(transactionUuid: string,  data: Object) Promise~Object~
+        +deleteTransaction(transactionUuid: string) Promise~boolean~
+    }
+
+    class DebtController {
+        +createDebt(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getAllDebts(req: Request, res: Response, next: NextFunction) Promise~void~
+        +getOneDebt(req: Request, res: Response, next: NextFunction) Promise~void~
+        +updateDebt(req: Request, res: Response, next: NextFunction) Promise~void~
+        +deleteDebt(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class DebtModel {
+        +constructor()
+    }
+
+    class JWTUtils {
+        +createAccessToken(user: Object) string
+        +createRefreshToken(user: Object) string
+        +createTokenResponse(user: Object) Object
+        +decodeToken(token: string) Object
+    }
+
+    class ThirdPartyAPIController {
+        +getQuotaInformation(req: Request, res: Response, next: NextFunction) Promise~void~
+        +extractSlipData(req: Request, res: Response, next: NextFunction) Promise~void~
+    }
+
+    class EasySlipService {
+        -EASYSLIP_API_URL: string
+        -EASYSLIP_API_KEY: string
+        +constructor()
+        +fetchQuotaInformation() Promise~Object~
+        +checkSlipApiAvailability() Promise~boolean~
+        +verifySlip(base64Image: string) Promise~Object~
+    }
+
+    class Utils{
+        +formatResponse(status_code: number, message: string, data: Object) Object
+        +logger(moduleName: string) Logger~instant~
+    }
+    
+    class Logger{
+        +constructor(moduleName: string)
+        +log(message: string)
+        +info(message: string)
+        +warn(message: string)
+        +error(message: string)
+        +debug(message: string)
+        +silly(message: string)
+        +verbose(message: string)
+    }
+
+    BaseController <|-- UserController
+    BaseController <|-- BankAccountController
+    BaseController <|-- TransactionController
+    BaseController <|-- DebtController
+    BaseController <|-- ThirdPartyAPIController
+
+    BaseModel <|-- UserModel
+    BaseModel <|-- BankAccountModel
+    BaseModel <|-- TransactionModel
+    BaseModel <|-- DebtModel
+
+    UserController *-- UserModel
+    BankAccountController *-- BankAccountModel
+    TransactionController *-- TransactionModel
+    DebtController *-- DebtModel
+    ThirdPartyAPIController *-- EasySlipService
+
+    PgClient <|-- BaseModel
+    TransactionController *-- PgClient
+
+    ExpressRouter o-- Middleware
+    ExpressRouter o-- AuthMiddleware
+    ExpressRouter ..> UserController : routes to
+    ExpressRouter ..> BankAccountController : routes to
+    ExpressRouter ..> TransactionController : routes to
+    ExpressRouter ..> DebtController : routes to
+    ExpressRouter ..> AuthController : routes to
+    ExpressRouter ..> ThirdPartyAPIController : routes to
+
+    UserController *-- MyAppErrors
+    BankAccountController *-- MyAppErrors
+    TransactionController *-- MyAppErrors
+    DebtController *-- MyAppErrors
+    ThirdPartyAPIController *-- MyAppErrors
+    AuthController *-- MyAppErrors
+
+    UserController *-- Utils
+    BankAccountController *-- Utils
+    TransactionController *-- Utils
+    DebtController *-- Utils
+    ThirdPartyAPIController *-- Utils
+
+    TransactionModel *-- Redis
+    TransactionModel *-- BankAccountModel
+
+    AuthController o-- JWTUtils
+    AuthMiddleware o-- JWTUtils
+
+    AuthController *-- UserModel
+    AuthMiddleware *-- MyAppErrors
+
+    Utils *-- Logger
+
+    UserModel "1" -- "many" BankAccountModel : manages
+    UserModel "1" -- "many" DebtModel : owns
+    UserModel "1" -- "many" TransactionModel : performs
+    DebtModel "0.1" -- "many" TransactionModel : associated with
+    TransactionModel "many" -- "1..2" BankAccountModel : involves

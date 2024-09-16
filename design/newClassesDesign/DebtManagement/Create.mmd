@@ -1,0 +1,96 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Sec as Security
+    participant Router as DebtRouter
+    box orange Controller
+        participant BaseCont as BaseController
+        participant Cont as DebtModelController extends BaseController
+    end
+    participant PGClient as PostgreSQLClient
+    participant BaseModel as BaseModel 
+    participant Model as DebtModelModel extends BaseModel
+    participant DB as [(Database)]
+
+    Client->>+Router: POST /debts/
+    Note over Sec, Router: this method defined in UserManagement/read.mmd
+    Router->>+Sec: verifyToken(req)
+    alt Token decode error | Token expired | Invalid token
+        Sec-->>Router: next(new UnauthorizedError('Invalid credentials'))
+        Router-->>Client: 🔴401, "Could not validate credentials"
+    end
+    Sec-->>-Router: decoded user object 
+
+    Note over Sec, Router: this method defined in UserManagement/create.mmd
+    Router->>Router: MethodValidator(allowedMethods)
+    opt path not available
+        Router-->>Client: 🔴404, "<path> not available"
+    end
+    opt method not allowed
+        Router-->>Client: 🔴405, "<method> not allowed for <path>"
+    end
+
+    Router->>+Cont: createDebt(req, res, next)
+    Cont->>Cont: Destructuring req.body
+    Note over Cont: requiredFields = ['DebtName', 'startDate', 'currentInstallment', 'totalInstallment', 'loanPrinciple', 'loanBalance']
+    Cont->>+BaseCont: verifyField(req.body, requiredFields)
+    Note over BaseCont: also type conversion eg. string -> decimal
+    opt missing required fields
+        BaseCont-->>Cont: throw new Error('<field> is required')
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<field> is required"
+    end
+    BaseCont->>-Cont: return true
+    
+    Note over Cont, BaseCont: this method defined in UserManagement/read.mmd
+    Cont->>+BaseCont: getCurrentUser(req)
+    BaseCont-->>-Cont: return User object
+    opt user not found
+        Cont-->>Router: next(new NotFoundError('User not found'))
+        Router-->>Client: 🔴404, "User not found"
+    end
+
+    Cont->>+Model: create({['DebtName', 'startDate', 'currentInstallment', 'totalInstallment', 'loanPrinciple', 'loanBalance'
+    Model->>+BaseModel: pass call
+    BaseModel->>BaseModel: validateSchema(data) 
+    Note over BaseModel: also validate each input individually by Regex: as each type of input has its own pattern, specific requirements and constraints.
+    opt missing required field || invalid type || RegEx does not match
+        BaseModel-->>Model: throw new Error('<field> is invalid')
+        Model-->>Cont: throw error
+        Cont-->>Router: next(new BadRequestError(error.message))
+        Router-->>Client: 🔴400, "<error.message>"
+    end
+
+    Note over BaseModel: query with prepare Statements
+    BaseModel->>BaseModel: query(sql, params)
+    BaseModel->>+DB: do operation
+    DB->>DB: SQL trigger
+    DB-->>-BaseModel: result
+    opt SQL unique violation
+        BaseModel-->>Model: throw new Error('duplicate key value')
+        Model-->>Cont: throw new Error('transaction Uuid already exists')
+        Cont-->>Router: next(new ConflictError(error.message))
+        Router-->>Client: 🔴409, "transaction Uuid already exists"
+    end
+    opt any other error
+       Model-->>Cont: throw error
+       Cont-->>Router: next(error)
+       Router-->>Client: 🔴500, "something went wrong"
+    end
+    BaseModel-->>-Model: return created Id 
+    Model-->>-Cont: pass result
+
+    Cont->>Cont: formatResponse(201, 'create Debt successful', createdDebtId)
+    Cont-->>-Router: return formatted response
+    Router-->>-Client: 🟢201, { status: 201, message: "Debt created successfully", data: {createdDebtId} }
