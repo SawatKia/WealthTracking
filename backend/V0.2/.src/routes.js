@@ -6,13 +6,12 @@ const appConfigs = require('./configs/AppConfigs');
 
 const Utils = require('./utilities/Utils');
 const mdw = require('./middlewares/Middlewares')
-const userController = require('./controllers/UserController');
+const UserController = require('./controllers/UserController');
 
 const NODE_ENV = appConfigs.environment;
 const logger = Utils.Logger('Routes');
 const { formatResponse } = Utils;
 const router = express.Router();
-const UserController = new userController();
 
 if (NODE_ENV != 'test') {
     const file = fs.readFileSync('./swagger.yaml', 'utf8');
@@ -43,6 +42,10 @@ router.get('/', (req, res, next) => {
 })
 router.post('/users', UserController.registerUser);
 router.post('/users/check', UserController.checkPassword);
+
+router.get('/slip/quota');
+router.post('/slip/');
+
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
 

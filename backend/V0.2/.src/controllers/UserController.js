@@ -1,4 +1,3 @@
-require('dotenv').config();
 const Utils = require('../utilities/Utils');
 const User = require('../models/UserModel');
 const BaseController = require('./BaseController');
@@ -12,7 +11,7 @@ class UserController extends BaseController {
         this.User = new User();
     }
 
-    normalizeUsernameEmail = (username = null, email = null) => {
+    normalizeUsernameEmail(username = null, email = null) {
         logger.info('Normalizing username and email');
         logger.debug(`before norm username: ${username}, email: ${email}`);
         let normalizedData = {};
@@ -24,17 +23,17 @@ class UserController extends BaseController {
         }
         logger.debug(`normalized data: ${JSON.stringify(normalizedData)}`);
         return normalizedData;
-    };
+    }
 
-    validateEmail = (email) => {
+    validateEmail(email) {
         logger.info('validateEmail');
         logger.debug(`email: ${email}`);
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         logger.debug(`email regex test: ${emailRegex.test(email)}`);
         return emailRegex.test(email);
-    };
+    }
 
-    registerUser = async (req, res, next) => {
+    async registerUser(req, res, next) {
         try {
             const { username, email, password, confirm_password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
@@ -84,15 +83,14 @@ class UserController extends BaseController {
                 next(MyAppErrors.userDuplicateError());
             }
             if (error.name === 'ValidationError') {
-                // next(new BadRequestError('invalid input'));
                 next(MyAppErrors.badRequest(error.message));
             }
 
             next(error);
         }
-    };
+    }
 
-    checkPassword = async (req, res, next) => {
+    async checkPassword(req, res, next) {
         try {
             const { email, password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
@@ -109,7 +107,6 @@ class UserController extends BaseController {
                 next(MyAppErrors.badRequest(error.message));
             }
             if (error.name === 'ValidationError') {
-                // next(new BadRequestError('invalid input'));
                 next(MyAppErrors.badRequest(error.message));
             }
             next(error);
@@ -117,4 +114,4 @@ class UserController extends BaseController {
     }
 }
 
-module.exports = UserController;
+module.exports = new UserController();
