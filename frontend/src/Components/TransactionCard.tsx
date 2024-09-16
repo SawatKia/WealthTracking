@@ -1,23 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 type TransactionCardProps = {
   type: string;
+  category: string;
   description: string;
   amount: number;
   date: string;
   time: string;
   fromAccount: string;
-  endBalance: number;
+  endBalance: number; 
 };
 
 const TransactionCard: React.FC<TransactionCardProps> = ({
   type,
+  category,
   description,
   amount,
   date,
   time,
   fromAccount,
-  endBalance,
+  endBalance
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -28,9 +30,9 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
       <div className="flex justify-between items-center">
         <div className="flex items-center">
           <div className="mr-4">
-            {type === 'Taxi' && <span className="text-blue-500">🚕</span>}
-            {type === 'Insurance' && <span className="text-red-500">🛡️</span>}
-            {type === 'Salary' && <span className="text-green-500">💰</span>}
+            {category === 'Taxi' && <span className="text-blue-500">🚕</span>}
+            {category === 'Insurance' && <span className="text-red-500">🛡️</span>}
+            {category === 'Salary' && <span className="text-green-500">💰</span>}
           </div>
           <div>
             <p className="text-lg font-semibold">{description}</p>
@@ -39,8 +41,8 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
             </p>
           </div>
         </div>
-        <div className={type === 'Salary' ? 'text-green-500' : 'text-red-500'}>
-          {type === 'Salary' ? `+฿${amount.toLocaleString()}` : `-฿${amount.toLocaleString()}`}
+        <div className={type === 'Income' ? 'text-green-500' : 'text-red-500'}>
+          {type === 'Income' ? `+฿${amount.toLocaleString()}` : `-฿${amount.toLocaleString()}`}
         </div>
       </div>
       <div className="flex justify-between mt-2">
