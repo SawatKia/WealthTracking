@@ -16,6 +16,10 @@ const config = {
         email: process.env.PGADMIN_DEFAULT_EMAIL,
         password: process.env.PGADMIN_DEFAULT_PASSWORD,
     },
+    easySlip: {
+        url: process.env.EASYSLIP_URL,
+        key: process.env.EASYSLIP_KEY,
+    }
 };
 
 module.exports = config;

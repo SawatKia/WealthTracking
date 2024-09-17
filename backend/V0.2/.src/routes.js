@@ -7,10 +7,11 @@ const appConfigs = require('./configs/AppConfigs');
 const Utils = require('./utilities/Utils');
 const mdw = require('./middlewares/Middlewares')
 const UserController = require('./controllers/UserController');
+const ApiController = require('./controllers/ApiController');
 
 const NODE_ENV = appConfigs.environment;
-const logger = Utils.Logger('Routes');
-const { formatResponse } = Utils;
+const { Logger, formatResponse } = Utils;
+const logger = Logger('Routes');
 const router = express.Router();
 
 if (NODE_ENV != 'test') {
@@ -24,7 +25,9 @@ const allowedMethods = {
     '/users': ['POST'],
     '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/debts/:debtName': ['GET', 'PATCH', 'DELETE']
+    '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
+    '/slip/quota': ['GET'],
+    '/slip': ['POST'],
 }
 
 if (NODE_ENV != 'production') {
@@ -43,8 +46,8 @@ router.get('/', (req, res, next) => {
 router.post('/users', UserController.registerUser);
 router.post('/users/check', UserController.checkPassword);
 
-router.get('/slip/quota');
-router.post('/slip/');
+router.get('/slip/quota', ApiController.getQuotaInformation);
+router.post('/slip/', ApiController.extractSlipData);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
