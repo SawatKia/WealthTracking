@@ -1,9 +1,10 @@
 const Utils = require('../utilities/Utils');
 const User = require('../models/UserModel');
 const BaseController = require('./BaseController');
-const logger = Utils.Logger('UserController');
 const MyAppErrors = require('../utilities/MyAppErrors')
-const { formatResponse } = Utils;
+
+const { Logger, formatResponse } = Utils;
+const logger = Logger('UserController');
 
 class UserController extends BaseController {
     constructor() {

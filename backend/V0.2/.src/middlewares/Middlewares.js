@@ -1,10 +1,9 @@
 const Utils = require('../utilities/Utils');
-const logger = Utils.Logger('Middlewares');
-const { formatResponse } = Utils;
-
 const MyAppErrors = require('../utilities/MyAppErrors');
 const appConfigs = require('../configs/AppConfigs');
 
+const { Logger, formatResponse } = Utils;
+const logger = Logger('Middlewares');
 const NODE_ENV = appConfigs.environment;
 
 class Middlewares {
