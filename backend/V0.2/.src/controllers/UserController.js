@@ -9,6 +9,12 @@ class UserController extends BaseController {
     constructor() {
         super();
         this.User = new User();
+
+        // Bind all methods to ensure correct 'this' context
+        this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
+        this.validateEmail = this.validateEmail.bind(this);
+        this.registerUser = this.registerUser.bind(this);
+        this.checkPassword = this.checkPassword.bind(this);
     }
 
     normalizeUsernameEmail(username = null, email = null) {
@@ -39,7 +45,7 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
             // Verify all required fields
-            super.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
+            this.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
                 throw MyAppErrors.badRequest('Password must be at least 8 characters long');
@@ -94,7 +100,7 @@ class UserController extends BaseController {
         try {
             const { email, password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
-            super.verifyField(req.body, ['email', 'password']);
+            this.verifyField(req.body, ['email', 'password']);
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
             const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
