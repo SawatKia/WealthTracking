@@ -19,6 +19,7 @@ paths:
               schema:
                 type: string
                 example: "You are connected to the api/v0.2"
+
   /users:
     post:
       summary: Register a new user
@@ -197,7 +198,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/Response"
         "400":
           description: Bad request due to invalid National ID.
           content:
@@ -246,7 +247,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/Response"
         "400":
           description: Bad request due to invalid input.
           content:
@@ -295,6 +296,57 @@ paths:
               format: date-time
               description: Date and time when the user was registered.
               example: "2024-09-09T10:25:22.650Z"
+
+  /slip:
+    post:
+      summary: Extract slip data (NOT available)
+      tags:
+        - Slip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlipDataRequest"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlipDataResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /slip/quota:
+    get:
+      summary: Get quota information
+      tags:
+        - Slip
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaResponse"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     User:
@@ -338,18 +390,213 @@ components:
         - email
         - password
         - confirm_password
-    UserResponse:
+
+    Response:
       type: object
       properties:
+        status_code:
+          type: integer
+          example: 200
         message:
           type: string
           example: "Operation successful"
         data:
-          $ref: "#/components/schemas/User"
+          type: object
+          description: Additional data returned with the response.
+
     ErrorResponse:
       type: object
       properties:
+        status_code:
+          type: integer
+          example: 401
         message:
           type: string
           description: Error message detailing the cause of the error.
           example: "Invalid input data"
+
+    QuotaResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "get quota information success"
+        data:
+          type: object
+          properties:
+            application:
+              type: string
+              example: "EasySlip Developer"
+            usedQuota:
+              type: number
+              example: 16
+            maxQuota:
+              type: number
+              example: 35000
+            remainingQuota:
+              type: number
+              example: 34984
+            expiredAt:
+              type: string
+              format: date-time
+              example: "2024-02-22T18:47:34+07:00"
+            currentCredit:
+              type: number
+              example: 1000
+
+    SlipDataRequest:
+      type: object
+      required:
+        - base64Image
+      properties:
+        base64Image:
+          type: string
+          description: Base64 encoded image data
+
+    SlipDataResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Slip verification success"
+        data:
+          type: object
+          properties:
+            payload:
+              type: string
+              example: "00000000000000000000000000000000000000000000000000000000000"
+            transRef:
+              type: string
+              example: "68370160657749I376388B35"
+            date:
+              type: string
+              format: date-time
+              example: "2023-01-01T00:00:00+07:00"
+            countryCode:
+              type: string
+              example: "TH"
+            amount:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  example: 1000
+                local:
+                  type: object
+                  properties:
+                    amount:
+                      type: number
+                      example: 0
+                    currency:
+                      type: string
+                      example: ""
+            fee:
+              type: number
+              example: 0
+            ref1:
+              type: string
+              example: ""
+            ref2:
+              type: string
+              example: ""
+            ref3:
+              type: string
+              example: ""
+            sender:
+              type: object
+              properties:
+                bank:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "001"
+                    name:
+                      type: string
+                      example: "กสิกรไทย"
+                    short:
+                      type: string
+                      example: "KBANK"
+                account:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      properties:
+                        th:
+                          type: string
+                          example: "นาย อีซี่ สลิป"
+                        en:
+                          type: string
+                          example: "MR. EASY SLIP"
+                    bank:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - BANKAC
+                            - TOKEN
+                            - DUMMY
+                          example: "BANKAC"
+                        account:
+                          type: string
+                          example: "1234xxxx5678"
+            receiver:
+              type: object
+              properties:
+                bank:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "030"
+                    name:
+                      type: string
+                      example: "ธนาคารออมสิน"
+                    short:
+                      type: string
+                      example: "GSB"
+                account:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      properties:
+                        th:
+                          type: string
+                          example: "นาย อีซี่ สลิป"
+                    bank:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - BANKAC
+                            - TOKEN
+                            - DUMMY
+                          example: "BANKAC"
+                        account:
+                          type: string
+                          example: "12xxxx3456"
+                    proxy:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - NATID
+                            - MSISDN
+                            - EWALLETID
+                            - EMAIL
+                            - BILLERID
+                          example: "EWALLETID"
+                        account:
+                          type: string
+                          example: "123xxxxxxxx4567"

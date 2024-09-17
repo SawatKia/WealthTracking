@@ -3,7 +3,8 @@ const app = require('../app');
 const PgClient = require('../models/PgClient');
 const { test: testConfig } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
-const Logger = Utils.Logger('users.test');
+const { Logger, formatResponse } = Utils;
+const logger = Logger('users.test');
 
 let db;
 
@@ -256,7 +257,7 @@ const checkPassBody = [
 beforeAll(async () => {
     db = new PgClient(testConfig);
     await db.init();
-    Logger.debug(`Database connected: ${db.isConnected()}`);
+    logger.debug(`Database connected: ${db.isConnected()}`);
     // Create tables if they don't exist
     await db.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -334,33 +335,33 @@ beforeAll(async () => {
         FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
       );
     `);
-    Logger.debug(`Tables created: ${db.isConnected()}`);
+    logger.debug(`Tables created: ${db.isConnected()}`);
 });
 
 afterAll(async () => {
     // Clean up the database after all tests
-    Logger.info('Dropping tables');
+    logger.info('Dropping tables');
 
     await db.query('DROP TABLE IF EXISTS transaction_bank_account_relations;');
-    Logger.info('Dropped table: transaction_bank_account_relations');
+    logger.info('Dropped table: transaction_bank_account_relations');
 
     await db.query('DROP TABLE IF EXISTS transactions;');
-    Logger.info('Dropped table: transactions');
+    logger.info('Dropped table: transactions');
 
     await db.query('DROP TABLE IF EXISTS debts;');
-    Logger.info('Dropped table: debts');
+    logger.info('Dropped table: debts');
 
     await db.query('DROP TABLE IF EXISTS bank_accounts;');
-    Logger.info('Dropped table: bank_accounts');
+    logger.info('Dropped table: bank_accounts');
 
     await db.query('DROP TABLE IF EXISTS financial_institutions;');
-    Logger.info('Dropped table: financial_institutions');
+    logger.info('Dropped table: financial_institutions');
 
     await db.query('DROP TABLE IF EXISTS users;');
-    Logger.info('Dropped table: users');
+    logger.info('Dropped table: users');
 
     await db.release();
-    Logger.debug(`Database disconnected: ${db.isConnected()}`);
+    logger.debug(`Database disconnected: ${db.isConnected()}`);
 });
 
 
@@ -394,9 +395,8 @@ describe('API Endpoints', () => {
     describe('POST /api/v0.2/users', () => {
 
         newUserBody.forEach((user, i) => {
-            console.log(`${i + 1}. ${user.testName}`);
             it(`${i + 1}. ${user.testName}`, async () => {
-
+                logger.info(`Test ${i + 1}. ${user.testName}`);
                 const response = await request(app)
                     .post('/api/v0.2/users')
                     .send(user.body);
@@ -431,7 +431,7 @@ describe('API Endpoints', () => {
 
         checkPassBody.forEach((check, i) => {
             it(`${i + 1}. ${check.testName}`, async () => {
-
+                logger.info(`Test ${i + 1}. ${check.testName}`);
                 const response = await request(app)
                     .post('/api/v0.2/users/check')
                     .send(check.body);

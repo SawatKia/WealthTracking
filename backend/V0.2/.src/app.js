@@ -1,14 +1,13 @@
 const express = require('express');
 const path = require('path');
-require('dotenv').config();
 const Utils = require('./utilities/Utils');
-const PgClient = require('./models/PgClient');
 const routes = require('./routes');
 const mdw = require('./middlewares/Middlewares');
+const appConfigs = require('./configs/AppConfigs')
 
-const NODE_ENV = process.env.NODE_ENV;
-const { formatResponse } = Utils;
-const logger = Utils.Logger('index');
+const NODE_ENV = appConfigs.environment;
+const { Logger, formatResponse } = Utils;
+const logger = Logger('index');
 const app = express();
 const isDev = NODE_ENV === 'development';
 
@@ -22,7 +21,6 @@ app.disable('x-powered-by');
 if (!isDev) {
     app.use(mdw.rateLimiter(15 * 60 * 1000, 100));  // Apply rate limiter with default values
 }
-
 /**
  * Request logger middleware
  */

@@ -2,8 +2,8 @@ const bcrypt = require('bcrypt');
 const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
-require('dotenv').config();
 const Utils = require('../utilities/Utils');
+const appConfigs = require('../configs/AppConfigs')
 
 const logger = Utils.Logger('UserModel');
 
@@ -11,63 +11,97 @@ class UserModel extends BaseModel {
 
     constructor() {
         const userSchema = Joi.object({
-            national_id: Joi.string().length(13).when(Joi.ref('$operation'), {
-                is: Joi.valid('read', 'update', 'delete'),
+            national_id: Joi.string()
+                .length(13)
+                .pattern(/^[0-9]*$/, 'numeric characters only') // Allow only numeric characters
+                .when(Joi.ref('$operation'), {
+                    is: Joi.valid('create', 'update', 'delete'),
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'string.length': 'National ID must be 13 characters long.',
+                    'string.pattern.name': 'National ID must contain only numeric characters.',
+                    'any.required': 'National ID is required for this operation.',
+                }),
+            email: Joi.string()
+                .email()
+                .pattern(/^[a-zA-Z0-9@.]*$/, 'valid email format') // Prevent special characters outside email format
+                .when(Joi.ref('$operation'), {
+                    is: Joi.valid('create', 'check'),
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'string.email': 'Email must be a valid email address.',
+                    'string.pattern.name': 'Email must contain only valid characters.',
+                    'any.required': 'Email is required for this operation.',
+                }),
+
+            national_id_or_email: Joi.alternatives().try(
+                Joi.ref('national_id'),
+                Joi.ref('email'),
+            ).when(Joi.ref('$operation'), {
+                is: 'read',
                 then: Joi.required(),
                 otherwise: Joi.optional(),
             }).messages({
-                'string.length': 'National ID must be 13 characters long.',
-                'any.required': 'National ID is required for this operation.',
+                'any.required': 'At least one of national_id or email must be provided when reading a user.',
             }),
 
-            email: Joi.string().email().when(Joi.ref('$operation'), {
-                is: Joi.valid('create', 'check'),
-                then: Joi.required(),
-                otherwise: Joi.optional(),
-            }).messages({
-                'string.email': 'Email must be a valid email address.',
-                'any.required': 'Email is required when creating a user.',
-            }),
+            username: Joi.string()
+                .alphanum() // Allow only alphanumeric characters
+                .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only') // Prevent special characters
+                .when(Joi.ref('$operation'), {
+                    is: 'create',
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'string.alphanum': 'Username must contain only alphanumeric characters.',
+                    'any.required': 'Username is required when creating a user.',
+                    'string.pattern.name': 'Username must not contain special characters.',
+                }),
 
-            username: Joi.string().alphanum().when(Joi.ref('$operation'), {
-                is: 'create',
-                then: Joi.required(),
-                otherwise: Joi.optional(),
-            }).messages({
-                'string.alphanum': 'Username must contain only alphanumeric characters.',
-                'any.required': 'Username is required when creating a user.',
-            }),
+            hashed_password: Joi.string()
+                .min(8) // Ensure the password has at least 8 characters
+                .when(Joi.ref('$operation'), {
+                    is: Joi.valid('create', 'update', 'delete'), // Allow password for create, update, and delete operations
+                    then: Joi.required(), // Make it required during these operations
+                    otherwise: Joi.forbidden(), // Forbid in other operations
+                })
+                .messages({
+                    'string.min': 'Password must be at least 8 characters long.',
+                    'any.required': 'Password is required for this operation.',
+                }),
 
-            hashed_password: Joi.string().min(8).when(Joi.ref('$operation'), {
-                is: 'create',
-                then: Joi.required(),
-                otherwise: Joi.forbidden(), // Don't allow hashed_password for non-create operations
-            }).messages({
-                'string.min': 'hashed_password must be at least 8 characters long.',
-                'any.required': 'hashed_password is required when creating a user.',
-            }),
+            role: Joi.string()
+                .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only') // Prevent special characters
+                .when(Joi.ref('$operation'), {
+                    is: 'create',
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'string.empty': 'Role is required when creating a user.',
+                    'any.required': 'Role is required when creating a user.',
+                    'string.pattern.name': 'Role must not contain special characters.',
+                }),
 
-            role: Joi.string().when(Joi.ref('$operation'), {
-                is: 'create',
-                then: Joi.required(),
-                otherwise: Joi.optional(),
-            }).messages({
-                'string.empty': 'Role is required when creating a user.',
-                'any.required': 'Role is required when creating a user.',
-            }),
-
-            member_since: Joi.date().when(Joi.ref('$operation'), {
-                is: 'create',
-                then: Joi.required(),
-                otherwise: Joi.optional(),
-            }).messages({
-                'date.base': 'member_since must be a valid date.',
-                'any.required': 'member_since is required when creating a user.',
-            }),
+            member_since: Joi.date() // Date fields are allowed
+                .when(Joi.ref('$operation'), {
+                    is: 'create',
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'date.base': 'Member since must be a valid date.',
+                    'any.required': 'Member since is required when creating a user.',
+                }),
         });
 
         super('users', userSchema);
-        this.saltRounds = parseInt(process.env.SALT_ROUNDS);
+        this.saltRounds = parseInt(appConfigs.saltRounds);
     }
 
     async _hashPassword(password) {
@@ -160,12 +194,35 @@ class UserModel extends BaseModel {
         }
     }
 
-    async findUser(userEmail) {
+    async findByNationalIdOrEmail(input) {
         try {
-
+            logger.info('Finding user by national_id or email');
+            logger.debug(`input: ${JSON.stringify(input)}`);
+            const validationResult = await super.validateSchema({
+                national_id_or_email: input
+            }, { operation: 'read' });
+            if (validationResult instanceof Error) {
+                logger.warn('Invalid input for finding user');
+                throw validationResult;
+            }
+            const result = await super.findOne({
+                $or: [
+                    { national_id: input },
+                    { email: input }
+                ]
+            });
+            if (!result) {
+                logger.warn('User not found');
+                return null;
+            }
+            logger.debug(`result: ${JSON.stringify(result)}`);
+            return result;
         } catch (error) {
-
+            logger.error(`Error finding user by national_id or email: ${error.message}`);
+            throw error;
         }
     }
+
+
 }
 module.exports = UserModel

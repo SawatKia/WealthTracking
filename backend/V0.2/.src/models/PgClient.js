@@ -2,9 +2,9 @@ const { development, test, production } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
 const Pool = require('pg-pool');
 const logger = Utils.Logger('PgClient');
+const appConfigs = require('../configs/AppConfigs')
 
-require('dotenv').config();
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = appConfigs.environment;
 
 class PgClient {
     constructor() {
@@ -69,29 +69,11 @@ class PgClient {
     }
 
 
-    /**
-     * Execute a PostgreSQL query. This method will automatically handle connecting
-     * to the database and logging the query and its parameters. If the query fails,
-     * the error will be re-thrown.
-     * @param {string} sql - The SQL query to execute.
-     * @param {Array} params - The parameters to substitute into the query.
-     * @returns {Promise<QueryResult>} - A promise that resolves to the result of the query.
-     */
     async query(sql, params) {
         if (!this.client) await this.init();
         logger.debug(`Query: ${sql}, params: ${JSON.stringify(params)}`);
         return this.client.query(sql, params);
     }
-    /**
-     * Start a PostgreSQL transaction. This will allow you to execute multiple queries
-     * in a single, atomic unit of work. If any of the queries fail, the entire
-     * transaction will be rolled back.
-     *
-     * @throws {Error} If the database is not connected.
-     * @throws {Error} If a transaction is already started.
-     * @returns {Promise<void>}
-     */
-
     async beginTransaction() {
         if (!this.client) throw new Error('Database not connected');
         if (this.transactionStarted) throw new Error('Transaction already started');
@@ -100,13 +82,6 @@ class PgClient {
         logger.debug('Transaction started');
     }
 
-    /**
-     * Commit the current PostgreSQL transaction. This will make the effects of any
-     * queries executed since the transaction was started permanent.
-     *
-     * @throws {Error} If no transaction is started.
-     * @returns {Promise<void>}
-     */
     async commit() {
         if (this.transactionStarted) {
             await this.client.query('COMMIT');
@@ -116,14 +91,6 @@ class PgClient {
     }
 
 
-    /**
-     * Roll back the current PostgreSQL transaction. This will undo any changes
-     * made in the current transaction, and will release any locks that were
-     * acquired during the transaction.
-     *
-     * @throws {Error} If no transaction is started.
-     * @returns {Promise<void>}
-     */
     async rollback() {
         if (this.transactionStarted) {
             await this.client.query('ROLLBACK');
@@ -132,13 +99,6 @@ class PgClient {
         }
     }
 
-    /**
-     * Release the PostgreSQL client connection back to the connection pool.
-     * This is important to do after you are done using the client, as it
-     * will allow other users to use the same connection.
-     *
-     * @returns {Promise<void>}
-     */
     async release() {
         if (this.client) {
             this.client.release();
@@ -208,6 +168,12 @@ class PgClient {
                 PRIMARY KEY (account_number, fi_code, transaction_id),
                 FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) ON UPDATE CASCADE ON DELETE CASCADE,
                 FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
+            );`,
+            `CREATE TABLE IF NOT EXISTS api_request_limits (
+                service_name VARCHAR(255) NOT NULL,
+                request_date DATE NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (service_name, request_date)
             );`
         ];
 

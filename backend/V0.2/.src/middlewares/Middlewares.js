@@ -1,12 +1,10 @@
 const Utils = require('../utilities/Utils');
-const logger = Utils.Logger('Middlewares');
-const { formatResponse } = Utils;
-
 const MyAppErrors = require('../utilities/MyAppErrors');
-require('dotenv').config();
+const appConfigs = require('../configs/AppConfigs');
 
-const NODE_ENV = process.env.NODE_ENV;
-const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
+const { Logger, formatResponse } = Utils;
+const logger = Logger('Middlewares');
+const NODE_ENV = appConfigs.environment;
 
 class Middlewares {
     /**
@@ -30,9 +28,9 @@ class Middlewares {
             const methods = allowedMethods[path];
             if (!methods.includes(method)) {
                 logger.error(`Method ${method} not allowed for ${path}`);
-                const errorMessage = isDevelopment
-                    ? `${method} method not allowed for ${path}`
-                    : 'Method not allowed';
+                const errorMessage = NODE_ENV === 'production'
+                    ? 'Method not allowed'
+                    : `${method} method not allowed for ${path}`;
                 return next(MyAppErrors.methodNotAllowed(errorMessage));
             }
 

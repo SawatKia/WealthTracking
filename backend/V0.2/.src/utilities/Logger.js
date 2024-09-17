@@ -3,9 +3,10 @@ const path = require('path');
 const { format } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
-const NODE_ENV = process.env.NODE_ENV;
+const appConfigs = require('../configs/AppConfigs');
 
-require('dotenv').config();
+const NODE_ENV = appConfigs.environment;
+
 const timezoned = () => {
     return new Date().toLocaleString('en-GB', {
         timeZone: 'Asia/Bangkok'
@@ -27,7 +28,7 @@ class Logger {
         const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
         const transports = [];
-        if (!isDevelopment) {
+        if (NODE_ENV === 'production' || NODE_ENV === 'test') {
             transports.push(new DailyRotateFile({
                 filename: 'log/error-%DATE%.log',
                 datePattern: 'YYYY-MM-DD',
@@ -66,7 +67,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp}, [${info.label}] [${info.caller ? `${info.caller}` : 'Unknown'}], ${info.level}, ${info.message}`; // global log format  
+                    return `${info.timestamp} [${info.label}] ${info.level} - ${info.message}`; // global log format  
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
