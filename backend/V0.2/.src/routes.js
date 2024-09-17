@@ -47,7 +47,7 @@ router.post('/users', UserController.registerUser);
 router.post('/users/check', UserController.checkPassword);
 
 router.get('/slip/quota', ApiController.getQuotaInformation);
-router.post('/slip/', ApiController.extractSlipData);
+router.post('/slip', ApiController.extractSlipData);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);

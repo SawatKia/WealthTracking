@@ -299,7 +299,7 @@ paths:
 
   /slip:
     post:
-      summary: Extract slip data
+      summary: Extract slip data (NOT available)
       tags:
         - Slip
       requestBody:
