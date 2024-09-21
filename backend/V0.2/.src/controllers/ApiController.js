@@ -28,10 +28,13 @@ class ApiController {
         try {
             const currentDate = this._getCurrentDate();
             let requestLimit = await this.apiRequestLimitModel.getRequestLimit('EasySlip', currentDate);
-
+            logger.debug(`requestLimit found: ${requestLimit ? JSON.stringify(requestLimit) : 'empty'}`);
             // there is no today's request yet, create a new one with 0 request count
             if (!requestLimit) {
+                logger.info("there is no todal's request to the api yet, create a new one");
                 requestLimit = await this.apiRequestLimitModel.createRequestLimit('EasySlip', currentDate);
+                logger.debug(`create requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : 'empty'}`);
+                return true;
             } else if (requestLimit.request_count >= 7) {
                 logger.warn('Daily EasySlip API request limit reached');
                 return false;
@@ -39,6 +42,7 @@ class ApiController {
 
             // ensure that the quota is not low and has not expired
             const quotaInfo = await this.easySlipService.fetchQuotaInformation();
+            logger.debug(`quotaInfo: ${JSON.stringify(quotaInfo)}`);
             const { remainingQuota, expiredAt } = quotaInfo.data;
 
             if (remainingQuota <= 5) {
@@ -83,6 +87,60 @@ class ApiController {
 
     async extractSlipData(req, res, next) {
         logger.info('Processing slip data extraction request');
+        const mockDataResponse = {
+            "payload": "00000000000000000000000000000000000000000000000000000000000",
+            "transRef": "68370160657749I376388B35",
+            "date": "2023-01-01T00:00:00+07:00",
+            "countryCode": "TH",
+            "amount": {
+                "amount": 1000,
+                "local": {
+                    "amount": 0,
+                    "currency": ""
+                }
+            },
+            "fee": 0,
+            "ref1": "",
+            "ref2": "",
+            "ref3": "",
+            "sender": {
+                "bank": {
+                    "id": "001",
+                    "name": "กสิกรไทย",
+                    "short": "KBANK"
+                },
+                "account": {
+                    "name": {
+                        "th": "นาย อีซี่ สลิป",
+                        "en": "MR. EASY SLIP"
+                    },
+                    "bank": {
+                        "type": "BANKAC",
+                        "account": "1234xxxx5678"
+                    }
+                }
+            },
+            "receiver": {
+                "bank": {
+                    "id": "030",
+                    "name": "ธนาคารออมสิน",
+                    "short": "GSB"
+                },
+                "account": {
+                    "name": {
+                        "th": "นาย อีซี่ สลิป"
+                    },
+                    "bank": {
+                        "type": "BANKAC",
+                        "account": "12xxxx3456"
+                    },
+                    "proxy": {
+                        "type": "EWALLETID",
+                        "account": "123xxxxxxxx4567"
+                    }
+                }
+            }
+        };
         try {
             const { base64Image } = req.body;
             if (!base64Image) {
@@ -97,7 +155,9 @@ class ApiController {
 
             const isQuotaAvailable = await this._checkQuotaAvailability();
             if (!isQuotaAvailable) {
-                throw new MyAppErrors.tooManyRequests('EasySlip service is not available due to quota restrictions');
+                // throw new MyAppErrors.tooManyRequests('EasySlip service is not available due to quota restrictions');
+                req.formattedResponse = formatResponse(200, " EasySlip service is currently unavailable, mock data response is return", mockDataResponse);
+                next();
             }
 
             const verificationResult = await this.easySlipService.verifySlip(base64Image);
@@ -112,4 +172,4 @@ class ApiController {
     }
 }
 
-module.exports = new ApiController();
+module.exports = ApiController;
