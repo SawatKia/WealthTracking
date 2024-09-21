@@ -29,7 +29,7 @@ class Logger {
 
         const transports = [];
         // configure transports based on NODE_ENV
-        if (NODE_ENV === 'production') {
+        if (NODE_ENV === 'production' || NODE_ENV === 'test') {
             // rotate error logs every day, keep for 7 days
             transports.push(new DailyRotateFile({
                 filename: 'log/error-%DATE%.log',
@@ -47,47 +47,18 @@ class Logger {
                 zippedArchive: true,
                 maxSize: '20m',
                 maxFiles: '14d'
-            }));
-
-            // add console transport for error and info levels
-            transports.push(new winston.transports.Console({
-                format: winston.format.combine(
-                    winston.format.colorize(),
-                    winston.format.printf(info => {
-                        return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
-                    })
-                )
-            }));
-        } else if (NODE_ENV === 'test') {
-            // rotate error logs every day, keep for 7 days
-            transports.push(new DailyRotateFile({
-                filename: 'log/error-%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                level: 'error',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '7d'
-            }));
-
-            // rotate combined logs every day, keep for 14 days
-            transports.push(new DailyRotateFile({
-                filename: 'log/combined-%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '14d'
-            }));
-        } else {
-            // add console transport for error and info levels
-            transports.push(new winston.transports.Console({
-                format: winston.format.combine(
-                    winston.format.colorize(),
-                    winston.format.printf(info => {
-                        return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
-                    })
-                )
             }));
         }
+        // add console transport for error and info levels
+        transports.push(new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.printf(info => {
+                    return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
+                })
+            )
+        }));
+
 
         this.logger = winston.createLogger({
             level: isDevelopment ? 'debug' : 'info',
