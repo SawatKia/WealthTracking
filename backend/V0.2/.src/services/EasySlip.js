@@ -1,7 +1,9 @@
 const axios = require('axios');
 const Utils = require('../utilities/Utils');
-const logger = Utils.Logger('EasySlip Services');
 const appConfigs = require('../configs/AppConfigs');
+
+const { Logger, formatResponse } = Utils;
+const logger = Logger('EasySlipService');
 
 class EasySlipService {
     constructor() {

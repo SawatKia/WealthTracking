@@ -1,10 +1,12 @@
 const app = require('./app');
 const Utils = require('./utilities/Utils');
 const appConfigs = require('./configs/AppConfigs');
+const pgClient = require('./models/PgClient');
+const FiModel = require('./models/FinancialInstitutionModel');
 
 const NODE_ENV = appConfigs.environment;
-const logger = Utils.Logger('index');
-const PgClient = require('./models/PgClient');
+const { Logger, formatResponse } = Utils;
+const logger = Logger('Index');
 const PORT = appConfigs.appPort || 3000;
 /**
  * Function to start the server
@@ -13,8 +15,11 @@ const startServer = async () => {
     logger.info('Starting server...');
     try {
         logger.info('Connecting to database...');
-        const pgClient = new PgClient();
-        await pgClient.init();
+
+        pgClient.isConnected() ? logger.info('Database connected') : await pgClient._init();
+
+        const fi = new FiModel();
+        await fi.initializeData();
 
         // Start Express server after database connection is established
         app.listen(PORT, '0.0.0.0', () => {

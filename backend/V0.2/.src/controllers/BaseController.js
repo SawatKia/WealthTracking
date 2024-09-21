@@ -2,7 +2,8 @@ require('dotenv').config();
 const Utils = require('../utilities/Utils');
 const User = require('../models/UserModel');
 
-const logger = Utils.Logger('BaseController');
+const { Logger, formatResponse } = Utils;
+const logger = Logger('BaseController');
 
 class BaseController {
 
