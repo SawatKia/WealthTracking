@@ -59,6 +59,9 @@ app.use((req, res, next) => {
 app.use('/', express.static(path.join(__dirname, './frontend_build')));
 
 // API Routes
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 app.use('/api/v0.2', routes);
 app.get('/api', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api, running in Environment: ' + NODE_ENV, null);
