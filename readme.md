@@ -62,18 +62,23 @@ npm run start
 2. Create a `.env` file in the root directory (same level as `~/backend`, `~/.vscode`, `~/design`, `~/frontend`, `~/project_structure.txt`) with the following keys and values(or your desired value):
 ```makefile
 NODE_ENV=development
-# or NODE_ENV=production
+# NODE_ENV=production
+# NODE_ENV=test
 APP_PORT=3000
 SALT_ROUNDS=10
 
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_postgres_password
-POSTGRES_NAME=your_database_name
+POSTGRES_USER=user
 POSTGRES_HOST=postgres # docker service name
+POSTGRES_TEST_NAME=test_database_name
+POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
+POSTGRES_DB=your_database_name
 
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=root
+
+EASYSLIP_URL=https://developer.easyslip.com
+EASYSLIP_KEY=<Api_key>
 ```
 4. Open Docker Desktop.
 5. In the project root directory, build and start the Docker container:
@@ -121,7 +126,7 @@ there are 2 options to debug your code
 ## Common Issues and Troubleshooting
 - **Issue 1**: If the backend is not connecting to PostgreSQL, ensure your `.env` file has the correct values and Docker Desktop is running.
 - **Issue 2**: If the frontend is not starting, make sure all dependencies are installed with `npm install`.
-- **Issue 3**: you might want to remove the docker volume for some reason. which can be done by this step
+- **Issue 3**: you might want to remove the docker volume for some reason (eg. modifying the `.env` file, need to remove the volume to make a change to affect). which can be done by this step:
   - Stop your Docker containers: `docker-compose down`
   - Remove the volume: `docker volume rm <your_project_name_postgres_data>`
   If you're unsure about the exact volume name, you can list all volumes with `docker volume ls` and look for the one related to your data.
