@@ -3,9 +3,10 @@ const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
 const Utils = require('../utilities/Utils');
-const appConfigs = require('../configs/AppConfigs')
+const appConfigs = require('../configs/AppConfigs');
 
-const logger = Utils.Logger('UserModel');
+const { Logger, formatResponse } = Utils;
+const logger = Logger('UserModel');
 
 class UserModel extends BaseModel {
 
@@ -188,6 +189,11 @@ class UserModel extends BaseModel {
             if (!(error instanceof Error)) {
                 logger.info('creating Error instance')
                 error = new Error(error);
+            } else if (error.message.includes('check_national_id_length') ||
+                error.message.includes('value too long for type character(13)')) {
+                throw new Error('invalid national_id length');
+            } else if (error.code === '23505') { // Postgres duplicate key error
+                throw new Error('duplicate key value');
             }
             logger.error(`Error creating new user: ${error.message}`);
             throw error;
