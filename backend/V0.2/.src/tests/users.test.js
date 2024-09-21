@@ -1,12 +1,11 @@
 const request = require('supertest');
 const app = require('../app');
-const PgClient = require('../models/PgClient');
+const pgClient = require('../models/PgClient');
 const { test: testConfig } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
 const { Logger, formatResponse } = Utils;
 const logger = Logger('users.test');
 
-let db;
 
 const newUserBody = [
     {
@@ -255,11 +254,11 @@ const checkPassBody = [
 ];
 
 beforeAll(async () => {
-    db = new PgClient(testConfig);
-    await db.init();
-    logger.debug(`Database connected: ${db.isConnected()}`);
+    await pgClient._init();
+
+    logger.debug(`Database connected: ${pgClient.isConnected()}`);
     // Create tables if they don't exist
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS users (
         national_id CHAR(13) PRIMARY KEY,
         email VARCHAR(255) NOT NULL,
@@ -270,14 +269,14 @@ beforeAll(async () => {
         CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
       );
     `);
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS financial_institutions (
         fi_code VARCHAR(20) PRIMARY KEY,
         name_th VARCHAR(255) NOT NULL,
         name_en VARCHAR(255) NOT NULL
       );
     `);
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS bank_accounts (
         account_number VARCHAR(20) NOT NULL,
         fi_code VARCHAR(20) NOT NULL,
@@ -291,7 +290,7 @@ beforeAll(async () => {
       );
     `);
 
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS debts (
         debt_number VARCHAR(50) NOT NULL,
         fi_code VARCHAR(20) NOT NULL,
@@ -308,7 +307,7 @@ beforeAll(async () => {
       );
     `);
 
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS transactions (
         transaction_id SERIAL PRIMARY KEY,
         transaction_datetime TIMESTAMP NOT NULL,
@@ -324,7 +323,7 @@ beforeAll(async () => {
       );
     `);
 
-    await db.query(`
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS transaction_bank_account_relations (
         transaction_id INT NOT NULL,
         account_number VARCHAR(20) NOT NULL,
@@ -335,33 +334,33 @@ beforeAll(async () => {
         FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
       );
     `);
-    logger.debug(`Tables created: ${db.isConnected()}`);
+    logger.debug(`Tables created: ${pgClient.isConnected()}`);
 });
 
 afterAll(async () => {
     // Clean up the database after all tests
     logger.info('Dropping tables');
 
-    await db.query('DROP TABLE IF EXISTS transaction_bank_account_relations;');
+    await pgClient.query('DROP TABLE IF EXISTS transaction_bank_account_relations;');
     logger.info('Dropped table: transaction_bank_account_relations');
 
-    await db.query('DROP TABLE IF EXISTS transactions;');
+    await pgClient.query('DROP TABLE IF EXISTS transactions;');
     logger.info('Dropped table: transactions');
 
-    await db.query('DROP TABLE IF EXISTS debts;');
+    await pgClient.query('DROP TABLE IF EXISTS debts;');
     logger.info('Dropped table: debts');
 
-    await db.query('DROP TABLE IF EXISTS bank_accounts;');
+    await pgClient.query('DROP TABLE IF EXISTS bank_accounts;');
     logger.info('Dropped table: bank_accounts');
 
-    await db.query('DROP TABLE IF EXISTS financial_institutions;');
+    await pgClient.query('DROP TABLE IF EXISTS financial_institutions;');
     logger.info('Dropped table: financial_institutions');
 
-    await db.query('DROP TABLE IF EXISTS users;');
+    await pgClient.query('DROP TABLE IF EXISTS users;');
     logger.info('Dropped table: users');
 
-    await db.release();
-    logger.debug(`Database disconnected: ${db.isConnected()}`);
+    await pgClient.release();
+    logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
 });
 
 
