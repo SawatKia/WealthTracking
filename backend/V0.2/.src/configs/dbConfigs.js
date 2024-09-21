@@ -12,11 +12,11 @@ module.exports = {
         connectionTimeoutMillis: 3000, // how long to wait for a connection to be established
     },
     test: {
-        user: appConfigs.postgres.user || 'your_postgres_user',
+        user: appConfigs.postgres.user,
         host: 'localhost',
-        database: appConfigs.postgres.databaseName || 'test_database_name',
-        password: appConfigs.postgres.password || 'your_postgres_password',
-        port: appConfigs.postgres.port || 5432,
+        database: appConfigs.postgres.databaseName,
+        password: appConfigs.postgres.password,
+        port: appConfigs.postgres.port,
         max: 20, // maximum number of connections in the pool connection
         idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
         connectionTimeoutMillis: 3000, // how long to wait for a connection to be established
