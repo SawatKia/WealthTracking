@@ -10,7 +10,7 @@ const config = {
         host: process.env.POSTGRES_HOST,
         password: process.env.POSTGRES_PASSWORD,
         port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-        databaseName: process.env.NODE_ENV === 'test' ? process.env.POSTGRES_TEST_NAME : process.env.POSTGRES_NAME,
+        databaseName: process.env.NODE_ENV === 'test' ? process.env.POSTGRES_TEST_NAME : process.env.POSTGRES_DB,
     },
     pgAdmin: {
         email: process.env.PGADMIN_DEFAULT_EMAIL,
