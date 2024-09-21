@@ -121,6 +121,11 @@ there are 2 options to debug your code
 ## Common Issues and Troubleshooting
 - **Issue 1**: If the backend is not connecting to PostgreSQL, ensure your `.env` file has the correct values and Docker Desktop is running.
 - **Issue 2**: If the frontend is not starting, make sure all dependencies are installed with `npm install`.
+- **Issue 3**: you might want to remove the docker volume for some reason. which can be done by this step
+  - Stop your Docker containers: `docker-compose down`
+  - Remove the volume: `docker volume rm <your_project_name_postgres_data>`
+  If you're unsure about the exact volume name, you can list all volumes with `docker volume ls` and look for the one related to your data.
+
 ## Miscellaneous
 - to list the structure, navigate to your desired directory and use this command `tree /F /A > project_structure.txt`
   - `tree`: Displays the directory structure
