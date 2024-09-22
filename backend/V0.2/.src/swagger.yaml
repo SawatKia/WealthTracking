@@ -7,24 +7,6 @@ servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
 paths:
-  /:
-    get:
-      tags:
-        - "Connection"
-      summary: API Root (v0.2)
-      description: Returns a welcome message to confirm API connectivity.
-      responses:
-        "200":
-          description: Successful response with a welcome message in JSON format.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "You are connected to the /api/v0.2/"
-                data: null
-
   /api:
     get:
       tags:
@@ -61,6 +43,25 @@ paths:
               schema:
                 type: string
                 example: "OK"
+
+  /:
+    get:
+      tags:
+        - "Connection"
+      summary: API v0.2 Root
+      description: Returns a welcome message to confirm API connectivity.
+      responses:
+        "200":
+          description: Successful response with a welcome message in JSON format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "You are connected to the /api/v0.2/"
+                data: null
+
   /users:
     post:
       tags:
