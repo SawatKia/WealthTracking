@@ -23,8 +23,8 @@ const startServer = async () => {
 
         // Start Express server after database connection is established
         app.listen(PORT, '0.0.0.0', () => {
-            logger.info(`App is listening on port ${PORT}`);
             logger.info(`Environment: ${NODE_ENV}`);
+            logger.info(`App is listening on port ${PORT}`);
         });
     } catch (error) {
         logger.error('Failed to start the server:', error.message);
