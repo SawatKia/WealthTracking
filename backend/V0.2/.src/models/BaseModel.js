@@ -32,6 +32,9 @@ class BaseModel {
 
     async create(data) {
         try {
+            const validated = await this.validateSchema(data, 'create');
+            logger.debug(`Validated data: ${JSON.stringify(validated)}`);
+            if (validated instanceof Error) throw validated;
             const keys = Object.keys(data);
             const value = Object.values(data);
             const placeholder = keys.map((_, index) => `$${index + 1}`).join(',');
