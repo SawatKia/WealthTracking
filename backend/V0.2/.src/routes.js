@@ -54,7 +54,7 @@ router.get('/', (req, res, next) => {
 })
 router.post('/users', userController.registerUser);
 router.post('/users/check', userController.checkPassword);
-
+//TODO - add middleware to verify token
 router.get('/fi/', fiController.getAllFinancialInstitutions);
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 

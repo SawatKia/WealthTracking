@@ -23,6 +23,7 @@ class BaseController {
     }
 
     async getCurrentUser(req) {
+        //TODO - get user from jwt
         req.user = {
             id: 1,
             email: 'V2yF3@example.com',
