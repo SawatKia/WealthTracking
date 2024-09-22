@@ -29,6 +29,7 @@ if (NODE_ENV != 'test') {
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['POST'],
+    '/users/check': ['POST'],
     '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
