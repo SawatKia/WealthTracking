@@ -9,19 +9,62 @@ servers:
 paths:
   /:
     get:
-      summary: API Root
+      tags:
+        - "Connection"
+      summary: API Root (v0.2)
       description: Returns a welcome message to confirm API connectivity.
       responses:
         "200":
-          description: Successful response with a welcome message.
+          description: Successful response with a welcome message in JSON format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "You are connected to the /api/v0.2/"
+                data: null
+
+  /api:
+    get:
+      tags:
+        - "Connection"
+      summary: API Root (General)
+      description: Returns a welcome message to confirm API connectivity.
+      servers:
+        - url: "http://localhost:3000"
+      responses:
+        "200":
+          description: Successful response with a welcome message in JSON format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "You are connected to the /api, running in Environment: development"
+                data: null
+
+  /health:
+    get:
+      tags:
+        - "Connection"
+      summary: Health check
+      description: Returns a plain text string to confirm the API is running.
+      servers:
+        - url: "http://localhost:3000"
+      responses:
+        "200":
+          description: Healthy response in plain text.
           content:
             text/plain:
               schema:
                 type: string
-                example: "You are connected to the api/v0.2"
-
+                example: "OK"
   /users:
     post:
+      tags:
+        - "User"
       summary: Register a new user
       description: Creates a new user with the provided information.
       requestBody:
@@ -113,6 +156,8 @@ paths:
 
   /users/check:
     post:
+      tags:
+        - "User"
       summary: Check user password (Development Mode Only)
       description: Validates user's email and password.
       requestBody:
@@ -182,6 +227,8 @@ paths:
 
   /users/{national_id}:
     get:
+      tags:
+        - "User"
       summary: Get user by National ID (NOT Implemented)
       description: Retrieves user information based on National ID.
       parameters:
@@ -212,6 +259,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
+      tags:
+        - "User"
       summary: Update user by National ID (NOT Implemented)
       description: Updates user information.
       parameters:
@@ -261,6 +310,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
+      tags:
+        - "User"
       summary: Delete user by National ID (NOT Implemented)
       description: Deletes a user from the system.
       parameters:
@@ -286,16 +337,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example: "johndoe@example.com"
-            role:
-              type: string
-              description: Role assigned to the user.
-              example: "user"
-            member_since:
-              type: string
-              format: date-time
-              description: Date and time when the user was registered.
-              example: "2024-09-09T10:25:22.650Z"
 
   /slip:
     post:
