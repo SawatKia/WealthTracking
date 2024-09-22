@@ -19,13 +19,31 @@ class Middlewares {
             logger.debug(`Request: Method=${method}, Path=${path}`);
             logger.debug(`Environment: ${NODE_ENV}`);
 
-            // Check if the path exists in allowedMethods
-            if (!allowedMethods[path]) {
+            // Helper function to match dynamic paths
+            const matchPath = (incomingPath) => {
+                for (const allowedPath in allowedMethods) {
+                    const pathRegex = new RegExp(`^${allowedPath.replace(/:[^/]+/g, '[^/]+')}$`);
+                    logger.debug(`Path regex: ${pathRegex}`);
+                    if (pathRegex.test(incomingPath)) {
+                        return allowedPath; // Return the matching allowed path
+                    }
+                }
+                return null;
+            };
+
+            // Match incoming path against allowed paths
+            const matchedPath = matchPath(path);
+
+            logger.debug(`Matched path: ${matchedPath}`);
+
+            // Check if a matching path exists in allowedMethods
+            if (!matchedPath) {
                 logger.error(`Path ${path} not found`);
                 return next(MyAppErrors.notFound(`${path} not available`));
             }
 
-            const methods = allowedMethods[path];
+            // Validate the method for the matched path
+            const methods = allowedMethods[matchedPath];
             if (!methods.includes(method)) {
                 logger.error(`Method ${method} not allowed for ${path}`);
                 const errorMessage = NODE_ENV === 'production'
@@ -38,6 +56,7 @@ class Middlewares {
             next();
         };
     }
+
 
     /**
      * Middleware to handle API responses in a consistent format
