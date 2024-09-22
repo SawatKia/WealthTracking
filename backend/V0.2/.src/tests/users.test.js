@@ -366,9 +366,17 @@ afterAll(async () => {
     logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
 });
 
-
 describe('API Endpoints', () => {
     describe('connection to api', () => {
+        describe('GET /health', () => {
+            it('should return 200 OK text', async () => {
+                const response = await request(app)
+                    .get('/health')
+                    .expect(200);
+
+                expect(response.text).toEqual('OK');
+            });
+        });
         describe('GET /api', () => {
             it('should return 200 OK formatted message', async () => {
                 const response = await request(app)
