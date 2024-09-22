@@ -54,7 +54,14 @@ class PgClient {
             logger.info('Checking if tables exist...');
             const tables = ['users', 'financial_institutions', 'bank_accounts', 'debts', 'transactions', 'transaction_bank_account_relations', 'api_request_limits'];
             for (const table of tables) {
-                await this.createTableIfNotExist(table);
+                try {
+                    await this.client.query(`SELECT 1 FROM ${table}`);
+                    logger.info(`Table ${table} exists, skip creating table...`);
+                } catch (error) {
+                    logger.debug(`Table ${table} does not exist`);
+                    logger.info(`Creating table: ${table}`);
+                    await this.createTableIfNotExist(table);
+                }
             }
         } catch (error) {
             logger.error(`Database connection failed: ${error.message}`);
