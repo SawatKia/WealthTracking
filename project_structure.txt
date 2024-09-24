@@ -1,5 +1,5 @@
-Folder PATH listing for volume Data
-Volume serial number is 4294-1FC7
+Folder PATH listing for volume H-Data
+Volume serial number is 307E-F514
 D:.
 |   .env
 |   .gitignore
@@ -15,54 +15,64 @@ D:.
 |       tasks.json
 |       
 +---backend
-|   +---V0.1
-|   |   |   backend_structure.txt
-|   |   |   Dockerfile
-|   |   |   package-lock.json
-|   |   |   package.json
-|   |   |   
-|   |   +---.src
-|   |   |   |   index.js
-|   |   |   |   
-|   |   |   +---configs
-|   |   |   |       database.js
-|   |   |   |       logger.js
-|   |   |   |       
-|   |   |   +---Controllers
-|   |   |   |       BankAccountController.js
-|   |   |   |       BaseController.js
-|   |   |   |       Security.js
-|   |   |   |       UserControlller.js
-|   |   |   |       
-|   |   |   +---middleware
-|   |   |   |       adminMiddleware.js
-|   |   |   |       errorHandler.js
-|   |   |   |       Indexmiddleware.js
-|   |   |   |       methodValidator.js
-|   |   |   |       responseHandler.js
-|   |   |   |       
-|   |   |   +---Models
-|   |   |   |   |   BankAccountModel.js
-|   |   |   |   |   BaseModel.js
-|   |   |   |   |   MongoObject.js
-|   |   |   |   |   UserModel.js
-|   |   |   |   |   
-|   |   |   |   \---__tests__
-|   |   |   |           UserModel.test.js
-|   |   |   |           
-|   |   |   +---routes
-|   |   |   |       BankAccountRoutes.js
-|   |   |   |       UserRoutes.js
-|   |   |   |       
-|   |   |   \---utils
-|   |   |           error.js
-|   |   |           responseFormatter.js
-|       |           
-|       \---Requests
-|               api.http
-|               User.http
-|               
-+---design
+|   |               
+|   \---V0.2
+|       |   backend_structure.txt
+|       |   dockerfile
+|       |   login_logout.js
+|       |   package-lock.json
+|       |   package.json
+|       |   
+|       +---.src
+|       |   |   app.js
+|       |   |   index.js
+|       |   |   routes.js
+|       |   |   swagger.yaml
+|       |   |   
+|       |   +---configs
+|       |   |       AppConfigs.js
+|       |   |       dbConfigs.js
+|       |   |       
+|       |   +---controllers
+|       |   |       ApiController.js
+|       |   |       AuthController.js
+|       |   |       BankController.js
+|       |   |       BaseController.js
+|       |   |       FinancialInstitutionController.js
+|       |   |       UserController.js
+|       |   |       
+|       |   +---middlewares
+|       |   |       Middlewares.js
+|       |   |       
+|       |   +---models
+|       |   |       APIRequestLimitModel.js
+|       |   |       BankModel.js
+|       |   |       BaseModel.js
+|       |   |       FinancialInstitutionModel.js
+|       |   |       TransactionModel.js
+|       |   |       UserModel.js
+|       |   |       
+|       |   +---services
+|       |   |       EasySlip.js
+|       |   |       PgClient.js
+|       |   |       Redis.js
+|       |   |       
+|       |   +---tests
+|       |   |   |   users.test.js
+|       |   |   |   
+|       |   |   \---report
+|       |   |       |   report.html
+|       |   |       |   
+|       |   |       \---jest-html-reporters-attach
+|       |   |           \---report
+|       |   |                   index.js
+|       |   |                   result.js
+|       |   |                   
+|       |   \---utilities
+|       |           Logger.js
+|       |           MyAppErrors.js
+|       |           Utils.js
+|       |           ValidationErrors.js
 |                   
 \---frontend
     |   .gitignore
@@ -92,7 +102,7 @@ D:.
     |               main.d624b840.js
     |               main.d624b840.js.LICENSE.txt
     |               main.d624b840.js.map
-    |                          
+    |           
     +---public
     |       favicon.ico
     |       index.html
