@@ -1,15 +1,16 @@
 const { development, test, production } = require('../configs/dbConfigs');
 const Utils = require('../utilities/Utils');
 const Pool = require('pg-pool');
-const appConfigs = require('../configs/AppConfigs')
+const appConfigs = require('../configs/AppConfigs');
 
 const NODE_ENV = appConfigs.environment;
-const { Logger, formatResponse } = Utils;
+const TEST_DB = appConfigs.postgres.databaseName;
+const { Logger } = Utils;
 const logger = Logger('PgClient');
 
 class PgClient {
     constructor() {
-        logger.info('Initializing PgClient');
+        logger.info('Initializing PgClient instance');
         logger.debug(`Running Environment: ${NODE_ENV}`);
 
         let config;
@@ -23,7 +24,6 @@ class PgClient {
 
         logger.debug(`Database Config: ${JSON.stringify(config)}`);
 
-        // Ensure all required config properties are present
         const requiredProps = ['user', 'host', 'database', 'password', 'port'];
         for (const prop of requiredProps) {
             if (!config[prop]) {
@@ -36,7 +36,6 @@ class PgClient {
         this.client = null;
         this.transactionStarted = false;
 
-        // Handle pool errors
         this.pool.on('error', (err) => {
             logger.error('Database pool error: ' + err.message);
         });
@@ -45,17 +44,19 @@ class PgClient {
     async _init() {
         try {
             logger.info('Initialize PgClient');
+            if (NODE_ENV === 'test') {
+                await this.createTestDatabase();
+            }
             this.client = await this.pool.connect();
             if (!this.client) throw new Error('Database connection failed');
             logger.debug('Database connected successfully');
 
-            // Create tables if they don't exist
             logger.info('Checking if tables exist...');
             const tables = ['users', 'financial_institutions', 'bank_accounts', 'debts', 'transactions', 'transaction_bank_account_relations', 'api_request_limits'];
             for (const table of tables) {
                 try {
                     await this.client.query(`SELECT 1 FROM ${table}`);
-                    logger.info(`Table ${table} exists`);
+                    logger.info(`Table ${table} exists, skip creating table...`);
                 } catch (error) {
                     logger.debug(`Table ${table} does not exist`);
                     logger.info(`Creating table: ${table}`);
@@ -64,13 +65,11 @@ class PgClient {
             }
         } catch (error) {
             logger.error(`Database connection failed: ${error.message}`);
-            logger.error(`Error stack trace: ${error.stack}`);
-            throw new Error('Database connection failed');
+            throw error;
         }
     }
 
     isConnected() {
-        // using !!, the method ensures that it always returns a boolean value 
         return !!this.client;
     }
 
@@ -100,7 +99,6 @@ class PgClient {
         }
     }
 
-
     async rollback() {
         if (this.transactionStarted) {
             await this.client.query('ROLLBACK');
@@ -113,6 +111,39 @@ class PgClient {
         if (this.client) {
             this.client.release();
             logger.debug('Database client released');
+        }
+    }
+
+    async createTestDatabase() {
+        const adminPool = new Pool({
+            ...test,
+            database: 'postgres',  // Use 'postgres' as the default admin database
+        });
+
+        logger.info(`Creating test database '${TEST_DB}'...`);
+        try {
+            const adminClient = await adminPool.connect();
+            // Check if the test database exists
+            logger.info(`Checking if test database '${TEST_DB}' exists...`);
+            const checkDbQuery = `SELECT 1 FROM pg_database WHERE datname = $1`;
+            const result = await adminClient.query(checkDbQuery, [TEST_DB]);
+
+            if (result.rowCount > 0) {
+                logger.info(`Test database '${TEST_DB}' already exists`);
+                adminClient.release();
+                return; // Exit if the database exists
+            }
+            await adminClient.query(`CREATE DATABASE ${TEST_DB}`);
+            logger.info(`Test database '${TEST_DB}' created successfully`);
+            adminClient.release();
+        } catch (error) {
+            if (error.code !== '42P04') { // 42P04 is the code for 'database already exists'
+                logger.error(`Error creating test database: ${error.message}`);
+                throw error;
+            }
+            logger.info(`Test database '${TEST_DB}' already exists`);
+        } finally {
+            await adminPool.end();
         }
     }
 
@@ -198,4 +229,5 @@ class PgClient {
         }
     }
 }
+
 module.exports = new PgClient();

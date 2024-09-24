@@ -143,11 +143,11 @@ class ApiController {
         };
         try {
             const { base64Image } = req.body;
-            if (!base64Image) {
-                throw MyAppErrors.badRequest('No image provided for slip verification');
+            if (!base64Image || typeof base64Image !== 'string') {
+                throw MyAppErrors.badRequest('Invalid input');
             }
 
-            const base64Regex = /^data:image\/(png|jpeg|jpg);base64,(.*)$/;
+            const base64Regex = /^data:image\/(png|jpg|jpeg|gif);base64,/;
             const match = base64Image.match(base64Regex);
             if (!match) {
                 throw MyAppErrors.badRequest('Invalid base64 image format provided');

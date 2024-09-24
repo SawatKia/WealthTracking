@@ -29,6 +29,7 @@ if (NODE_ENV != 'test') {
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['POST'],
+    '/users/check': ['POST'],
     '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
@@ -53,7 +54,7 @@ router.get('/', (req, res, next) => {
 })
 router.post('/users', userController.registerUser);
 router.post('/users/check', userController.checkPassword);
-
+//TODO - add middleware to verify token
 router.get('/fi/', fiController.getAllFinancialInstitutions);
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 
