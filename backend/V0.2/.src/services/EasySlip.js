@@ -1,6 +1,7 @@
 const axios = require("axios");
 const Utils = require("../utilities/Utils");
 const appConfigs = require("../configs/AppConfigs");
+const MyAppErrors = require("../utilities/MyAppErrors");
 
 const { Logger, formatResponse } = Utils;
 const logger = Logger("EasySlipService");
@@ -34,7 +35,7 @@ class EasySlipService {
       !appConfigs.easySlip.key ||
       !this.apiKeyPattern.test(appConfigs.easySlip.key)
     ) {
-      throw new Error(
+      throw MyAppErrors.badRequest(
         "EasySlip API key is missing. Cannot fetch quota information."
       );
     }
@@ -58,8 +59,8 @@ class EasySlipService {
       !appConfigs.easySlip.key ||
       !this.apiKeyPattern.test(appConfigs.easySlip.key)
     ) {
-      throw new Error(
-        "EasySlip API key is missing. Cannot verify slip information."
+      throw MyAppErrors.badRequest(
+        "EasySlip API key is invalid. Cannot verify slip information."
       );
     }
     if (!base64Image) {
