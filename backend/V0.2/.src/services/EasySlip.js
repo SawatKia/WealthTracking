@@ -28,6 +28,20 @@ class EasySlipService {
     }
   }
 
+  async init() {
+    if (!this.client) {
+      logger.error("Failed to initialize EasySlip API client");
+      throw new Error("Failed to initialize EasySlip API client");
+    }
+    if (
+      !appConfigs.easySlip.key ||
+      !this.apiKeyPattern.test(appConfigs.easySlip.key)
+    ) {
+      logger.warn("EasySlip API key is invalid");
+    }
+    logger.info("EasySlip API client initialized successfully");
+    return true;
+  }
   async fetchQuotaInformation() {
     logger.info("Fetching quota information from EasySlip API");
 

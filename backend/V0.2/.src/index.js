@@ -1,8 +1,10 @@
 const app = require("./app");
 const Utils = require("./utilities/Utils");
 const appConfigs = require("./configs/AppConfigs");
-const pgClient = require("./services/PgClient");
 const FiModel = require("./models/FinancialInstitutionModel");
+
+const pgClient = require("./services/PgClient");
+const easySlip = require("./services/EasySlip");
 
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse } = Utils;
@@ -19,6 +21,7 @@ const startServer = async () => {
     pgClient.isConnected()
       ? logger.info("Database connected")
       : await pgClient._init();
+    easySlip.init();
 
     const fi = new FiModel();
     await fi.initializeData();
