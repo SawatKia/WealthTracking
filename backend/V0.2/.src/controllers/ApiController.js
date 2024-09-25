@@ -32,8 +32,7 @@ class ApiController {
         currentDate
       );
       logger.debug(
-        `requestLimit found: ${
-          requestLimit ? JSON.stringify(requestLimit) : "empty"
+        `requestLimit found: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
         }`
       );
       // there is no today's request yet, create a new one with 0 request count
@@ -46,8 +45,7 @@ class ApiController {
           currentDate
         );
         logger.debug(
-          `create requestLimit: ${
-            requestLimit ? JSON.stringify(requestLimit) : "empty"
+          `create requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
           }`
         );
         return true;
@@ -108,8 +106,8 @@ class ApiController {
       next();
     } catch (error) {
       logger.error(
-        "Error processing quota information request: ",
-        error.message
+        `Error processing quota information request: ${error.message}`
+
       );
       if (error.message == "Invalid EasySlip API key provided") {
         next(MyAppErrors.badRequest(error.message));
