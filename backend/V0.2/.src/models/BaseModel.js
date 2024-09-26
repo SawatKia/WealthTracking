@@ -103,11 +103,10 @@ class BaseModel {
         .map((_, index) => `$${updateKeys.length + index + 1}`)
         .join(" AND ");
 
-      const sql = `UPDATE ${
-        this.tableName
-      } SET ${updatePlaceholders} WHERE ${keys.join(
-        " = "
-      )} = ${conditionPlaceholders} RETURNING *`;
+      const sql = `UPDATE ${this.tableName
+        } SET ${updatePlaceholders} WHERE ${keys.join(
+          " = "
+        )} = ${conditionPlaceholders} RETURNING *`;
       const result = await this.pgClient.query(sql, [
         ...updateValues,
         ...primaryValues,
