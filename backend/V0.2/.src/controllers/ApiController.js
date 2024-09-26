@@ -10,12 +10,68 @@ class ApiController {
   constructor() {
     this.easySlipService = EasySlipService;
     this.apiRequestLimitModel = new APIRequestLimitModel();
+    this.mockDataResponse = {
+      payload: "00000000000000000000000000000000000000000000000000000000000",
+      transRef: "68370160657749I376388B35",
+      date: "2023-01-01T00:00:00+07:00",
+      countryCode: "TH",
+      amount: {
+        amount: 1000,
+        local: {
+          amount: 0,
+          currency: "",
+        },
+      },
+      fee: 0,
+      ref1: "",
+      ref2: "",
+      ref3: "",
+      sender: {
+        bank: {
+          id: "001",
+          name: "กสิกรไทย",
+          short: "KBANK",
+        },
+        account: {
+          name: {
+            th: "นาย อีซี่ สลิป",
+            en: "MR. EASY SLIP",
+          },
+          bank: {
+            type: "BANKAC",
+            account: "1234xxxx5678",
+          },
+        },
+      },
+      receiver: {
+        bank: {
+          id: "030",
+          name: "ธนาคารออมสิน",
+          short: "GSB",
+        },
+        account: {
+          name: {
+            th: "นาย อีซี่ สลิป",
+          },
+          bank: {
+            type: "BANKAC",
+            account: "12xxxx3456",
+          },
+          proxy: {
+            type: "EWALLETID",
+            account: "123xxxxxxxx4567",
+          },
+        },
+      },
+    };
 
     // Bind methods to ensure correct 'this' context
     this._getCurrentDate = this._getCurrentDate.bind(this);
     this._checkQuotaAvailability = this._checkQuotaAvailability.bind(this);
     this.getQuotaInformation = this.getQuotaInformation.bind(this);
-    this.extractSlipData = this.extractSlipData.bind(this);
+    this.extractSlipDataByPayload = this.extractSlipDataByPayload.bind(this);
+    this.extractSlipDataByFile = this.extractSlipDataByFile.bind(this);
+    this.extractSlipDataByBase64 = this.extractSlipDataByBase64.bind(this);
   }
 
   _getCurrentDate() {
@@ -116,68 +172,106 @@ class ApiController {
     }
   }
 
-  async extractSlipData(req, res, next) {
+  /**
+   * Verifies bank slip by payload (QR code).
+   * @param {Object} req - The HTTP request object.
+   * @param {string} req.query.payload - The QR code payload. Data read from qr code
+   * @param {Object} res - The HTTP response object.
+   * @param {function} next - The next middleware function.
+   */
+  async extractSlipDataByPayload(req, res, next) {
+    logger.info("Processing slip data extraction by payload request");
+    try {
+      const { payload } = req.query;
+      if (!payload) {
+        throw MyAppErrors.badRequest("No payload provided");
+      }
+
+      const isQuotaAvailable = await this._checkQuotaAvailability();
+      if (!isQuotaAvailable) {
+        req.formattedResponse = formatResponse(
+          200,
+          "EasySlip service is currently unavailable, mock data response is returned",
+          this.mockDataResponse
+        );
+        next();
+      }
+
+      const verificationResult = await this.easySlipService.verifySlipByPayload(payload);
+      await this.apiRequestLimitModel.incrementRequestCount(
+        "EasySlip",
+        this._getCurrentDate()
+      );
+
+      req.formattedResponse = formatResponse(
+        200,
+        "Slip verification success by payload",
+        verificationResult.data
+      );
+      next();
+    } catch (error) {
+      logger.error("Error processing slip data extraction by payload:", error.message);
+      next(error);
+    }
+  }
+
+  /**
+   * Verifies bank slip by image file upload.
+   * @param {Object} req - The HTTP request object.
+   * @param {Object} req.file - The image file from multipart/form-data.
+   * @param {Object} res - The HTTP response object.
+   * @param {function} next - The next middleware function.
+   */
+  async extractSlipDataByFile(req, res, next) {
+    logger.info("Processing slip data extraction by file request");
+    try {
+      const file = req.file; // Assuming file is uploaded using multer or similar middleware
+      if (!file) {
+        throw MyAppErrors.badRequest("No file provided");
+      }
+
+      const isQuotaAvailable = await this._checkQuotaAvailability();
+      if (!isQuotaAvailable) {
+        req.formattedResponse = formatResponse(
+          200,
+          "EasySlip service is currently unavailable, mock data response is returned",
+          this.mockDataResponse
+        );
+        next();
+      }
+
+      const verificationResult = await this.easySlipService.verifySlipByImage(file);
+      await this.apiRequestLimitModel.incrementRequestCount(
+        "EasySlip",
+        this._getCurrentDate()
+      );
+
+      req.formattedResponse = formatResponse(
+        200,
+        "Slip verification success by file",
+        verificationResult.data
+      );
+      next();
+    } catch (error) {
+      logger.error("Error processing slip data extraction by file:", error.message);
+      next(error);
+    }
+  }
+
+  /**
+   * Verifies bank slip by base64 encoded image.
+   * @param {Object} req - The HTTP request object.
+   * @param {string} req.body.image - The base64 encoded image.
+   * @param {Object} res - The HTTP response object.
+   * @param {function} next - The next middleware function.
+   */
+  async extractSlipDataByBase64(req, res, next) {
     logger.info("Processing slip data extraction request");
-    const mockDataResponse = {
-      payload: "00000000000000000000000000000000000000000000000000000000000",
-      transRef: "68370160657749I376388B35",
-      date: "2023-01-01T00:00:00+07:00",
-      countryCode: "TH",
-      amount: {
-        amount: 1000,
-        local: {
-          amount: 0,
-          currency: "",
-        },
-      },
-      fee: 0,
-      ref1: "",
-      ref2: "",
-      ref3: "",
-      sender: {
-        bank: {
-          id: "001",
-          name: "กสิกรไทย",
-          short: "KBANK",
-        },
-        account: {
-          name: {
-            th: "นาย อีซี่ สลิป",
-            en: "MR. EASY SLIP",
-          },
-          bank: {
-            type: "BANKAC",
-            account: "1234xxxx5678",
-          },
-        },
-      },
-      receiver: {
-        bank: {
-          id: "030",
-          name: "ธนาคารออมสิน",
-          short: "GSB",
-        },
-        account: {
-          name: {
-            th: "นาย อีซี่ สลิป",
-          },
-          bank: {
-            type: "BANKAC",
-            account: "12xxxx3456",
-          },
-          proxy: {
-            type: "EWALLETID",
-            account: "123xxxxxxxx4567",
-          },
-        },
-      },
-    };
     try {
       const { base64Image } = req.body;
       if (!base64Image || typeof base64Image !== "string") {
         throw MyAppErrors.badRequest("Invalid input");
       }
-
       const base64Regex = /^data:image\/(png|jpg|jpeg|gif);base64,/;
       const match = base64Image.match(base64Regex);
       if (!match) {
@@ -186,16 +280,15 @@ class ApiController {
 
       const isQuotaAvailable = await this._checkQuotaAvailability();
       if (!isQuotaAvailable) {
-        // throw new MyAppErrors.tooManyRequests('EasySlip service is not available due to quota restrictions');
         req.formattedResponse = formatResponse(
           200,
-          " EasySlip service is currently unavailable, mock data response is return",
-          mockDataResponse
+          "EasySlip service is currently unavailable, mock data response is return",
+          this.mockDataResponse
         );
         next();
       }
 
-      const verificationResult = await this.easySlipService.verifySlip(
+      const verificationResult = await this.easySlipService.verifySlipByBase64(
         base64Image
       );
       await this.apiRequestLimitModel.incrementRequestCount(
