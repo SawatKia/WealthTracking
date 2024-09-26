@@ -12,7 +12,6 @@ const app = express();
 const isDev = NODE_ENV === "development";
 
 // Middleware to parse JSON
-// todo - add limit size and timeout
 // Increase the limit for JSON and URL-encoded requests
 app.use(express.json({ limit: "10mb" })); // Set the limit as per your needs
 // app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -46,9 +45,7 @@ app.use((req, res, next) => {
 
   // Log the incoming request with the truncated body if necessary
   logger.info(
-    `Incoming Request: ${ip} => ${method} ${requestPath} with body: ${
-      logBody ? JSON.stringify(logBody) : "empty"
-    }`
+    `Incoming Request: ${ip} => ${method} ${requestPath} with body: ${logBody ? JSON.stringify(logBody) : "empty"}`
   );
 
   // Log the outgoing response when it's finished
