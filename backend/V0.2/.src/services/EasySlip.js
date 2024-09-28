@@ -93,7 +93,7 @@ class EasySlipService {
       return response.data;
     } catch (error) {
       logger.error(`Error verifying slip with EasySlip API by payload: ${error.message}`);
-      throw new Error("Failed to verify slip by payload with EasySlip API");
+      throw error;
     }
   }
 
