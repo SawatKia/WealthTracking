@@ -37,6 +37,7 @@ const allowedMethods = {
     '/slip': ['POST'],
     '/fi/': ['GET'],
     '/fi/:fi_code': ['GET'],
+    '/slip/verify': ['POST', 'GET'],
 }
 
 if (NODE_ENV != 'production') {
@@ -59,7 +60,8 @@ router.get('/fi/', fiController.getAllFinancialInstitutions);
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 
 router.get('/slip/quota', apiController.getQuotaInformation);
-router.post('/slip', apiController.extractSlipData);
+router.post('/slip', apiController.extractSlipDataByBase64);
+router.all('/slip/verify', mdw.conditionalFileUpload, apiController.verifySlip);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
