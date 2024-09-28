@@ -65,7 +65,7 @@ class Middlewares {
             return res.status(400).json(formatResponse(null, new AppError.BadRequestError('Invalid token')));
         }
     }
-    // Middleware verify token valid and check
+    // Middleware verify token valid and recheck
     verifyToken(req, res, next) {
         const token = req.cookies[`_${DOMAIN}_access_token`];
 
