@@ -49,6 +49,38 @@ class Middlewares {
             next();
         };
     }
+    // Middleware  decode token can't verify (only decode data)
+    decodeToken(req, res, next) {
+        const token = req.cookies[`_${DOMAIN}_access_token`];
+
+        if (!token) {
+            return res.status(401).json(formatResponse(null, new AppError.UnauthorizedError('Access token not found')));
+        }
+
+        try {
+            const decoded = jwt.decode(token); 
+            req.user = decoded;
+            next(); 
+        } catch (error) {
+            return res.status(400).json(formatResponse(null, new AppError.BadRequestError('Invalid token')));
+        }
+    }
+    // Middleware verify token valid and check
+    verifyToken(req, res, next) {
+        const token = req.cookies[`_${DOMAIN}_access_token`];
+
+        if (!token) {
+            return res.status(401).json(formatResponse(null, new AppError.UnauthorizedError('Access token not found')));
+        }
+
+        try {
+            const verified = jwt.verify(token, SECRET_KEY, { algorithms: [ALGORITHM] });
+            req.user = verified; // req.user
+            next(); 
+        } catch (error) {
+            return res.status(401).json(formatResponse(null, new AppError.UnauthorizedError('Invalid or expired token')));
+        }
+    }
 
     /**
      * Middleware to handle API responses in a consistent format
