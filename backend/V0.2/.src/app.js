@@ -31,7 +31,7 @@ app.use((req, res, next) => {
   logger.info("entering the routing for " + req.method + " " + req.url);
   const { ip, method, path: requestPath, body } = req;
 
-  // Prepare the body for logging
+  // Prepare the body for logging 
   let logBody;
   if (body && body.base64Image) {
     // Truncate the base64Image value to show only the first 50 characters
