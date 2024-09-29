@@ -1,3 +1,7 @@
+const sanitizeHtml = require('sanitize-html');
+const validator = require('validator');
+const path = require('path');
+
 const EasySlipService = require("../services/EasySlip");
 const APIRequestLimitModel = require("../models/APIRequestLimitModel");
 const Utils = require("../utilities/Utils");
@@ -106,7 +110,6 @@ class ApiController {
           }`
         );
         logger.debug("returning true");
-        return true;
       } else if (requestLimit.request_count >= 7) {
         logger.warn("Daily EasySlip API request limit reached");
         logger.debug("returning false");
@@ -140,6 +143,70 @@ class ApiController {
       logger.debug("returning false");
       return false;
     }
+  }
+
+  _sanitizeObject(obj) {
+    logger.info('Sanitizing object...');
+    logger.debug(`obj: ${JSON.stringify(obj)}`);
+    const sanitized = {};
+    let i = 0;
+    for (const [key, value] of Object.entries(obj)) {
+      i++;
+      logger.debug(`key: ${key}, value: ${value}`);
+      sanitized[key] = typeof value === 'string' ? sanitizeHtml(value) : value;
+      logger.debug(`${i}. sanitized[${key}]: ${JSON.stringify(sanitized)}`);
+    }
+    logger.debug(`sanitized result: ${JSON.stringify(sanitized)}`);
+    return sanitized;
+  }
+
+  _isValidPayload(payload) {
+    logger.info('Validating payload...');
+    // Implement specific validation logic for your payload format
+    // This is a basic example; adjust based on your actual payload structure
+    const result = /^[A-Za-z0-9]{30,100}$/.test(payload);
+    logger.debug(`payload validation result: ${result}`);
+    return result;
+  }
+
+  _isValidFile(file) {
+    logger.info('Validating file...');
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    logger.debug(`fileExtension: ${fileExtension}, fileSize: ${file.size}, maxSize: ${maxSize}`);
+    const result = allowedExtensions.includes(fileExtension) && file.size <= maxSize;
+    logger.debug(`file validation result: ${result}`);
+    return result;
+  }
+
+  _isValidBase64Image(base64String) {
+    logger.info('Validating base64 image string...');
+    logger.debug(`base64String: ${base64String.substring(0, 50)}...[truncated]`);
+
+    // Ensure the string has both parts: data:image/jpeg;base64,...
+    const parts = base64String.split(',');
+    if (parts.length !== 2) {
+      logger.warn('Invalid base64 format: missing parts');
+      return false;
+    }
+
+    const mimeType = parts[0].split(';')[0].split(':')[1];
+    const base64Data = parts[1];
+
+    // Check if the data is valid base64
+    if (!validator.isBase64(base64Data)) {
+      logger.warn('Invalid base64 string');
+      return false;
+    }
+
+    // Check if it has a valid image MIME type
+    logger.debug(`mimeType: ${mimeType}`);
+    const result = ['image/jpeg', 'image/png', 'image/gif'].includes(mimeType);
+    logger.debug(`base64 image validation result: ${result}`);
+    return result;
   }
 
 
@@ -195,17 +262,31 @@ class ApiController {
     try {
       let result;
 
-      if (req.query.payload) {
-        logger.debug(`payload: ${req.query.payload.substring(0, 50)}... [truncated]`);
-        result = await this.extractSlipDataByPayload(req.query.payload);
+      // Validate and sanitize query parameters
+      const sanitizedQuery = this._sanitizeObject(req.query);
+
+      if (sanitizedQuery.payload) {
+        // Validate payload
+        if (!this._isValidPayload(sanitizedQuery.payload)) {
+          throw MyAppErrors.badRequest("Invalid payload format");
+        }
+        logger.debug(`payload: ${req.query.payload.substring(0, 50)}...[truncated]`);
+        result = await this.extractSlipDataByPayload(sanitizedQuery.payload);
       } else if (req.file) {
-        logger.debug(`file: {filename: ${req.file.originalname}, size: ${req.file.size}}`);
+        // Validate file
+        if (!this._isValidFile(req.file)) {
+          throw MyAppErrors.badRequest("Invalid file type or size");
+        }
+        logger.debug(`file: { filename: ${req.file.originalname}, size: ${req.file.size} } `);
         result = await this.extractSlipDataByFile(req.file);
       } else if (req.body.base64Image) {
-        logger.debug(`base64Image: ${req.body.base64Image.substring(0, 50)}... [truncated]`);
+        // Validate base64 image
+        if (!this._isValidBase64Image(req.body.base64Image)) {
+          throw MyAppErrors.badRequest("Invalid base64 image format");
+        }
+        logger.debug(`base64Image: ${req.body.base64Image.substring(0, 50)}...[truncated]`);
         result = await this.extractSlipDataByBase64(req.body.base64Image);
       } else {
-        logger.error("Invalid input: Payload, file, or base64 image required");
         throw MyAppErrors.badRequest("Invalid input: Payload, file, or base64 image required");
       }
 
