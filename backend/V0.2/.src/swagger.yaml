@@ -339,20 +339,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /slip:
+  /slip/verify:
     post:
-      summary: Extract slip data (NOT available)
+      summary: Verify slip data
       tags:
         - Slip
+      description: Verifies slip data using payload, image file, or base64 encoded image.
       requestBody:
-        required: true
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imageFile:
+                  type: string
+                  format: binary
+                  description: Image file of the slip
           application/json:
             schema:
-              $ref: "#/components/schemas/SlipDataRequest"
+              type: object
+              properties:
+                base64Image:
+                  type: string
+                  description: Base64 encoded image of the slip
+      # parameters:
+      #   - in: query
+      #     name: payload
+      #     schema:
+      #       type: string
+      #     description: QR code payload data
       responses:
         "200":
-          description: Successful response
+          description: Successful verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlipDataResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Verify slip data (GET method)
+      tags:
+        - Slip
+      description: Verifies slip data using payload in query parameter.
+      parameters:
+        - in: query
+          name: payload
+          required: true
+          schema:
+            type: string
+          description: QR code payload data
+      responses:
+        "200":
+          description: Successful verification
           content:
             application/json:
               schema:

@@ -1,7 +1,10 @@
+const multer = require('multer');
+
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
 
+const upload = multer({ storage: multer.memoryStorage() });
 const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -117,6 +120,13 @@ class Middlewares {
       },
     });
   }
+
+  conditionalFileUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return upload.single('imageFile')(req, res, next);
+    }
+    next();
+  };
 }
 
 module.exports = new Middlewares();
