@@ -172,6 +172,7 @@ class UserModel extends BaseModel {
             // logger.debug(`validation result: ${validationResult}`);
             // if (validationResult instanceof Error) throw validationResult;
             // verify if there is a user with this national_id or email
+            //TODO - use findByNationalIdOrEmail instead
             const userObject = await super.findOne({ national_id: newUserData.national_id }) || await super.findOne({ email: newUserData.email });
             if (userObject) {
                 logger.error('User with this national_id or email already exists');
@@ -228,7 +229,5 @@ class UserModel extends BaseModel {
             throw error;
         }
     }
-
-
 }
 module.exports = UserModel
