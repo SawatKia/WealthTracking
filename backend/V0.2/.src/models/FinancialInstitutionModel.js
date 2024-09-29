@@ -35,6 +35,7 @@ class FinancialInstitutionModel extends BaseModel {
       }
     } catch (error) {
       logger.error(`Error initializing data: ${error.message}`);
+      throw error;
     }
   }
 
