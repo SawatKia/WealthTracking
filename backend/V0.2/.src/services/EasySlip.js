@@ -64,7 +64,7 @@ class EasySlipService {
         `Error fetching quota information from EasySlip API: ${error.message}`
       );
       // Throw a more descriptive error to provide context
-      throw new Error("Failed to fetch quota information from EasySlip API");
+      throw error;
     }
   }
 
@@ -160,7 +160,7 @@ class EasySlipService {
       return response.data;
     } catch (error) {
       logger.error(`Error verifying slip with EasySlip API by base64: ${error.message}`);
-      throw new Error("Failed to verify slip by base64 with EasySlip API");
+      throw error;
     }
   }
 }
