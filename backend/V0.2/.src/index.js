@@ -18,7 +18,7 @@ const startServer = async () => {
   try {
     logger.info("Connecting to database...");
 
-    pgClient.isConnected() ? logger.info("Database connected") : await pgClient._init();
+    pgClient.isConnected() ? logger.info("Database connected") : await pgClient.init();
     easySlip.init();
 
     const fi = new FiModel();

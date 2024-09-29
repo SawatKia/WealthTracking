@@ -41,7 +41,7 @@ class PgClient {
     });
   }
 
-  async _init() {
+  async init() {
     try {
       logger.info("Initialize PgClient");
       if (NODE_ENV === "test") {
@@ -86,7 +86,7 @@ class PgClient {
   }
 
   async query(sql, params) {
-    if (!this.client) await this._init();
+    if (!this.client) await this.init();
     logger.debug(
       `Executing Query: ${sql}, with params: ${JSON.stringify(params)}`
     );
@@ -238,6 +238,7 @@ class PgClient {
       logger.debug(`Table ${tableName} created`);
     } catch (error) {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
+      throw error;
     }
   }
 }
