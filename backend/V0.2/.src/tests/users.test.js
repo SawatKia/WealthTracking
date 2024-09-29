@@ -3,6 +3,7 @@ const app = require("../app");
 const pgClient = require("../services/PgClient");
 const { test: testConfig } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
+const PgClient = require("../services/PgClient");
 const { Logger, formatResponse } = Utils;
 const logger = Logger("users.test");
 
@@ -253,7 +254,7 @@ const checkPassBody = [
 ];
 
 beforeAll(async () => {
-  await pgClient._init();
+  await pgClient.init();
 
   logger.debug(`Database connected: ${pgClient.isConnected()}`);
   // Create tables if they don't exist
@@ -331,6 +332,13 @@ beforeAll(async () => {
             FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
           );
         `),
+    PgClient.query(`CREATE TABLE IF NOT EXISTS api_request_limits (
+                service_name VARCHAR(255) NOT NULL,
+                request_date DATE NOT NULL,
+                request_count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (service_name, request_date)
+            );
+            `),
   ]);
   logger.debug(`Tables created: ${pgClient.isConnected()}`);
 });
@@ -360,13 +368,16 @@ afterAll(async () => {
     pgClient
       .query("DROP TABLE IF EXISTS users;")
       .then(() => logger.info("Dropped table: users")),
+    pgClient
+      .query("DROP TABLE IF EXISTS api_request_limits;")
+      .then(() => logger.info("Dropped table: api_request_limits")),
   ]);
 
   await pgClient.release();
   logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
 });
 
-describe("API Endpoints", () => {
+describe("Users Endpoints", () => {
   describe("connection to api", () => {
     describe("GET /health", () => {
       it("should return 200 OK text", async () => {
@@ -417,28 +428,28 @@ describe("API Endpoints", () => {
         const expectedStatusCode = user.testName.includes("success")
           ? 201
           : user.testName.includes("already exists")
-          ? 409
-          : 400;
+            ? 409
+            : 400;
 
         const expectedMessage = user.testName.includes("success")
           ? "User created successfully"
           : user.testName.includes("missing") || user.testName.includes("empty")
-          ? "Missing required field"
-          : user.testName.includes("id < 13") ||
-            user.testName.includes("id > 13") ||
-            user.testName.includes("invalid national_id")
-          ? "National ID must be 13 characters long."
-          : user.testName.includes("invalid email")
-          ? "Invalid email address"
-          : user.testName.includes("invalid username")
-          ? "Username must contain only alphanumeric characters."
-          : user.testName.includes("invalid password < 8")
-          ? "Password must be at least 8 characters long"
-          : user.testName.includes("mis match confirm_password")
-          ? "Passwords do not match"
-          : user.testName.includes("already exists")
-          ? "national_id or email are already taken"
-          : "Invalid request";
+            ? "Missing required field"
+            : user.testName.includes("id < 13") ||
+              user.testName.includes("id > 13") ||
+              user.testName.includes("invalid national_id")
+              ? "National ID must be 13 characters long."
+              : user.testName.includes("invalid email")
+                ? "Invalid email address"
+                : user.testName.includes("invalid username")
+                  ? "Username must contain only alphanumeric characters."
+                  : user.testName.includes("invalid password < 8")
+                    ? "Password must be at least 8 characters long"
+                    : user.testName.includes("mis match confirm_password")
+                      ? "Passwords do not match"
+                      : user.testName.includes("already exists")
+                        ? "national_id or email are already taken"
+                        : "Invalid request";
 
         expect(response.statusCode).toBe(expectedStatusCode);
         expect(response.body).toHaveProperty("status_code", expectedStatusCode);
