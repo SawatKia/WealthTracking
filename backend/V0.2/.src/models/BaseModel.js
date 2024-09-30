@@ -41,104 +41,133 @@ class BaseModel {
     }
   }
 
-
   async executeQuery(sql, params) {
-    return this.executeWithTransaction(async () => {
-      const result = await this.pgClient.query(sql, params);
-      return result;
-    });
+    try {
+      return await this.executeWithTransaction(async () => {
+        const result = await this.pgClient.query(sql, params);
+        return result;
+      });
+    } catch (error) {
+      logger.error("Error executing query:", error);
+      throw error;
+    }
   }
 
   async create(data) {
-    return this.executeWithTransaction(async () => {
-      const validated = await this.validateSchema(data, "create");
-      logger.debug("Validated data:", validated);
+    try {
+      return await this.executeWithTransaction(async () => {
+        const validated = await this.validateSchema(data, "create");
+        logger.debug("Validated data:", validated);
 
-      const keys = Object.keys(validated);
-      const values = Object.values(validated);
-      const placeholders = keys.map((_, index) => `$${index + 1}`).join(",");
+        const keys = Object.keys(validated);
+        const values = Object.values(validated);
+        const placeholders = keys.map((_, index) => `$${index + 1}`).join(",");
 
-      const sql = `INSERT INTO ${this.tableName} (${keys.join(
-        ","
-      )}) VALUES (${placeholders}) RETURNING *`;
-      logger.debug("Create SQL prepared query:", sql);
-      const result = await this.pgClient.query(sql, values);
-      logger.debug("Create result:", result);
-      return result;
-    });
+        const sql = `INSERT INTO ${this.tableName} (${keys.join(
+          ","
+        )}) VALUES (${placeholders}) RETURNING *`;
+        logger.debug("Create SQL prepared query:", sql);
+        const result = await this.pgClient.query(sql, values);
+        logger.debug("Create result:", result);
+        return result;
+      });
+    } catch (error) {
+      logger.error("Error creating record:", error);
+      throw error;
+    }
   }
 
   async findAll(userEmail) {
-    const sql = `SELECT * FROM ${this.tableName} WHERE userEmail = $1`;
-    const result = await this.pgClient.query(sql, [userEmail]);
-    return result.rows;
+    try {
+      const sql = `SELECT * FROM ${this.tableName} WHERE userEmail = $1`;
+      const result = await this.pgClient.query(sql, [userEmail]);
+      return result.rows;
+    } catch (error) {
+      logger.error("Error finding all records:", error);
+      throw error;
+    }
   }
 
   async findOne(primaryKeys) {
-    if (typeof primaryKeys !== "object" || primaryKeys === null) {
-      throw new Error("primaryKeys must be a non-null object");
+    try {
+      if (typeof primaryKeys !== "object" || primaryKeys === null) {
+        throw new Error("primaryKeys must be a non-null object");
+      }
+
+      logger.info("Finding one...");
+      logger.debug("primaryKeys:", primaryKeys);
+
+      const keys = Object.keys(primaryKeys);
+      const values = Object.values(primaryKeys);
+      const condition = keys
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(" AND ");
+
+      const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
+      const result = await this.pgClient.query(sql, values);
+      logger.debug("findOne result:", result.rows[0]);
+      return result.rows[0];
+    } catch (error) {
+      logger.error("Error finding one record:", error);
+      throw error;
     }
-
-    logger.info("Finding one...");
-    logger.debug("primaryKeys:", primaryKeys);
-
-    const keys = Object.keys(primaryKeys);
-    const values = Object.values(primaryKeys);
-    const condition = keys
-      .map((key, index) => `${key} = $${index + 1}`)
-      .join(" AND ");
-
-    const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
-    const result = await this.pgClient.query(sql, values);
-    logger.debug("findOne result:", result.rows[0]);
-    return result.rows[0];
   }
 
   async update(primaryKeys, data) {
-    return this.executeWithTransaction(async () => {
-      const validated = await this.validateSchema(data, "update");
-      logger.debug("Validated data:", validated);
+    try {
+      return await this.executeWithTransaction(async () => {
+        const validated = await this.validateSchema(data, "update");
+        logger.debug("Validated data:", validated);
 
-      const keys = Object.keys(primaryKeys);
-      const primaryValues = Object.values(primaryKeys);
-      const updateKeys = Object.keys(validated);
-      const updateValues = Object.values(validated);
+        const keys = Object.keys(primaryKeys);
+        const primaryValues = Object.values(primaryKeys);
+        const updateKeys = Object.keys(validated);
+        const updateValues = Object.values(validated);
 
-      const updatePlaceholders = updateKeys
-        .map((key, index) => `${key} = $${index + 1}`)
-        .join(",");
-      const conditionPlaceholders = keys
-        .map((_, index) => `$${updateKeys.length + index + 1}`)
-        .join(" AND ");
+        const updatePlaceholders = updateKeys
+          .map((key, index) => `${key} = $${index + 1}`)
+          .join(",");
+        const conditionPlaceholders = keys
+          .map((_, index) => `$${updateKeys.length + index + 1}`)
+          .join(" AND ");
 
-      const sql = `UPDATE ${this.tableName
-        } SET ${updatePlaceholders} WHERE ${keys.join(
-          " = "
-        )} = ${conditionPlaceholders} RETURNING *`;
-      const result = await this.pgClient.query(sql, [
-        ...updateValues,
-        ...primaryValues,
-      ]);
-      logger.debug("Update result:", result.rows[0]);
-      return result.rows[0];
-    });
+        const sql = `UPDATE ${this.tableName
+          } SET ${updatePlaceholders} WHERE ${keys.join(
+            " = "
+          )} = ${conditionPlaceholders} RETURNING *`;
+        const result = await this.pgClient.query(sql, [
+          ...updateValues,
+          ...primaryValues,
+        ]);
+        logger.debug("Update result:", result.rows[0]);
+        return result.rows[0];
+      });
+    } catch (error) {
+      logger.error("Error updating record:", error);
+      throw error;
+    }
   }
 
   async delete(primaryKeys) {
-    return this.executeWithTransaction(async () => {
-      const keys = Object.keys(primaryKeys);
-      const values = Object.values(primaryKeys);
-      const placeholders = keys
-        .map((_, index) => `$${index + 1}`)
-        .join(" AND ");
+    try {
+      return await this.executeWithTransaction(async () => {
+        const keys = Object.keys(primaryKeys);
+        const values = Object.values(primaryKeys);
+        const placeholders = keys
+          .map((_, index) => `$${index + 1}`)
+          .join(" AND ");
 
-      const sql = `DELETE FROM ${this.tableName} WHERE ${keys.join(
-        " = "
-      )} = ${placeholders} RETURNING *`;
-      const result = await this.pgClient.query(sql, values);
-      logger.debug("Delete result:", result.rows[0]);
-      return result.rows[0];
-    });
+        const sql = `DELETE FROM ${this.tableName} WHERE ${keys.join(
+          " = "
+        )} = ${placeholders} RETURNING *`;
+        const result = await this.pgClient.query(sql, values);
+        logger.debug("Delete result:", result.rows[0]);
+        return result.rows[0];
+      });
+    } catch (error) {
+      logger.error("Error deleting record:", error);
+      throw error;
+    }
   }
 }
 
