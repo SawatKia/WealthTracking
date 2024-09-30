@@ -41,6 +41,14 @@ class BaseModel {
     }
   }
 
+
+  async executeQuery(sql, params) {
+    return this.executeWithTransaction(async () => {
+      const result = await this.pgClient.query(sql, params);
+      return result;
+    });
+  }
+
   async create(data) {
     return this.executeWithTransaction(async () => {
       const validated = await this.validateSchema(data, "create");
