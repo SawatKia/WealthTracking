@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js .src/tests/users.test.js --coverage --runInBand",
+    "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage ",
+    "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
     "dev": "node index.js",
     "debug": "node --inspect=0.0.0.0:9229 .src/index.js",
     "start": "cross-env NODE_ENV=production node .src/index.js"
