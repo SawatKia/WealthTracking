@@ -5,16 +5,16 @@ const Utils = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 
 const { Logger, formatResponse } = Utils;
-const logger = Logger('BankModel');
+const logger = Logger('BankAccountModel');
 
-class BankModel extends BaseModel {
+class BankAccountModel extends BaseModel {
     constructor() {
         const bankSchema = Joi.object({
             account_number: Joi.string()
                 .max(20)
                 .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -28,7 +28,7 @@ class BankModel extends BaseModel {
                 .max(20)
                 .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -42,7 +42,7 @@ class BankModel extends BaseModel {
                 .length(13)
                 .pattern(/^[0-9]*$/, 'numeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -92,5 +92,5 @@ class BankModel extends BaseModel {
         super('bank_accounts', bankSchema);
     }
 }
-module.exports = BankModel
+module.exports = BankAccountModel
 
