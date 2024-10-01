@@ -176,8 +176,8 @@ class UserModel extends BaseModel {
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
             let createdResult = await super.create(newUserData);
             createdResult = {
-                national_id: createdResult.rows[0].national_id,
-                email: createdResult.rows[0].email
+                national_id: createdResult.national_id,
+                email: createdResult.email
             }
             logger.debug(`create result: ${JSON.stringify(createdResult)}`);
             return createdResult;
