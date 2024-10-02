@@ -255,92 +255,7 @@ const checkPassBody = [
 
 beforeAll(async () => {
   await pgClient.init();
-
   logger.debug(`Database connected: ${pgClient.isConnected()}`);
-  // Create tables if they don't exist
-  await Promise.all([
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS users (
-            national_id CHAR(13) PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            username VARCHAR(50) NOT NULL,
-            hashed_password VARCHAR(255) NOT NULL,
-            role VARCHAR(20) NOT NULL,
-            member_since TIMESTAMP NOT NULL,
-            CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
-          );
-        `),
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS financial_institutions (
-            fi_code VARCHAR(20) PRIMARY KEY,
-            name_th VARCHAR(255) NOT NULL,
-            name_en VARCHAR(255) NOT NULL
-          );
-        `),
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS bank_accounts (
-            account_number VARCHAR(20) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            national_id CHAR(13) NOT NULL,
-            display_name VARCHAR(100) NOT NULL,
-            account_name VARCHAR(100) NOT NULL,
-            balance DECIMAL(15, 2) NOT NULL,
-            PRIMARY KEY (account_number, fi_code),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) ON UPDATE CASCADE ON DELETE CASCADE
-          );
-        `),
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS debts (
-            debt_number VARCHAR(50) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            national_id CHAR(13) NOT NULL,
-            debt_name VARCHAR(100) NOT NULL,
-            start_date DATE NOT NULL,
-            current_installment INT NOT NULL,
-            total_installments INT NOT NULL,
-            loan_principle DECIMAL(15, 2) NOT NULL,
-            loan_balance DECIMAL(15, 2) NOT NULL,
-            PRIMARY KEY (debt_number, fi_code),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) ON UPDATE CASCADE ON DELETE CASCADE
-          );
-        `),
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id SERIAL PRIMARY KEY,
-            transaction_datetime TIMESTAMP NOT NULL,
-            category VARCHAR(50) NOT NULL,
-            type VARCHAR(20) NOT NULL,
-            amount DECIMAL(15, 2) NOT NULL,
-            note TEXT,
-            national_id CHAR(13) NOT NULL,
-            debt_number VARCHAR(50),
-            fi_code VARCHAR(20),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (debt_number, fi_code) REFERENCES debts(debt_number, fi_code) ON UPDATE CASCADE ON DELETE CASCADE
-          );
-        `),
-    pgClient.query(`
-          CREATE TABLE IF NOT EXISTS transaction_bank_account_relations (
-            transaction_id INT NOT NULL,
-            account_number VARCHAR(20) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            role VARCHAR(20) NOT NULL,
-            PRIMARY KEY (account_number, fi_code, transaction_id),
-            FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) ON UPDATE CASCADE ON DELETE CASCADE,
-            FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
-          );
-        `),
-    PgClient.query(`CREATE TABLE IF NOT EXISTS api_request_limits (
-                service_name VARCHAR(255) NOT NULL,
-                request_date DATE NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0,
-                PRIMARY KEY (service_name, request_date)
-            );
-            `),
-  ]);
-  logger.debug(`Tables created: ${pgClient.isConnected()}`);
 });
 
 afterAll(async () => {
@@ -349,28 +264,28 @@ afterAll(async () => {
 
   await Promise.all([
     pgClient
-      .query("DROP TABLE IF EXISTS transaction_bank_account_relations;")
+      .query("DELETE FROM transaction_bank_account_relations;")
       .then(() =>
-        logger.info("Dropped table: transaction_bank_account_relations")
+        logger.info("DELETE all rows from table: transaction_bank_account_relations")
       ),
     pgClient
-      .query("DROP TABLE IF EXISTS transactions;")
-      .then(() => logger.info("Dropped table: transactions")),
+      .query("DELETE FROM transactions;")
+      .then(() => logger.info("DELETE all rows from table: transactions")),
     pgClient
-      .query("DROP TABLE IF EXISTS debts;")
-      .then(() => logger.info("Dropped table: debts")),
+      .query("DELETE FROM debts;")
+      .then(() => logger.info("DELETE all rows from table: debts")),
     pgClient
-      .query("DROP TABLE IF EXISTS bank_accounts;")
-      .then(() => logger.info("Dropped table: bank_accounts")),
+      .query("DELETE FROM bank_accounts;")
+      .then(() => logger.info("DELETE all rows from table: bank_accounts")),
     pgClient
-      .query("DROP TABLE IF EXISTS financial_institutions;")
-      .then(() => logger.info("Dropped table: financial_institutions")),
+      .query("DELETE FROM financial_institutions;")
+      .then(() => logger.info("DELETE all rows from table: financial_institutions")),
     pgClient
-      .query("DROP TABLE IF EXISTS users;")
-      .then(() => logger.info("Dropped table: users")),
+      .query("DELETE FROM users;")
+      .then(() => logger.info("DELETE all rows from table: users")),
     pgClient
-      .query("DROP TABLE IF EXISTS api_request_limits;")
-      .then(() => logger.info("Dropped table: api_request_limits")),
+      .query("DELETE FROM api_request_limits;")
+      .then(() => logger.info("DELETE all rows from table: api_request_limits")),
   ]);
 
   await pgClient.release();
