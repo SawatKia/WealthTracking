@@ -41,41 +41,38 @@ class PgClient {
     });
   }
 
+  /**
+   * Initialize the PgClient by connecting to the database and creating tables
+   * if they don't exist. This function is called automatically by the constructor.
+   * If the environment is "test", it will create a test database if it doesn't
+   * exist.
+   * @returns {Promise<void>}
+   */
   async init() {
     try {
       logger.info("Initialize PgClient");
       if (NODE_ENV === "test") {
+        // Create test database if it doesn't exist
+        logger.info("Checking if test database exists...");
         await this.createTestDatabase();
       }
+
+      // Connect to the database
+      logger.info("Connecting to the database...");
       this.client = await this.pool.connect();
-      if (!this.client) throw new Error("Database connection failed");
+      if (!this.client) {
+        throw new Error("Database connection failed");
+      }
       logger.debug("Database connected successfully");
 
-      logger.info("Checking if tables exist...");
-      const tables = [
-        "users",
-        "financial_institutions",
-        "bank_accounts",
-        "debts",
-        "transactions",
-        "transaction_bank_account_relations",
-        "api_request_limits",
-      ];
-      for (const table of tables) {
-        try {
-          await this.client.query(`SELECT 1 FROM ${table}`);
-          logger.info(`Table ${table} exists, skip creating table...`);
-        } catch (error) {
-          logger.debug(`Table ${table} does not exist`);
-          logger.info(`Creating table: ${table}`);
-          await this.createTableIfNotExist(table);
-        }
-      }
+      this.createAllTables();
     } catch (error) {
+      // If there's an error, log it and throw it
       logger.error(`Database connection failed: ${error.message}`);
       throw error;
     }
   }
+
 
   isConnected() {
     return !!this.client;
@@ -145,6 +142,7 @@ class PgClient {
       }
       await adminClient.query(`CREATE DATABASE ${TEST_DB}`);
       logger.info(`Test database '${TEST_DB}' created successfully`);
+      this.createAllTables();
       adminClient.release();
     } catch (error) {
       if (error.code !== "42P04") {
@@ -158,17 +156,47 @@ class PgClient {
     }
   }
 
+  async createAllTables() {
+    // Check if tables exist and create them if they don't
+    logger.info("Checking if tables exist...");
+    const tables = [
+      "users",
+      "financial_institutions",
+      "bank_accounts",
+      "debts",
+      "transactions",
+      "transaction_bank_account_relations",
+      "api_request_limits",
+    ];
+    for (const table of tables) {
+      try {
+        // Check if the table exists
+        logger.info(`Checking if table ${table} exists...`);
+        await this.client.query(`SELECT 1 FROM ${table}`);
+        logger.info(`Table ${table} exists, skip creating table...`);
+      } catch (error) {
+        // The table doesn't exist, create it
+        logger.debug(`Table ${table} does not exist`);
+        logger.info(`Creating table: ${table}`);
+        await this.createTableIfNotExist(table);
+      }
+    }
+  }
+
+
   async createTableIfNotExist(tableName) {
     const createTableQuery = {
+      //TODO -  add DoB to users table
       users: `CREATE TABLE IF NOT EXISTS users (
-                national_id CHAR(13) PRIMARY KEY,
-                email VARCHAR(255) NOT NULL,
-                username VARCHAR(50) NOT NULL,
-                hashed_password VARCHAR(255) NOT NULL,
-                role VARCHAR(20) NOT NULL,
-                member_since TIMESTAMP NOT NULL,
-                CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
-            );`,
+              national_id CHAR(13) PRIMARY KEY,
+              email VARCHAR(255) NOT NULL,
+              username VARCHAR(50) NOT NULL,
+              hashed_password VARCHAR(255) NOT NULL,
+              role VARCHAR(20) NOT NULL,
+              member_since TIMESTAMP NOT NULL,
+              date_of_birth DATE,  -- New DoB field
+              CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
+          );`,
       financial_institutions: `CREATE TABLE IF NOT EXISTS financial_institutions (
                 fi_code VARCHAR(20) PRIMARY KEY,
                 name_th VARCHAR(255) NOT NULL,

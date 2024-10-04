@@ -5,36 +5,36 @@ const Utils = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 
 const { Logger, formatResponse } = Utils;
-const logger = Logger('BankModel');
+const logger = Logger('BankAccountModel');
 
-class BankModel extends BaseModel {
+class BankAccountModel extends BaseModel {
     constructor() {
         const bankSchema = Joi.object({
             account_number: Joi.string()
                 .max(20)
-                .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only')
+                .pattern(/^[0-9]*$/, 'numeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
                     'string.max': 'Account number must not exceed 20 characters.',
-                    'string.pattern.name': 'Account number must contain only alphanumeric characters.',
+                    'string.pattern.name': 'Account number must contain only numeric characters.',
                     'any.required': 'Account number is required for this operation.',
                 }),
 
             fi_code: Joi.string()
                 .max(20)
-                .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only')
+                .pattern(/^[0-9]*$/, 'numeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
                     'string.max': 'Financial institution code must not exceed 20 characters.',
-                    'string.pattern.name': 'Financial institution code must contain only alphanumeric characters.',
+                    'string.pattern.name': 'Financial institution code must contain only numeric characters.',
                     'any.required': 'Financial institution code is required for this operation.',
                 }),
 
@@ -42,7 +42,7 @@ class BankModel extends BaseModel {
                 .length(13)
                 .pattern(/^[0-9]*$/, 'numeric characters only')
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -91,6 +91,12 @@ class BankModel extends BaseModel {
         });
         super('bank_accounts', bankSchema);
     }
+    // TODO: add get and getAll methods
+    /*
+     * Either get or getall must format account number to correspond bank before return 
+     * The controller might call the get method to route to 2 method which are get and getall and after that
+     * call the function to format the account number and return
+     */
 }
-module.exports = BankModel
+module.exports = BankAccountModel
 

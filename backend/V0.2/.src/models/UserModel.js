@@ -21,8 +21,8 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.length': 'National ID must be 13 characters long.',
-                    'string.pattern.name': 'National ID must contain only numeric characters.',
+                    'string.length': 'Invalid national ID',
+                    'string.pattern.name': 'Invalid national ID',
                     'any.required': 'National ID is required for this operation.',
                 }),
             email: Joi.string()
@@ -34,8 +34,8 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.email': 'Email must be a valid email address.',
-                    'string.pattern.name': 'Email must contain only valid characters.',
+                    'string.email': 'Invalid email',
+                    'string.pattern.name': 'Invalid email',
                     'any.required': 'Email is required for this operation.',
                 }),
 
@@ -59,9 +59,9 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.alphanum': 'Username must contain only alphanumeric characters.',
+                    'string.alphanum': 'Invalid username',
                     'any.required': 'Username is required when creating a user.',
-                    'string.pattern.name': 'Username must not contain special characters.',
+                    'string.pattern.name': 'Invalid username',
                 }),
 
             hashed_password: Joi.string()
@@ -72,7 +72,7 @@ class UserModel extends BaseModel {
                     otherwise: Joi.forbidden(), // Forbid in other operations
                 })
                 .messages({
-                    'string.min': 'Password must be at least 8 characters long.',
+                    'string.min': 'Invalid password',
                     'any.required': 'Password is required for this operation.',
                 }),
 
@@ -98,6 +98,16 @@ class UserModel extends BaseModel {
                 .messages({
                     'date.base': 'Member since must be a valid date.',
                     'any.required': 'Member since is required when creating a user.',
+                }),
+            date_of_birth: Joi.date() // Date fields are allowed
+                .when(Joi.ref('$operation'), {
+                    is: 'create',
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'date.base': 'Invalid date of birth',
+                    'any.required': 'Date of birth is required when creating a user.',
                 }),
         });
 
@@ -168,21 +178,20 @@ class UserModel extends BaseModel {
                 hashed_password
             };
             delete newUserData.password;
-            // const validationResult = await super.validateSchema(newUserData);
-            // logger.debug(`validation result: ${validationResult}`);
-            // if (validationResult instanceof Error) throw validationResult;
-            // verify if there is a user with this national_id or email
-            //TODO - use findByNationalIdOrEmail instead
             const userObject = await super.findOne({ national_id: newUserData.national_id }) || await super.findOne({ email: newUserData.email });
             if (userObject) {
                 logger.error('User with this national_id or email already exists');
                 throw new Error('duplicate key value');
             }
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
+            const validationResult = await super.validateSchema(newUserData, 'create');
+            if (validationResult instanceof Error) throw validationResult;
+
             let createdResult = await super.create(newUserData);
             createdResult = {
-                national_id: createdResult.rows[0].national_id,
-                email: createdResult.rows[0].email
+                national_id: createdResult.national_id,
+                email: createdResult.email,
+                date_of_birth: createdResult.date_of_birth,
             }
             logger.debug(`create result: ${JSON.stringify(createdResult)}`);
             return createdResult;
@@ -201,10 +210,19 @@ class UserModel extends BaseModel {
         }
     }
 
+
+    /**
+     * Finds a user by their national_id or email
+     * @param {String} input - the national_id or email to search for
+     * @returns {Object} the user object if found, null otherwise
+     * @throws {Error} if the input is invalid or the user is not found
+     */
     async findByNationalIdOrEmail(input) {
         try {
             logger.info('Finding user by national_id or email');
             logger.debug(`input: ${JSON.stringify(input)}`);
+
+            // Validate input
             const validationResult = await super.validateSchema({
                 national_id_or_email: input
             }, { operation: 'read' });
@@ -212,17 +230,19 @@ class UserModel extends BaseModel {
                 logger.warn('Invalid input for finding user');
                 throw validationResult;
             }
-            const result = await super.findOne({
-                $or: [
-                    { national_id: input },
-                    { email: input }
-                ]
-            });
+
+            // find a user by either national ID or email, without knowing in advance which one is provided.
+            const query = `SELECT * FROM users 
+            WHERE national_id = $1 OR email = $1
+            LIMIT 1`;
+            const result = await super.executeQuery(query, [input]);
+            // const result = await super.findOne({ national_id: input }) || await super.findOne({ email: input });
             if (!result) {
                 logger.warn('User not found');
                 return null;
             }
             logger.debug(`result: ${JSON.stringify(result)}`);
+
             return result;
         } catch (error) {
             logger.error(`Error finding user by national_id or email: ${error.message}`);
