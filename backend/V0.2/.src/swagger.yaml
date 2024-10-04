@@ -81,6 +81,7 @@ paths:
                 - email
                 - password
                 - confirm_password
+                - date_of_birth
               properties:
                 national_id:
                   type: string
@@ -105,6 +106,11 @@ paths:
                   format: password
                   description: Password confirmation (must match password).
                   example: "securePassword123"
+                date_of_birth:
+                  type: string
+                  format: date
+                  description: User's date of birth.
+                  example: "1990-01-01"
       responses:
         "201":
           description: User created successfully.
@@ -128,6 +134,10 @@ paths:
                       email:
                         type: string
                         example: "johndoe@example.com"
+                      date_of_birth:
+                        type: string
+                        format: date
+                        example: "1990-01-01"
         "400":
           description: Bad request due to missing required fields, invalid email address, or password mismatch.
           content:
@@ -475,12 +485,18 @@ components:
           format: date-time
           description: Date and time when the user was registered (auto-assigned).
           example: "2024-09-09T10:25:22.650Z"
+        date_of_birth:
+          type: string
+          format: date
+          description: User's date of birth.
+          example: "1990-01-01"
       required:
         - national_id
         - username
         - email
         - password
         - confirm_password
+        - date_of_birth
 
     Response:
       type: object
