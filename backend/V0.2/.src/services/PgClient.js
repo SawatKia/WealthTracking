@@ -188,14 +188,15 @@ class PgClient {
     const createTableQuery = {
       //TODO -  add DoB to users table
       users: `CREATE TABLE IF NOT EXISTS users (
-                national_id CHAR(13) PRIMARY KEY,
-                email VARCHAR(255) NOT NULL,
-                username VARCHAR(50) NOT NULL,
-                hashed_password VARCHAR(255) NOT NULL,
-                role VARCHAR(20) NOT NULL,
-                member_since TIMESTAMP NOT NULL,
-                CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
-            );`,
+              national_id CHAR(13) PRIMARY KEY,
+              email VARCHAR(255) NOT NULL,
+              username VARCHAR(50) NOT NULL,
+              hashed_password VARCHAR(255) NOT NULL,
+              role VARCHAR(20) NOT NULL,
+              member_since TIMESTAMP NOT NULL,
+              date_of_birth DATE,  -- New DoB field
+              CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
+          );`,
       financial_institutions: `CREATE TABLE IF NOT EXISTS financial_institutions (
                 fi_code VARCHAR(20) PRIMARY KEY,
                 name_th VARCHAR(255) NOT NULL,

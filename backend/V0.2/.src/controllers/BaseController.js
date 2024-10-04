@@ -19,14 +19,21 @@ class BaseController {
         logger.debug(`requiredFields: ${requiredFields}`);
 
         if (!body || typeof body !== 'object') {
+            logger.debug('Invalid request body');
             throw new Error('Invalid request body');
         }
+        logger.info(`body: ${JSON.stringify(body)}`);
         if (!requiredFields || !Array.isArray(requiredFields)) {
+            logger.debug('Invalid required fields');
             throw new Error('Invalid required fields');
         }
+        logger.info(`requiredFields: ${requiredFields}`);
+
         if (model && typeof model !== 'object') {
+            logger.debug('Invalid model');
             throw new Error('Invalid model');
         }
+        logger.info(`model is valid}`);
 
         // Verify required fields
         if (requiredFields && requiredFields.length > 0) {
@@ -36,6 +43,7 @@ class BaseController {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
                 }
+                logger.debug(`${field} is present in body`);
             }
         }
 
@@ -47,7 +55,7 @@ class BaseController {
             for (const [key, value] of Object.entries(body)) {
                 if (schema.describe().keys[key]) {
                     const fieldSchema = schema.describe().keys[key];
-
+                    logger.debug(`[${key}] expected type: ${fieldSchema.type}, current type: ${typeof value}`);
                     try {
                         switch (fieldSchema.type) {
                             case 'number':

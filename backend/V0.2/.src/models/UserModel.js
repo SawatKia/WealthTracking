@@ -21,8 +21,8 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.length': 'National ID must be 13 characters long.',
-                    'string.pattern.name': 'National ID must contain only numeric characters.',
+                    'string.length': 'Invalid national ID',
+                    'string.pattern.name': 'Invalid national ID',
                     'any.required': 'National ID is required for this operation.',
                 }),
             email: Joi.string()
@@ -34,8 +34,8 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.email': 'Email must be a valid email address.',
-                    'string.pattern.name': 'Email must contain only valid characters.',
+                    'string.email': 'Invalid email',
+                    'string.pattern.name': 'Invalid email',
                     'any.required': 'Email is required for this operation.',
                 }),
 
@@ -59,9 +59,9 @@ class UserModel extends BaseModel {
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.alphanum': 'Username must contain only alphanumeric characters.',
+                    'string.alphanum': 'Invalid username',
                     'any.required': 'Username is required when creating a user.',
-                    'string.pattern.name': 'Username must not contain special characters.',
+                    'string.pattern.name': 'Invalid username',
                 }),
 
             hashed_password: Joi.string()
@@ -72,7 +72,7 @@ class UserModel extends BaseModel {
                     otherwise: Joi.forbidden(), // Forbid in other operations
                 })
                 .messages({
-                    'string.min': 'Password must be at least 8 characters long.',
+                    'string.min': 'Invalid password',
                     'any.required': 'Password is required for this operation.',
                 }),
 
@@ -98,6 +98,16 @@ class UserModel extends BaseModel {
                 .messages({
                     'date.base': 'Member since must be a valid date.',
                     'any.required': 'Member since is required when creating a user.',
+                }),
+            date_of_birth: Joi.date() // Date fields are allowed
+                .when(Joi.ref('$operation'), {
+                    is: 'create',
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'date.base': 'Invalid date of birth',
+                    'any.required': 'Date of birth is required when creating a user.',
                 }),
         });
 
@@ -177,7 +187,8 @@ class UserModel extends BaseModel {
             let createdResult = await super.create(newUserData);
             createdResult = {
                 national_id: createdResult.national_id,
-                email: createdResult.email
+                email: createdResult.email,
+                date_of_birth: createdResult.date_of_birth,
             }
             logger.debug(`create result: ${JSON.stringify(createdResult)}`);
             return createdResult;

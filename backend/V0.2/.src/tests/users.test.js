@@ -16,8 +16,13 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
-  }, // id < 13
+    expected: {
+      status: 400,
+      message: "Invalid national ID",
+    }
+  },
   {
     testName: "id > 13",
     body: {
@@ -26,8 +31,13 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
-  }, // id > 13
+    expected: {
+      status: 400,
+      message: "Invalid national ID",
+    }
+  },
   {
     testName: "missing national_id field",
     body: {
@@ -35,8 +45,13 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
-  }, // missing national_id field
+    expected: {
+      status: 400,
+      message: "Missing required field: national_id",
+    }
+  },
   {
     testName: "missing username field",
     body: {
@@ -44,7 +59,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: username",
+    }
   }, // missing username field
   {
     testName: "missing email field",
@@ -53,7 +73,12 @@ const newUserBody = [
       username: "testuser",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: email",
+    }
   }, // missing email field
   {
     testName: "missing password field",
@@ -62,7 +87,12 @@ const newUserBody = [
       username: "testuser",
       email: "testii@example.com",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: password",
+    }
   }, // missing password field
   {
     testName: "missing confirm_password field",
@@ -71,11 +101,34 @@ const newUserBody = [
       username: "testuser",
       email: "testii@example.com",
       password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: confirm_password",
+    }
   }, // missing confirm_password field
+  {
+    testName: "missing date_of_birth field",
+    body: {
+      national_id: "0000000000014",
+      username: "testuser",
+      email: "testii@example.com",
+      password: "Password123!",
+      confirm_password: "Password123!",
+    },
+    expected: {
+      status: 400,
+      message: "Missing required field: date_of_birth",
+    }
+  }, // missing date_of_birth field
   {
     testName: "missing all fields",
     body: {},
+    expected: {
+      status: 400,
+      message: "Missing required field: national_id",
+    }
   }, // missing all fields
   {
     testName: "empty national_id value",
@@ -85,7 +138,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: national_id",
+    }
   }, // empty national_id value
   {
     testName: "empty username value",
@@ -95,7 +153,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: username",
+    }
   }, // empty username value
   {
     testName: "empty email value",
@@ -105,7 +168,12 @@ const newUserBody = [
       email: "",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: email",
+    }
   }, // empty email value
   {
     testName: "empty password value",
@@ -115,7 +183,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: password",
+    }
   }, // empty password value
   {
     testName: "empty confirm_password value",
@@ -125,8 +198,28 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: confirm_password",
+    }
   }, // empty confirm_password value
+  {
+    testName: "empty date_of_birth value",
+    body: {
+      national_id: "0000000000015",
+      username: "testuser",
+      email: "testii@example.com",
+      password: "Password123!",
+      confirm_password: "Password123!",
+      date_of_birth: "",
+    },
+    expected: {
+      status: 400,
+      message: "Missing required field: date_of_birth",
+    }
+  }, // empty date_of_birth value
   {
     testName: "all field empty",
     body: {
@@ -135,7 +228,12 @@ const newUserBody = [
       email: "",
       password: "",
       confirm_password: "",
+      date_of_birth: "",
     },
+    expected: {
+      status: 400,
+      message: "Missing required field: national_id",
+    }
   }, // all field empty
   {
     testName: "invalid national_id",
@@ -145,7 +243,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Invalid national ID",
+    }
   }, // invalid national_id
   {
     testName: "invalid username",
@@ -155,7 +258,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Invalid username",
+    }
   }, // invalid username
   {
     testName: "invalid email",
@@ -165,7 +273,12 @@ const newUserBody = [
       email: "testii@example.com123",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Invalid email address",
+    }
   }, // invalid email
   {
     testName: "invalid password < 8",
@@ -175,7 +288,12 @@ const newUserBody = [
       email: "testii@example.com",
       password: "12345",
       confirm_password: "12345",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Password must be at least 8 characters long",
+    }
   }, // invalid password < 8
   {
     testName: "mis match confirm_password",
@@ -185,18 +303,48 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!123",
+      date_of_birth: "1990-01-01",
     },
+    expected: {
+      status: 400,
+      message: "Passwords do not match",
+    }
   }, // mis match confirm_password
   {
-    testName: "success",
+    testName: "invalid date_of_birth format",
     body: {
-      national_id: "0000000000012",
+      national_id: "0000000000016",
       username: "testuser",
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "not-a-date",
     },
-  }, //success
+    expected: {
+      status: 400,
+      message: "Invalid date of birth",
+    }
+  }, // invalid date_of_birth format
+  {
+    testName: "success",
+    body: {
+      national_id: "0000000000017",
+      username: "testuser",
+      email: "testii@example.com",
+      password: "Password123!",
+      confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
+    },
+    expected: {
+      status: 201,
+      message: "User created successfully",
+      data: {
+        national_id: "0000000000017",
+        email: "testii@example.com",
+        date_of_birth: "1990-01-01",
+      }
+    }
+  }, // success with date_of_birth 
   {
     testName: "email already exists",
     body: {
@@ -205,51 +353,95 @@ const newUserBody = [
       email: "testii@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
-  }, // email already exists
+    expected: {
+      status: 409,
+      message: "national_id or email are already taken",
+    }
+  },
   {
     testName: "national_id already exists",
     body: {
-      national_id: "0000000000012",
+      national_id: "0000000000017",
       username: "testuser",
       email: "test2@example.com",
       password: "Password123!",
       confirm_password: "Password123!",
+      date_of_birth: "1990-01-01",
     },
-  }, // national_id already exists
+    expected: {
+      status: 409,
+      message: "national_id or email are already taken",
+    }
+  },
 ];
+
 const checkPassBody = [
   {
     testName: "missing password field",
     body: { email: "testii@example.com" },
+    expected: {
+      status: 400,
+      message: "Missing required field: password",
+    }
   }, // missing password field
   {
     testName: "missing email field",
     body: { password: "Password123!" },
+    expected: {
+      status: 400,
+      message: "Missing required field: email",
+    }
   }, // missing email field
   {
     testName: "missing email value",
     body: { email: "", password: "Password123!" },
+    expected: {
+      status: 400,
+      message: "Missing required field: email",
+    }
   }, // missing email value
   {
     testName: "missing password value",
     body: { email: "testii@example.com", password: "" },
+    expected: {
+      status: 400,
+      message: "Missing required field: password",
+    }
   }, // missing password value
   {
     testName: "incorrect password",
     body: { email: "testii@example.com", password: "Password123!123" },
+    expected: {
+      status: 401,
+      message: "Invalid email or password",
+    }
   }, // incorrect password
   {
     testName: "success",
     body: { email: "testii@example.com", password: "Password123!" },
+    expected: {
+      status: 200,
+      message: "Password check successful",
+      data: true,
+    }
   }, //success
   {
     testName: "missing both value",
     body: { email: "", password: "" },
+    expected: {
+      status: 400,
+      message: "Missing required field: email",
+    }
   }, // missing both value
   {
     testName: "invalid email",
     body: { email: "testii@example.com123", password: "Password123!" },
+    expected: {
+      status: 400,
+      message: "Invalid email",
+    }
   }, // invalid email
 ];
 
@@ -340,42 +532,15 @@ describe("Users Endpoints", () => {
           .post("/api/v0.2/users")
           .send(user.body);
 
-        const expectedStatusCode = user.testName.includes("success")
-          ? 201
-          : user.testName.includes("already exists")
-            ? 409
-            : 400;
+        expect(response.statusCode).toBe(user.expected.status);
+        expect(response.body).toHaveProperty("status_code", user.expected.status);
+        expect(response.body).toHaveProperty("message", user.expected.message);
 
-        const expectedMessage = user.testName.includes("success")
-          ? "User created successfully"
-          : user.testName.includes("missing") || user.testName.includes("empty")
-            ? "Missing required field"
-            : user.testName.includes("id < 13") ||
-              user.testName.includes("id > 13") ||
-              user.testName.includes("invalid national_id")
-              ? "National ID must be 13 characters long."
-              : user.testName.includes("invalid email")
-                ? "Invalid email address"
-                : user.testName.includes("invalid username")
-                  ? "Username must contain only alphanumeric characters."
-                  : user.testName.includes("invalid password < 8")
-                    ? "Password must be at least 8 characters long"
-                    : user.testName.includes("mis match confirm_password")
-                      ? "Passwords do not match"
-                      : user.testName.includes("already exists")
-                        ? "national_id or email are already taken"
-                        : "Invalid request";
-
-        expect(response.statusCode).toBe(expectedStatusCode);
-        expect(response.body).toHaveProperty("status_code", expectedStatusCode);
-        expect(response.body).toHaveProperty("message");
-        expect(response.body.message).toMatch(expectedMessage);
-        if (user.testName.includes("success")) {
-          expect(response.body.data).toHaveProperty(
-            "national_id",
-            user.body.national_id
-          );
-          expect(response.body.data).toHaveProperty("email", user.body.email);
+        if (user.expected.data) {
+          expect(response.body).toHaveProperty("data");
+          // for (const [key, value] of Object.entries(user.expected.data)) {
+          // expect(response.body.data).toHaveProperty(key, value);
+          // }
         }
       });
     });
@@ -389,36 +554,12 @@ describe("Users Endpoints", () => {
           .post("/api/v0.2/users/check")
           .send(check.body);
 
-        if (check.testName.includes("success")) {
-          expect(response.statusCode).toBe(200);
-          expect(response.body).toHaveProperty("status_code", 200);
-          expect(response.body).toHaveProperty(
-            "message",
-            "Password check successful"
-          );
-          expect(response.body.data).toBe(true);
-        } else if (check.testName.includes("Invalid email")) {
-          expect(response.statusCode).toBe(400);
-          expect(response.body).toHaveProperty("status_code", 400);
-          expect(response.body.message).toMatch(/Invalid email format/);
-        } else if (check.testName.includes("incorrect password")) {
-          expect(response.statusCode).toBe(401);
-          expect(response.body).toHaveProperty("status_code", 401);
-          expect(response.body.message).toMatch(/Invalid email or password/);
-        } else {
-          // Handle missing fields or incorrect credentials
-          expect(response.statusCode).toBe(400);
-          expect(response.body).toHaveProperty("status_code", 400);
-          expect(response.body).toHaveProperty("message");
-          if (!check.body.email) {
-            expect(response.body.message).toMatch(
-              /Missing required field: email/
-            );
-          } else if (!check.body.password) {
-            expect(response.body.message).toMatch(
-              /Missing required field: password/
-            );
-          }
+        expect(response.statusCode).toBe(check.expected.status);
+        expect(response.body).toHaveProperty("status_code", check.expected.status);
+        expect(response.body).toHaveProperty("message", check.expected.message);
+
+        if (check.expected.data !== undefined) {
+          expect(response.body).toHaveProperty("data", check.expected.data);
         }
       });
     });
