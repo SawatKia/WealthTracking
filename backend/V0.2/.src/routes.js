@@ -7,6 +7,7 @@ const appConfigs = require('./configs/AppConfigs');
 const Utils = require('./utilities/Utils');
 const mdw = require('./middlewares/Middlewares')
 const UserController = require('./controllers/UserController');
+const BankAccountController = require('./controllers/BankAccountController');
 const ApiController = require('./controllers/ApiController');
 const FinancialInstitutionController = require('./controllers/FinancialInstitutionController');
 
@@ -17,6 +18,7 @@ const router = express.Router();
 
 // Instantiate controllers
 const userController = new UserController();
+const bankAccountController = new BankAccountController();
 const apiController = new ApiController();
 const fiController = new FinancialInstitutionController();
 
@@ -31,6 +33,8 @@ const allowedMethods = {
     '/users': ['POST'],
     '/users/check': ['POST'],
     '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
+    '/banks': ['POST'],
+    '/banks/:bank_name': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
     '/slip/quota': ['GET'],
@@ -55,7 +59,9 @@ router.get('/', (req, res, next) => {
 })
 router.post('/users', userController.registerUser);
 router.post('/users/check', userController.checkPassword);
-//TODO - add middleware to verify token
+//TODO - adter this line every route should add middleware to verify token
+router.post('/banks', bankAccountController.createBankAccount);
+
 router.get('/fi/', fiController.getAllFinancialInstitutions);
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 
