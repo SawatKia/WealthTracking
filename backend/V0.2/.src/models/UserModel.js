@@ -184,6 +184,9 @@ class UserModel extends BaseModel {
                 throw new Error('duplicate key value');
             }
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
+            const validationResult = await super.validateSchema(newUserData, 'create');
+            if (validationResult instanceof Error) throw validationResult;
+
             let createdResult = await super.create(newUserData);
             createdResult = {
                 national_id: createdResult.national_id,
