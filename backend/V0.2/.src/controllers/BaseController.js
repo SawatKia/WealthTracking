@@ -23,11 +23,11 @@ class BaseController {
             throw new Error('Invalid request body');
         }
         logger.info(`body: ${JSON.stringify(body)}`);
+        logger.info(`requiredFields: ${requiredFields}`);
         if (!requiredFields || !Array.isArray(requiredFields)) {
             logger.debug('Invalid required fields');
             throw new Error('Invalid required fields');
         }
-        logger.info(`requiredFields: ${requiredFields}`);
 
         if (model && typeof model !== 'object') {
             logger.debug('Invalid model');
