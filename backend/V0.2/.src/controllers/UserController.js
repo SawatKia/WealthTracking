@@ -46,7 +46,8 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
             // Verify all required fields 
-            this.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'], this.UserModel);
+            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'];
+            this.verifyField(req.body, requiredFields, this.UserModel);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
                 throw MyAppErrors.badRequest('Password must be at least 8 characters long');
