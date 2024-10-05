@@ -269,6 +269,45 @@ class PgClient {
       throw error;
     }
   }
+
+  async connect() {
+    if (!this.client) {
+      this.client = await this.pool.connect();
+    }
+  }
+
+  async disconnect() {
+    if (this.client) {
+      await this.client.release();
+      this.client = null;
+    }
+  }
+
+  async end() {
+    if (NODE_ENV === 'test') {
+      logger.info('Test environment detected. Dropping all rows from all tables...');
+      const tables = [
+        'transaction_bank_account_relations',
+        'transactions',
+        'bank_accounts',
+        'debts',
+        'financial_institutions',
+        'users',
+        'api_request_limits'
+      ];
+
+      for (const table of tables) {
+        try {
+          await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
+          logger.debug(`All rows deleted from table: ${table}`);
+        } catch (error) {
+          logger.error(`Error deleting rows from table ${table}: ${error.message}`);
+        }
+      }
+      logger.info('All rows deleted from all tables in test environment');
+    }
+    await this.pool.end();
+  }
 }
 
 module.exports = new PgClient();
