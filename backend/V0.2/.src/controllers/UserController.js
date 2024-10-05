@@ -9,7 +9,7 @@ const logger = Logger('UserController');
 class UserController extends BaseController {
     constructor() {
         super();
-        this.User = new User();
+        this.UserModel = new User();
 
         // Bind all methods to ensure correct 'this' context
         this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
@@ -46,7 +46,7 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
             // Verify all required fields 
-            this.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth']);
+            this.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'], this.UserModel);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
                 throw MyAppErrors.badRequest('Password must be at least 8 characters long');
@@ -75,7 +75,7 @@ class UserController extends BaseController {
             logger.debug(`combined normalized data: ${JSON.stringify(normalizedData)}`);
 
             // Create user
-            const createdUser = await this.User.createUser(normalizedData);
+            const createdUser = await this.UserModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
 
             // Success response
@@ -103,7 +103,7 @@ class UserController extends BaseController {
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
             this.verifyField(req.body, ['email', 'password']);
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
-            const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
+            const { result, user } = await this.UserModel.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw MyAppErrors.passwordError();
             req.formattedResponse = formatResponse(200, 'Password check successful', result);
