@@ -3,7 +3,6 @@ const app = require("../app");
 const pgClient = require("../services/PgClient");
 const { test: testConfig } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
-const PgClient = require("../services/PgClient");
 const { Logger, formatResponse } = Utils;
 const logger = Logger("users.test");
 
@@ -453,34 +452,7 @@ beforeAll(async () => {
 afterAll(async () => {
   // Clean up the database after all tests
   logger.info("Dropping tables");
-
-  await Promise.all([
-    pgClient
-      .query("DELETE FROM transaction_bank_account_relations;")
-      .then(() =>
-        logger.info("DELETE all rows from table: transaction_bank_account_relations")
-      ),
-    pgClient
-      .query("DELETE FROM transactions;")
-      .then(() => logger.info("DELETE all rows from table: transactions")),
-    pgClient
-      .query("DELETE FROM debts;")
-      .then(() => logger.info("DELETE all rows from table: debts")),
-    pgClient
-      .query("DELETE FROM bank_accounts;")
-      .then(() => logger.info("DELETE all rows from table: bank_accounts")),
-    pgClient
-      .query("DELETE FROM financial_institutions;")
-      .then(() => logger.info("DELETE all rows from table: financial_institutions")),
-    pgClient
-      .query("DELETE FROM users;")
-      .then(() => logger.info("DELETE all rows from table: users")),
-    pgClient
-      .query("DELETE FROM api_request_limits;")
-      .then(() => logger.info("DELETE all rows from table: api_request_limits")),
-  ]);
-
-  await pgClient.release();
+  await pgClient.end();
   logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
 });
 
