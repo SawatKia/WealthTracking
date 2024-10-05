@@ -33,7 +33,7 @@ class BaseController {
             logger.debug('Invalid model');
             throw new Error('Invalid model');
         }
-        logger.info(`model is valid}`);
+        logger.info(`model is valid`);
 
         // Verify required fields
         if (requiredFields && requiredFields.length > 0) {
