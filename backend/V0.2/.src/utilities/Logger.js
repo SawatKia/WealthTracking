@@ -61,7 +61,7 @@ class Logger {
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
+                    return `[${info.caller ? `${info.caller}` : info.label}] ${info.level}: ${info.message}`;
                 })
             )
         }));
@@ -78,7 +78,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.caller}] ${info.level} - ${info.message}`; // global log format, if not specified
+                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // global log format, if not specified
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
