@@ -3,6 +3,7 @@ const Joi = require('joi');
 const BaseModel = require('./BaseModel');
 const Utils = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
+const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 
 const { Logger, formatResponse } = Utils;
 const logger = Logger('BankAccountModel');
@@ -90,13 +91,35 @@ class BankAccountModel extends BaseModel {
                 }),
         });
         super('bank_accounts', bankSchema);
+        this.bankAccountUtils = new BankAccountUtils();
     }
-    // TODO: add get and getAll methods
-    /*
-     * Either get or getall must format account number to correspond bank before return 
-     * The controller might call the get method to route to 2 method which are get and getall and after that
-     * call the function to format the account number and return
-     */
+
+    async get(accountNumber, fiCode) {
+        try {
+            const result = await this.findOne({ account_number: accountNumber, fi_code: fiCode });
+            if (result) {
+                result.account_number = this.bankAccountUtils.formatAccountNumber(result.account_number, result.fi_code);
+            }
+            return result;
+        } catch (error) {
+            logger.error(`Error in get method: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async getAll(nationalId) {
+        try {
+            const results = await this.findAll({ national_id: nationalId });
+            return results.map(account => {
+                account.account_number = this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
+                return account;
+            });
+        } catch (error) {
+            logger.error(`Error in getAll method: ${error.message}`);
+            throw error;
+        }
+    }
 }
+
 module.exports = BankAccountModel
 

@@ -17,6 +17,7 @@ class Middlewares {
    */
   methodValidator(allowedMethods) {
     return (req, res, next) => {
+      logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`)
       const { method, path } = req;
       logger.info("Validating request method and path");
       logger.debug(`Request: Method=${method}, Path=${path}`);
@@ -127,6 +128,20 @@ class Middlewares {
     }
     next();
   };
+
+  authMiddleware(req, res, next) {
+    const bearerHeader = req.headers['authorization'];
+
+    if (typeof bearerHeader !== 'undefined') {
+      const bearer = bearerHeader.split(' ');
+      const bearerToken = bearer[1];
+      req.token = bearerToken;
+      next();
+    } else {
+      logger.warn('No bearer token provided');
+      next(MyAppErrors.unauthorized('Authentication token is missing'));
+    }
+  }
 }
 
 module.exports = new Middlewares();

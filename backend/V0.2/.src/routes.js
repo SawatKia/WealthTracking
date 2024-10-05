@@ -33,19 +33,21 @@ const allowedMethods = {
     '/users': ['POST'],
     '/users/check': ['POST'],
     '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
-    '/banks': ['POST'],
-    '/banks/:bank_name': ['GET', 'PATCH', 'DELETE'],
+    '/banks': ['POST', 'GET'],
+    '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
     '/slip/quota': ['GET'],
     '/slip': ['POST'],
-    '/fi/': ['GET'],
+    // '/fi': ['GET'],
     '/fi/:fi_code': ['GET'],
+    '/fis/operating-banks': ['GET'],
     '/slip/verify': ['POST', 'GET'],
 }
 
 if (NODE_ENV != 'production') {
     allowedMethods['/users/check'] = ['POST'];
+    allowedMethods['/fis'] = ['GET'];
 }
 
 router.use((req, res, next) => {
@@ -57,17 +59,20 @@ router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
-router.post('/users', userController.registerUser);
-router.post('/users/check', userController.checkPassword);
-//TODO - adter this line every route should add middleware to verify token
-router.post('/banks', bankAccountController.createBankAccount);
+router.post('/users', mdw.authMiddleware, userController.registerUser);
+router.post('/users/check', mdw.authMiddleware, userController.checkPassword);
+//TODO - after this line every route should add middleware to verify token
+router.post('/banks', mdw.authMiddleware, bankAccountController.createBankAccount);
+router.get('/banks', mdw.authMiddleware, bankAccountController.getAllBankAccounts);
+router.get('/banks/:account_number/:fi_code', mdw.authMiddleware, bankAccountController.getBankAccount);
 
-router.get('/fi/', fiController.getAllFinancialInstitutions);
-router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
+router.get('/fis', mdw.authMiddleware, fiController.getAllFinancialInstitutions);
+router.get('/fis/operating-banks', mdw.authMiddleware, fiController.getOperatingThaiCommercialBanks);
+router.get('/fi/:fi_code', mdw.authMiddleware, fiController.getFinancialInstitutionByCode);
 
-router.get('/slip/quota', apiController.getQuotaInformation);
-router.post('/slip', apiController.extractSlipDataByBase64);
-router.all('/slip/verify', mdw.conditionalFileUpload, apiController.verifySlip);
+router.get('/slip/quota', mdw.authMiddleware, apiController.getQuotaInformation);
+router.post('/slip', mdw.authMiddleware, apiController.extractSlipDataByBase64);
+router.all('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiController.verifySlip);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
