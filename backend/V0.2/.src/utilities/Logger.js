@@ -20,7 +20,14 @@ const getCaller = () => {
     const stackLines = stack.split('\n');
     if (stackLines.length < 4) return ''; // Make sure there's enough stack info
     const callerLine = stackLines[3].trim(); // 3rd line usually contains the caller info
-    return callerLine.replace(/^at\s/, ''); // Clean up the line
+    // Extract filename and line number from the caller line
+    const match = callerLine.match(/\((.+):(\d+):\d+\)$/);
+    if (match) {
+        const [, filePath, lineNumber] = match;
+        const fileName = path.basename(filePath);
+        return `${fileName}:${lineNumber}`;
+    }
+    return callerLine; // Return the full line if we can't extract filename and line number
 }
 
 class Logger {
@@ -54,7 +61,7 @@ class Logger {
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
+                    return `[${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
                 })
             )
         }));
@@ -71,7 +78,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.label}] ${info.level} - ${info.message}`; // global log format  
+                    return `${info.timestamp} [${info.caller}] ${info.level} - ${info.message}`; // global log format, if not specified
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
