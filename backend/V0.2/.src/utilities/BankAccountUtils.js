@@ -78,14 +78,8 @@ class BankAccountUtils {
         logger.info(`Validating account number: ${accountNumber} for bank code: ${bankCode}`);
 
         const cleanedNumber = this.normalizeAccountNumber(accountNumber);
-        const bank = this._getBankFormat(bankCode);
 
-        if (!bank) {
-            logger.error(`Unknown bank code: ${bankCode}`);
-            return this._validationResult(false, `Unknown bank code: ${bankCode}`);
-        }
-
-        const formattedNumber = this.formatAccountNumber(cleanedNumber, bank.format);
+        const formattedNumber = this.formatAccountNumber(cleanedNumber, bankCode);
 
         if (!formattedNumber) {
             logger.error(`Invalid account number for ${bank.displayName}`);
@@ -95,16 +89,6 @@ class BankAccountUtils {
         return this._validationResult(true, null, formattedNumber);
     }
 
-    /**
-     * Formats a string of digits according to the bank's format
-     * @param {string} digits - String of digits
-     * @param {RegExp} format - Regular expression for the bank's format
-     * @returns {string|null} - Formatted account number or null if invalid
-     */
-    formatAccountNumber(digits, format) {
-        const matchedFormat = digits.match(format);
-        return matchedFormat ? matchedFormat[0] : null;
-    }
 
     /**
      * Normalizes the account number by removing non-digit characters
@@ -152,6 +136,52 @@ class BankAccountUtils {
             'string.pattern.base': `Account number format should match ${bank.displayName}: ${bank.example}`
         });
     }
+
+    /**
+     * Formats the account number based on the bank's code
+     * @param {string} accountNumber - Raw input account number
+     * @param {string} fiCode - Bank's code
+     * @returns {string} - Formatted account number
+     */
+    formatAccountNumber(accountNumber, fiCode) {
+        const bank = this._getBankFormat(fiCode);
+        logger.debug(`bank: ${JSON.stringify(bank, null, 2)}`);
+
+        if (!bank || !bank.format) {
+            logger.warn(`Unknown bank code or format missing: ${fiCode}`);
+            return accountNumber; // Return original if bank not found or format is missing
+        }
+
+        const cleanedNumber = this.normalizeAccountNumber(accountNumber);
+
+        // Get the example format and split it by "-" to determine positions of separators
+        const formatExample = bank.example;
+        const exampleParts = formatExample.split('-');
+
+        let formattedNumber = '';
+        let currentIndex = 0;
+
+        // Format the cleaned number by matching the example structure
+        exampleParts.forEach(part => {
+            const partLength = part.length;
+            formattedNumber += cleanedNumber.slice(currentIndex, currentIndex + partLength);
+            currentIndex += partLength;
+            // Add separator after each part except the last one
+            if (currentIndex < cleanedNumber.length) {
+                formattedNumber += '-';
+            }
+        });
+
+        logger.debug(`Formatting result: ${JSON.stringify({
+            originalNumber: accountNumber,
+            cleanedNumber,
+            formattedNumber,
+            bankFormat: bank.format
+        }, null, 2)}`);
+
+        return formattedNumber;
+    }
+
 }
 
 module.exports = {
