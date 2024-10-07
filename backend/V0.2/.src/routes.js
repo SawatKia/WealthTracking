@@ -54,6 +54,7 @@ router.use((req, res, next) => {
     logger.info(`entering the routing for ${req.method} ${req.url}`);
     next();
 })
+//TODO - ensure the middlewares is finished before goto the routes
 router.use(mdw.methodValidator(allowedMethods));
 router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
