@@ -160,6 +160,11 @@ class BankAccountUtils {
 
         let formattedNumber = '';
         let currentIndex = 0;
+        // Check if the cleaned number matches the bank's format
+        if (!bank.format.test(cleanedNumber)) {
+            logger.warn(`Account number ${cleanedNumber} does not match the format for bank ${fiCode}`);
+            return accountNumber; // Return original if format doesn't match
+        }
 
         // Format the cleaned number by matching the example structure
         exampleParts.forEach(part => {
