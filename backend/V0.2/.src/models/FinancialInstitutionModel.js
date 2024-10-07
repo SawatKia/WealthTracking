@@ -26,13 +26,16 @@ class FinancialInstitutionModel extends BaseModel {
     logger.info("Initializing FI data...");
     try {
       const isEmpty = await this._isTableEmpty();
+      logger.debug(`Table is empty: ${isEmpty}`);
       if (isEmpty) {
         await this._importCSVData();
+        logger.info("CSV import completed successfully.");
       } else {
         logger.info(
           "Financial institutions table is not empty. Skipping CSV import."
         );
       }
+      return true;
     } catch (error) {
       logger.error(`Error initializing data: ${error.message}`);
       throw error;
@@ -49,8 +52,11 @@ class FinancialInstitutionModel extends BaseModel {
 
   async _importCSVData() {
     logger.info("Importing CSV data...");
-    // Define the CSV file path inside the Docker environment
-    const csvFilePath = path.join(__dirname, "../statics/FI_CODE.csv");
+    // Define the CSV file path based on the environment whether it is test or in docker
+    const csvFilePath = appConfigs.environment === 'test'
+      ? path.join(__dirname, "../../statics/FI_CODE.csv")
+      : path.join(__dirname, "../statics/FI_CODE.csv");
+
     // Check if the CSV file exists
     if (!fs.existsSync(csvFilePath)) {
       logger.error(`CSV file not found: ${csvFilePath}`);
@@ -81,7 +87,7 @@ class FinancialInstitutionModel extends BaseModel {
       }
 
       logger.info("CSV file read successfully");
-      logger.debug(`CSV cached data: ${JSON.stringify(results)}`);
+      logger.debug(`Sample CSV read data: ${JSON.stringify(results.slice(0, 3), null, 2)}...(remain ${results.length - 3} objects)...`);
 
       // Now that we have all rows, validate and insert them
       for (const data of results) {
@@ -93,7 +99,7 @@ class FinancialInstitutionModel extends BaseModel {
         ) {
           logger.silly(`Valid data row added: ${JSON.stringify(data)}`);
         } else {
-          logger.warn(`Invalid data row skipped: ${JSON.stringify(data)}`);
+          logger.warn(`Invalid data row, skipped: ${JSON.stringify(data)}`);
           continue;
         }
 
@@ -118,7 +124,6 @@ class FinancialInstitutionModel extends BaseModel {
             sanitizedData.name_th,
             sanitizedData.name_en,
           ]);
-          logger.silly(`CSV data added: ${JSON.stringify(sanitizedData)}`);
         } catch (error) {
           if (error.code === "23505") {
             logger.warn(
