@@ -15,16 +15,16 @@ class BaseModel {
 
   async validateSchema(data, operation = "create") {
     logger.info("Validating schema...");
-    logger.debug("Data to be validated: ", JSON.stringify(data));
+    logger.debug("Data to be validated:", data);
 
     try {
       const validated = await this.schema.validateAsync(data, {
         context: { operation },
       });
-      logger.debug("Validation passed for data: ", JSON.stringify(validated));
+      logger.debug("Validation passed for data:", validated);
       return validated;
     } catch (error) {
-      logger.error("Validation error: %s", error.message);
+      logger.error("Validation error: ", error.message);
       throw new ValidationError(error.message);
     }
   }
@@ -123,7 +123,7 @@ class BaseModel {
       }
 
       logger.info("Finding one...");
-      logger.debug("primaryKeys: ", JSON.stringify(primaryKeys));
+      logger.debug("primaryKeys: %s", JSON.stringify(primaryKeys));
 
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);
