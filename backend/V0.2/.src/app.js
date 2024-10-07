@@ -51,7 +51,11 @@ app.use((req, res, next) => {
   // Log the outgoing response when it's finished
   res.on("finish", () => {
     logger.info(
-      `Outgoing Response: ${requestPath} => ${res.statusCode} ${res.statusMessage} => ${ip}`
+      `Outgoing Response: ${method} ${requestPath} -> ${JSON.stringify({
+        statusCode: res.statusCode,
+        statusMessage: res.statusMessage,
+        data: res.data,
+      }, null, 2)} -> ${ip}`
     );
     logger.debug("");
   });
