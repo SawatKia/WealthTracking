@@ -17,7 +17,7 @@ class Middlewares {
    */
   methodValidator(allowedMethods) {
     return (req, res, next) => {
-      logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`)
+      logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`);
       const { method, path } = req;
       logger.info("Validating request method and path");
       logger.debug(`Request: Method=${method}, Path=${path}`);
@@ -29,7 +29,6 @@ class Middlewares {
           const pathRegex = new RegExp(
             `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
           );
-          logger.debug(`Path regex: ${pathRegex}`);
           if (pathRegex.test(incomingPath)) {
             return allowedPath; // Return the matching allowed path
           }
@@ -60,7 +59,7 @@ class Middlewares {
       }
 
       logger.info(`Method ${method} is allowed for ${path}`);
-      next();
+      return next();
     };
   }
 
