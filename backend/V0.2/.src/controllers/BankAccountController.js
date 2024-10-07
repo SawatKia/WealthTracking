@@ -4,6 +4,7 @@ const BankAccountModel = require("../models/BankAccountModel");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
 const { BankAccountUtils } = require('../utilities/BankAccountUtils');
+const UserModel = require('../models/UserModel');
 
 const { Logger, formatResponse } = Utils;
 const logger = Logger("BankAccountController");
@@ -14,6 +15,7 @@ class BankAccountController extends BaseController {
         this.BankAccountModel = new BankAccountModel();
         this.FiModel = new FinancialInstitutionModel();
         this.BankAccountUtils = new BankAccountUtils();
+        this.UserModel = new UserModel();
 
         this.createBankAccount = this.createBankAccount.bind(this);
         this.getBankAccount = this.getBankAccount.bind(this);
@@ -36,8 +38,9 @@ class BankAccountController extends BaseController {
             const requiredFields = ["account_number", "fi_code", "display_name", "account_name", "balance"];
             const convertedBody = super.verifyField(req.body, requiredFields, this.BankAccountModel);
 
-            //TODO - change the method after modifying the BankAccounModel
-            const bankData = await this.FiModel.findOne({ fi_code });
+            logger.debug(`Searching for bank data with fi_code: ${fi_code}, type: ${typeof fi_code}`);
+            const bankData = await this.FiModel.findOne({ fi_code: fi_code });
+            logger.debug(`Bank data found: ${JSON.stringify(bankData)}`);
             if (!bankData) {
                 throw MyAppErrors.notFound('specified fi_code not found. to get list of available fi_code please use /fi/ endpoint');
             }
@@ -46,6 +49,12 @@ class BankAccountController extends BaseController {
             logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
+            }
+
+            // Add this block to verify the user exists
+            const userExists = await this.UserModel.findOne({ national_id: currentUser.national_id });
+            if (!userExists) {
+                throw MyAppErrors.badRequest('invalid national id');
             }
 
             const bankAccountData = {
@@ -57,12 +66,16 @@ class BankAccountController extends BaseController {
             const createResult = await this.BankAccountModel.create(bankAccountData);
             logger.debug(`createResult: ${JSON.stringify(createResult)}`);
             const result = await this.BankAccountModel.get(createResult.account_number, createResult.fi_code);
-            logger.debug(`get create result: ${JSON.stringify(result)}`);
+            logger.debug(`get create result: ${JSON.stringify(result), null, 2}`);
             req.formattedResponse = formatResponse(201, 'Bank account created successfully', result);
             next();
         } catch (error) {
             logger.error(`Failed to create bank account: ${error.message}`);
-            next(error);
+            if (error.message.includes('violates foreign key constraint')) {
+                next(MyAppErrors.badRequest('Invalid national ID. The user does not exist.'));
+            } else {
+                next(error);
+            }
         }
     }
 
