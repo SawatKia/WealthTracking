@@ -1,11 +1,16 @@
 const request = require("supertest");
 const app = require("../app");
 const pgClient = require("../services/PgClient");
+const FiModel = require("../models/FinancialInstitutionModel");
 const { test: testConfig } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
-const PgClient = require("../services/PgClient");
 const { Logger, formatResponse } = Utils;
-const logger = Logger("users.test");
+const logger = Logger("bankAcc.test");
+const UserModel = require('../models/UserModel');
+const { ValidationError } = require('../utilities/ValidationErrors');
+
+// Mock JWT token
+const mockToken = 'mockJWTtoken123';
 
 const newBankAccount = [
     //* success
@@ -14,7 +19,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -25,10 +29,10 @@ const newBankAccount = [
             data: {
                 account_number: "12345678901234567890",
                 fi_code: "004",
-                national_id: "0000000000001",
+                national_id: "1234567890123",
                 display_name: "Test Bank Account",
                 account_name: "Test Bank Account Name",
-                balance: 1000.00
+                balance: "1000.00"
             }
         }
     },
@@ -37,7 +41,6 @@ const newBankAccount = [
         testName: "missing account_number",
         body: {
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -52,7 +55,6 @@ const newBankAccount = [
         body: {
             account_number: "",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -67,7 +69,6 @@ const newBankAccount = [
         testName: "missing fi_code",
         body: {
             account_number: "12345678901234567890",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -82,7 +83,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -128,7 +128,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             account_name: "Test Bank Account Name",
             balance: 1000.00
         },
@@ -142,7 +141,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -158,7 +156,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             balance: 1000.00
         },
@@ -172,7 +169,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "",
             balance: 1000.00
@@ -188,7 +184,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name"
         },
@@ -202,7 +197,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: ""
@@ -219,7 +213,6 @@ const newBankAccount = [
         body: {
             account_number: "123456789", // User inputs without separators
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -230,10 +223,10 @@ const newBankAccount = [
             data: {
                 account_number: "123-4-56789-0", // Note the formatted output
                 fi_code: "004",
-                national_id: "0000000000001",
+                national_id: "1234567890123",
                 display_name: "Test Bank Account",
                 account_name: "Test Bank Account Name",
-                balance: 1000.00
+                balance: "1000.00"
             }
         }
     },
@@ -242,10 +235,9 @@ const newBankAccount = [
         body: {
             account_number: "123-4-56789-0", // User inputs with separators
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 201,
@@ -253,10 +245,10 @@ const newBankAccount = [
             data: {
                 account_number: "123-4-56789-0", // Note the formatted output
                 fi_code: "004",
-                national_id: "0000000000001",
+                national_id: "1234567890123",
                 display_name: "Test Bank Account",
                 account_name: "Test Bank Account Name",
-                balance: 1000.00
+                balance: "1000.00"
             }
         }
     },
@@ -265,7 +257,6 @@ const newBankAccount = [
         body: {
             account_number: "123456789", // SCB format for Kasikorn bank
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -280,7 +271,6 @@ const newBankAccount = [
         body: {
             account_number: "123456789",
             fi_code: "999", // Unsupported bank code
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -295,7 +285,6 @@ const newBankAccount = [
         body: {
             account_number: "123456789012345678901", // 21 characters, exceeds 20
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -310,7 +299,6 @@ const newBankAccount = [
         body: {
             account_number: "12345ABV7890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -327,7 +315,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "12345678901234567890A", // 21 characters, exceeds 20
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -342,7 +329,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "FI_TEST!",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -389,7 +375,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "A".repeat(101), // 101 characters, exceeds 100
             account_name: "Test Bank Account Name",
             balance: 1000.00
@@ -405,7 +390,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "A".repeat(101), // 101 characters, exceeds 100
             balance: 1000.00
@@ -421,7 +405,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: 1000.999
@@ -436,7 +419,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: "1000.00"
@@ -451,7 +433,6 @@ const newBankAccount = [
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
-            national_id: "0000000000001",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
             balance: -100.00
@@ -462,3 +443,70 @@ const newBankAccount = [
         }
     },
 ];
+
+beforeAll(async () => {
+    await pgClient.init(); // This will check and create tables
+    // Ensure pgClient is initialized before running tests
+    try {
+        await pgClient.query('SELECT 1');
+        logger.info('PostgreSQL connection is ready');
+
+        const fi = new FiModel();
+        await fi.initializeData();
+        logger.info('Financial institution data initialized');
+
+        // Add mock user
+        const userModel = new UserModel();
+        logger.info('UserModel initialized, creating mock user');
+        const mockUser = {
+            national_id: '1234567890123',
+            email: 'V2yF3@example.com',
+            username: 'test_user',
+            role: 'user',
+            password: 'testPassword123', // Add a password
+            date_of_birth: '1990-01-01', // Add a date of birth
+            member_since: new Date().toISOString()
+        };
+        try {
+            await userModel.createUser(mockUser);
+            logger.info('Mock user created');
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                logger.warn(`Validation error while creating mock user: ${error.message}`);
+            } else {
+                logger.error(`Error creating mock user: ${error.message}`);
+                throw error;
+            }
+        }
+    } catch (error) {
+        logger.error('Failed to initialize test environment:', error);
+        throw new Error('Test environment initialization failed');
+    }
+    logger.info('Test environment initialized');
+});
+
+afterAll(async () => {
+    await pgClient.end();
+    // Add a small delay to ensure all connections are closed
+    await new Promise(resolve => setTimeout(resolve, 500));
+});
+
+describe('Bank Account Creation', () => {
+    newBankAccount.forEach((testCase, index) => {
+        it(`${index + 1}. should ${testCase.testName}`, async () => {
+            logger.info(`Running test ${index + 1}: ${testCase.testName}`);
+
+            const response = await request(app)
+                .post('/api/v0.2/banks')
+                .set('Authorization', `Bearer ${mockToken}`)
+                .send(testCase.body);
+
+            expect(response.status).toBe(testCase.expected.status);
+            expect(response.body.message).toBe(testCase.expected.message);
+
+            if (testCase.expected.data) {
+                expect(response.body.data).toEqual(testCase.expected.data);
+            }
+        });
+    });
+});
