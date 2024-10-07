@@ -99,6 +99,8 @@ class BankAccountModel extends BaseModel {
             const result = await this.findOne({ account_number: accountNumber, fi_code: fiCode });
             if (result) {
                 result.account_number = this.bankAccountUtils.formatAccountNumber(result.account_number, result.fi_code);
+                // Convert balance to number, format to 2 decimal places, then back to string
+                result.balance = Number(result.balance).toFixed(2).toString();
             }
             return result;
         } catch (error) {
@@ -112,6 +114,8 @@ class BankAccountModel extends BaseModel {
             const results = await this.findAll({ national_id: nationalId });
             return results.map(account => {
                 account.account_number = this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
+                // Convert balance to number, format to 2 decimal places, then back to string
+                account.balance = Number(account.balance).toFixed(2).toString();
                 return account;
             });
         } catch (error) {
