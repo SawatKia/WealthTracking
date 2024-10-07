@@ -16,18 +16,17 @@ class BaseController {
      */
     verifyField(body, requiredFields, model) {
         logger.info('verifyField');
-        logger.debug(`requiredFields: ${requiredFields}`);
 
         if (!body || typeof body !== 'object') {
             logger.debug('Invalid request body');
             throw new Error('Invalid request body');
         }
-        logger.info(`body: ${JSON.stringify(body)}`);
-        logger.info(`requiredFields: ${requiredFields}`);
+        logger.info(`body: ${JSON.stringify(body, null, 2)} is valid`);
         if (!requiredFields || !Array.isArray(requiredFields)) {
             logger.debug('Invalid required fields');
             throw new Error('Invalid required fields');
         }
+        logger.info(`requiredFields: ${JSON.stringify(requiredFields, null, 2)} is valid`);
 
         if (model && typeof model !== 'object') {
             logger.debug('Invalid model');
@@ -43,15 +42,15 @@ class BaseController {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
                 }
-                logger.debug(`${field} is present in body`);
             }
+            logger.info(`all required fields are present`);
         }
 
         // Perform type conversion if model is provided
         if (model && model.schema) {
             const schema = model.schema;
             const convertedBody = {};
-
+            logger.info('type conversion');
             for (const [key, value] of Object.entries(body)) {
                 if (schema.describe().keys[key]) {
                     const fieldSchema = schema.describe().keys[key];
@@ -86,7 +85,7 @@ class BaseController {
                     convertedBody[key] = value;
                 }
             }
-
+            logger.info(`type conversion complete: ${JSON.stringify(convertedBody, null, 2)}`);
             return convertedBody;
         }
 
