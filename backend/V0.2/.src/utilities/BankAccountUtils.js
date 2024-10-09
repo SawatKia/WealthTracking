@@ -75,28 +75,49 @@ class BankAccountUtils {
      * @returns {Object} - Validation result
      */
     validateAccountNumber(accountNumber, bankCode) {
-        logger.info(`Validating account number: ${accountNumber} for bank code: ${bankCode}`);
+        try {
+            logger.info(`Validating account number: ${accountNumber} for bank code: ${bankCode}`);
 
-        const cleanedNumber = this.normalizeAccountNumber(accountNumber);
+            const cleanedNumber = this.normalizeAccountNumber(accountNumber);
 
-        const formattedNumber = this.formatAccountNumber(cleanedNumber, bankCode);
+            const formattedNumber = this.formatAccountNumber(cleanedNumber, bankCode);
 
-        if (!formattedNumber) {
-            logger.error(`Invalid account number for ${bank.displayName}`);
-            return this._validationResult(false, `Invalid format for ${bank.displayName}. Expected format: ${bank.example}`);
+            if (!formattedNumber) {
+                const bank = this._getBankFormat(bankCode);
+                logger.error(`Invalid account number for ${bank.displayName}`);
+                return this._validationResult(false, `Invalid format for ${bank.displayName}. Expected format: ${bank.example}`);
+            }
+
+            return this._validationResult(true, null, formattedNumber);
+        } catch (error) {
+            logger.error(`Error validating account number: ${error.message}`);
+            return this._validationResult(false, `Validation error: ${error.message}`);
         }
-
-        return this._validationResult(true, null, formattedNumber);
     }
 
-
     /**
-     * Normalizes the account number by removing non-digit characters
+     * Normalizes the account number by removing dashes if the input contains only digits and dashes.
+     * Throws an error for inputs containing other characters.
      * @param {string} accountNumber - Raw input account number
      * @returns {string} - Cleaned account number with only digits
+     * @throws {Error} If the input contains characters other than digits or dashes
      */
     normalizeAccountNumber(accountNumber) {
-        return accountNumber.replace(/\D/g, '');
+        try {
+            logger.info(`Normalizing account number: ${accountNumber}`);
+            if (/^[\d-]+$/.test(accountNumber)) {
+                const normalizedNumber = accountNumber.replace(/-/g, '');
+                logger.debug(`Normalized account number: ${normalizedNumber}`);
+                return normalizedNumber;
+            } else {
+                logger.error(`Invalid account number format: ${accountNumber}, account number should contain only digits or digits with dashes`);
+                throw new Error('Account number should contain only digits or digits with dashes');
+            }
+        } catch (error) {
+            logger.error(`Error in normalizeAccountNumber: ${error.message}`);
+            logger.error(`Error normalizing account number: ${error.message}`);
+            throw new Error(`Normalization error: ${error.message}`);
+        }
     }
 
     /**
@@ -105,7 +126,12 @@ class BankAccountUtils {
      * @returns {Object|null} - Bank format or null if not found
      */
     _getBankFormat(bankCode) {
-        return Object.values(this.bankFormats).find(bank => bank.code === bankCode);
+        try {
+            return Object.values(this.bankFormats).find(bank => bank.code === bankCode);
+        } catch (error) {
+            logger.error(`Error getting bank format: ${error.message}`);
+            throw new Error(`Bank format retrieval error: ${error.message}`);
+        }
     }
 
     /**
@@ -125,16 +151,21 @@ class BankAccountUtils {
      * @returns {Object} - Joi validation schema
      */
     getValidationSchema(bankCode) {
-        const bank = this._getBankFormat(bankCode);
+        try {
+            const bank = this._getBankFormat(bankCode);
 
-        if (!bank) {
-            logger.error(`Bank code ${bankCode} not found for Joi schema`);
-            return Joi.string().custom(() => { throw new Error('Invalid bank code'); });
+            if (!bank) {
+                logger.error(`Bank code ${bankCode} not found for Joi schema`);
+                return Joi.string().custom(() => { throw new Error('Invalid bank code'); });
+            }
+
+            return Joi.string().pattern(bank.format).messages({
+                'string.pattern.base': `Account number format should match ${bank.displayName}: ${bank.example}`
+            });
+        } catch (error) {
+            logger.error(`Error creating validation schema: ${error.message}`);
+            throw new Error(`Validation schema error: ${error.message}`);
         }
-
-        return Joi.string().pattern(bank.format).messages({
-            'string.pattern.base': `Account number format should match ${bank.displayName}: ${bank.example}`
-        });
     }
 
     /**
@@ -144,47 +175,53 @@ class BankAccountUtils {
      * @returns {string} - Formatted account number
      */
     formatAccountNumber(accountNumber, fiCode) {
-        const bank = this._getBankFormat(fiCode);
-        logger.debug(`bank: ${JSON.stringify(bank, null, 2)}`);
+        try {
+            const bank = this._getBankFormat(fiCode);
+            logger.debug(`bank: ${JSON.stringify(bank, null, 2)}`);
 
-        if (!bank || !bank.format) {
-            logger.warn(`Unknown bank code or format missing: ${fiCode}`);
-            return accountNumber; // Return original if bank not found or format is missing
-        }
-
-        const cleanedNumber = this.normalizeAccountNumber(accountNumber);
-
-        // Get the example format and split it by "-" to determine positions of separators
-        const formatExample = bank.example;
-        const exampleParts = formatExample.split('-');
-
-        let formattedNumber = '';
-        let currentIndex = 0;
-        // Check if the cleaned number matches the bank's format
-        if (!bank.format.test(cleanedNumber)) {
-            logger.warn(`Account number ${cleanedNumber} does not match the format for bank ${fiCode}`);
-            return accountNumber; // Return original if format doesn't match
-        }
-
-        // Format the cleaned number by matching the example structure
-        exampleParts.forEach(part => {
-            const partLength = part.length;
-            formattedNumber += cleanedNumber.slice(currentIndex, currentIndex + partLength);
-            currentIndex += partLength;
-            // Add separator after each part except the last one
-            if (currentIndex < cleanedNumber.length) {
-                formattedNumber += '-';
+            if (!bank || !bank.format) {
+                logger.warn(`Unknown bank code or format missing: ${fiCode}`);
+                return accountNumber; // Return original if bank not found or format is missing
             }
-        });
 
-        logger.debug(`Formatting result: ${JSON.stringify({
-            originalNumber: accountNumber,
-            cleanedNumber,
-            formattedNumber,
-            bankFormat: bank.format
-        }, null, 2)}`);
+            const cleanedNumber = this.normalizeAccountNumber(accountNumber);
 
-        return formattedNumber;
+            // Get the example format and split it by "-" to determine positions of separators
+            const formatExample = bank.example;
+            const exampleParts = formatExample.split('-');
+
+            let formattedNumber = '';
+            let currentIndex = 0;
+            // Check if the cleaned number matches the bank's format
+            const expectedLength = bank.example.replace(/-/g, '').length;
+            if (cleanedNumber.length !== expectedLength) {
+                logger.warn(`Account number ${cleanedNumber} does not have the expected length (${expectedLength} digits) for bank ${fiCode}`);
+                return accountNumber; // Return original if length doesn't match
+            }
+
+            // Format the cleaned number by matching the example structure
+            exampleParts.forEach(part => {
+                const partLength = part.length;
+                formattedNumber += cleanedNumber.slice(currentIndex, currentIndex + partLength);
+                currentIndex += partLength;
+                // Add separator after each part except the last one
+                if (currentIndex < cleanedNumber.length) {
+                    formattedNumber += '-';
+                }
+            });
+
+            logger.debug(`Formatting result: ${JSON.stringify({
+                originalNumber: accountNumber,
+                cleanedNumber,
+                formattedNumber,
+                bankFormat: bank.format
+            }, null, 2)}`);
+
+            return formattedNumber;
+        } catch (error) {
+            logger.error(`Error formatting account number: ${error.message}`);
+            return accountNumber; // Return original number in case of error
+        }
     }
 
 }
