@@ -51,14 +51,14 @@ class UserModel extends BaseModel {
             }),
 
             username: Joi.string()
-                .pattern(/^[a-zA-Z0-9_.-]*$/, 'alphanumeric characters and some special characters (_.-) only')
+                .pattern(/^[a-zA-Z0-9_.-]*$/)
                 .when(Joi.ref('$operation'), {
                     is: 'create',
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.pattern.base': 'Invalid username. Only alphanumeric characters and some special characters (_.-) are allowed.',
+                    'string.pattern.base': 'Invalid username',
                     'any.required': 'Username is required when creating a user.',
                 }),
 
