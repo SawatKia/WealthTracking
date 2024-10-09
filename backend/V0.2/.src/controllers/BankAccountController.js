@@ -2,6 +2,7 @@ const BaseController = require("./BaseController");
 const Utils = require("../utilities/Utils");
 const BankAccountModel = require("../models/BankAccountModel");
 const MyAppErrors = require("../utilities/MyAppErrors");
+const { ValidationError } = require("../utilities/ValidationErrors");
 const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
 const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 const UserModel = require('../models/UserModel');
@@ -27,34 +28,52 @@ class BankAccountController extends BaseController {
     async createBankAccount(req, res, next) {
         logger.info('Creating bank account...');
         try {
-            const { fi_code, account_number } = req.body;
+            const { fi_code, account_number, balance } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
+
+            const requiredFields = ["account_number", "fi_code", "display_name", "account_name", "balance"];
+            let convertedBody;
+            try {
+                convertedBody = await super.verifyField(req.body, requiredFields, this.BankAccountModel);
+            } catch (error) {
+                if (error.message.startsWith('Invalid number format for field:')) {
+                    throw new ValidationError(error.message);
+                }
+                throw error;
+            }
+
+            // Verify balance is a valid number
+            if (isNaN(parseFloat(balance))) {
+                throw new ValidationError("balance must be a valid number.");
+            }
+
+            // Verify balance is not negative
+            if (parseFloat(balance) < 0) {
+                throw new ValidationError("balance must not be negative.");
+            }
+
+            // Verify balance has at most 2 decimal places
+            if (!/^\d+(\.\d{1,2})?$/.test(balance)) {
+                throw new ValidationError("Balance must have at most 2 decimal places.");
+            }
 
             // Clean up the account number before further processing
             const cleanedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(account_number);
-            req.body.account_number = cleanedAccountNumber;
-            logger.debug(`req.body after normalized account_number: ${JSON.stringify(req.body)}`);
-
-            const requiredFields = ["account_number", "fi_code", "display_name", "account_name", "balance"];
-            const convertedBody = super.verifyField(req.body, requiredFields, this.BankAccountModel);
-
+            convertedBody.account_number = cleanedAccountNumber;
+            logger.debug(`convertedBody after normalized account_number: ${JSON.stringify(convertedBody)}`);
             logger.debug(`Searching for bank data with fi_code: ${fi_code}, type: ${typeof fi_code}`);
             const bankData = await this.FiModel.findOne({ fi_code: fi_code });
-            logger.debug(`Bank data found: ${JSON.stringify(bankData)}`);
             if (!bankData) {
-                throw MyAppErrors.notFound('specified fi_code not found. to get list of available fi_code please use /fi/ endpoint');
+                logger.debug('Bank data not found');
+                logger.error(`Financial institution with fi_code '${fi_code}' not found. To get a list of available fi_codes, please use the /fi/ endpoint.`);
+                throw MyAppErrors.notFound(`Financial institution with fi_code '${fi_code}' not found. To get a list of available fi_codes, please use the /fi/ endpoint.`);
             }
+            logger.debug(`Bank data found: ${JSON.stringify(bankData)}`);
 
             const currentUser = await super.getCurrentUser(req);
             logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
-            }
-
-            // Add this block to verify the user exists
-            const userExists = await this.UserModel.findOne({ national_id: currentUser.national_id });
-            if (!userExists) {
-                throw MyAppErrors.badRequest('invalid national id');
             }
 
             const bankAccountData = {
@@ -71,8 +90,16 @@ class BankAccountController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Failed to create bank account: ${error.message}`);
-            if (error.message.includes('violates foreign key constraint')) {
+            if (error.message.startsWith('Missing required field:')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('violates foreign key constraint')) {
                 next(MyAppErrors.badRequest('Invalid national ID. The user does not exist.'));
+            } else if (error.message.includes('duplicate key value') || error.code === '23505') {
+                next(MyAppErrors.badRequest('Bank account already exists for this user.'));
+            } else if (error.message.includes('Account number should contain only digits or digits with dashes')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error instanceof ValidationError) {
+                next(MyAppErrors.badRequest(error.message));
             } else {
                 next(error);
             }
