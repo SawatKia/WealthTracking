@@ -1,15 +1,13 @@
-import "./App.css";
+import React from 'react';
+import './App.css';
+import AddBankAccountPage from './Pages/AddBankAccount';
 
-function App() {
+const App: React.FC = () => {
   return (
     <div className="App">
-      <h1>this is your Home page</h1>
-      <h2>
-        the frontend can't open(with live server) /build/index.html after build,
-        you need to fix this before. as the backend can serve this frontend
-      </h2>
+      <AddBankAccountPage /> {/* แสดง AddBankAccount */}
     </div>
   );
-}
+};
 
 export default App;
