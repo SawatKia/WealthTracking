@@ -6,6 +6,9 @@ const { Logger, formatResponse } = Utils;
 const logger = Logger('BaseController');
 
 class BaseController {
+    constructor() {
+        this.UserModel = new User();
+    }
 
     /**
      * Verifies required fields and performs type conversion based on the model schema
@@ -14,26 +17,25 @@ class BaseController {
      * @param {Object} model - The model instance containing the schema
      * @returns {Object} - The body with converted types
      */
-    verifyField(body, requiredFields, model) {
+    async verifyField(body, requiredFields, model) {
         logger.info('verifyField');
-        logger.debug(`requiredFields: ${requiredFields}`);
 
         if (!body || typeof body !== 'object') {
             logger.debug('Invalid request body');
             throw new Error('Invalid request body');
         }
-        logger.info(`body: ${JSON.stringify(body)}`);
+        logger.info(`received body: ${JSON.stringify(body, null, 2)}`);
         if (!requiredFields || !Array.isArray(requiredFields)) {
             logger.debug('Invalid required fields');
             throw new Error('Invalid required fields');
         }
-        logger.info(`requiredFields: ${requiredFields}`);
+        logger.info(`requiredFields: ${JSON.stringify(requiredFields, null, 2)} is valid`);
 
         if (model && typeof model !== 'object') {
             logger.debug('Invalid model');
             throw new Error('Invalid model');
         }
-        logger.info(`model is valid}`);
+        logger.info(`model is valid`);
 
         // Verify required fields
         if (requiredFields && requiredFields.length > 0) {
@@ -43,15 +45,15 @@ class BaseController {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
                 }
-                logger.debug(`${field} is present in body`);
             }
+            logger.info(`all required fields are present`);
         }
 
         // Perform type conversion if model is provided
         if (model && model.schema) {
             const schema = model.schema;
             const convertedBody = {};
-
+            logger.info('type conversion');
             for (const [key, value] of Object.entries(body)) {
                 if (schema.describe().keys[key]) {
                     const fieldSchema = schema.describe().keys[key];
@@ -67,26 +69,20 @@ class BaseController {
                             case 'string':
                                 convertedBody[key] = String(value);
                                 break;
-                            case 'boolean':
-                                if (typeof value === 'string') {
-                                    convertedBody[key] = value.toLowerCase() === 'true';
-                                } else {
-                                    convertedBody[key] = Boolean(value);
-                                }
-                                break;
                             default:
                                 convertedBody[key] = value;
+                                break;
                         }
                     } catch (error) {
-                        logger.error(`Type conversion failed for field ${key}: ${error.message}`);
-                        throw new Error(`Invalid format for field ${key}: ${error.message}`);
+                        logger.error(`Type conversion error: ${error.message}`);
+                        throw error;
                     }
                 } else {
                     // If the field is not in the schema, keep it as is
                     convertedBody[key] = value;
                 }
             }
-
+            logger.info(`type conversion complete: ${JSON.stringify(convertedBody, null, 2)}`);
             return convertedBody;
         }
 
@@ -112,7 +108,14 @@ class BaseController {
         if (!req.user) {
             throw new Error('User not found');
         }
-        return req.user;
+
+        // Check if the user exists in the database
+        const userExists = await this.UserModel.findOne({ national_id: req.user.national_id });
+        if (!userExists) {
+            throw new Error('User not found in the database');
+        }
+
+        return userExists;
     }
 
     verifyOwnership(user, resource) {

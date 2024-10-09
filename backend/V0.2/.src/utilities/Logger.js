@@ -20,7 +20,14 @@ const getCaller = () => {
     const stackLines = stack.split('\n');
     if (stackLines.length < 4) return ''; // Make sure there's enough stack info
     const callerLine = stackLines[3].trim(); // 3rd line usually contains the caller info
-    return callerLine.replace(/^at\s/, ''); // Clean up the line
+    // Extract filename and line number from the caller line
+    const match = callerLine.match(/\((.+):(\d+):\d+\)$/);
+    if (match) {
+        const [, filePath, lineNumber] = match;
+        const fileName = path.basename(filePath);
+        return `${fileName}:${lineNumber}`;
+    }
+    return callerLine; // Return the full line if we can't extract filename and line number
 }
 
 class Logger {
@@ -29,8 +36,32 @@ class Logger {
 
         const transports = [];
         // configure transports based on NODE_ENV
-        if (NODE_ENV === 'production' || NODE_ENV === 'test') {
-            // rotate error logs every day, keep for 7 days
+        if (NODE_ENV === 'test') {
+            const testRotateOptions = {
+                datePattern: 'YYYY-MM-DD',
+                zippedArchive: true,
+                maxSize: '20m',
+                maxFiles: '1d',
+                createSymlink: true,
+                // options: { start: 0, flags: 'r+' }
+            };
+
+            // rotate error logs for test environment
+            transports.push(new DailyRotateFile({
+                ...testRotateOptions,
+                filename: 'log/error-%DATE%.log',
+                level: 'error',
+                symlinkName: 'current-error.log',
+            }));
+
+            // rotate combined logs for test environment
+            transports.push(new DailyRotateFile({
+                ...testRotateOptions,
+                filename: 'log/combined-%DATE%.log',
+                symlinkName: 'current-combined.log',
+            }));
+        } else if (NODE_ENV === 'production') {
+            // rotate error logs for production environment
             transports.push(new DailyRotateFile({
                 filename: 'log/error-%DATE%.log',
                 datePattern: 'YYYY-MM-DD',
@@ -40,7 +71,7 @@ class Logger {
                 maxFiles: '7d'
             }));
 
-            // rotate combined logs every day, keep for 14 days
+            // rotate combined logs for production environment
             transports.push(new DailyRotateFile({
                 filename: 'log/combined-%DATE%.log',
                 datePattern: 'YYYY-MM-DD',
@@ -54,7 +85,7 @@ class Logger {
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[caller: ${info.caller ? `${info.caller}` : 'Unknown caller'}] ${info.level}: ${info.message}`;
+                    return `[${info.caller ? `${info.caller}` : info.label}] ${info.level}: ${info.message}`;
                 })
             )
         }));
@@ -71,7 +102,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.label}] ${info.level} - ${info.message}`; // global log format  
+                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // global log format, if not specified
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },

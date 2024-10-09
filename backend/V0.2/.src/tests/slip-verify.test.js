@@ -5,6 +5,8 @@ const { test: testConfig } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
 const { Logger, formatResponse } = Utils;
 const logger = Logger("slip-verify.test");
+// Mock JWT token
+const mockToken = 'mockJWTtoken123';
 
 const verifySlipTestCases = [
     {
@@ -91,9 +93,12 @@ describe("Slip Verification API Endpoint", () => {
                 if (testCase.method === 'GET') {
                     response = await request(app)
                         .get("/api/v0.2/slip/verify")
+                        .set('Authorization', `Bearer ${mockToken}`)
                         .query(testCase.query);
                 } else {
-                    const req = request(app).post("/api/v0.2/slip/verify");
+                    const req = request(app)
+                        .post("/api/v0.2/slip/verify")
+                        .set('Authorization', `Bearer ${mockToken}`);
 
                     if (testCase.file) {
                         req.attach('imageFile', testCase.file.buffer, testCase.file.originalname);

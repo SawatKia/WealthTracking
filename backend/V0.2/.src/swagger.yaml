@@ -242,6 +242,8 @@ paths:
         - "User"
       summary: Get user by National ID (NOT Implemented)
       description: Retrieves user information based on National ID.
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: national_id
@@ -274,6 +276,8 @@ paths:
         - "User"
       summary: Update user by National ID (NOT Implemented)
       description: Updates user information.
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: national_id
@@ -325,6 +329,8 @@ paths:
         - "User"
       summary: Delete user by National ID (NOT Implemented)
       description: Deletes a user from the system.
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: national_id
@@ -355,6 +361,8 @@ paths:
       tags:
         - Slip
       description: Verifies slip data using payload, image file, or base64 encoded image.
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -401,6 +409,8 @@ paths:
       summary: Verify slip data (GET method)
       tags:
         - Slip
+      security:
+        - bearerAuth: []
       description: Verifies slip data using payload in query parameter.
       parameters:
         - in: query
@@ -434,6 +444,8 @@ paths:
       summary: Get quota information
       tags:
         - Slip
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Successful response
@@ -448,7 +460,155 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /banks:
+    post:
+      tags:
+        - "Bank Account"
+      summary: Create a new bank account
+      description: Creates a new bank account for the authenticated user.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountInput"
+      responses:
+        "201":
+          description: Bank account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get all bank accounts
+      description: Retrieves all bank accounts for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of bank accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /banks/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get a specific bank account
+      description: Retrieves a specific bank account by account number and financial institution code.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /fis:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get all financial institutions (Development Mode Only)
+      description: Retrieves a list of all financial institutions.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of financial institutions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fis/operating-banks:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get operating Thai commercial banks
+      description: Retrieves a list of operating Thai commercial banks.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of operating Thai commercial banks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fi/{fi_code}:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get a specific financial institution (Development Mode Only)
+      description: Retrieves a specific financial institution by its code.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of financial institution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     User:
       type: object
@@ -707,3 +867,265 @@ components:
                         account:
                           type: string
                           example: "123xxxxxxxx4567"
+
+    BankAccountInput:
+      type: object
+      required:
+        - bankAccountName
+        - bankAccountDisplayName
+        - bankName
+        - bankAccountNumber
+        - balance
+      properties:
+        bankAccountName:
+          type: string
+          example: "My Savings Account"
+        bankAccountDisplayName:
+          type: string
+          example: "Savings"
+        bankName:
+          type: string
+          example: "Example Bank"
+        bankAccountNumber:
+          type: string
+          example: "1234567890"
+        balance:
+          type: number
+          format: float
+          example: 1000.50
+
+    BankAccountResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Bank account retrieved successfully"
+        data:
+          $ref: "#/components/schemas/BankAccount"
+
+    BankAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "abc123"
+        bankAccountName:
+          type: string
+          example: "My Savings Account"
+        bankAccountDisplayName:
+          type: string
+          example: "Savings"
+        bankName:
+          type: string
+          example: "Example Bank"
+        bankAccountNumber:
+          type: string
+          example: "1234567890"
+        balance:
+          type: number
+          format: float
+          example: 1000.50
+
+    BankAccountsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Bank accounts retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BankAccount"
+
+    DebtInput:
+      type: object
+      required:
+        - debtName
+        - amount
+        - interestRate
+        - startDate
+        - endDate
+      properties:
+        debtName:
+          type: string
+          example: "Car Loan"
+        amount:
+          type: number
+          format: float
+          example: 20000.00
+        interestRate:
+          type: number
+          format: float
+          example: 5.5
+        startDate:
+          type: string
+          format: date
+          example: "2023-01-01"
+        endDate:
+          type: string
+          format: date
+          example: "2028-01-01"
+
+    DebtUpdateInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+          example: 18000.00
+        interestRate:
+          type: number
+          format: float
+          example: 5.0
+        endDate:
+          type: string
+          format: date
+          example: "2027-01-01"
+
+    DebtResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Debt retrieved successfully"
+        data:
+          $ref: "#/components/schemas/Debt"
+
+    Debt:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "def456"
+        debtName:
+          type: string
+          example: "Car Loan"
+        amount:
+          type: number
+          format: float
+          example: 20000.00
+        interestRate:
+          type: number
+          format: float
+          example: 5.5
+        startDate:
+          type: string
+          format: date
+          example: "2023-01-01"
+        endDate:
+          type: string
+          format: date
+          example: "2028-01-01"
+
+    DebtsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Debts retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Debt"
+
+    FinancialInstitution:
+      type: object
+      properties:
+        fi_code:
+          type: string
+          example: "KBANK"
+        name:
+          type: string
+          example: "Kasikornbank"
+        short_name:
+          type: string
+          example: "KBank"
+
+    FinancialInstitutionResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Financial institution retrieved successfully"
+        data:
+          $ref: "#/components/schemas/FinancialInstitution"
+
+    FinancialInstitutionsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Financial institutions retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialInstitution"
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 400
+            message: "Invalid input data"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 401
+            message: "Authentication required"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 404
+            message: "Resource not found"
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 409
+            message: "Resource already exists"
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 500
+            message: "An unexpected error occurred"

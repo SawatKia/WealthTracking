@@ -29,7 +29,7 @@ if (!isDev) {
  */
 app.use((req, res, next) => {
   logger.info("entering the routing for " + req.method + " " + req.url);
-  const { ip, method, path: requestPath, body } = req;
+  const { ip, method, path: requestPath, body, headers } = req;
 
   // Prepare the body for logging 
   let logBody;
@@ -44,15 +44,35 @@ app.use((req, res, next) => {
   }
 
   // Log the incoming request with the truncated body if necessary
-  logger.info(
-    `Incoming Request: ${ip} => ${method} ${requestPath} with body: ${logBody ? JSON.stringify(logBody) : "empty"}`
-  );
+  // Prepare a human-friendly log message
+  const requestLogMessage = `
+    Incoming Request:
+    ----------------
+    ${ip} => ${method} ${requestPath}
+    Headers:
+      Host: ${headers.host}
+      Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
+      Content-Type: ${headers['content-type']}
+      Content-Length: ${headers['content-length']}
+    Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
+  `;
+
+  // Log the formatted message
+  logger.info(requestLogMessage);
 
   // Log the outgoing response when it's finished
   res.on("finish", () => {
-    logger.info(
-      `Outgoing Response: ${requestPath} => ${res.statusCode} ${res.statusMessage} => ${ip}`
-    );
+    // Prepare a human-friendly log message for the response
+    const responseLogMessage = `
+    Outgoing Response:
+    ------------------
+    ${method} ${requestPath} => ${ip}
+    Status: ${res.statusCode} ${res.statusMessage}
+    Data: ${res.data ? JSON.stringify(res.data, null, 2) : 'No data'}
+    `;
+
+    // Log the formatted response message
+    logger.info(responseLogMessage);
     logger.debug("");
   });
 

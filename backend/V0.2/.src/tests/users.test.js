@@ -3,7 +3,6 @@ const app = require("../app");
 const pgClient = require("../services/PgClient");
 const { test: testConfig } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
-const PgClient = require("../services/PgClient");
 const { Logger, formatResponse } = Utils;
 const logger = Logger("users.test");
 
@@ -451,38 +450,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Clean up the database after all tests
-  logger.info("Dropping tables");
-
-  await Promise.all([
-    pgClient
-      .query("DELETE FROM transaction_bank_account_relations;")
-      .then(() =>
-        logger.info("DELETE all rows from table: transaction_bank_account_relations")
-      ),
-    pgClient
-      .query("DELETE FROM transactions;")
-      .then(() => logger.info("DELETE all rows from table: transactions")),
-    pgClient
-      .query("DELETE FROM debts;")
-      .then(() => logger.info("DELETE all rows from table: debts")),
-    pgClient
-      .query("DELETE FROM bank_accounts;")
-      .then(() => logger.info("DELETE all rows from table: bank_accounts")),
-    pgClient
-      .query("DELETE FROM financial_institutions;")
-      .then(() => logger.info("DELETE all rows from table: financial_institutions")),
-    pgClient
-      .query("DELETE FROM users;")
-      .then(() => logger.info("DELETE all rows from table: users")),
-    pgClient
-      .query("DELETE FROM api_request_limits;")
-      .then(() => logger.info("DELETE all rows from table: api_request_limits")),
-  ]);
-
-  await pgClient.release();
-  logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
-});
+  try {
+    // Clean up the database after all tests
+    logger.info("Dropping tables");
+    await pgClient.end();
+    logger.info("Database connection closed successfully");
+  } catch (error) {
+    logger.error("Error during database cleanup:", error);
+  } finally {
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+  }
+}, 120000); // Increase timeout to 30 seconds
 
 describe("Users Endpoints", () => {
   describe("connection to api", () => {
@@ -526,8 +504,8 @@ describe("Users Endpoints", () => {
 
   describe("POST /api/v0.2/users", () => {
     newUserBody.forEach((user, i) => {
-      it(`${i + 1}. ${user.testName}`, async () => {
-        logger.info(`Test ${i + 1}. ${user.testName}`);
+      test(`${i + 1}: ${user.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${user.testName}`);
         const response = await request(app)
           .post("/api/v0.2/users")
           .send(user.body);
@@ -548,8 +526,8 @@ describe("Users Endpoints", () => {
 
   describe("POST /api/v0.2/users/check", () => {
     checkPassBody.forEach((check, i) => {
-      it(`${i + 1}. ${check.testName}`, async () => {
-        logger.info(`Test ${i + 1}. ${check.testName}`);
+      test(`${i + 1}: ${check.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${check.testName}`);
         const response = await request(app)
           .post("/api/v0.2/users/check")
           .send(check.body);

@@ -51,17 +51,15 @@ class UserModel extends BaseModel {
             }),
 
             username: Joi.string()
-                .alphanum() // Allow only alphanumeric characters
-                .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only') // Prevent special characters
+                .pattern(/^[a-zA-Z0-9_.-]*$/)
                 .when(Joi.ref('$operation'), {
                     is: 'create',
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.alphanum': 'Invalid username',
+                    'string.pattern.base': 'Invalid username',
                     'any.required': 'Username is required when creating a user.',
-                    'string.pattern.name': 'Invalid username',
                 }),
 
             hashed_password: Joi.string()
@@ -185,7 +183,10 @@ class UserModel extends BaseModel {
             }
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
             const validationResult = await super.validateSchema(newUserData, 'create');
-            if (validationResult instanceof Error) throw validationResult;
+            if (validationResult instanceof Error) {
+                logger.error(`Validation error: ${validationResult.message}`);
+                throw validationResult;
+            }
 
             let createdResult = await super.create(newUserData);
             createdResult = {

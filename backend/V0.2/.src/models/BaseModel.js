@@ -24,7 +24,7 @@ class BaseModel {
       logger.debug("Validation passed for data:", validated);
       return validated;
     } catch (error) {
-      logger.error("Validation error:", error.message);
+      logger.error("Validation error: ", error.message);
       throw new ValidationError(error.message);
     }
   }
@@ -56,7 +56,7 @@ class BaseModel {
         return result;
       });
     } catch (error) {
-      logger.error("Error executing query:", error);
+      logger.error("Error executing query: %s", error);
       throw error;
     }
   }
@@ -73,7 +73,7 @@ class BaseModel {
     try {
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "create");
-        logger.debug("Validated data:", validated);
+        logger.debug("Validated data: " + JSON.stringify(validated));
 
         const keys = Object.keys(validated);
         const values = Object.values(validated);
@@ -82,14 +82,14 @@ class BaseModel {
         const sql = `INSERT INTO ${this.tableName} (${keys.join(
           ","
         )}) VALUES (${placeholders}) RETURNING *`;
-        logger.debug("Create SQL prepared query:", sql);
+        logger.debug("Create SQL prepared query: %s", sql);
         const result = await this.pgClient.query(sql, values);
-        logger.debug("Create SQL result:", result);
-        logger.debug("Create result:", result.rows[0]);
+        logger.debug("Create SQL result: " + JSON.stringify(result));
+        logger.debug("Create result: " + JSON.stringify(result.rows[0]));
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error creating record:", error);
+      logger.error("Error creating record: %s", error);
       throw error;
     }
   }
@@ -105,7 +105,7 @@ class BaseModel {
       const result = await this.pgClient.query(sql, [userEmail]);
       return result.rows;
     } catch (error) {
-      logger.error("Error finding all records:", error);
+      logger.error("Error finding all records: %s", error);
       throw error;
     }
   }
@@ -123,7 +123,7 @@ class BaseModel {
       }
 
       logger.info("Finding one...");
-      logger.debug("primaryKeys:", primaryKeys);
+      logger.debug("primaryKeys: %s", JSON.stringify(primaryKeys));
 
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);
@@ -133,10 +133,10 @@ class BaseModel {
 
       const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
       const result = await this.pgClient.query(sql, values);
-      logger.debug("findOne result:", result.rows[0]);
+      logger.debug("findOne result: " + JSON.stringify(result.rows[0]));
       return result.rows[0];
     } catch (error) {
-      logger.error("Error finding one record:", error);
+      logger.error("Error finding one record: %s", error);
       throw error;
     }
   }
@@ -155,7 +155,7 @@ class BaseModel {
     try {
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "update");
-        logger.debug("Validated data:", validated);
+        logger.debug("Validated data: " + JSON.stringify(validated));
 
         const keys = Object.keys(primaryKeys);
         const primaryValues = Object.values(primaryKeys);
@@ -177,11 +177,11 @@ class BaseModel {
           ...updateValues,
           ...primaryValues,
         ]);
-        logger.debug("Update result:", result.rows[0]);
+        logger.debug("Update result: " + JSON.stringify(result.rows[0]));
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error updating record:", error);
+      logger.error("Error updating record: %s", error);
       throw error;
     }
   }
@@ -205,11 +205,11 @@ class BaseModel {
           " = "
         )} = ${placeholders} RETURNING *`;
         const result = await this.pgClient.query(sql, values);
-        logger.debug("Delete result:", result.rows[0]);
+        logger.debug("Delete result: " + JSON.stringify(result.rows[0]));
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error deleting record:", error);
+      logger.error("Error deleting record: %s", error);
       throw error;
     }
   }

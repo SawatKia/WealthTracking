@@ -14,9 +14,11 @@ class FinancialInstitutionController extends BaseController {
         // Bind all methods to ensure correct 'this' context
         this.getAllFinancialInstitutions = this.getAllFinancialInstitutions.bind(this);
         this.getFinancialInstitutionByCode = this.getFinancialInstitutionByCode.bind(this);
+        this.getOperatingThaiCommercialBanks = this.getOperatingThaiCommercialBanks.bind(this);
     }
 
     async getAllFinancialInstitutions(req, res, next) {
+        logger.info(`getAllFinancialInstitutions`);
         try {
             const institutions = await this.model.findAll();
             req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully', institutions);
@@ -28,6 +30,7 @@ class FinancialInstitutionController extends BaseController {
     }
 
     async getFinancialInstitutionByCode(req, res, next) {
+        logger.info(`getFinancialInstitutionByCode: ${req.params}`);
         try {
             const { fi_code } = req.params;
             const institution = await this.model.findOne({ fi_code });
@@ -40,6 +43,31 @@ class FinancialInstitutionController extends BaseController {
         } catch (error) {
             logger.error(`Failed to fetch financial institution: ${error.message}`);
             next(error)
+        }
+    }
+
+    async getOperatingThaiCommercialBanks(req, res, next) {
+        logger.info(`getOperatingThaiCommercialBanks`);
+        try {
+            const operatingThaiCommercialBankCodes = [
+                '002', '004', '006', '009', '011', '014', '017', '018', '020', '022',
+                '024', '025', '030', '031', '033', '034', '039', '045', '052', '066',
+                '067', '069', '070', '071', '073', '098'
+            ];
+            const institutions = await Promise.all(operatingThaiCommercialBankCodes.map(code =>
+                this.model.findOne({ fi_code: code })
+            ));
+            logger.debug('Operating commercial banks:', JSON.stringify(institutions, null, 2));
+
+            if (institutions.length > 0) {
+                req.formattedResponse = Utils.formatResponse(200, 'Operating Thai commercial banks fetched successfully', institutions);
+            } else {
+                throw MyAppErrors.notFound('No operating Thai commercial banks found');
+            }
+            next();
+        } catch (error) {
+            logger.error(`Failed to fetch operating Thai commercial banks: ${error.message}`);
+            next(error);
         }
     }
 }

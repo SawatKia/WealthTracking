@@ -65,7 +65,7 @@ class PgClient {
       }
       logger.debug("Database connected successfully");
 
-      this.createAllTables();
+      await this.createAllTables();
     } catch (error) {
       // If there's an error, log it and throw it
       logger.error(`Database connection failed: ${error.message}`);
@@ -171,13 +171,12 @@ class PgClient {
     for (const table of tables) {
       try {
         // Check if the table exists
-        logger.info(`Checking if table ${table} exists...`);
         await this.client.query(`SELECT 1 FROM ${table}`);
-        logger.info(`Table ${table} exists, skip creating table...`);
+        logger.info(`Table [${table}] exists, skip creating table...`);
       } catch (error) {
         // The table doesn't exist, create it
-        logger.debug(`Table ${table} does not exist`);
-        logger.info(`Creating table: ${table}`);
+        logger.debug(`Table [${table}] does not exist`);
+        logger.info(`Creating table: [${table}]`);
         await this.createTableIfNotExist(table);
       }
     }
@@ -268,6 +267,44 @@ class PgClient {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
       throw error;
     }
+  }
+
+  async connect() {
+    if (!this.client) {
+      this.client = await this.pool.connect();
+    }
+  }
+
+  async disconnect() {
+    if (this.client) {
+      await this.client.release();
+      this.client = null;
+    }
+  }
+
+  async end() {
+    if (NODE_ENV === 'test') {
+      logger.info('Test environment detected. Dropping all rows from data tables...');
+      const tables = [
+        'transaction_bank_account_relations',
+        'transactions',
+        'bank_accounts',
+        'debts',
+        'users',
+        'api_request_limits'
+      ];
+
+      for (const table of tables) {
+        try {
+          await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
+          logger.debug(`All rows deleted from table: ${table}`);
+        } catch (error) {
+          logger.error(`Error deleting rows from table ${table}: ${error.message}`);
+        }
+      }
+      logger.info('All rows deleted from all tables in test environment');
+    }
+    await this.pool.end();
   }
 }
 
