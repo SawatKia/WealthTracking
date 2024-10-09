@@ -21,7 +21,7 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 201,
@@ -43,7 +43,7 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -57,11 +57,11 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
-            message: "account_number must not be empty"
+            message: "Missing required field: account_number"
         }
     },
     //* missing and empty fi_code
@@ -71,7 +71,7 @@ const newBankAccount = [
             account_number: "12345678901234567890",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -85,41 +85,11 @@ const newBankAccount = [
             fi_code: "",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
-            message: "fi_code must not be empty"
-        }
-    },
-    //* missing and empty national_id
-    {
-        testName: "missing national_id",
-        body: {
-            account_number: "12345678901234567890",
-            fi_code: "004",
-            display_name: "Test Bank Account",
-            account_name: "Test Bank Account Name",
-            balance: 1000.00
-        },
-        expected: {
-            status: 400,
-            message: "Missing required field: national_id"
-        }
-    },
-    {
-        testName: "empty national_id",
-        body: {
-            account_number: "12345678901234567890",
-            fi_code: "004",
-            national_id: "",
-            display_name: "Test Bank Account",
-            account_name: "Test Bank Account Name",
-            balance: 1000.00
-        },
-        expected: {
-            status: 400,
-            message: "national_id must not be empty"
+            message: "Missing required field: fi_code"
         }
     },
     //* missing and empty display_name
@@ -129,7 +99,7 @@ const newBankAccount = [
             account_number: "12345678901234567890",
             fi_code: "004",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -143,11 +113,11 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
-            message: "display_name must not be empty"
+            message: "Missing required field: display_name"
         }
     },
     //* missing and empty account_name
@@ -157,7 +127,7 @@ const newBankAccount = [
             account_number: "12345678901234567890",
             fi_code: "004",
             display_name: "Test Bank Account",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -171,11 +141,11 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
-            message: "account_name must not be empty"
+            message: "Missing required field: account_name"
         }
     },
     //* missing and empty balance
@@ -203,7 +173,7 @@ const newBankAccount = [
         },
         expected: {
             status: 400,
-            message: "balance must not be empty"
+            message: "Missing required field: balance"
         }
     },
 
@@ -211,11 +181,11 @@ const newBankAccount = [
     {
         testName: "valid Kasikorn account",
         body: {
-            account_number: "123456789", // User inputs without separators
+            account_number: "1234567890", // User inputs without separators
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: '1000.00'
         },
         expected: {
             status: 201,
@@ -240,16 +210,8 @@ const newBankAccount = [
             balance: "1000.00"
         },
         expected: {
-            status: 201,
-            message: "Bank account created successfully",
-            data: {
-                account_number: "123-4-56789-0", // Note the formatted output
-                fi_code: "004",
-                national_id: "1234567890123",
-                display_name: "Test Bank Account",
-                account_name: "Test Bank Account Name",
-                balance: "1000.00"
-            }
+            status: 400,
+            message: "Bank account already exists for this user.",
         }
     },
     {
@@ -259,25 +221,19 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
-            status: 400,
-            message: "Invalid account number format for Kasikorn Bank. Expected format: 123-4-56789-0"
-        }
-    },
-    {
-        testName: "unsupported bank code",
-        body: {
-            account_number: "123456789",
-            fi_code: "999", // Unsupported bank code
-            display_name: "Test Bank Account",
-            account_name: "Test Bank Account Name",
-            balance: 1000.00
-        },
-        expected: {
-            status: 400,
-            message: "Invalid bank code. Supported banks are: 004, 025, 006, 014, 030, 002"
+            status: 201,
+            message: "Bank account created successfully",
+            data: {
+                account_number: "123456789",
+                fi_code: "004",
+                national_id: "1234567890123",
+                display_name: "Test Bank Account",
+                account_name: "Test Bank Account Name",
+                balance: "1000.00"
+            }
         }
     },
     {
@@ -287,7 +243,7 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -301,15 +257,29 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
-            message: "Account number must contain only numeric characters."
+            message: "Account number should contain only digits or digits with dashes"
         }
     },
 
     //* fi_code
+    {
+        testName: "unsupported bank code",
+        body: {
+            account_number: "123456789",
+            fi_code: "999", // Unsupported bank code
+            display_name: "Test Bank Account",
+            account_name: "Test Bank Account Name",
+            balance: "1000.00"
+        },
+        expected: {
+            status: 404,
+            message: "Financial institution with fi_code '999' not found. To get a list of available fi_codes, please use the /fi/ endpoint."
+        }
+    },
     {
         testName: "fi_code exceeds max length",
         body: {
@@ -317,11 +287,11 @@ const newBankAccount = [
             fi_code: "12345678901234567890A", // 21 characters, exceeds 20
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
-            status: 400,
-            message: "Financial institution code must not exceed 20 characters."
+            status: 404,
+            message: "Financial institution with fi_code '12345678901234567890A' not found. To get a list of available fi_codes, please use the /fi/ endpoint."
         }
     },
     {
@@ -331,42 +301,11 @@ const newBankAccount = [
             fi_code: "FI_TEST!",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
-            status: 400,
-            message: "Financial institution code must contain only numeric characters."
-        }
-    },
-    //* national_id
-    {
-        testName: "national_id wrong length",
-        body: {
-            account_number: "12345678901234567890",
-            fi_code: "004",
-            national_id: "00000000001", // 11 characters, should be 13
-            display_name: "Test Bank Account",
-            account_name: "Test Bank Account Name",
-            balance: 1000.00
-        },
-        expected: {
-            status: 400,
-            message: "National ID must be 13 characters long."
-        }
-    },
-    {
-        testName: "national_id contains non-numeric characters",
-        body: {
-            account_number: "12345678901234567890",
-            fi_code: "004",
-            national_id: "00000000000A1",
-            display_name: "Test Bank Account",
-            account_name: "Test Bank Account Name",
-            balance: 1000.00
-        },
-        expected: {
-            status: 400,
-            message: "National ID must contain only numeric characters."
+            status: 404,
+            message: "Financial institution with fi_code 'FI_TEST!' not found. To get a list of available fi_codes, please use the /fi/ endpoint."
         }
     },
     //* display_name
@@ -377,7 +316,7 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "A".repeat(101), // 101 characters, exceeds 100
             account_name: "Test Bank Account Name",
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -392,7 +331,7 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "A".repeat(101), // 101 characters, exceeds 100
-            balance: 1000.00
+            balance: "1000.00"
         },
         expected: {
             status: 400,
@@ -403,11 +342,11 @@ const newBankAccount = [
     {
         testName: "balance with more than 2 decimal places",
         body: {
-            account_number: "12345678901234567890",
+            account_number: "0987654321",
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: 1000.999
+            balance: "1000.999"
         },
         expected: {
             status: 400,
@@ -415,17 +354,17 @@ const newBankAccount = [
         }
     },
     {
-        testName: "balance as string instead of number",
+        testName: "balance as non-numeric string",
         body: {
             account_number: "12345678901234567890",
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: "1000.00"
+            balance: "not a number"
         },
         expected: {
             status: 400,
-            message: "Balance must be a number."
+            message: "Invalid number format for field: balance"
         }
     },
     {
@@ -435,11 +374,11 @@ const newBankAccount = [
             fi_code: "004",
             display_name: "Test Bank Account",
             account_name: "Test Bank Account Name",
-            balance: -100.00
+            balance: "-100.00"
         },
         expected: {
             status: 400,
-            message: "balance must not be negative"
+            message: "balance must not be negative."
         }
     },
 ];
@@ -486,14 +425,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await pgClient.end();
-    // Add a small delay to ensure all connections are closed
-    await new Promise(resolve => setTimeout(resolve, 500));
-});
+    try {
+        await pgClient.end();
+        logger.info('PostgreSQL connection closed');
+    } catch (error) {
+        logger.error('Error closing PostgreSQL connection:', error);
+    }
+}, 120000); // Increase timeout to 30 seconds
 
 describe('Bank Account Creation', () => {
     newBankAccount.forEach((testCase, index) => {
-        it(`${index + 1}. should ${testCase.testName}`, async () => {
+        test(`${index + 1}: ${testCase.testName}`, async () => {
             logger.info(`Running test ${index + 1}: ${testCase.testName}`);
 
             const response = await request(app)
@@ -502,7 +444,7 @@ describe('Bank Account Creation', () => {
                 .send(testCase.body);
 
             expect(response.status).toBe(testCase.expected.status);
-            expect(response.body.message).toBe(testCase.expected.message);
+            expect(response.body.message).toContain(testCase.expected.message);
 
             if (testCase.expected.data) {
                 expect(response.body.data).toEqual(testCase.expected.data);

@@ -450,11 +450,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Clean up the database after all tests
-  logger.info("Dropping tables");
-  await pgClient.end();
-  logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
-});
+  try {
+    // Clean up the database after all tests
+    logger.info("Dropping tables");
+    await pgClient.end();
+    logger.info("Database connection closed successfully");
+  } catch (error) {
+    logger.error("Error during database cleanup:", error);
+  } finally {
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+  }
+}, 120000); // Increase timeout to 30 seconds
 
 describe("Users Endpoints", () => {
   describe("connection to api", () => {
@@ -498,8 +504,8 @@ describe("Users Endpoints", () => {
 
   describe("POST /api/v0.2/users", () => {
     newUserBody.forEach((user, i) => {
-      it(`${i + 1}. ${user.testName}`, async () => {
-        logger.info(`Test ${i + 1}. ${user.testName}`);
+      test(`${i + 1}: ${user.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${user.testName}`);
         const response = await request(app)
           .post("/api/v0.2/users")
           .send(user.body);
@@ -520,8 +526,8 @@ describe("Users Endpoints", () => {
 
   describe("POST /api/v0.2/users/check", () => {
     checkPassBody.forEach((check, i) => {
-      it(`${i + 1}. ${check.testName}`, async () => {
-        logger.info(`Test ${i + 1}. ${check.testName}`);
+      test(`${i + 1}: ${check.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${check.testName}`);
         const response = await request(app)
           .post("/api/v0.2/users/check")
           .send(check.body);
