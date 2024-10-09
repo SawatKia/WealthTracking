@@ -55,13 +55,15 @@ router.use((req, res, next) => {
     next();
 })
 //TODO - ensure the middlewares is finished before goto the routes
-router.use(mdw.methodValidator(allowedMethods));
+router.use(async (req, res, next) => {
+    await mdw.methodValidator(allowedMethods)(req, res, next);
+});
 router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
-router.post('/users', mdw.authMiddleware, userController.registerUser);
-router.post('/users/check', mdw.authMiddleware, userController.checkPassword);
+router.post('/users', userController.registerUser);
+router.post('/users/check', userController.checkPassword);
 //TODO - after this line every route should add middleware to verify token
 router.post('/banks', mdw.authMiddleware, bankAccountController.createBankAccount);
 router.get('/banks', mdw.authMiddleware, bankAccountController.getAllBankAccounts);
