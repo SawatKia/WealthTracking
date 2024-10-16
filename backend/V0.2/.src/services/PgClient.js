@@ -261,8 +261,22 @@ class PgClient {
 
     logger.info(`Creating table ${tableName} if not exist...`);
     try {
-      await this.client.query(createTableQuery);
-      logger.debug(`Table ${tableName} created`);
+      // Check if table exists
+      const tableExistsQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `;
+      const { rows } = await this.client.query(tableExistsQuery, [tableName]);
+
+      if (!rows[0].exists) {
+        await this.client.query(createTableQuery);
+        logger.debug(`Table ${tableName} created`);
+      } else {
+        logger.debug(`Table ${tableName} already exists`);
+      }
     } catch (error) {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
       throw error;
