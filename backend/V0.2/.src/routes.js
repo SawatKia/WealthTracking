@@ -74,11 +74,9 @@ router.get('/fis/operating-banks', mdw.authMiddleware, fiController.getOperating
 router.get('/fi/:fi_code', mdw.authMiddleware, fiController.getFinancialInstitutionByCode);
 
 router.get('/slip/quota', mdw.authMiddleware, apiController.getQuotaInformation);
-router.post('/slip', mdw.authMiddleware, apiController.extractSlipDataByBase64);
-router.all('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiController.verifySlip);
+router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiController.verifySlip);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
 
 module.exports = router;
-

@@ -369,7 +369,7 @@ paths:
             schema:
               type: object
               properties:
-                imageFile:
+                file:
                   type: string
                   format: binary
                   description: Image file of the slip
@@ -380,42 +380,9 @@ paths:
                 base64Image:
                   type: string
                   description: Base64 encoded image of the slip
-      # parameters:
-      #   - in: query
-      #     name: payload
-      #     schema:
-      #       type: string
-      #     description: QR code payload data
-      responses:
-        "200":
-          description: Successful verification
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SlipDataResponse"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    get:
-      summary: Verify slip data (GET method)
-      tags:
-        - Slip
-      security:
-        - bearerAuth: []
-      description: Verifies slip data using payload in query parameter.
       parameters:
         - in: query
           name: payload
-          required: true
           schema:
             type: string
           description: QR code payload data
