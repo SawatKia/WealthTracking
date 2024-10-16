@@ -23,7 +23,8 @@
           "openReport": true
         }
       ]
-    ]
+    ],
+    "maxWorkers": 4
   },
   "keywords": [],
   "author": "",
