@@ -63,17 +63,6 @@ const verifySlipTestCases = [
 beforeAll(async () => {
     await pgClient.init();
     logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-    // Create necessary tables (if not already created in your main setup)
-    await pgClient.query(`
-    CREATE TABLE IF NOT EXISTS api_request_limits (
-      service_name VARCHAR(255) NOT NULL,
-      request_date DATE NOT NULL,
-      request_count INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (service_name, request_date)
-    );
-  `);
-    logger.debug(`Tables created: ${pgClient.isConnected()}`);
 });
 
 afterAll(async () => {
