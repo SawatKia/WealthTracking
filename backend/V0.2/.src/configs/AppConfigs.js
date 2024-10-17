@@ -19,6 +19,10 @@ const config = {
     easySlip: {
         url: process.env.EASYSLIP_URL,
         key: process.env.EASYSLIP_KEY,
+    },
+    redis: {
+        host: process.env.REDIS_HOST || 'redis', // service name in docker-compose
+        port: process.env.REDIS_PORT || 6379,
     }
 };
 

@@ -83,8 +83,30 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "256M"
+    networks:
+      - app_network
+
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   app_network:

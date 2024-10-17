@@ -10,6 +10,7 @@ const UserController = require('./controllers/UserController');
 const BankAccountController = require('./controllers/BankAccountController');
 const ApiController = require('./controllers/ApiController');
 const FinancialInstitutionController = require('./controllers/FinancialInstitutionController');
+const cacheController = require('./controllers/CacheController');
 
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse } = Utils;
@@ -43,6 +44,8 @@ const allowedMethods = {
     '/fi/:fi_code': ['GET'],
     '/fis/operating-banks': ['GET'],
     '/slip/verify': ['POST', 'GET'],
+    '/cache': ['POST'],
+    '/cache/:key': ['GET', 'DELETE'],
 }
 
 if (NODE_ENV != 'production') {
@@ -75,6 +78,11 @@ router.get('/fi/:fi_code', mdw.authMiddleware, fiController.getFinancialInstitut
 
 router.get('/slip/quota', mdw.authMiddleware, apiController.getQuotaInformation);
 router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiController.verifySlip);
+
+// Cache routes
+router.post('/cache', cacheController.set);
+router.get('/cache/:key', cacheController.get);
+router.delete('/cache/:key', cacheController.delete);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
