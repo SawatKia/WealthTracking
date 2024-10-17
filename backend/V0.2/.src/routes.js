@@ -41,8 +41,8 @@ const allowedMethods = {
     '/slip/quota': ['GET'],
     '/slip': ['POST'],
     // '/fi': ['GET'],
-    '/fi/:fi_code': ['GET'],
-    '/fis/operating-banks': ['GET'],
+    // '/fi/:fi_code': ['GET'],
+    // '/fis/operating-banks': ['GET'],
     '/slip/verify': ['POST', 'GET'],
     '/cache': ['POST'],
     '/cache/:key': ['GET', 'DELETE'],
@@ -51,6 +51,8 @@ const allowedMethods = {
 if (NODE_ENV != 'production') {
     allowedMethods['/users/check'] = ['POST'];
     allowedMethods['/fis'] = ['GET'];
+    allowedMethods['/fi/:fi_code'] = ['GET'];
+    allowedMethods['/fis/operating-banks'] = ['GET'];
 }
 
 router.use((req, res, next) => {

@@ -422,7 +422,7 @@ const checkPassBody = [
     body: { email: "testii@example.com", password: "Password123!" },
     expected: {
       status: 200,
-      message: "Password check successful",
+      message: "Password check successful. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.",
       data: true,
     }
   }, //success

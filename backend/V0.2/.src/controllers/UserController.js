@@ -107,7 +107,7 @@ class UserController extends BaseController {
             const { result, user } = await this.UserModel.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw MyAppErrors.passwordError();
-            req.formattedResponse = formatResponse(200, 'Password check successful', result);
+            req.formattedResponse = formatResponse(200, 'Password check successful. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', result);
             next();
         }
         catch (error) {
