@@ -70,9 +70,15 @@ class Middlewares {
     logger.info("Handling response");
     if (req.formattedResponse) {
       const { status_code, message, data } = req.formattedResponse;
-      logger.debug(
-        `Sending response: Status=${status_code}, Message=${message}, data=${data}`
-      );
+      const responseLogMessage = `
+      Outgoing Response:
+      ------------------
+      ${req.method} ${req.path} => ${req.ip}
+      Status: ${status_code}
+      Message: ${message}
+      Data: ${data ? JSON.stringify(data, null, 2) : 'No data'}
+      `;
+      logger.debug(responseLogMessage);
       res.status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();

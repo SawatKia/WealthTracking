@@ -15,7 +15,7 @@ const isDev = NODE_ENV === "development";
 // Increase the limit for JSON and URL-encoded requests
 app.use(express.json({ limit: "10mb" })); // Set the limit as per your needs
 // app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
+//TODO -  Set connection timeout to 10 seconds
 app.disable("x-powered-by");
 
 /**
@@ -61,20 +61,20 @@ app.use((req, res, next) => {
   logger.info(requestLogMessage);
 
   // Log the outgoing response when it's finished
-  res.on("finish", () => {
-    // Prepare a human-friendly log message for the response
-    const responseLogMessage = `
-    Outgoing Response:
-    ------------------
-    ${method} ${requestPath} => ${ip}
-    Status: ${res.statusCode} ${res.statusMessage}
-    Data: ${res.data ? JSON.stringify(res.data, null, 2) : 'No data'}
-    `;
+  // res.on("finish", () => {
+  //   // Prepare a human-friendly log message for the response
+  //   const responseLogMessage = `
+  //   Outgoing Response:
+  //   ------------------
+  //   ${method} ${requestPath} => ${ip}
+  //   Status: ${res.statusCode} ${res.statusMessage}
+  //   Data: ${res.data ? JSON.stringify(res.data, null, 2) : 'No data'}
+  //   `;
 
-    // Log the formatted response message
-    logger.info(responseLogMessage);
-    logger.debug("");
-  });
+  //   // Log the formatted response message
+  //   logger.info(responseLogMessage);
+  //   logger.debug("");
+  // });
 
   next();
 });
