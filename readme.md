@@ -97,6 +97,9 @@ PGADMIN_DEFAULT_PASSWORD=root
 
 EASYSLIP_URL=https://developer.easyslip.com
 EASYSLIP_KEY=<Api_key>
+
+REDIS_HOST=redis
+REDIS_PORT=6379
 ```
 
 4. Open Docker Desktop.
