@@ -450,17 +450,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  try {
-    // Clean up the database after all tests
-    logger.info("Dropping tables");
-    await pgClient.end();
-    logger.info("Database connection closed successfully");
-  } catch (error) {
-    logger.error("Error during database cleanup:", error);
-  } finally {
-    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-  }
-}, 120000); // Increase timeout to 30 seconds
+  await pgClient.release();
+  logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+});
 
 describe("Users Endpoints", () => {
   describe("connection to api", () => {
