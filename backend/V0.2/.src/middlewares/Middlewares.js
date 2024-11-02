@@ -1,4 +1,5 @@
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
@@ -135,15 +136,19 @@ class Middlewares {
   };
 
   authMiddleware(req, res, next) {
-    const bearerHeader = req.headers['authorization'];
+    const accessToken = req.cookies['access_token'];
 
-    if (typeof bearerHeader !== 'undefined') {
-      const bearer = bearerHeader.split(' ');
-      const bearerToken = bearer[1];
-      req.token = bearerToken;
-      next();
+    if (accessToken) {
+      //TODO - create decodeoken instead of directly use im Midddleware
+      jwt.verify(accessToken, appConfigs.accessTokenSecret, (err, user) => {
+        if (err) {
+          return next(MyAppErrors.unauthorized('Invalid access token'));
+        }
+        req.user = user; // Attach user info to request
+        next();
+      });
     } else {
-      logger.warn('No bearer token provided');
+      logger.warn('No access token provided');
       next(MyAppErrors.unauthorized('Authentication token is missing'));
     }
   }
