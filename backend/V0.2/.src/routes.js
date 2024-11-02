@@ -11,6 +11,7 @@ const BankAccountController = require('./controllers/BankAccountController');
 const ApiController = require('./controllers/ApiController');
 const FinancialInstitutionController = require('./controllers/FinancialInstitutionController');
 const cacheController = require('./controllers/CacheController');
+const AuthController = require('./controllers/AuthController');
 
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse } = Utils;
@@ -85,6 +86,10 @@ router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiCo
 router.post('/cache', cacheController.set);
 router.get('/cache/:key', cacheController.get);
 router.delete('/cache/:key', cacheController.delete);
+
+// Add login and logout routes
+router.post('/login', AuthController.login);
+router.post('/logout', AuthController.logout);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
