@@ -83,6 +83,7 @@ NODE_ENV=development
 # NODE_ENV=production
 # NODE_ENV=test
 APP_PORT=3000
+APP_SECRET=your_app_secret
 SALT_ROUNDS=10
 
 POSTGRES_USER=user

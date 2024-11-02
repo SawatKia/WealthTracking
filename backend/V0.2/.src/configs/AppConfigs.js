@@ -23,7 +23,8 @@ const config = {
     redis: {
         host: process.env.REDIS_HOST || 'redis', // service name in docker-compose
         port: process.env.REDIS_PORT || 6379,
-    }
+    },
+    app_secret: process.env.APP_SECRET
 };
 
 module.exports = config;
