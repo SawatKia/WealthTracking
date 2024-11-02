@@ -29,7 +29,7 @@ if (!isDev) {
  */
 app.use((req, res, next) => {
   logger.info("entering the routing for " + req.method + " " + req.url);
-  const { ip, method, path: requestPath, body, headers } = req;
+  const { ip, method, path: requestPath, body, headers, query } = req;
 
   // Prepare the body for logging 
   let logBody;
@@ -55,6 +55,7 @@ app.use((req, res, next) => {
       Content-Type: ${headers['content-type']}
       Content-Length: ${headers['content-length']}
     Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
+    Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
   `;
 
   // Log the formatted message
