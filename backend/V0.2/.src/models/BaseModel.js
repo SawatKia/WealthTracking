@@ -18,6 +18,10 @@ class BaseModel {
     logger.debug("Data to be validated:", data);
 
     try {
+      if (!this.schema) {
+        logger.error("Schema is not defined for this model.");
+        throw new ValidationError("Schema is not defined for this model.");
+      }
       const validated = await this.schema.validateAsync(data, {
         context: { operation },
       });
@@ -128,7 +132,7 @@ class BaseModel {
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);
       const condition = keys
-        .map((key, index) => `${key} = $${index + 1}`)
+        .map((key, index) => `"${key}" = $${index + 1}`)
         .join(" AND ");
 
       const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;

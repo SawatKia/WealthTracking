@@ -243,7 +243,7 @@ paths:
       summary: Get user by National ID (NOT Implemented)
       description: Retrieves user information based on National ID.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: national_id
@@ -277,7 +277,7 @@ paths:
       summary: Update user by National ID (NOT Implemented)
       description: Updates user information.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: national_id
@@ -330,7 +330,7 @@ paths:
       summary: Delete user by National ID (NOT Implemented)
       description: Deletes a user from the system.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: national_id
@@ -362,7 +362,7 @@ paths:
         - Slip
       description: Verifies slip data using payload, image file, or base64 encoded image.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -412,7 +412,7 @@ paths:
       tags:
         - Slip
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful response
@@ -434,7 +434,7 @@ paths:
       summary: Create a new bank account
       description: Creates a new bank account for the authenticated user.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -460,7 +460,7 @@ paths:
       summary: Get all bank accounts
       description: Retrieves all bank accounts for the authenticated user.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of bank accounts
@@ -478,7 +478,7 @@ paths:
       summary: Get a specific bank account
       description: Retrieves a specific bank account by account number and financial institution code.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: account_number
@@ -511,7 +511,7 @@ paths:
       summary: Get all financial institutions (Development Mode Only)
       description: Retrieves a list of all financial institutions.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of financial institutions
@@ -529,7 +529,7 @@ paths:
       summary: Get operating Thai commercial banks
       description: Retrieves a list of operating Thai commercial banks.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of operating Thai commercial banks
@@ -549,7 +549,7 @@ paths:
       summary: Get a specific financial institution (Development Mode Only)
       description: Retrieves a specific financial institution by its code.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: fi_code
@@ -569,12 +569,124 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Login user
+      description: Authenticates user and returns JWT tokens in cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /refresh:
+    post:
+      tags:
+        - "Authentication"
+      summary: Refresh access token
+      description: Uses refresh token to generate new access and refresh tokens
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Tokens refreshed successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags:
+        - "Authentication"
+      summary: Logout user
+      description: Invalidates the current refresh token and clears authentication cookies
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged out successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    # bearerAuth:
+    #   type: http
+    #   scheme: bearer
+    #   bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  headers:
+    SetCookieAuth:
+      description: Authentication cookies
+      schema:
+        type: object
+        properties:
+          access_token:
+            type: string
+            description: JWT access token cookie
+            example: "access_token=xyz...; HttpOnly; Secure; SameSite=Strict"
+          refresh_token:
+            type: string
+            description: JWT refresh token cookie
+            example: "refresh_token=abc...; HttpOnly; Secure; SameSite=Strict"
 
   schemas:
     User:
@@ -1059,6 +1171,9 @@ components:
 
     Unauthorized:
       description: Unauthorized
+      headers:
+        Set-Cookie:
+          $ref: "#/components/headers/SetCookieAuth"
       content:
         application/json:
           schema:

@@ -23,6 +23,7 @@ const userController = new UserController();
 const bankAccountController = new BankAccountController();
 const apiController = new ApiController();
 const fiController = new FinancialInstitutionController();
+const authController = new AuthController();
 
 if (NODE_ENV != 'test') {
     const file = fs.readFileSync('./swagger.yaml', 'utf8');
@@ -47,6 +48,9 @@ const allowedMethods = {
     '/slip/verify': ['POST', 'GET'],
     '/cache': ['POST'],
     '/cache/:key': ['GET', 'DELETE'],
+    '/login': ['POST'],
+    '/refresh': ['POST'],
+    '/logout': ['POST'],
 }
 
 if (NODE_ENV != 'production') {
@@ -88,8 +92,9 @@ router.get('/cache/:key', cacheController.get);
 router.delete('/cache/:key', cacheController.delete);
 
 // Add login and logout routes
-router.post('/login', AuthController.login);
-router.post('/logout', AuthController.logout);
+router.post('/login', authController.login);
+router.post('/refresh', authController.refresh);
+router.post('/logout', authController.logout);
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);

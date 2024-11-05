@@ -1,11 +1,12 @@
 const Logger = require('./Logger');
 
 class Utils {
-    static formatResponse(status_code, message, data) {
+    static formatResponse(status_code, message, data, headers = {}) {
         return {
             status_code: status_code,
             message: message,
-            data: data
+            data: data,
+            headers: headers
         }
     }
 

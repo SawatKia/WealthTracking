@@ -24,7 +24,10 @@ const config = {
         host: process.env.REDIS_HOST || 'redis', // service name in docker-compose
         port: process.env.REDIS_PORT || 6379,
     },
-    app_secret: process.env.APP_SECRET
+    app_secret: process.env.APP_SECRET,
+    app_domain: process.env.APP_DOMAIN,
+    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret',
+    refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'your-refresh-token-secret'
 };
 
 module.exports = config;

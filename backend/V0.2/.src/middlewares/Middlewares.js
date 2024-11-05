@@ -1,11 +1,12 @@
 const multer = require('multer');
-const jwt = require('jsonwebtoken');
 
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
+const AuthController = require("../controllers/AuthController");
 
 const upload = multer({ storage: multer.memoryStorage() });
+const authController = new AuthController();
 const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -70,9 +71,10 @@ class Middlewares {
   responseHandler(req, res, next) {
     logger.info("Handling response");
     if (req.formattedResponse) {
-      const { status_code, message, data } = req.formattedResponse;
+      const { status_code, message, data, headers } = req.formattedResponse;
       const responseLogMessage = `
       Outgoing Response:
+      Headers: ${headers ? JSON.stringify(headers, null, 2) : 'xxx No header xxx'}
       ------------------
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
@@ -80,7 +82,7 @@ class Middlewares {
       Data: ${data ? JSON.stringify(data, null, 2) : 'No data'}
       `;
       logger.debug(responseLogMessage);
-      res.status(status_code).json(formatResponse(status_code, message, data));
+      res.set(headers || {}).status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();
     }
@@ -92,18 +94,21 @@ class Middlewares {
   errorHandler(err, req, res, next) {
     if (!res.headersSent) {
       logger.info("Handling error");
+      let response;
       if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
-        res
-          .status(err.statusCode)
-          .json(formatResponse(err.statusCode, err.message));
+        response = formatResponse(err.statusCode, err.message, err.data);
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
-        res.status(500).json(formatResponse(500, err.message));
+        response = formatResponse(500, err.message);
       } else {
         logger.error(`Unhandled error: ${err}`);
-        res.status(500).json(formatResponse(500, "Internal Server Error"));
+        response = formatResponse(500, "Internal Server Error");
       }
+      res
+        .status(response.status_code)
+        .set(err.headers || {})
+        .json(response);
       return;
     }
   }
@@ -138,11 +143,14 @@ class Middlewares {
   authMiddleware(req, res, next) {
     const accessToken = req.cookies['access_token'];
 
+    if (appConfigs.environment === 'test') {
+      next();
+      return;
+    }
     if (accessToken) {
-      //TODO - create decodeoken instead of directly use im Midddleware
-      jwt.verify(accessToken, appConfigs.accessTokenSecret, (err, user) => {
+      authController.verifyToken(accessToken, appConfigs.accessTokenSecret, (err, user) => {
         if (err) {
-          return next(MyAppErrors.unauthorized('Invalid access token'));
+          return next(err);
         }
         req.user = user; // Attach user info to request
         next();

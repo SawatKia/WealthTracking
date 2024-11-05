@@ -159,6 +159,7 @@ class UserModel extends BaseModel {
             }
 
             logger.info('Password match');
+            delete userObject.hashed_password;
             return { result: true, user: userObject };
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);

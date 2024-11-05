@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 const Utils = require("./utilities/Utils");
 const routes = require("./routes");
 const mdw = require("./middlewares/Middlewares");
@@ -14,6 +15,7 @@ const isDev = NODE_ENV === "development";
 // Middleware to parse JSON
 // Increase the limit for JSON and URL-encoded requests
 app.use(express.json({ limit: "10mb" })); // Set the limit as per your needs
+app.use(cookieParser());
 // app.use(express.urlencoded({ limit: '10mb', extended: true }));
 //TODO -  Set connection timeout to 10 seconds
 app.disable("x-powered-by");
@@ -54,6 +56,7 @@ app.use((req, res, next) => {
       Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
       Content-Type: ${headers['content-type']}
       Content-Length: ${headers['content-length']}
+    cookies: ${Object.keys(req.cookies).map(key => `${key}: ${req.cookies[key].substring(0, 20)}...`).join(',\n')}
     Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
     Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
   `;

@@ -83,10 +83,10 @@ class PgClient {
   }
 
   async query(sql, params) {
+    logger.info('received query request');
     if (!this.client) await this.init();
-    logger.debug(
-      `Executing Query: ${sql}, with params: ${JSON.stringify(params)}`
-    );
+    logger.debug(`sql: ${sql}\nparams: ${JSON.stringify(params)}`);
+    logger.info('querying...');
     return this.client.query(sql, params);
   }
 
@@ -167,6 +167,7 @@ class PgClient {
       "transactions",
       "transaction_bank_account_relations",
       "api_request_limits",
+      "used_refresh_tokens"
     ];
     for (const table of tables) {
       try {
@@ -261,6 +262,11 @@ class PgClient {
                 request_count INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (service_name, request_date)
             );`,
+      used_refresh_tokens: `CREATE TABLE IF NOT EXISTS used_refresh_tokens (
+                jti TEXT PRIMARY KEY,
+                created_at TIMESTAMP NOT NULL,
+                expires_at TIMESTAMP NOT NULL
+      );`,
     }[tableName];
 
     if (!createTableQuery)
