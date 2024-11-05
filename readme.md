@@ -83,7 +83,9 @@ NODE_ENV=development
 # NODE_ENV=production
 # NODE_ENV=test
 APP_PORT=3000
-APP_SECRET=your_app_secret
+APP_DOMAIN=WealthTrack
+ACCESS_TOKEN_SECRET=your-secure-access-token-secret
+REFRESH_TOKEN_SECRET=your-secure-refresh-token-secret
 SALT_ROUNDS=10
 
 POSTGRES_USER=user
