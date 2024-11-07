@@ -4,6 +4,7 @@ const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
 const AuthController = require("../controllers/AuthController");
+const { json } = require('express');
 
 const upload = multer({ storage: multer.memoryStorage() });
 const authController = new AuthController();
@@ -20,7 +21,9 @@ class Middlewares {
   methodValidator(allowedMethods) {
     return (req, res, next) => {
       logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`);
-      const { method, path } = req;
+      const { method } = req;
+      const path = req.path;
+
       logger.info("Validating request method and path");
       logger.debug(`Request: Method=${method}, Path=${path}`);
       logger.debug(`Environment: ${NODE_ENV}`);
@@ -32,7 +35,7 @@ class Middlewares {
             `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
           );
           if (pathRegex.test(incomingPath)) {
-            return allowedPath; // Return the matching allowed path
+            return allowedPath;
           }
         }
         return null;
@@ -105,6 +108,7 @@ class Middlewares {
         logger.error(`Unhandled error: ${err}`);
         response = formatResponse(500, "Internal Server Error");
       }
+      logger.debug(`sending Error response: ${JSON.stringify(response)}`);
       res
         .status(response.status_code)
         .set(err.headers || {})
@@ -159,6 +163,47 @@ class Middlewares {
       logger.warn('No access token provided');
       next(MyAppErrors.unauthorized('Authentication token is missing'));
     }
+  }
+
+  /**
+   * Request logger middleware to log incoming requests in a consistent format
+   */
+  requestLogger(req, res, next) {
+    logger.info(`entering the routing for ${req.method} ${req.url}`);
+    const { ip, method, path: requestPath, body, headers, query } = req;
+
+    // Prepare the body for logging 
+    let logBody;
+    if (body && body.base64Image) {
+      // Truncate the base64Image value to show only the first 50 characters
+      logBody = {
+        ...body,
+        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+      };
+    } else {
+      logBody = body;
+    }
+
+    // Prepare a human-friendly log message
+    const requestLogMessage = `
+    Incoming Request:
+    ----------------
+    ${ip} => ${method} ${requestPath}
+    Headers:
+      Host: ${headers.host}
+      Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
+      Content-Type: ${headers['content-type']}
+      Content-Length: ${headers['content-length']}
+    Cookies: 
+      ${Object.keys(req.cookies)
+        .map(key => `${key}: ${req.cookies[key]?.substring(0, 20) || 'undefined'}...`)
+        .join('\n      ')}
+    Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
+    Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
+    `;
+
+    logger.info(requestLogMessage);
+    next();
   }
 }
 
