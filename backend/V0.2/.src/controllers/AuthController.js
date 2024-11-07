@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios');
 
 const UsedRefreshTokenModel = require('../models/UsedRefreshTokenModel');
 const UserModel = require('../models/UserModel');
@@ -47,6 +49,9 @@ class AuthController {
         this.login = this.login.bind(this);
         this.refresh = this.refresh.bind(this);
         this.logout = this.logout.bind(this);
+        this.googleLogin = this.googleLogin.bind(this);
+        this.googleCallback = this.googleCallback.bind(this);
+        this._getGoogleUser = this._getGoogleUser.bind(this);
     }
 
     /**
@@ -237,6 +242,63 @@ class AuthController {
             } else {
                 next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
             }
+        }
+    }
+
+    async _getGoogleUser(access_token) {
+        try {
+            logger.info('Getting Google user');
+            const response = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`);
+            return response.data;
+        } catch (error) {
+            logger.error(`Error getting Google user: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async googleLogin(req, res, next) {
+        try {
+            logger.info('Google login requested');
+            const oAuth2Client = new OAuth2Client(appConfigs.google.clientId, appConfigs.google.clientSecret, appConfigs.google.redirectUri);
+            const url = oAuth2Client.generateAuthUrl({
+                access_type: 'offline', // return refresh token
+                scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid',
+            });
+            logger.debug(`Google login URL: ${url}`);
+            res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
+            req.formattedResponse = formatResponse(200, 'redirect to this URL to login with Google', url, this.authenticationError.headers);
+            next();
+        } catch (error) {
+            logger.error(`Error during Google login: ${error.message}`);
+            next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
+        }
+    }
+
+    async googleCallback(req, res, next) {
+        try {
+            logger.info('Google callback requested');
+            const oAuth2Client = new OAuth2Client(appConfigs.google.clientId, appConfigs.google.clientSecret, appConfigs.google.redirectUri);
+
+            //NOTE - retrieve access token and refresh token
+            const { tokens } = await oAuth2Client.getToken(req.query.code);
+            logger.debug(`Google tokens: ${JSON.stringify(tokens, null, 2)}`);
+
+            //NOTE - set tokens to the oAuth2Client's credentials property
+            await oAuth2Client.setCredentials(tokens);
+            logger.debug('Token acquired, Google credentials set');
+
+            const credentials = oAuth2Client.credentials;
+            logger.debug(`credentials: ${JSON.stringify(credentials, null, 2)}`);
+
+            const googleUser = await this._getGoogleUser(tokens.access_token);
+            logger.debug(`Google user: ${JSON.stringify(googleUser, null, 2)}`);
+
+            logger.debug('login successful');
+            req.formattedResponse = formatResponse(200, 'Logged in with Google', googleUser, this.authenticationError.headers);
+            next();
+        } catch (error) {
+            logger.error(`Error during Google callback: ${error.message}`);
+            next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
         }
     }
 }

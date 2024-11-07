@@ -662,6 +662,51 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /google/login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Initiate Google OAuth login
+      description: Redirects user to Google OAuth consent screen
+      responses:
+        "302":
+          description: Redirect to Google OAuth consent screen
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+
+  /google/callback:
+    get:
+      tags:
+        - "Authentication"
+      summary: Google OAuth callback
+      description: Handles the OAuth callback from Google
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code from Google
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in with Google"
+                data:
+                  email: "user@example.com"
+                  name: "John Doe"
+                  picture: "https://..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
     # bearerAuth:

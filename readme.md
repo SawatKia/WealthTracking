@@ -98,15 +98,19 @@ POSTGRES_DB=your_database_name
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=root
 
-EASYSLIP_URL=https://developer.easyslip.com
-EASYSLIP_KEY=<Api_key>
-
 REDIS_HOST=redis
 REDIS_PORT=6379
+
+EASYSLIP_URL=https://developer.easyslip.com
+EASYSLIP_KEY=your-easyslip-api-key
+
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 ```
 
-4. Open Docker Desktop.
-5. In the project root directory, build and start the Docker container:
+1. Open Docker Desktop.
+2. In the project root directory, build and start the Docker container:
 
 ```bash
 docker-compose up -d --build

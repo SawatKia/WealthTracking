@@ -51,6 +51,8 @@ const allowedMethods = {
     '/login': ['POST'],
     '/refresh': ['POST'],
     '/logout': ['POST'],
+    '/google/login': ['POST'],
+    '/google/callback': ['GET'],
 }
 
 if (NODE_ENV != 'production') {
@@ -95,6 +97,9 @@ router.delete('/cache/:key', cacheController.delete);
 router.post('/login', authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
+router.post('/google/login', authController.googleLogin);
+router.get('/google/callback', authController.googleCallback);
+
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
