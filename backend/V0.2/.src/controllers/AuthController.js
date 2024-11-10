@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 
 const UsedRefreshTokenModel = require('../models/UsedRefreshTokenModel');
+const BaseController = require('./BaseController');
 const UserModel = require('../models/UserModel');
 const appConfigs = require('../configs/AppConfigs');
 const Utils = require('../utilities/Utils');
@@ -12,13 +13,14 @@ const MyAppErrors = require('../utilities/MyAppErrors');
 const { Logger, formatResponse } = Utils;
 const logger = Logger('AuthController');
 
-class AuthController {
+class AuthController extends BaseController {
     constructor() {
+        super();
         this.userModel = new UserModel();
         this.usedRefreshTokenModel = new UsedRefreshTokenModel();
         this.algorithm = 'HS256';
         this.domain = appConfigs.app_domain;
-        logger.info(`AuthController initialized with domain: ${this.domain}`);
+        logger.info(`AuthController initialized with domain: ${this.domain} which use for JWT issuer`);
 
         this.cookieOptions = {
             httpOnly: true,
@@ -45,13 +47,16 @@ class AuthController {
             }
         };
 
-        this.decodeToken = this.decodeToken.bind(this);
+        this._decodeToken = this._decodeToken.bind(this);
         this.login = this.login.bind(this);
         this.refresh = this.refresh.bind(this);
         this.logout = this.logout.bind(this);
         this.googleLogin = this.googleLogin.bind(this);
         this.googleCallback = this.googleCallback.bind(this);
         this._getGoogleUser = this._getGoogleUser.bind(this);
+
+        this.pendingStates = new Map();
+        this.stateTokenExpiry = 5 * 60 * 1000; // 5 minutes in milliseconds
     }
 
     /**
@@ -60,7 +65,7 @@ class AuthController {
      * @param {string} token - The token to be decoded.
      * @returns {object} The decoded token.
      */
-    decodeToken(token) {
+    _decodeToken(token) {
         logger.debug('Decoding token');
         try {
             return jwt.decode(token);
@@ -77,7 +82,7 @@ class AuthController {
      * @param {string} secret - The secret to verify the token against.
      * @returns {object} The verified token.
      */
-    verifyToken(token, secret) {
+    _verifyToken(token, secret) {
         logger.debug('Verifying token');
         try {
             return jwt.verify(token, secret, {
@@ -91,7 +96,13 @@ class AuthController {
         }
     }
 
-    createTokens(userId) {
+    /**
+     * Creates a new token pair for a user.
+     * 
+     * @param {string} userId - The ID of the user to create tokens for.
+     * @returns {object} An object containing the access token and refresh token.
+     */
+    _createTokens(userId) {
         logger.debug(`Creating new token pair for user: ${userId}`);
         const now = Math.floor(Date.now() / 1000);
         const jti = uuidv4();
@@ -121,6 +132,7 @@ class AuthController {
     async login(req, res, next) {
         logger.info('Logging in');
         const { email, password } = req.body;
+        super.verifyField(req.body, ['email', 'password']);
         try {
             const { result, user } = await this.userModel.checkPassword(email, password);
             if (!result) {
@@ -129,7 +141,7 @@ class AuthController {
             }
 
             logger.debug(`User ${user.national_id} authenticated successfully`);
-            const { accessToken, refreshToken } = this.createTokens(user.national_id);
+            const { accessToken, refreshToken } = this._createTokens(user.national_id);
 
             logger.debug('Setting authentication cookies');
             res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
@@ -159,7 +171,7 @@ class AuthController {
             }
 
             logger.debug('Verifying refresh token');
-            let decoded = this.decodeToken(refreshToken);
+            let decoded = this._decodeToken(refreshToken);
             logger.debug(`Decoded token JTI: ${decoded.jti}`);
 
             const now = Math.floor(Date.now() / 1000);
@@ -168,7 +180,7 @@ class AuthController {
                 logger.warn(`Token not yet valid. NBF: ${decoded.nbf}, Current: ${now}. Will be valid in ${timeUntilValid} seconds`);
                 throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
             }
-            decoded = this.verifyToken(refreshToken, appConfigs.refreshTokenSecret);
+            decoded = this._verifyToken(refreshToken, appConfigs.refreshTokenSecret);
 
             // Check if token is used
             const isUsed = await this.usedRefreshTokenModel.has(decoded.jti);
@@ -185,7 +197,7 @@ class AuthController {
             await this.usedRefreshTokenModel.add(decoded.jti, new Date(decoded.exp * 1000));
 
             logger.debug(`Creating new token pair for user: ${decoded.sub}`);
-            const { accessToken, refreshToken: newRefreshToken } = this.createTokens(decoded.sub);
+            const { accessToken, refreshToken: newRefreshToken } = this._createTokens(decoded.sub);
 
             logger.debug('Setting new authentication cookies');
             res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
@@ -221,7 +233,7 @@ class AuthController {
 
         try {
             if (refreshToken) {
-                const decoded = this.decodeToken(refreshToken);
+                const decoded = this._decodeToken(refreshToken);
                 if (decoded?.jti) {
                     logger.debug(`Adding refresh token ${decoded.jti} to used tokens`);
                     await this.usedRefreshTokenModel.add(decoded.jti, new Date(decoded.exp * 1000));
@@ -256,49 +268,215 @@ class AuthController {
         }
     }
 
+    /**
+     * Creates a state token with uuidv4, expires after 5 minutes, and associates it with the given action.
+     * 
+     * @param {string} action - The action to be associated with the state token.
+     * @returns {string} The created state token.
+     */
+    _createStateToken(action) {
+        logger.info('Creating state token');
+        const stateToken = uuidv4();
+        const expiryTime = Date.now() + this.stateTokenExpiry;
+
+        this.pendingStates.set(stateToken, {
+            action,
+            expiryTime
+        });
+        logger.debug(`this.pendingStates length: ${this.pendingStates.size}`);
+        logger.debug(`this.pendingStates: ${JSON.stringify(Array.from(this.pendingStates.entries()))}`);
+
+        // Cleanup expired tokens
+        this._cleanupExpiredStates();
+
+        return stateToken;
+    }
+
+    _uuidValidateV4(uuid) {
+        logger.info('Validating UUID v4');
+        logger.debug(`Validating UUID: ${uuid}`);
+        return uuidValidate(uuid) && uuidVersion(uuid) === 4;
+    }
+
+    /**
+     * Verifies a state token and returns the associated action if valid.
+     * 
+     * @param {string} stateToken - The state token to be verified.
+     * @returns {string|null} The associated action if the token is valid, otherwise null.
+     */
+    _verifyStateToken(stateToken) {
+        logger.info('Verifying state token');
+        logger.debug(`Verifying state token: ${stateToken}`);
+        const stateData = this.pendingStates.get(stateToken);
+        logger.debug(`Extracted state data: ${JSON.stringify(stateData, null, 2)}`);
+
+        if (!stateData) {
+            logger.warn('State token not found');
+            return null;
+        }
+
+        if (!this._uuidValidateV4(stateToken)) {
+            logger.warn('Invalid state token');
+            return null;
+        }
+        logger.info(`State token ${stateToken} is valid`);
+
+        if (Date.now() > stateData.expiryTime) {
+            logger.warn('State token expired');
+            this.pendingStates.delete(stateToken);
+            return null;
+        }
+        logger.info(`State token ${stateToken} is not expired`);
+
+        // Remove the used token
+        this.pendingStates.delete(stateToken);
+        logger.info(`State token ${stateToken} removed`);
+        return stateData.action;
+    }
+
+    _cleanupExpiredStates() {
+        logger.info('Cleaning up expired state tokens');
+        const now = Date.now();
+        for (const [token, data] of this.pendingStates.entries()) {
+            if (now > data.expiryTime) {
+                logger.debug(`Deleting expired state token: ${token}`);
+                this.pendingStates.delete(token);
+            }
+        }
+    }
+
     async googleLogin(req, res, next) {
         try {
             logger.info('Google login requested');
-            const oAuth2Client = new OAuth2Client(appConfigs.google.clientId, appConfigs.google.clientSecret, appConfigs.google.redirectUri);
+            const action = req.query.action;
+            if (!action) {
+                logger.warn('Missing action parameter');
+                throw MyAppErrors.badRequest('Missing action parameter');
+            }
+
+            const stateToken = this._createStateToken(action);
+            logger.debug(`State token created for action: ${action}, State token: ${stateToken}`);
+
+            const oAuth2Client = new OAuth2Client(
+                appConfigs.google.clientId,
+                appConfigs.google.clientSecret,
+                appConfigs.google.redirectUri
+            );
+
             const url = oAuth2Client.generateAuthUrl({
-                access_type: 'offline', // return refresh token
+                access_type: 'offline',
                 scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid',
+                state: stateToken
             });
-            logger.debug(`Google login URL: ${url}`);
+
+            logger.debug(`Google auth URL generated with state token: ${stateToken}`);
             res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
-            req.formattedResponse = formatResponse(200, 'redirect to this URL to login with Google', url, this.authenticationError.headers);
+            if (appConfigs.environment != 'production') {
+                req.formattedResponse = formatResponse(200, `redirect to this URL to login with Google. in production, will redirect to the url automatically`, url);
+            } else {
+                res.redirect(url);
+            }
             next();
         } catch (error) {
             logger.error(`Error during Google login: ${error.message}`);
-            next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                logger.error(`Error during Google login: ${error.message}`);
+                next(MyAppErrors.internalServerError(error.message));
+            }
         }
     }
 
     async googleCallback(req, res, next) {
         try {
             logger.info('Google callback requested');
-            const oAuth2Client = new OAuth2Client(appConfigs.google.clientId, appConfigs.google.clientSecret, appConfigs.google.redirectUri);
+            const { code, state: stateToken } = req.query;
 
-            //NOTE - retrieve access token and refresh token
-            const { tokens } = await oAuth2Client.getToken(req.query.code);
-            logger.debug(`Google tokens: ${JSON.stringify(tokens, null, 2)}`);
+            if (!code || !stateToken) {
+                logger.warn('Missing code or state parameter');
+                throw MyAppErrors.badRequest('Invalid callback parameters');
+            }
 
-            //NOTE - set tokens to the oAuth2Client's credentials property
+            // Verify state token and get action
+            const action = this._verifyStateToken(stateToken);
+            if (!action) {
+                logger.warn('Invalid or expired state token');
+                throw MyAppErrors.unauthorized('Invalid or expired authentication request');
+            }
+
+            const oAuth2Client = new OAuth2Client(
+                appConfigs.google.clientId,
+                appConfigs.google.clientSecret,
+                appConfigs.google.redirectUri
+            );
+
+            const { tokens } = await oAuth2Client.getToken(code);
             await oAuth2Client.setCredentials(tokens);
-            logger.debug('Token acquired, Google credentials set');
-
-            const credentials = oAuth2Client.credentials;
-            logger.debug(`credentials: ${JSON.stringify(credentials, null, 2)}`);
 
             const googleUser = await this._getGoogleUser(tokens.access_token);
-            logger.debug(`Google user: ${JSON.stringify(googleUser, null, 2)}`);
+            logger.debug('Google User data:', JSON.stringify(googleUser, null, 2));
 
-            logger.debug('login successful');
-            req.formattedResponse = formatResponse(200, 'Logged in with Google', googleUser, this.authenticationError.headers);
+            // Check if user exists in our database
+            const existingUser = await this.userModel.findOne({ email: googleUser.email }) || await this.userModel.findOne({ national_id: googleUser.sub });
+
+            if (action === 'register') {
+                logger.info(`Registering user with email: ${googleUser.email}`);
+                if (existingUser) {
+                    logger.warn(`User with email ${googleUser.email} already exists`);
+                    throw MyAppErrors.badRequest('User already exists. Please login instead.');
+                }
+
+                const userData = {
+                    national_id: googleUser.sub,
+                    email: googleUser.email,
+                    username: googleUser.name,
+                    profile_picture_uri: googleUser.picture
+                };
+
+                const createdUser = await this.userModel.createGoogleUser(userData);
+                if (!createdUser) {
+                    throw MyAppErrors.internalServerError('Failed to create user');
+                }
+
+                const { accessToken, refreshToken } = this._createTokens(createdUser.national_id);
+
+                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+                if (appConfigs.environment != 'production') {
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google. in production, will redirect to "/home"', createdUser);
+                } else {
+                    res.redirect('/home');
+                }
+            } else if (action === 'login') {
+                logger.info(`Logging in user with email: ${googleUser.email}`);
+                if (!existingUser) {
+                    logger.warn(`No user found with email ${googleUser.email} or national_id ${googleUser.sub}`);
+                    throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                }
+                logger.debug(`User ${existingUser.national_id} found`);
+
+                const { accessToken, refreshToken } = this._createTokens(existingUser.national_id);
+
+                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+
+                if (appConfigs.environment != 'production') {
+                    req.formattedResponse = formatResponse(200, 'Logged in successfully with Google. in production, will redirect to "/home"');
+                } else {
+                    res.redirect('/home');
+                }
+            }
+
             next();
         } catch (error) {
             logger.error(`Error during Google callback: ${error.message}`);
-            next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                logger.error(`Error during Google login: ${error.message}`);
+                next(MyAppErrors.internalServerError(error.message));
+            }
         }
     }
 }

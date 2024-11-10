@@ -667,15 +667,43 @@ paths:
       tags:
         - "Authentication"
       summary: Initiate Google OAuth login
-      description: Redirects user to Google OAuth consent screen
+      description: Generates a Google OAuth URL for login or registration
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [login, register]
+          description: Specifies whether the user wants to login or register
       responses:
-        "302":
-          description: Redirect to Google OAuth consent screen
-          headers:
-            Location:
+        200:
+          description: Successfully generated Google OAuth URL
+          content:
+            application/json:
               schema:
-                type: string
-                example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: redirect to this URL to login with Google
+                  data:
+                    type: string
+                    example: https://accounts.google.com/o/oauth2/v2/auth?...
+        # "302":
+        #   description: Redirect to Google OAuth consent screen
+        #   headers:
+        #     Location:
+        #       schema:
+        #         type: string
+        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+        400:
+          description: Missing or invalid action parameter
+        500:
+          description: Internal server error
 
   /google/callback:
     get:
