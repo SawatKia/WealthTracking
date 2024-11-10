@@ -82,7 +82,7 @@ class Middlewares {
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
       Message: ${message}
-      Data: ${data ? JSON.stringify(data, null, 2) : 'No data'}
+      Data: ${data ? JSON.stringify(data, null, 6) : 'No data'}
       `;
       logger.debug(responseLogMessage);
       res.set(headers || {}).status(status_code).json(formatResponse(status_code, message, data));
