@@ -69,8 +69,6 @@ class UserController extends BaseController {
             normalizedData = {
                 ...req.body,
                 ...normalizedData,
-                role: 'user',
-                member_since: new Date().toISOString(),
             };
             delete normalizedData['confirm_password'];
             logger.debug(`combined normalized data: ${JSON.stringify(normalizedData)}`);

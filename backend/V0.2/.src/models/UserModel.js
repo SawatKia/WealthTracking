@@ -9,27 +9,33 @@ const { Logger, formatResponse } = Utils;
 const logger = Logger('UserModel');
 
 class UserModel extends BaseModel {
-
+    //TODO - add google_id to the schema
+    //TODO - user need to have a profile picture, find a way to store it
     constructor() {
         const userSchema = Joi.object({
             national_id: Joi.string()
-                .length(13)
-                .pattern(/^[0-9]*$/, 'numeric characters only') // Allow only numeric characters
+                .max(255)
+                .when('auth_service', {
+                    is: 'local',
+                    then: Joi.string().length(13).pattern(/^[0-9]*$/, 'numeric characters only'),
+                    otherwise: Joi.string().max(255)
+                })
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'update', 'delete', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.length': 'Invalid national ID',
-                    'string.pattern.name': 'Invalid national ID',
+                    'string.max': 'National ID cannot exceed 255 characters',
+                    'string.length': 'Local auth national ID must be 13 characters',
+                    'string.pattern.name': 'Local auth national ID must be numeric',
                     'any.required': 'National ID is required for this operation.',
                 }),
             email: Joi.string()
                 .email()
                 .pattern(/^[a-zA-Z0-9@.]*$/, 'valid email format') // Prevent special characters outside email format
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'check'),
+                    is: Joi.valid('create', 'check', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -51,9 +57,9 @@ class UserModel extends BaseModel {
             }),
 
             username: Joi.string()
-                .pattern(/^[a-zA-Z0-9_.-]*$/)
+                .pattern(/^[a-zA-Z0-9_. -]*$/)
                 .when(Joi.ref('$operation'), {
-                    is: 'create',
+                    is: Joi.valid('create', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -63,21 +69,25 @@ class UserModel extends BaseModel {
                 }),
 
             hashed_password: Joi.string()
-                .min(8) // Ensure the password has at least 8 characters
-                .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete'), // Allow password for create, update, and delete operations
-                    then: Joi.required(), // Make it required during these operations
-                    otherwise: Joi.forbidden(), // Forbid in other operations
+                .min(8)
+                .when('$operation', {
+                    is: Joi.valid('create', 'update', 'delete'),
+                    then: Joi.when('auth_service', {
+                        is: 'local',
+                        then: Joi.required(),
+                        otherwise: Joi.optional()
+                    }),
+                    otherwise: Joi.optional()
                 })
                 .messages({
                     'string.min': 'Invalid password',
-                    'any.required': 'Password is required for this operation.',
+                    'any.required': 'Password is required for local authentication.',
                 }),
 
             role: Joi.string()
                 .pattern(/^[a-zA-Z0-9]*$/, 'alphanumeric characters only') // Prevent special characters
                 .when(Joi.ref('$operation'), {
-                    is: 'create',
+                    is: Joi.valid('create', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -89,7 +99,7 @@ class UserModel extends BaseModel {
 
             member_since: Joi.date() // Date fields are allowed
                 .when(Joi.ref('$operation'), {
-                    is: 'create',
+                    is: Joi.valid('create', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -97,15 +107,32 @@ class UserModel extends BaseModel {
                     'date.base': 'Member since must be a valid date.',
                     'any.required': 'Member since is required when creating a user.',
                 }),
+
             date_of_birth: Joi.date() // Date fields are allowed
+                .optional() // Make it optional for all operations
+                .messages({
+                    'date.base': 'Invalid date of birth',
+                }),
+
+            auth_service: Joi.string()
+                .valid('local', 'google', 'facebook', 'apple')
                 .when(Joi.ref('$operation'), {
-                    is: 'create',
+                    is: Joi.valid('create', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'date.base': 'Invalid date of birth',
-                    'any.required': 'Date of birth is required when creating a user.',
+                    'any.required': 'Auth service is required when creating a user from google.',
+                }),
+
+            profile_picture_uri: Joi.string()
+                .when(Joi.ref('$operation'), {
+                    is: Joi.valid('google_register'),
+                    then: Joi.required(),
+                    otherwise: Joi.optional(),
+                })
+                .messages({
+                    'any.required': 'Profile picture URI is required when creating a user from google.',
                 }),
         });
 
@@ -182,6 +209,12 @@ class UserModel extends BaseModel {
                 logger.error('User with this national_id or email already exists');
                 throw new Error('duplicate key value');
             }
+            newUserData = {
+                ...newUserData,
+                auth_service: 'local',
+                member_since: new Date().toISOString(),
+                role: 'user'
+            }
             logger.debug(`userdata to be create: ${JSON.stringify(newUserData)}`);
             const validationResult = await super.validateSchema(newUserData, 'create');
             if (validationResult instanceof Error) {
@@ -208,6 +241,44 @@ class UserModel extends BaseModel {
                 throw new Error('duplicate key value');
             }
             logger.error(`Error creating new user: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async createGoogleUser(newUserData) {
+        try {
+            logger.info('creating google user');
+            logger.debug(`newUserData: ${JSON.stringify(newUserData, null, 2)}`);
+
+            // verify if user already exists
+            const userObject = await super.findOne({ national_id: newUserData.national_id }) ||
+                await super.findOne({ email: newUserData.email });
+            if (userObject) {
+                logger.error('User with this national_id or email already exists');
+                throw new Error('duplicate key value');
+            }
+            logger.info('user deuplicated not found')
+
+            const userData = {
+                ...newUserData,
+                auth_service: 'google',
+                member_since: new Date().toISOString(),
+                role: 'user'
+            };
+
+            // validate schema
+            const validationResult = await super.validateSchema(userData, 'google_register');
+            if (validationResult instanceof Error) {
+                logger.error(`Validation error: ${validationResult.message}`);
+                throw validationResult;
+            }
+
+            // create new user
+            const createdResult = await super.create(userData);
+            logger.info(`Google user created successfully: ${JSON.stringify(createdResult)}`);
+            return createdResult;
+        } catch (error) {
+            logger.error(`Error creating Google user: ${error.message}`);
             throw error;
         }
     }
