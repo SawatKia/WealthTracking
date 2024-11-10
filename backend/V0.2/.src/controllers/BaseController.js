@@ -12,7 +12,7 @@ class BaseController {
 
     /**
      * Verifies required fields and performs type conversion based on the model schema
-     * @param {Object} body - The request body
+     * @param {Object} body - The request body object
      * @param {Array} requiredFields - Array of required field names
      * @param {Object} model - The model instance containing the schema
      * @returns {Object} - The body with converted types
@@ -32,7 +32,7 @@ class BaseController {
         logger.info(`requiredFields: ${JSON.stringify(requiredFields, null, 2)} is valid`);
 
         if (model && typeof model !== 'object') {
-            logger.debug('Invalid model');
+            logger.warn('Invalid model');
             throw new Error('Invalid model');
         }
         logger.info(`model is valid`);
