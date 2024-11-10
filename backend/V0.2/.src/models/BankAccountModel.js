@@ -10,6 +10,7 @@ const logger = Logger('BankAccountModel');
 
 class BankAccountModel extends BaseModel {
     constructor() {
+        // TODO - add favourite field
         const bankSchema = Joi.object({
             account_number: Joi.string()
                 .max(20)
