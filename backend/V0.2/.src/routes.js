@@ -2,8 +2,9 @@ const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const fs = require("fs")
 const YAML = require('yaml')
-const appConfigs = require('./configs/AppConfigs');
+const path = require('path');
 
+const appConfigs = require('./configs/AppConfigs');
 const Utils = require('./utilities/Utils');
 const mdw = require('./middlewares/Middlewares')
 const UserController = require('./controllers/UserController');
@@ -26,8 +27,11 @@ const fiController = new FinancialInstitutionController();
 const authController = new AuthController();
 
 if (NODE_ENV != 'test') {
-    const file = fs.readFileSync('./swagger.yaml', 'utf8');
+    logger.info('Generating swagger documentation');
+    const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
+    // const file = fs.readFileSync('./swagger.yaml', 'utf8');
     const swaggerDocument = YAML.parse(file)
+    logger.debug(`loaded swagger document: ${JSON.stringify(swaggerDocument, null, 2).substring(0, 50)}...`);
     router.use('/docs', swaggerUi.serve);
     router.get('/docs', swaggerUi.setup(swaggerDocument));
 }
