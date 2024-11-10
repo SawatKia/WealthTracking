@@ -1,7 +1,6 @@
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-const cors = require("cors");
 const Utils = require("./utilities/Utils");
 const routes = require("./routes");
 const mdw = require("./middlewares/Middlewares");
@@ -13,13 +12,6 @@ const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 
-// Add CORS configuration before other middleware
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-  allowedHeaders: ['X-Requested-With', 'content-type', 'credentials'],
-  methods: ['GET', 'POST']
-}));
 
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
