@@ -196,7 +196,13 @@ class Middlewares {
       Content-Length: ${headers['content-length']}
     Cookies: 
       ${Object.keys(req.cookies)
-        .map(key => `${key}: ${req.cookies[key]?.substring(0, 20) || 'undefined'}...`)
+        .map(key => {
+          const cookieValue = req.cookies[key];
+          const displayValue = typeof cookieValue === 'string'
+            ? cookieValue.substring(0, 20)
+            : String(cookieValue);
+          return `${key}: ${displayValue}...`;
+        })
         .join('\n      ')}
     Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
     Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
