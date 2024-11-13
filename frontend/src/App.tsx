@@ -10,9 +10,7 @@ const App: React.FC = () => {
       <PhoneScreen>
         <IncomeExpenses />
       </PhoneScreen>
-    <div className="App">
-      <AddBankAccountPage /> {/* แสดง AddBankAccount */}
-    </div>
+      {/* <AddBankAccountPage /> */}
     </div>
   );
 };
