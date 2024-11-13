@@ -30,6 +30,18 @@ class MyAppErrors extends Error {
         return new MyAppErrors(message || 'Conflict', 409, data);
     }
 
+    static tooManyRequests(message, data = null) {
+        return new MyAppErrors(message || 'Too Many Requests', 429, data);
+    }
+
+    static serviceUnavailable(message, data = null) {
+        return new MyAppErrors(message || 'Service Unavailable', 503, data);
+    }
+
+    static userNotFound() {
+        return new MyAppErrors('user not found', 404);
+    }
+
     static passwordError() {
         return new MyAppErrors('Invalid email or password', 401);
     }

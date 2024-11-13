@@ -12,8 +12,6 @@ class Utils {
     static Logger(moduleName) {
         return new Logger(moduleName);
     }
-
-
 }
 
 module.exports = Utils

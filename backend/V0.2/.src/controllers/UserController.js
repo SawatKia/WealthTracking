@@ -1,18 +1,24 @@
-require('dotenv').config();
 const Utils = require('../utilities/Utils');
 const User = require('../models/UserModel');
 const BaseController = require('./BaseController');
-const logger = Utils.Logger('UserController');
 const MyAppErrors = require('../utilities/MyAppErrors')
-const { formatResponse } = Utils;
+
+const { Logger, formatResponse } = Utils;
+const logger = Logger('UserController');
 
 class UserController extends BaseController {
     constructor() {
         super();
-        this.User = new User();
+        this.UserModel = new User();
+
+        // Bind all methods to ensure correct 'this' context
+        this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
+        this.validateEmail = this.validateEmail.bind(this);
+        this.registerUser = this.registerUser.bind(this);
+        this.checkPassword = this.checkPassword.bind(this);
     }
 
-    normalizeUsernameEmail = (username = null, email = null) => {
+    normalizeUsernameEmail(username = null, email = null) {
         logger.info('Normalizing username and email');
         logger.debug(`before norm username: ${username}, email: ${email}`);
         let normalizedData = {};
@@ -24,23 +30,24 @@ class UserController extends BaseController {
         }
         logger.debug(`normalized data: ${JSON.stringify(normalizedData)}`);
         return normalizedData;
-    };
+    }
 
-    validateEmail = (email) => {
+    validateEmail(email) {
         logger.info('validateEmail');
         logger.debug(`email: ${email}`);
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         logger.debug(`email regex test: ${emailRegex.test(email)}`);
         return emailRegex.test(email);
-    };
+    }
 
-    registerUser = async (req, res, next) => {
+    async registerUser(req, res, next) {
         try {
             const { username, email, password, confirm_password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
-            // Verify all required fields
-            super.verifyField(req.body, ['national_id', 'username', 'email', 'password', 'confirm_password']);
+            // Verify all required fields 
+            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'];
+            await super.verifyField(req.body, requiredFields, this.UserModel);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
                 throw MyAppErrors.badRequest('Password must be at least 8 characters long');
@@ -69,7 +76,7 @@ class UserController extends BaseController {
             logger.debug(`combined normalized data: ${JSON.stringify(normalizedData)}`);
 
             // Create user
-            const createdUser = await this.User.createUser(normalizedData);
+            const createdUser = await this.UserModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
 
             // Success response
@@ -84,21 +91,20 @@ class UserController extends BaseController {
                 next(MyAppErrors.userDuplicateError());
             }
             if (error.name === 'ValidationError') {
-                // next(new BadRequestError('invalid input'));
                 next(MyAppErrors.badRequest(error.message));
             }
 
             next(error);
         }
-    };
+    }
 
-    checkPassword = async (req, res, next) => {
+    async checkPassword(req, res, next) {
         try {
             const { email, password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
-            super.verifyField(req.body, ['email', 'password']);
+            await super.verifyField(req.body, ['email', 'password'], this.UserModel);
             const normalizedEmail = this.normalizeUsernameEmail(null, email);
-            const { result, user } = await this.User.checkPassword(normalizedEmail['email'], password);
+            const { result, user } = await this.UserModel.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw MyAppErrors.passwordError();
             req.formattedResponse = formatResponse(200, 'Password check successful', result);
@@ -109,7 +115,6 @@ class UserController extends BaseController {
                 next(MyAppErrors.badRequest(error.message));
             }
             if (error.name === 'ValidationError') {
-                // next(new BadRequestError('invalid input'));
                 next(MyAppErrors.badRequest(error.message));
             }
             next(error);
