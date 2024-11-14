@@ -164,6 +164,9 @@ class BaseModel {
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "update");
         logger.debug("Validated data: " + JSON.stringify(validated));
+        if (typeof primaryKeys !== "object" || primaryKeys === null) {
+          throw new Error("primaryKeys must be a non-null object");
+        }
 
         const keys = Object.keys(primaryKeys);
         const primaryValues = Object.values(primaryKeys);
@@ -171,16 +174,21 @@ class BaseModel {
         const updateValues = Object.values(validated);
 
         const updatePlaceholders = updateKeys
-          .map((key, index) => `${key} = $${index + 1}`)
-          .join(",");
+          .map((key, index) => `"${key}" = $${index + 1}`)
+          .join(", ");
+
         const conditionPlaceholders = keys
-          .map((_, index) => `$${updateKeys.length + index + 1}`)
+          .map((key, index) => `"${key}" = $${updateKeys.length + index + 1}`)
           .join(" AND ");
 
-        const sql = `UPDATE ${this.tableName
-          } SET ${updatePlaceholders} WHERE ${keys.join(
-            " = "
-          )} = ${conditionPlaceholders} RETURNING *`;
+        const sql = `UPDATE ${this.tableName} 
+          SET ${updatePlaceholders} 
+          WHERE ${conditionPlaceholders} 
+          RETURNING *`;
+
+        logger.debug(`Update SQL: ${sql}`);
+        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(updateValues, primaryValues))}`);
+
         const result = await this.pgClient.query(sql, [
           ...updateValues,
           ...primaryValues,
