@@ -210,22 +210,33 @@ class BaseModel {
    */
   async delete(primaryKeys) {
     try {
+      logger.info("Deleting record...");
+      logger.debug("primaryKeys:", primaryKeys);
+
       return await this.executeWithTransaction(async () => {
+        if (typeof primaryKeys !== "object" || primaryKeys === null) {
+          throw new Error("primaryKeys must be a non-null object");
+        }
+
         const keys = Object.keys(primaryKeys);
         const values = Object.values(primaryKeys);
-        const placeholders = keys
-          .map((_, index) => `$${index + 1}`)
+        logger.debug("keys:", keys);
+        logger.debug("values:", values);
+
+        const conditions = keys
+          .map((key, index) => `"${key}" = $${index + 1}`)
           .join(" AND ");
 
-        const sql = `DELETE FROM ${this.tableName} WHERE ${keys.join(
-          " = "
-        )} = ${placeholders} RETURNING *`;
+        const sql = `DELETE FROM ${this.tableName} WHERE ${conditions} RETURNING *`;
+        logger.debug("Delete SQL:", sql);
+        logger.debug("Delete params:", values);
+
         const result = await this.pgClient.query(sql, values);
-        logger.debug("Delete result: " + JSON.stringify(result.rows[0]));
+        logger.debug("Delete result:", result.rows[0]);
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error deleting record: %s", error);
+      logger.error("Error deleting record:", error);
       throw error;
     }
   }
