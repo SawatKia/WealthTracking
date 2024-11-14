@@ -326,33 +326,65 @@ paths:
     delete:
       tags:
         - "User"
-      summary: Delete user by National ID (NOT Implemented)
-      description: Deletes a user from the system.
+      summary: Delete current user
+      description: Deletes the current authenticated user. Requires current password for verification.
       security:
         - cookieAuth: []
-      parameters:
-        - in: path
-          name: national_id
-          schema:
-            type: string
-            length: 13
-          required: true
-          description: National ID of the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: Current password for verification
+                  example: "securePassword123"
       responses:
-        "204":
-          description: User deleted successfully. No content returned.
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "User deleted successfully"
+                data: null
         "400":
-          description: Bad request due to invalid National ID.
+          description: Bad request due to missing password
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 400
+                message: "Missing required field: password"
+                data: null
+        "401":
+          description: Unauthorized due to incorrect password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 401
+                message: "Invalid username or password"
+                data: null
         "404":
-          description: User not found.
+          description: User not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 404
+                message: "User not found"
+                data: null
 
   /slip/verify:
     post:

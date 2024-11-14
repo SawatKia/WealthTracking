@@ -243,15 +243,60 @@ class UserController extends BaseController {
 
     async deleteUser(req, res, next) {
         try {
-            logger.info('deleteUser');
+            logger.info('request received for deleteUser');
+
+            // Get current user
             const user = await super.getCurrentUser(req);
             if (!user) {
                 throw MyAppErrors.notFound('User not found');
             }
-            logger.info(`user: ${JSON.stringify(user, null, 2)}`);
+            logger.debug(`Current user: ${JSON.stringify(user)}`);
+
+            // Verify required password field
+            await super.verifyField(req.body, ['password'], this.userModel);
+            logger.debug('Required fields verified');
+
+            // Check current password
+            const { result } = await this.userModel.checkPassword(user.email, req.body.password);
+            if (!result) {
+                logger.error('Password check failed');
+                throw MyAppErrors.passwordError();
+            }
+            logger.info('Password check successful');
+
+            // Delete user's profile picture if exists
+            if (user.profile_picture_uri) {
+                try {
+                    await fs.promises.unlink(user.profile_picture_uri);
+                    logger.info('Profile picture deleted');
+                } catch (err) {
+                    logger.error(`Failed to delete profile picture: ${err.message}`);
+                    // Continue with user deletion even if profile picture deletion fails
+                }
+            }
+
+            // Delete user from database
+            const deletedUser = await this.userModel.delete({
+                national_id: user.national_id
+            });
+
+            if (!deletedUser) {
+                throw MyAppErrors.notFound('delete user failed');
+            }
+            logger.info('User deleted successfully');
+
+            // Format success response
+            req.formattedResponse = formatResponse(200, 'User deleted successfully');
+            next();
         } catch (error) {
             logger.error(`deleteUser error: ${error.message}`);
-            next(error);
+            if (error.message.includes('Missing required field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError('Error deleting user', { details: error.message }));
+            }
         }
     }
 }
