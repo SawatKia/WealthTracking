@@ -21,7 +21,7 @@ class UserModel extends BaseModel {
                     otherwise: Joi.string().max(255)
                 })
                 .when(Joi.ref('$operation'), {
-                    is: Joi.valid('create', 'update', 'delete', 'google_register'),
+                    is: Joi.valid('create', 'read', 'delete', 'google_register'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
@@ -37,7 +37,7 @@ class UserModel extends BaseModel {
                 .when(Joi.ref('$operation'), {
                     is: Joi.valid('create', 'check', 'google_register'),
                     then: Joi.required(),
-                    otherwise: Joi.optional(),
+                    otherwise: Joi.allow('').optional(),
                 })
                 .messages({
                     'string.email': 'Invalid email',
@@ -45,23 +45,23 @@ class UserModel extends BaseModel {
                     'any.required': 'Email is required for this operation.',
                 }),
 
-            national_id_or_email: Joi.alternatives().try(
-                Joi.ref('national_id'),
-                Joi.ref('email'),
-            ).when(Joi.ref('$operation'), {
-                is: 'read',
-                then: Joi.required(),
-                otherwise: Joi.optional(),
-            }).messages({
-                'any.required': 'At least one of national_id or email must be provided when reading a user.',
-            }),
+            // national_id_or_email: Joi.alternatives().try(
+            //     Joi.ref('national_id'),
+            //     Joi.ref('email'),
+            // ).when(Joi.ref('$operation'), {
+            //     is: 'read',
+            //     then: Joi.required(),
+            //     otherwise: Joi.optional(),
+            // }).messages({
+            //     'any.required': 'At least one of national_id or email must be provided when reading a user.',
+            // }),
 
             username: Joi.string()
                 .pattern(/^[a-zA-Z0-9_. -]*$/)
                 .when(Joi.ref('$operation'), {
                     is: Joi.valid('create', 'google_register'),
                     then: Joi.required(),
-                    otherwise: Joi.optional(),
+                    otherwise: Joi.allow('').optional()
                 })
                 .messages({
                     'string.pattern.base': 'Invalid username',
@@ -71,7 +71,7 @@ class UserModel extends BaseModel {
             hashed_password: Joi.string()
                 .min(8)
                 .when('$operation', {
-                    is: Joi.valid('create', 'update', 'delete'),
+                    is: Joi.valid('create', 'delete'),
                     then: Joi.when('auth_service', {
                         is: 'local',
                         then: Joi.required(),
@@ -285,42 +285,59 @@ class UserModel extends BaseModel {
 
 
     /**
-     * Finds a user by their national_id or email
-     * @param {String} input - the national_id or email to search for
+     * Finds a user by their national_id
+     * @param {String} national_id - the national_id to search for
      * @returns {Object} the user object if found, null otherwise
      * @throws {Error} if the input is invalid or the user is not found
      */
-    async findByNationalIdOrEmail(input) {
+    async findUser(national_id) {
         try {
-            logger.info('Finding user by national_id or email');
-            logger.debug(`input: ${JSON.stringify(input)}`);
+            logger.info('Finding user by national_id');
+            logger.debug(`national_id: ${JSON.stringify(national_id)}`);
 
             // Validate input
-            const validationResult = await super.validateSchema({
-                national_id_or_email: input
-            }, { operation: 'read' });
+            const validationResult = await super.validateSchema({ national_id }, 'read');
             if (validationResult instanceof Error) {
                 logger.warn('Invalid input for finding user');
                 throw validationResult;
             }
 
-            // find a user by either national ID or email, without knowing in advance which one is provided.
+            // find a user by national ID
             const query = `SELECT * FROM users 
-            WHERE national_id = $1 OR email = $1
+            WHERE national_id = $1
             LIMIT 1`;
-            const result = await super.executeQuery(query, [input]);
-            // const result = await super.findOne({ national_id: input }) || await super.findOne({ email: input });
-            if (!result) {
+            const result = await super.executeQuery(query, [national_id]);
+            const user = result.rows[0];
+            if (!user) {
                 logger.warn('User not found');
                 return null;
             }
-            logger.debug(`result: ${JSON.stringify(result)}`);
-
-            return result;
+            delete user.national_id;
+            delete user.hashed_password;
+            delete user.role;
+            delete user.auth_service;
+            logger.debug(`user found: ${JSON.stringify(user)}`);
+            return user;
         } catch (error) {
-            logger.error(`Error finding user by national_id or email: ${error.message}`);
+            logger.error(`Error finding user by national_id: ${error.message}`);
             throw error;
         }
     }
+
+    async updateUser(national_id, updateFields) {
+        logger.info('Updating user');
+        logger.debug(`updateFields: ${JSON.stringify(updateFields)}`);
+        if (updateFields.password) {
+            updateFields.hashed_password = await this._hashPassword(updateFields.password);
+            delete updateFields.password;
+        }
+        const updatedUser = await super.update({ national_id }, updateFields);
+        delete updatedUser.national_id;
+        delete updatedUser.hashed_password;
+        delete updatedUser.role;
+        delete updatedUser.auth_service;
+        logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
+        return updatedUser;
+    }
 }
-module.exports = UserModel
+module.exports = UserModel;
