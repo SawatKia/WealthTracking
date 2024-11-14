@@ -67,9 +67,40 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - app_network
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "8001:8001"
+    volumes:
+      - redisinsight_data:/db
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - app_network
+
 
 volumes:
   postgres_data:
+  redis_data:
+  redisinsight_data:
 
 networks:
   app_network:

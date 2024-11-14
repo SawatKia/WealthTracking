@@ -83,6 +83,9 @@ NODE_ENV=development
 # NODE_ENV=production
 # NODE_ENV=test
 APP_PORT=3000
+APP_DOMAIN=WealthTrack
+ACCESS_TOKEN_SECRET=your-secure-access-token-secret
+REFRESH_TOKEN_SECRET=your-secure-refresh-token-secret
 SALT_ROUNDS=10
 
 POSTGRES_USER=user
@@ -95,12 +98,19 @@ POSTGRES_DB=your_database_name
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=root
 
+REDIS_HOST=redis
+REDIS_PORT=6379
+
 EASYSLIP_URL=https://developer.easyslip.com
-EASYSLIP_KEY=<Api_key>
+EASYSLIP_KEY=your-easyslip-api-key
+
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 ```
 
-4. Open Docker Desktop.
-5. In the project root directory, build and start the Docker container:
+1. Open Docker Desktop.
+2. In the project root directory, build and start the Docker container:
 
 ```bash
 docker-compose up -d --build

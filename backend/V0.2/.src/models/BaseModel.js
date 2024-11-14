@@ -15,9 +15,17 @@ class BaseModel {
 
   async validateSchema(data, operation = "create") {
     logger.info("Validating schema...");
-    logger.debug("Data to be validated:", data);
+    logger.debug("schema: ", this.schema);
+    logger.debug("data type: ", typeof data);
+    logger.debug("Data to be validated: ", JSON.stringify(data, null, 2));
+    logger.debug(`operation: ${operation}`);
 
     try {
+      if (!this.schema) {
+        logger.error("Schema is not defined for this model.");
+        throw new ValidationError("Schema is not defined for this model.");
+      }
+      logger.info("Validating data against schema for operation:", operation);
       const validated = await this.schema.validateAsync(data, {
         context: { operation },
       });
@@ -128,7 +136,7 @@ class BaseModel {
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);
       const condition = keys
-        .map((key, index) => `${key} = $${index + 1}`)
+        .map((key, index) => `"${key}" = $${index + 1}`)
         .join(" AND ");
 
       const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
@@ -156,6 +164,9 @@ class BaseModel {
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "update");
         logger.debug("Validated data: " + JSON.stringify(validated));
+        if (typeof primaryKeys !== "object" || primaryKeys === null) {
+          throw new Error("primaryKeys must be a non-null object");
+        }
 
         const keys = Object.keys(primaryKeys);
         const primaryValues = Object.values(primaryKeys);
@@ -163,16 +174,21 @@ class BaseModel {
         const updateValues = Object.values(validated);
 
         const updatePlaceholders = updateKeys
-          .map((key, index) => `${key} = $${index + 1}`)
-          .join(",");
+          .map((key, index) => `"${key}" = $${index + 1}`)
+          .join(", ");
+
         const conditionPlaceholders = keys
-          .map((_, index) => `$${updateKeys.length + index + 1}`)
+          .map((key, index) => `"${key}" = $${updateKeys.length + index + 1}`)
           .join(" AND ");
 
-        const sql = `UPDATE ${this.tableName
-          } SET ${updatePlaceholders} WHERE ${keys.join(
-            " = "
-          )} = ${conditionPlaceholders} RETURNING *`;
+        const sql = `UPDATE ${this.tableName} 
+          SET ${updatePlaceholders} 
+          WHERE ${conditionPlaceholders} 
+          RETURNING *`;
+
+        logger.debug(`Update SQL: ${sql}`);
+        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(updateValues, primaryValues))}`);
+
         const result = await this.pgClient.query(sql, [
           ...updateValues,
           ...primaryValues,
@@ -194,22 +210,33 @@ class BaseModel {
    */
   async delete(primaryKeys) {
     try {
+      logger.info("Deleting record...");
+      logger.debug("primaryKeys:", primaryKeys);
+
       return await this.executeWithTransaction(async () => {
+        if (typeof primaryKeys !== "object" || primaryKeys === null) {
+          throw new Error("primaryKeys must be a non-null object");
+        }
+
         const keys = Object.keys(primaryKeys);
         const values = Object.values(primaryKeys);
-        const placeholders = keys
-          .map((_, index) => `$${index + 1}`)
+        logger.debug("keys:", keys);
+        logger.debug("values:", values);
+
+        const conditions = keys
+          .map((key, index) => `"${key}" = $${index + 1}`)
           .join(" AND ");
 
-        const sql = `DELETE FROM ${this.tableName} WHERE ${keys.join(
-          " = "
-        )} = ${placeholders} RETURNING *`;
+        const sql = `DELETE FROM ${this.tableName} WHERE ${conditions} RETURNING *`;
+        logger.debug("Delete SQL:", sql);
+        logger.debug("Delete params:", values);
+
         const result = await this.pgClient.query(sql, values);
-        logger.debug("Delete result: " + JSON.stringify(result.rows[0]));
+        logger.debug("Delete result:", result.rows[0]);
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error deleting record: %s", error);
+      logger.error("Error deleting record:", error);
       throw error;
     }
   }

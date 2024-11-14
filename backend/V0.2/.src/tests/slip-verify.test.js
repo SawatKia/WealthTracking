@@ -11,10 +11,9 @@ const mockToken = 'mockJWTtoken123';
 const verifySlipTestCases = [
     {
         testName: "success with payload",
-        method: "GET",
+        method: "POST",
         query: { payload: "00020101021229370016A000000677010111011300668960066896007802TH53037646304" },
         expectedStatus: 200,
-        // expectedMessage: "Slip verification success by payload",
         expectedMessage: "EasySlip service is currently unavailable, mock data response is returned"
     },
     {
@@ -26,7 +25,6 @@ const verifySlipTestCases = [
             originalname: 'slip.jpg',
         },
         expectedStatus: 200,
-        // expectedMessage: "Slip verification success by file",
         expectedMessage: "EasySlip service is currently unavailable, mock data response is returned"
     },
     {
@@ -34,57 +32,54 @@ const verifySlipTestCases = [
         method: "POST",
         body: { base64Image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==" },
         expectedStatus: 200,
-        // expectedMessage: "Slip verification success by base64",
         expectedMessage: "EasySlip service is currently unavailable, mock data response is returned"
     },
     {
         testName: "invalid payload",
-        method: "GET",
+        method: "POST",
         query: { payload: "invalidpayload" },
         expectedStatus: 400,
-        expectedMessage: "Invalid payload format",
-    },
-    {
-        testName: "missing input",
-        method: "POST",
-        file: {},
-        expectedStatus: 400,
-        expectedMessage: "Invalid input: Payload, file, or base64 image required",
+        expectedMessage: "The provided payload format is invalid.",
     },
     {
         testName: "invalid base64 image",
         method: "POST",
         body: { base64Image: "invalid base64" },
         expectedStatus: 400,
-        expectedMessage: "Invalid base64 image format",
+        expectedMessage: "The provided base64 image format is invalid.",
     },
+    {
+        testName: "invalid file type",
+        method: "POST",
+        file: {
+            fieldname: 'imageFile',
+            buffer: Buffer.from('mockImageData'),
+            originalname: 'invalid.txt', // Invalid file type
+        },
+        expectedStatus: 400,
+        expectedMessage: "The uploaded file is invalid or exceeds the size limit.",
+    },
+    {
+        testName: "missing input",
+        method: "POST",
+        file: {},
+        expectedStatus: 400,
+        expectedMessage: "At least one of the following is required: payload, file, or base64 image."
+    }
 ];
 
 beforeAll(async () => {
-    await pgClient.init();
+    await pgClient.init(); // Initialize PgClient
     logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-    // Create necessary tables (if not already created in your main setup)
-    await pgClient.query(`
-    CREATE TABLE IF NOT EXISTS api_request_limits (
-      service_name VARCHAR(255) NOT NULL,
-      request_date DATE NOT NULL,
-      request_count INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (service_name, request_date)
-    );
-  `);
-    logger.debug(`Tables created: ${pgClient.isConnected()}`);
 });
 
 afterAll(async () => {
-    // Clean up the database after all tests
-    await pgClient.query("DROP TABLE IF EXISTS api_request_limits;");
-    await pgClient.release();
-    logger.debug(`Database disconnected: ${pgClient.isConnected()}`);
+    await pgClient.release(); // Release the PgClient
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
 });
 
 describe("Slip Verification API Endpoint", () => {
-    describe("POST /slip/verify", () => {
+    describe("POST and GET /api/v0.2/slip/verify", () => {
         verifySlipTestCases.forEach((testCase, index) => {
             it(`${index + 1}. ${testCase.testName}`, async () => {
                 logger.info(`Test ${index + 1}. ${testCase.testName}`);
@@ -99,6 +94,10 @@ describe("Slip Verification API Endpoint", () => {
                     const req = request(app)
                         .post("/api/v0.2/slip/verify")
                         .set('Authorization', `Bearer ${mockToken}`);
+
+                    if (testCase.query) {
+                        req.query(testCase.query);
+                    }
 
                     if (testCase.file) {
                         req.attach('imageFile', testCase.file.buffer, testCase.file.originalname);

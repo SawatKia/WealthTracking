@@ -1,41 +1,46 @@
 class MyAppErrors extends Error {
-    constructor(message, statusCode, data = null) {
+    constructor(message, statusCode, data = null, headers = {}) {
         super(message);
         this.statusCode = statusCode;
         this.data = data;
+        this.headers = headers;
         Error.captureStackTrace(this, this.constructor);
     }
 
-    static badRequest(message, data = null) {
-        return new MyAppErrors(message || 'Bad Request', 400, data);
+    static badRequest(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Bad Request', 400, data, headers);
     }
 
-    static unauthorized(message, data = null) {
-        return new MyAppErrors(message || 'Unauthorized', 401, data);
+    static unauthorized(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Unauthorized', 401, data, headers);
     }
 
-    static forbidden(message, data = null) {
-        return new MyAppErrors(message || 'Forbidden', 403, data);
+    static forbidden(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Forbidden', 403, data, headers);
     }
 
-    static notFound(message, data = null) {
-        return new MyAppErrors(message || 'Not Found', 404, data);
+    static notFound(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Not Found', 404, data, headers);
     }
 
-    static methodNotAllowed(message, data = null) {
-        return new MyAppErrors(message || 'Method Not Allowed', 405, data);
+    static methodNotAllowed(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Method Not Allowed', 405, data, headers);
     }
 
-    static conflict(message, data = null) {
-        return new MyAppErrors(message || 'Conflict', 409, data);
+    static conflict(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Conflict', 409, data, headers);
     }
 
-    static tooManyRequests(message, data = null) {
-        return new MyAppErrors(message || 'Too Many Requests', 429, data);
+    static tooManyRequests(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Too Many Requests', 429, data, headers);
     }
 
-    static serviceUnavailable(message, data = null) {
-        return new MyAppErrors(message || 'Service Unavailable', 503, data);
+    static internalServerError(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Internal Server Error', 500, data, headers);
+    }
+
+    static serviceUnavailable(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Service Unavailable', 503, data, headers);
     }
 
     static userNotFound() {

@@ -1,10 +1,39 @@
 const multer = require('multer');
+const fs = require('fs');
 
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
+const AuthUtils = require('../utilities/AuthUtils');
+const { json } = require('express');
 
-const upload = multer({ storage: multer.memoryStorage() });
+const slipToDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/slip-images/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
+  }
+});
+const profilePictureToDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/profile-pictures/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
+  }
+});
+const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
+const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
+const { verifyToken } = AuthUtils;
 const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -18,7 +47,9 @@ class Middlewares {
   methodValidator(allowedMethods) {
     return (req, res, next) => {
       logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`);
-      const { method, path } = req;
+      const { method } = req;
+      const path = req.path;
+
       logger.info("Validating request method and path");
       logger.debug(`Request: Method=${method}, Path=${path}`);
       logger.debug(`Environment: ${NODE_ENV}`);
@@ -30,7 +61,7 @@ class Middlewares {
             `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
           );
           if (pathRegex.test(incomingPath)) {
-            return allowedPath; // Return the matching allowed path
+            return allowedPath;
           }
         }
         return null;
@@ -69,11 +100,18 @@ class Middlewares {
   responseHandler(req, res, next) {
     logger.info("Handling response");
     if (req.formattedResponse) {
-      const { status_code, message, data } = req.formattedResponse;
-      logger.debug(
-        `Sending response: Status=${status_code}, Message=${message}, data=${data}`
-      );
-      res.status(status_code).json(formatResponse(status_code, message, data));
+      const { status_code, message, data, headers } = req.formattedResponse;
+      const responseLogMessage = `
+      Outgoing Response:
+      Headers: ${headers ? JSON.stringify(headers, null, 2) : 'xxx No header xxx'}
+      ------------------
+      ${req.method} ${req.path} => ${req.ip}
+      Status: ${status_code}
+      Message: ${message}
+      Data: ${data ? JSON.stringify(data, null, 6) : 'No data'}
+      `;
+      logger.debug(responseLogMessage);
+      res.set(headers || {}).status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();
     }
@@ -85,18 +123,25 @@ class Middlewares {
   errorHandler(err, req, res, next) {
     if (!res.headersSent) {
       logger.info("Handling error");
+      let response;
       if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
-        res
-          .status(err.statusCode)
-          .json(formatResponse(err.statusCode, err.message));
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(err.statusCode, err.message, err.data);
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
-        res.status(500).json(formatResponse(500, err.message));
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(500, err.message);
       } else {
         logger.error(`Unhandled error: ${err}`);
-        res.status(500).json(formatResponse(500, "Internal Server Error"));
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(500, "Internal Server Error");
       }
+      logger.debug(`sending Error response: ${JSON.stringify(response)}`);
+      res
+        .status(response.status_code)
+        .set(err.headers || {})
+        .json(response);
       return;
     }
   }
@@ -121,25 +166,97 @@ class Middlewares {
     });
   }
 
-  conditionalFileUpload(req, res, next) {
+  conditionalSlipUpload(req, res, next) {
     if (req.is('multipart/form-data')) {
-      return upload.single('imageFile')(req, res, next);
+      return uploadSlipToDisk.single('imageFile')(req, res, next);
+    }
+    next();
+  };
+
+  conditionalProfilePictureUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
     }
     next();
   };
 
   authMiddleware(req, res, next) {
-    const bearerHeader = req.headers['authorization'];
+    const accessToken = req.cookies['access_token'];
 
-    if (typeof bearerHeader !== 'undefined') {
-      const bearer = bearerHeader.split(' ');
-      const bearerToken = bearer[1];
-      req.token = bearerToken;
+    if (appConfigs.environment === 'test') {
       next();
-    } else {
-      logger.warn('No bearer token provided');
-      next(MyAppErrors.unauthorized('Authentication token is missing'));
+      return;
     }
+
+    if (accessToken) {
+      try {
+        const user = verifyToken(accessToken, appConfigs.accessTokenSecret);
+        req.user = user;
+        logger.info(`User authenticated(req.user): ${JSON.stringify(req.user, null, 2)}`);
+        next();
+      } catch (err) {
+        logger.warn('Invalid access token');
+        next(MyAppErrors.unauthorized(
+          AuthUtils.authenticationError.message,
+          null,
+          AuthUtils.authenticationError.headers
+        ));
+      }
+    } else {
+      logger.warn('No access token provided');
+      next(MyAppErrors.unauthorized(
+        AuthUtils.authenticationError.message,
+        null,
+        AuthUtils.authenticationError.headers
+      ));
+    }
+  }
+
+  /**
+   * Request logger middleware to log incoming requests in a consistent format
+   */
+  requestLogger(req, res, next) {
+    logger.info(`entering the routing for ${req.method} ${req.url}`);
+    const { ip, method, path: requestPath, body, headers, query } = req;
+
+    // Prepare the body for logging 
+    let logBody;
+    if (body && body.base64Image) {
+      // Truncate the base64Image value to show only the first 50 characters
+      logBody = {
+        ...body,
+        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+      };
+    } else {
+      logBody = body;
+    }
+
+    // Prepare a human-friendly log message
+    const requestLogMessage = `
+    Incoming Request:
+    ----------------
+    ${ip} => ${method} ${requestPath}
+    Headers:
+      Host: ${headers.host}
+      Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
+      Content-Type: ${headers['content-type']}
+      Content-Length: ${headers['content-length']}
+    Cookies: 
+      ${Object.keys(req.cookies)
+        .map(key => {
+          const cookieValue = req.cookies[key];
+          const displayValue = typeof cookieValue === 'string'
+            ? cookieValue.substring(0, 20)
+            : String(cookieValue);
+          return `${key}: ${displayValue}...`;
+        })
+        .join('\n      ')}
+    Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
+    Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
+    `;
+
+    logger.info(requestLogMessage);
+    next();
   }
 }
 

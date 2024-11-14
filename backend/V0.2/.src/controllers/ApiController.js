@@ -146,67 +146,90 @@ class ApiController {
   }
 
   _sanitizeObject(obj) {
-    logger.info('Sanitizing object...');
-    logger.debug(`obj: ${JSON.stringify(obj)}`);
-    const sanitized = {};
-    let i = 0;
-    for (const [key, value] of Object.entries(obj)) {
-      i++;
-      logger.debug(`key: ${key}, value: ${value}`);
-      sanitized[key] = typeof value === 'string' ? sanitizeHtml(value) : value;
-      logger.debug(`${i}. sanitized[${key}]: ${JSON.stringify(sanitized)}`);
+    try {
+      logger.info('Sanitizing object...');
+      logger.debug(`obj: ${JSON.stringify(obj)}`);
+      const sanitized = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object' && value !== null) {
+          sanitized[key] = this._sanitizeObject(value); // Recursively sanitize nested objects
+        } else if (Array.isArray(value)) {
+          sanitized[key] = value.map(item => typeof item === 'string' ? sanitizeHtml(item) : item);
+        } else {
+          sanitized[key] = typeof value === 'string' ? sanitizeHtml(value) : value;
+        }
+        logger.debug(`sanitized[${key}]: ${JSON.stringify(sanitized[key])}`);
+      }
+      logger.debug(`sanitized result: ${JSON.stringify(sanitized)}`);
+      return sanitized;
+    } catch (error) {
+      logger.error(`Error sanitizing object: ${error.message}`);
+      throw error;
     }
-    logger.debug(`sanitized result: ${JSON.stringify(sanitized)}`);
-    return sanitized;
   }
 
   _isValidPayload(payload) {
-    logger.info('Validating payload...');
-    // Implement specific validation logic for your payload format
-    // This is a basic example; adjust based on your actual payload structure
-    const result = /^[A-Za-z0-9]{30,100}$/.test(payload);
-    logger.debug(`payload validation result: ${result}`);
-    return result;
+    try {
+      logger.info('Validating payload...');
+      // Implement specific validation logic for your payload format
+      // This is a basic example; adjust based on your actual payload structure
+      const result = /^[A-Za-z0-9]{30,100}$/.test(payload);
+      logger.debug(`payload validation result: ${result}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error validating payload: ${error.message}`);
+      return false;
+    }
   }
 
   _isValidFile(file) {
-    logger.info('Validating file...');
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    try {
+      logger.info('Validating file...');
+      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+      const maxSize = 5 * 1024 * 1024; // 5MB
 
-    const fileExtension = path.extname(file.originalname).toLowerCase();
+      const fileExtension = path.extname(file.originalname).toLowerCase();
 
-    logger.debug(`fileExtension: ${fileExtension}, fileSize: ${file.size}, maxSize: ${maxSize}`);
-    const result = allowedExtensions.includes(fileExtension) && file.size <= maxSize;
-    logger.debug(`file validation result: ${result}`);
-    return result;
+      logger.debug(`fileExtension: ${fileExtension}, fileSize: ${file.size}, maxSize: ${maxSize}`);
+      const result = allowedExtensions.includes(fileExtension) && file.size <= maxSize;
+      logger.debug(`file validation result: ${result}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error validating file: ${error.message}`);
+      return false;
+    }
   }
 
   _isValidBase64Image(base64String) {
-    logger.info('Validating base64 image string...');
-    logger.debug(`base64String: ${base64String.substring(0, 50)}...[truncated]`);
+    try {
+      logger.info('Validating base64 image string...');
+      logger.debug(`base64String: ${base64String.substring(0, 50)}...[truncated]`);
 
-    // Ensure the string has both parts: data:image/jpeg;base64,...
-    const parts = base64String.split(',');
-    if (parts.length !== 2) {
-      logger.warn('Invalid base64 format: missing parts');
+      // Ensure the string has both parts: data:image/jpeg;base64,...
+      const parts = base64String.split(',');
+      if (parts.length !== 2) {
+        logger.warn('Invalid base64 format: missing parts');
+        return false;
+      }
+
+      const mimeType = parts[0].split(';')[0].split(':')[1];
+      const base64Data = parts[1];
+
+      // Check if the data is valid base64
+      if (!validator.isBase64(base64Data)) {
+        logger.warn('Invalid base64 string');
+        return false;
+      }
+
+      // Check if it has a valid image MIME type
+      logger.debug(`mimeType: ${mimeType}`);
+      const result = ['image/jpeg', 'image/png', 'image/gif'].includes(mimeType);
+      logger.debug(`base64 image validation result: ${result}`);
+      return result;
+    } catch (error) {
+      logger.error(`Error validating base64 image: ${error.message}`);
       return false;
     }
-
-    const mimeType = parts[0].split(';')[0].split(':')[1];
-    const base64Data = parts[1];
-
-    // Check if the data is valid base64
-    if (!validator.isBase64(base64Data)) {
-      logger.warn('Invalid base64 string');
-      return false;
-    }
-
-    // Check if it has a valid image MIME type
-    logger.debug(`mimeType: ${mimeType}`);
-    const result = ['image/jpeg', 'image/png', 'image/gif'].includes(mimeType);
-    logger.debug(`base64 image validation result: ${result}`);
-    return result;
   }
 
 
@@ -261,39 +284,47 @@ class ApiController {
     logger.info("Processing unified slip verification request");
     try {
       let result;
+      logger.debug(`req.query: ${req.query}`);
+      logger.debug(`req.file: ${JSON.stringify(req.file)}`);
+      logger.debug(`req.body: ${JSON.stringify(req.body)}`);
 
       // Validate and sanitize query parameters
       const sanitizedQuery = this._sanitizeObject(req.query);
+      logger.debug(`sanitizedQuery: ${JSON.stringify(sanitizedQuery)}`);
 
       if (sanitizedQuery.payload) {
         // Validate payload
         if (!this._isValidPayload(sanitizedQuery.payload)) {
-          throw MyAppErrors.badRequest("Invalid payload format");
+          throw MyAppErrors.badRequest("The provided payload format is invalid.");
         }
-        logger.debug(`payload: ${req.query.payload.substring(0, 50)}...[truncated]`);
+        logger.debug(`payload: ${sanitizedQuery.payload.substring(0, 50)}...[truncated]`);
         result = await this.extractSlipDataByPayload(sanitizedQuery.payload);
       } else if (req.file) {
         // Validate file
         if (!this._isValidFile(req.file)) {
-          throw MyAppErrors.badRequest("Invalid file type or size");
+          throw MyAppErrors.badRequest("The uploaded file is invalid or exceeds the size limit.");
         }
         logger.debug(`file: { filename: ${req.file.originalname}, size: ${req.file.size} } `);
         result = await this.extractSlipDataByFile(req.file);
-      } else if (req.body.base64Image) {
+      } else if (req.body && req.body.base64Image) {
         // Validate base64 image
         if (!this._isValidBase64Image(req.body.base64Image)) {
-          throw MyAppErrors.badRequest("Invalid base64 image format");
+          throw MyAppErrors.badRequest("The provided base64 image format is invalid.");
         }
         logger.debug(`base64Image: ${req.body.base64Image.substring(0, 50)}...[truncated]`);
         result = await this.extractSlipDataByBase64(req.body.base64Image);
       } else {
-        throw MyAppErrors.badRequest("Invalid input: Payload, file, or base64 image required");
+        throw MyAppErrors.badRequest("At least one of the following is required: payload, file, or base64 image.");
+      }
+
+      if (!result) {
+        throw MyAppErrors.badRequest("Failed to verify slip");
       }
 
       req.formattedResponse = formatResponse(200, result.message, result.data);
       next();
     } catch (error) {
-      logger.error("Error processing unified slip verification:", error.message);
+      logger.error("Error processing unified slip verification:", error);
       next(error);
     }
   }
@@ -342,6 +373,7 @@ class ApiController {
     if (!file) {
       throw MyAppErrors.badRequest("No file provided");
     }
+    logger.debug(`file: ${JSON.stringify(file, null, 2)}`);
 
     const isQuotaAvailable = await this._checkQuotaAvailability();
     if (!isQuotaAvailable) {

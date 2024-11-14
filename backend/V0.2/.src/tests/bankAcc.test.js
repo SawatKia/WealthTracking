@@ -384,54 +384,42 @@ const newBankAccount = [
 ];
 
 beforeAll(async () => {
-    await pgClient.init(); // This will check and create tables
-    // Ensure pgClient is initialized before running tests
+    await pgClient.init(); // Initialize PgClient
+    logger.debug(`Database connected: ${pgClient.isConnected()}`);
+
+    const fi = new FiModel();
+    await fi.initializeData();
+    logger.info('Financial institution data initialized');
+
+    // Add mock user
+    const userModel = new UserModel();
+    logger.info('UserModel initialized, creating mock user');
+    const mockUser = {
+        national_id: '1234567890123',
+        email: 'V2yF3@example.com',
+        username: 'test_user',
+        role: 'user',
+        password: 'testPassword123', // Add a password
+        date_of_birth: '1990-01-01', // Add a date of birth
+        member_since: new Date().toISOString()
+    };
     try {
-        await pgClient.query('SELECT 1');
-        logger.info('PostgreSQL connection is ready');
-
-        const fi = new FiModel();
-        await fi.initializeData();
-        logger.info('Financial institution data initialized');
-
-        // Add mock user
-        const userModel = new UserModel();
-        logger.info('UserModel initialized, creating mock user');
-        const mockUser = {
-            national_id: '1234567890123',
-            email: 'V2yF3@example.com',
-            username: 'test_user',
-            role: 'user',
-            password: 'testPassword123', // Add a password
-            date_of_birth: '1990-01-01', // Add a date of birth
-            member_since: new Date().toISOString()
-        };
-        try {
-            await userModel.createUser(mockUser);
-            logger.info('Mock user created');
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                logger.warn(`Validation error while creating mock user: ${error.message}`);
-            } else {
-                logger.error(`Error creating mock user: ${error.message}`);
-                throw error;
-            }
-        }
+        await userModel.createUser(mockUser);
+        logger.info('Mock user created');
     } catch (error) {
-        logger.error('Failed to initialize test environment:', error);
-        throw new Error('Test environment initialization failed');
+        if (error instanceof ValidationError) {
+            logger.warn(`Validation error while creating mock user: ${error.message}`);
+        } else {
+            logger.error(`Error creating mock user: ${error.message}`);
+            throw error;
+        }
     }
-    logger.info('Test environment initialized');
 });
 
 afterAll(async () => {
-    try {
-        await pgClient.end();
-        logger.info('PostgreSQL connection closed');
-    } catch (error) {
-        logger.error('Error closing PostgreSQL connection:', error);
-    }
-}, 120000); // Increase timeout to 30 seconds
+    await pgClient.release(); // Release the PgClient
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+});
 
 describe('Bank Account Creation', () => {
     newBankAccount.forEach((testCase, index) => {

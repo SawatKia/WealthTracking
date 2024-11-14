@@ -62,6 +62,77 @@ paths:
                 message: "You are connected to the /api/v0.2/"
                 data: null
 
+  /users/check:
+    post:
+      tags:
+        - "User"
+      summary: Check user password (Development Mode Only)
+      description: Validates user's email and password.
+      requestBody:
+        description: User login data.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: User's password.
+                  example: "securePassword123"
+      responses:
+        "200":
+          description: Password check successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password check successful"
+                  data:
+                    type: boolean
+                    example: true
+        "400":
+          description: Bad request due to missing required fields or invalid email address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
+        "401":
+          description: Unauthorized due to incorrect password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+
   /users:
     post:
       tags:
@@ -164,94 +235,13 @@ paths:
                   message:
                     type: string
                     example: "national_id or email are already taken"
-
-  /users/check:
-    post:
-      tags:
-        - "User"
-      summary: Check user password (Development Mode Only)
-      description: Validates user's email and password.
-      requestBody:
-        description: User login data.
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                  description: User's email address.
-                  example: "johndoe@example.com"
-                password:
-                  type: string
-                  format: password
-                  description: User's password.
-                  example: "securePassword123"
-      responses:
-        "200":
-          description: Password check successful.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: "Password check successful"
-                  data:
-                    type: boolean
-                    example: true
-        "400":
-          description: Bad request due to missing required fields or invalid email address.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
-                    type: string
-                    example: "Missing required field: email"
-        "401":
-          description: Unauthorized due to incorrect password.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 401
-                  message:
-                    type: string
-                    example: "Invalid email or password"
-
-  /users/{national_id}:
     get:
       tags:
         - "User"
-      summary: Get user by National ID (NOT Implemented)
-      description: Retrieves user information based on National ID.
+      summary: Get current user from cookie
+      description: Retrieves user information based on cookie.
       security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: national_id
-          schema:
-            type: string
-            length: 13
-          required: true
-          description: National ID of the user.
+        - cookieAuth: []
       responses:
         "200":
           description: User retrieved successfully.
@@ -272,39 +262,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
+      security:
+        - cookieAuth: []
       tags:
         - "User"
-      summary: Update user by National ID (NOT Implemented)
-      description: Updates user information.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: national_id
-          schema:
-            type: string
-            length: 13
-          required: true
-          description: National ID of the user.
+      summary: Update user information
+      description: Update authenticated user's information
       requestBody:
         description: Fields to update.
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
-                username:
+                password:
                   type: string
-                  description: New username.
+                  description: Current password for verification
+                  required: true
+                  example: "securePassword123"
+                newPassword:
+                  type: string
+                  description: New password (optional)
+                  example: "newSecurePassword123"
+                newConfirmPassword:
+                  type: string
+                  description: Confirm new password
+                  example: "newSecurePassword123"
                 email:
                   type: string
                   format: email
-                  description: New email address.
-                password:
+                  example: "newEmail@example.com"
+                username:
                   type: string
-                  format: password
-                  description: New password.
+                  example: "newUsername"
+                date_of_birth:
+                  type: string
+                  format: date
+                  example: "1990-01-01"
+                profilePicture:
+                  type: string
+                  format: binary
+                  description: Profile picture file
       responses:
         "200":
           description: User updated successfully.
@@ -327,42 +326,76 @@ paths:
     delete:
       tags:
         - "User"
-      summary: Delete user by National ID (NOT Implemented)
-      description: Deletes a user from the system.
+      summary: Delete current user
+      description: Deletes the current authenticated user. Requires current password for verification.
       security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: national_id
-          schema:
-            type: string
-            length: 13
-          required: true
-          description: National ID of the user.
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: Current password for verification
+                  example: "securePassword123"
       responses:
-        "204":
-          description: User deleted successfully. No content returned.
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "User deleted successfully"
+                data: null
         "400":
-          description: Bad request due to invalid National ID.
+          description: Bad request due to missing password
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 400
+                message: "Missing required field: password"
+                data: null
+        "401":
+          description: Unauthorized due to incorrect password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 401
+                message: "Invalid username or password"
+                data: null
         "404":
-          description: User not found.
+          description: User not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 404
+                message: "User not found"
+                data: null
 
   /slip/verify:
     post:
       summary: Verify slip data
       tags:
         - Slip
-      description: Verifies slip data using payload, image file, or base64 encoded image.
+      description: |
+        Verifies slip data using payload, image file, **or** base64 encoded image. 
+        You can test by sending any preferred format which does not need to be correct slip file format.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -380,42 +413,9 @@ paths:
                 base64Image:
                   type: string
                   description: Base64 encoded image of the slip
-      # parameters:
-      #   - in: query
-      #     name: payload
-      #     schema:
-      #       type: string
-      #     description: QR code payload data
-      responses:
-        "200":
-          description: Successful verification
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SlipDataResponse"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    get:
-      summary: Verify slip data (GET method)
-      tags:
-        - Slip
-      security:
-        - bearerAuth: []
-      description: Verifies slip data using payload in query parameter.
       parameters:
         - in: query
           name: payload
-          required: true
           schema:
             type: string
           description: QR code payload data
@@ -445,7 +445,7 @@ paths:
       tags:
         - Slip
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful response
@@ -467,7 +467,7 @@ paths:
       summary: Create a new bank account
       description: Creates a new bank account for the authenticated user.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -493,7 +493,7 @@ paths:
       summary: Get all bank accounts
       description: Retrieves all bank accounts for the authenticated user.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of bank accounts
@@ -511,7 +511,7 @@ paths:
       summary: Get a specific bank account
       description: Retrieves a specific bank account by account number and financial institution code.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: account_number
@@ -544,7 +544,7 @@ paths:
       summary: Get all financial institutions (Development Mode Only)
       description: Retrieves a list of all financial institutions.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of financial institutions
@@ -562,7 +562,7 @@ paths:
       summary: Get operating Thai commercial banks
       description: Retrieves a list of operating Thai commercial banks.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Successful retrieval of operating Thai commercial banks
@@ -582,7 +582,7 @@ paths:
       summary: Get a specific financial institution (Development Mode Only)
       description: Retrieves a specific financial institution by its code.
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - in: path
           name: fi_code
@@ -602,12 +602,197 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Login user
+      description: Authenticates user and returns JWT tokens in cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /refresh:
+    post:
+      tags:
+        - "Authentication"
+      summary: Refresh access token
+      description: Uses refresh token to generate new access and refresh tokens
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Tokens refreshed successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags:
+        - "Authentication"
+      summary: Logout user
+      description: Invalidates the current refresh token and clears authentication cookies
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged out successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /google/login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Initiate Google OAuth login
+      description: Generates a Google OAuth URL for login or registration
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [login, register]
+          description: Specifies whether the user wants to login or register
+      responses:
+        200:
+          description: Successfully generated Google OAuth URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: redirect to this URL to login with Google
+                  data:
+                    type: string
+                    example: https://accounts.google.com/o/oauth2/v2/auth?...
+        # "302":
+        #   description: Redirect to Google OAuth consent screen
+        #   headers:
+        #     Location:
+        #       schema:
+        #         type: string
+        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+        400:
+          description: Missing or invalid action parameter
+        500:
+          description: Internal server error
+
+  /google/callback:
+    get:
+      tags:
+        - "Authentication"
+      summary: Google OAuth callback
+      description: Handles the OAuth callback from Google
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code from Google
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in with Google"
+                data:
+                  email: "user@example.com"
+                  name: "John Doe"
+                  picture: "https://..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    # bearerAuth:
+    #   type: http
+    #   scheme: bearer
+    #   bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  headers:
+    SetCookieAuth:
+      description: Authentication cookies
+      schema:
+        type: object
+        properties:
+          access_token:
+            type: string
+            description: JWT access token cookie
+            example: "access_token=xyz...; HttpOnly; Secure; SameSite=Strict"
+          refresh_token:
+            type: string
+            description: JWT refresh token cookie
+            example: "refresh_token=abc...; HttpOnly; Secure; SameSite=Strict"
 
   schemas:
     User:
@@ -1092,6 +1277,9 @@ components:
 
     Unauthorized:
       description: Unauthorized
+      headers:
+        Set-Cookie:
+          $ref: "#/components/headers/SetCookieAuth"
       content:
         application/json:
           schema:

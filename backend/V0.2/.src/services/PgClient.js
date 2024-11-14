@@ -83,10 +83,11 @@ class PgClient {
   }
 
   async query(sql, params) {
+    logger.info('received query request');
     if (!this.client) await this.init();
-    logger.debug(
-      `Executing Query: ${sql}, with params: ${JSON.stringify(params)}`
-    );
+    logger.debug(`sql: ${sql}`);
+    logger.debug(`params: ${JSON.stringify(params)}`);
+    logger.info('querying...');
     return this.client.query(sql, params);
   }
 
@@ -167,6 +168,7 @@ class PgClient {
       "transactions",
       "transaction_bank_account_relations",
       "api_request_limits",
+      "used_refresh_tokens"
     ];
     for (const table of tables) {
       try {
@@ -185,16 +187,21 @@ class PgClient {
 
   async createTableIfNotExist(tableName) {
     const createTableQuery = {
-      //TODO -  add DoB to users table
       users: `CREATE TABLE IF NOT EXISTS users (
-              national_id CHAR(13) PRIMARY KEY,
+              national_id VARCHAR(255) PRIMARY KEY,
               email VARCHAR(255) NOT NULL,
               username VARCHAR(50) NOT NULL,
-              hashed_password VARCHAR(255) NOT NULL,
+              hashed_password VARCHAR(255),
               role VARCHAR(20) NOT NULL,
               member_since TIMESTAMP NOT NULL,
-              date_of_birth DATE,  -- New DoB field
-              CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
+              date_of_birth DATE,
+              auth_service VARCHAR(20) DEFAULT 'local',
+              profile_picture_uri VARCHAR(255),
+              CONSTRAINT check_auth_service CHECK (auth_service IN ('local', 'google', 'facebook', 'apple')),
+              CONSTRAINT check_password_requirement CHECK (
+                  (auth_service = 'local' AND hashed_password IS NOT NULL) OR 
+                  (auth_service != 'local')
+              )
           );`,
       financial_institutions: `CREATE TABLE IF NOT EXISTS financial_institutions (
                 fi_code VARCHAR(20) PRIMARY KEY,
@@ -209,8 +216,10 @@ class PgClient {
                 account_name VARCHAR(100) NOT NULL,
                 balance DECIMAL(15, 2) NOT NULL,
                 PRIMARY KEY (account_number, fi_code),
-                FOREIGN KEY (national_id) REFERENCES users(national_id),
-                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) ON UPDATE CASCADE ON DELETE CASCADE
+                FOREIGN KEY (national_id) REFERENCES users(national_id) 
+                    ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
             );`,
       debts: `CREATE TABLE IF NOT EXISTS debts (
                 debt_number VARCHAR(50) NOT NULL,
@@ -223,8 +232,10 @@ class PgClient {
                 loan_principle DECIMAL(15, 2) NOT NULL,
                 loan_balance DECIMAL(15, 2) NOT NULL,
                 PRIMARY KEY (debt_number, fi_code),
-                FOREIGN KEY (national_id) REFERENCES users(national_id),
-                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) ON UPDATE CASCADE ON DELETE CASCADE
+                FOREIGN KEY (national_id) REFERENCES users(national_id)
+                    ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
             );`,
       transactions: `CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id SERIAL PRIMARY KEY,
@@ -236,8 +247,10 @@ class PgClient {
                 national_id CHAR(13) NOT NULL,
                 debt_number VARCHAR(50),
                 fi_code VARCHAR(20),
-                FOREIGN KEY (national_id) REFERENCES users(national_id),
-                FOREIGN KEY (debt_number, fi_code) REFERENCES debts(debt_number, fi_code) ON UPDATE CASCADE ON DELETE CASCADE
+                FOREIGN KEY (national_id) REFERENCES users(national_id)
+                    ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY (debt_number, fi_code) REFERENCES debts(debt_number, fi_code) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
             );`,
       transaction_bank_account_relations: `CREATE TABLE IF NOT EXISTS transaction_bank_account_relations (
                 transaction_id INT NOT NULL,
@@ -245,8 +258,10 @@ class PgClient {
                 fi_code VARCHAR(20) NOT NULL,
                 role VARCHAR(20) NOT NULL,
                 PRIMARY KEY (account_number, fi_code, transaction_id),
-                FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) ON UPDATE CASCADE ON DELETE CASCADE,
-                FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON UPDATE CASCADE ON DELETE SET NULL
+                FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) 
+                    ON UPDATE CASCADE ON DELETE CASCADE,
+                FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) 
+                    ON UPDATE CASCADE ON DELETE CASCADE
             );`,
       api_request_limits: `CREATE TABLE IF NOT EXISTS api_request_limits (
                 service_name VARCHAR(255) NOT NULL,
@@ -254,6 +269,11 @@ class PgClient {
                 request_count INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (service_name, request_date)
             );`,
+      used_refresh_tokens: `CREATE TABLE IF NOT EXISTS used_refresh_tokens (
+                jti TEXT PRIMARY KEY,
+                created_at TIMESTAMP NOT NULL,
+                expires_at TIMESTAMP NOT NULL
+      );`,
     }[tableName];
 
     if (!createTableQuery)
@@ -261,8 +281,22 @@ class PgClient {
 
     logger.info(`Creating table ${tableName} if not exist...`);
     try {
-      await this.client.query(createTableQuery);
-      logger.debug(`Table ${tableName} created`);
+      // Check if table exists
+      const tableExistsQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `;
+      const { rows } = await this.client.query(tableExistsQuery, [tableName]);
+
+      if (!rows[0].exists) {
+        await this.client.query(createTableQuery);
+        logger.debug(`Table ${tableName} created`);
+      } else {
+        logger.debug(`Table ${tableName} already exists`);
+      }
     } catch (error) {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
       throw error;

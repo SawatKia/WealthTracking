@@ -21,7 +21,7 @@ class FinancialInstitutionController extends BaseController {
         logger.info(`getAllFinancialInstitutions`);
         try {
             const institutions = await this.model.findAll();
-            req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully', institutions);
+            req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', institutions);
             next();
         } catch (error) {
             logger.error(`Failed to fetch financial institutions: ${error.message}`);
@@ -35,7 +35,7 @@ class FinancialInstitutionController extends BaseController {
             const { fi_code } = req.params;
             const institution = await this.model.findOne({ fi_code });
             if (institution) {
-                req.formattedResponse = Utils.formatResponse(200, 'Financial institution fetched successfully', institution);
+                req.formattedResponse = Utils.formatResponse(200, 'Financial institution fetched successfully. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', institution);
             } else {
                 throw MyAppErrors.notFound('Financial institution not found');
             }
@@ -60,7 +60,7 @@ class FinancialInstitutionController extends BaseController {
             logger.debug('Operating commercial banks:', JSON.stringify(institutions, null, 2));
 
             if (institutions.length > 0) {
-                req.formattedResponse = Utils.formatResponse(200, 'Operating Thai commercial banks fetched successfully', institutions);
+                req.formattedResponse = Utils.formatResponse(200, 'Operating Thai commercial banks fetched successfully. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', institutions);
             } else {
                 throw MyAppErrors.notFound('No operating Thai commercial banks found');
             }

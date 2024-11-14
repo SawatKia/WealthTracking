@@ -422,7 +422,7 @@ const checkPassBody = [
     body: { email: "testii@example.com", password: "Password123!" },
     expected: {
       status: 200,
-      message: "Password check successful",
+      message: "Password check successful. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.",
       data: true,
     }
   }, //success
@@ -450,17 +450,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  try {
-    // Clean up the database after all tests
-    logger.info("Dropping tables");
-    await pgClient.end();
-    logger.info("Database connection closed successfully");
-  } catch (error) {
-    logger.error("Error during database cleanup:", error);
-  } finally {
-    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-  }
-}, 120000); // Increase timeout to 30 seconds
+  await pgClient.release();
+  logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+});
 
 describe("Users Endpoints", () => {
   describe("connection to api", () => {

@@ -37,6 +37,11 @@
                 <label for="userFlow_check"><span class="verified-text">code verified</span></label>
             </li>
             <li>
+                <a href="#Simpilyfy">Simpilyfy</a>
+                <input type="checkbox" id="Simpilyfy_check">
+                <label for="Simpilyfy_check"><span class="verified-text">code verified</span></label>
+            </li>
+            <li>
                 <a href="#ERD">ERD</a>
                 <input type="checkbox" id="ERD_check">
                 <label for="ERD_check"><span class="verified-text">code verified</span></label>
@@ -215,6 +220,17 @@
                         onclick='saveDiagram("highLevel", "userFlowDiagram")'>Download</button>
                     <div class="mermaid" id="userFlowDiagram">
                         <div class="skeleton-loader" id="loadingUserFlow"> loading diagram...</div>
+                    </div>
+                </div>
+            </div>
+            <div id="Simpilyfy">
+                <h3>Simpilyfy</h3>
+                <div class="diagram-container">
+                    <button class="reset-zoom">Reset Zoom</button>
+                    <button class="download-diagram"
+                        onclick='saveDiagram("highLevel", "SimpilyfyDiagram")'>Download</button>
+                    <div class="mermaid" id="SimpilyfyDiagram">
+                        <div class="skeleton-loader" id="loadingSimpilyfy"> loading diagram...</div>
                     </div>
                 </div>
             </div>
