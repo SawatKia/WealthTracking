@@ -192,3 +192,30 @@ there are 2 options to debug your code
   - `/A` option tells the tree command to use ASCII characters instead of extended characters. This will produce output using "|" and "+" symbols
   - `> backend_structure.txt`: Redirects the output to a text file named "backend_structure.txt"
 - to undo the lastest git local commit use this command `git reset --soft HEAD~1`
+
+
+# Update Change Fronted to React Native
+### Guide to Run the Project
+1. Check the Project Folder Path
+The project folder is located at this path
+  `cd .\frontend\V2.0`
+
+2. Run the Web Version 
+Open a terminal in the project folder and run the following command to start the Expo development server:
+  `npx expo start`
+-After running the command, the terminal will display a QR code and some instructions.
+- To view the web version, press w on your keyboard. This will open the project in a browser.
+
+- You can also refer to this guide for creating your first app with Expo:  
+[Expo - Create Your First App](https://docs.expo.dev/tutorial/create-your-first-app/)
+
+3. Run the App on Your Phone (Optional)
+- Download the Expo Go app on your phone from App Store or Google Play:
+
+- Sign in to Expo Go:
+  Open the Expo Go app and sign in with your Expo account (if you don’t have one, create it).
+
+- Scan the QR Code:
+After you run npx expo start in the terminal, you will see a QR code.
+Open the camera on your phone and scan the QR code that appears in the terminal.
+- Once scanned, Expo Go will automatically open and load the app you’re developing.
