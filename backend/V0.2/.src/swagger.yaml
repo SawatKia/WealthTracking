@@ -7,6 +7,7 @@ servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
 paths:
+  # Connection/Health Check Endpoints
   /api:
     get:
       tags:
@@ -62,14 +63,14 @@ paths:
                 message: "You are connected to the /api/v0.2/"
                 data: null
 
-  /users/check:
+  # Authentication Endpoints
+  /login:
     post:
       tags:
-        - "User"
-      summary: Check user password (Development Mode Only)
-      description: Validates user's email and password.
+        - "Authentication"
+      summary: Login user
+      description: Authenticates user and returns JWT tokens in cookies
       requestBody:
-        description: User login data.
         required: true
         content:
           application/json:
@@ -82,57 +83,154 @@ paths:
                 email:
                   type: string
                   format: email
-                  description: User's email address.
                   example: "johndoe@example.com"
                 password:
                   type: string
                   format: password
-                  description: User's password.
                   example: "securePassword123"
       responses:
         "200":
-          description: Password check successful.
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /refresh:
+    post:
+      tags:
+        - "Authentication"
+      summary: Refresh access token
+      description: Uses refresh token to generate new access and refresh tokens
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Tokens refreshed successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags:
+        - "Authentication"
+      summary: Logout user
+      description: Invalidates the current refresh token and clears authentication cookies
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged out successfully"
+                data: null
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /google/login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Initiate Google OAuth login
+      description: Generates a Google OAuth URL for login or registration
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [login, register]
+          description: Specifies whether the user wants to login or register
+      responses:
+        200:
+          description: Successfully generated Google OAuth URL
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status_code:
+                  status:
                     type: integer
                     example: 200
                   message:
                     type: string
-                    example: "Password check successful"
+                    example: redirect to this URL to login with Google
                   data:
-                    type: boolean
-                    example: true
-        "400":
-          description: Bad request due to missing required fields or invalid email address.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
                     type: string
-                    example: "Missing required field: email"
-        "401":
-          description: Unauthorized due to incorrect password.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 401
-                  message:
-                    type: string
-                    example: "Invalid email or password"
+                    example: https://accounts.google.com/o/oauth2/v2/auth?...
+        # "302":
+        #   description: Redirect to Google OAuth consent screen
+        #   headers:
+        #     Location:
+        #       schema:
+        #         type: string
+        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+        400:
+          description: Missing or invalid action parameter
+        500:
+          description: Internal server error
 
+  /google/callback:
+    get:
+      tags:
+        - "Authentication"
+      summary: Google OAuth callback
+      description: Handles the OAuth callback from Google
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code from Google
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in with Google"
+                data:
+                  email: "user@example.com"
+                  name: "John Doe"
+                  picture: "https://..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # User Management Endpoints
   /users:
     post:
       tags:
@@ -386,80 +484,78 @@ paths:
                 message: "User not found"
                 data: null
 
-  /slip/verify:
+  /users/check:
     post:
-      summary: Verify slip data
       tags:
-        - Slip
-      description: |
-        Verifies slip data using payload, image file, **or** base64 encoded image. 
-        You can test by sending any preferred format which does not need to be correct slip file format.
-      security:
-        - cookieAuth: []
+        - "User"
+      summary: Check user password (Development Mode Only)
+      description: Validates user's email and password.
       requestBody:
+        description: User login data.
+        required: true
         content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                imageFile:
-                  type: string
-                  format: binary
-                  description: Image file of the slip
           application/json:
             schema:
               type: object
+              required:
+                - email
+                - password
               properties:
-                base64Image:
+                email:
                   type: string
-                  description: Base64 encoded image of the slip
-      parameters:
-        - in: query
-          name: payload
-          schema:
-            type: string
-          description: QR code payload data
+                  format: email
+                  description: User's email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: User's password.
+                  example: "securePassword123"
       responses:
         "200":
-          description: Successful verification
+          description: Password check successful.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SlipDataResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password check successful"
+                  data:
+                    type: boolean
+                    example: true
         "400":
-          description: Bad request
+          description: Bad request due to missing required fields or invalid email address.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Too many requests
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
+        "401":
+          description: Unauthorized due to incorrect password.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
 
-  /slip/quota:
-    get:
-      summary: Get quota information
-      tags:
-        - Slip
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QuotaResponse"
-        "503":
-          description: Service unavailable
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+  # Bank Account Endpoints
   /banks:
     post:
       tags:
@@ -537,6 +633,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # Financial Institution Endpoints
   /fis:
     get:
       tags:
@@ -602,171 +699,82 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /login:
+  # Slip Management Endpoints
+  /slip/verify:
     post:
+      summary: Verify slip data
       tags:
-        - "Authentication"
-      summary: Login user
-      description: Authenticates user and returns JWT tokens in cookies
+        - Slip
+      description: |
+        Verifies slip data using payload, image file, **or** base64 encoded image. 
+        You can test by sending any preferred format which does not need to be valid slip file format.
+      security:
+        - cookieAuth: []
       requestBody:
-        required: true
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imageFile:
+                  type: string
+                  format: binary
+                  description: Image file of the slip
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - password
               properties:
-                email:
+                base64Image:
                   type: string
-                  format: email
-                  example: "johndoe@example.com"
-                password:
-                  type: string
-                  format: password
-                  example: "securePassword123"
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /refresh:
-    post:
-      tags:
-        - "Authentication"
-      summary: Refresh access token
-      description: Uses refresh token to generate new access and refresh tokens
-      responses:
-        "200":
-          description: Tokens refreshed successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Tokens refreshed successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /logout:
-    post:
-      tags:
-        - "Authentication"
-      summary: Logout user
-      description: Invalidates the current refresh token and clears authentication cookies
-      responses:
-        "200":
-          description: Logout successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged out successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /google/login:
-    post:
-      tags:
-        - "Authentication"
-      summary: Initiate Google OAuth login
-      description: Generates a Google OAuth URL for login or registration
+                  description: Base64 encoded image of the slip
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAQABADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AP/2Q=="
       parameters:
         - in: query
-          name: action
-          required: true
+          name: payload
           schema:
             type: string
-            enum: [login, register]
-          description: Specifies whether the user wants to login or register
+          description: QR code payload data
+          example: "00000000000000000000000000000000000000000000000000000000000"
       responses:
-        200:
-          description: Successfully generated Google OAuth URL
+        "200":
+          description: Successful verification
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: redirect to this URL to login with Google
-                  data:
-                    type: string
-                    example: https://accounts.google.com/o/oauth2/v2/auth?...
-        # "302":
-        #   description: Redirect to Google OAuth consent screen
-        #   headers:
-        #     Location:
-        #       schema:
-        #         type: string
-        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
-        400:
-          description: Missing or invalid action parameter
-        500:
-          description: Internal server error
+                $ref: "#/components/schemas/SlipDataResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /google/callback:
+  /slip/quota:
     get:
+      summary: Get quota information
       tags:
-        - "Authentication"
-      summary: Google OAuth callback
-      description: Handles the OAuth callback from Google
-      parameters:
-        - in: query
-          name: code
-          schema:
-            type: string
-          required: true
-          description: Authorization code from Google
+        - Slip
+      security:
+        - cookieAuth: []
       responses:
         "200":
-          description: Login successful
+          description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in with Google"
-                data:
-                  email: "user@example.com"
-                  name: "John Doe"
-                  picture: "https://..."
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                $ref: "#/components/schemas/QuotaResponse"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   securitySchemes:
@@ -1058,7 +1066,7 @@ components:
       required:
         - bankAccountName
         - bankAccountDisplayName
-        - bankName
+        - fiCode
         - bankAccountNumber
         - balance
       properties:
@@ -1068,9 +1076,11 @@ components:
         bankAccountDisplayName:
           type: string
           example: "Savings"
-        bankName:
+        fiCode:
           type: string
-          example: "Example Bank"
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
         bankAccountNumber:
           type: string
           example: "1234567890"
@@ -1103,9 +1113,11 @@ components:
         bankAccountDisplayName:
           type: string
           example: "Savings"
-        bankName:
+        fiCode:
           type: string
-          example: "Example Bank"
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
         bankAccountNumber:
           type: string
           example: "1234567890"
@@ -1131,47 +1143,116 @@ components:
     DebtInput:
       type: object
       required:
-        - debtName
-        - amount
-        - interestRate
-        - startDate
-        - endDate
+        - debt_number
+        - fi_code
+        - debt_name
+        - start_date
+        - total_installments
+        - loan_principle
+        - loan_balance
       properties:
-        debtName:
+        debt_number:
           type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
           example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtUpdateInput:
       type: object
       properties:
-        amount:
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 13
+        loan_balance:
           type: number
-          format: float
-          example: 18000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.0
-        endDate:
+          format: decimal
+          minimum: 0
+          example: 780000.00
+
+    Debt:
+      type: object
+      required:
+        - debt_number
+        - fi_code
+        - national_id
+        - debt_name
+        - start_date
+        - current_installment
+        - total_installments
+        - loan_principle
+        - loan_balance
+      properties:
+        debt_number:
+          type: string
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        national_id:
+          type: string
+          description: "13-digit national ID"
+          example: "1234567890123"
+          pattern: "^[0-9]{13}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
-          example: "2027-01-01"
+          example: "2023-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtResponse:
       type: object
@@ -1184,32 +1265,6 @@ components:
           example: "Debt retrieved successfully"
         data:
           $ref: "#/components/schemas/Debt"
-
-    Debt:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "def456"
-        debtName:
-          type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
-          type: string
-          format: date
-          example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
 
     DebtsListResponse:
       type: object
@@ -1227,16 +1282,22 @@ components:
 
     FinancialInstitution:
       type: object
+      required:
+        - fi_code
       properties:
         fi_code:
           type: string
-          example: "KBANK"
-        name:
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        name_th:
           type: string
-          example: "Kasikornbank"
-        short_name:
+          description: "Thai bank name"
+          example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+        name_en:
           type: string
-          example: "KBank"
+          description: "English bank name"
+          example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
 
     FinancialInstitutionResponse:
       type: object
@@ -1263,6 +1324,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FinancialInstitution"
+          example:
+            - fi_code: "002"
+              name_th: "ธนาคารกรุงเทพ จำกัด (มหาชน)"
+              name_en: "BANGKOK BANK PUBLIC COMPANY LTD."
+            - fi_code: "004"
+              name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+              name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+            - fi_code: "006"
+              name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
+              name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
+            - fi_code: "014"
+              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหาชน)"
+              name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
 
   responses:
     BadRequest:
