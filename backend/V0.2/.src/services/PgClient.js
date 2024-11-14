@@ -85,7 +85,8 @@ class PgClient {
   async query(sql, params) {
     logger.info('received query request');
     if (!this.client) await this.init();
-    logger.debug(`sql: ${sql}\nparams: ${JSON.stringify(params)}`);
+    logger.debug(`sql: ${sql}`);
+    logger.debug(`params: ${JSON.stringify(params)}`);
     logger.info('querying...');
     return this.client.query(sql, params);
   }
