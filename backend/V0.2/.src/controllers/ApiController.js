@@ -317,6 +317,10 @@ class ApiController {
         throw MyAppErrors.badRequest("At least one of the following is required: payload, file, or base64 image.");
       }
 
+      if (!result) {
+        throw MyAppErrors.badRequest("Failed to verify slip");
+      }
+
       req.formattedResponse = formatResponse(200, result.message, result.data);
       next();
     } catch (error) {
@@ -369,6 +373,7 @@ class ApiController {
     if (!file) {
       throw MyAppErrors.badRequest("No file provided");
     }
+    logger.debug(`file: ${JSON.stringify(file, null, 2)}`);
 
     const isQuotaAvailable = await this._checkQuotaAvailability();
     if (!isQuotaAvailable) {
