@@ -1,13 +1,53 @@
-require('dotenv').config();
 const Utils = require('../utilities/Utils');
-const User = require('../models/UserModel');
+const MyAppErrors = require('../utilities/MyAppErrors');
+const UserModel = require('../models/UserModel');
 
-const { Logger, formatResponse } = Utils;
+const { Logger } = Utils;
 const logger = Logger('BaseController');
 
 class BaseController {
     constructor() {
-        this.UserModel = new User();
+        try {
+            this.userModel = new UserModel();
+            // Initialize userModel in constructor
+            logger.info('Initializing BaseController');
+
+            // Bind methods to preserve 'this' context
+            this.verifyField = this.verifyField.bind(this);
+            this.verifyOwnership = this.verifyOwnership.bind(this);
+            this.getCurrentUser = this.getCurrentUser.bind(this);
+            logger.info('BaseController initialized');
+        } catch (error) {
+            logger.error(`BaseController initialization failed: ${error.stack}`);
+            throw error;
+        }
+    }
+
+    async getCurrentUser(req) {
+        try {
+            logger.debug('getCurrentUser');
+            logger.debug(`req.user: ${JSON.stringify(req.user, null, 2)}`);
+
+            if (!req.user) {
+                throw MyAppErrors.unauthorized('Access token or refresh token not found');
+            }
+
+            const national_id = req.user.sub;
+            if (!national_id) {
+                throw MyAppErrors.unauthorized('decoded user national_id not found');
+            }
+            logger.debug(`decoded user national_id found: ${national_id}`);
+
+            const user = await this.userModel.findUser(national_id);
+            if (!user) {
+                throw MyAppErrors.notFound('User not found');
+            }
+            logger.debug(`user found: ${JSON.stringify(user, null, 2)}`);
+            return user;
+        } catch (error) {
+            logger.error(`Error getting current user national_id: ${error.message}`);
+            throw error;
+        }
     }
 
     /**
@@ -88,34 +128,6 @@ class BaseController {
 
         // If no model is provided, return the original body
         return body;
-    }
-
-    /**
-     * Retrieves the current user from the request.
-     * @param {Object} req - The request object
-     * @returns {Object} - The user object
-     * @throws {Error} - If the user is not found
-     */
-    async getCurrentUser(req) {
-        //TODO - get user from jwt
-        req.user = {
-            national_id: '1234567890123',
-            email: 'V2yF3@example.com',
-            username: 'test_user',
-            role: 'user',
-            memberSince: '2021-05-06T14:39:54.981Z',
-        }
-        if (!req.user) {
-            throw new Error('User not found');
-        }
-
-        // Check if the user exists in the database
-        const userExists = await this.UserModel.findOne({ national_id: req.user.national_id });
-        if (!userExists) {
-            throw new Error('User not found in the database');
-        }
-
-        return userExists;
     }
 
     verifyOwnership(user, resource) {
