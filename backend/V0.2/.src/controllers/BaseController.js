@@ -23,6 +23,11 @@ class BaseController {
         }
     }
 
+    /**
+     * Gets the current user from the request
+     * @param {Object} req - The request object
+     * @returns {Object} - The current user
+     */
     async getCurrentUser(req) {
         try {
             logger.debug('getCurrentUser');
