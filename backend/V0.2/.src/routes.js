@@ -37,9 +37,8 @@ if (NODE_ENV != 'test') {
 }
 const allowedMethods = {
     '/': ['GET'],
-    '/users': ['POST'],
+    '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
     '/users/check': ['POST'],
-    '/users/:national_id': ['GET', 'PATCH', 'DELETE'],
     '/banks': ['POST', 'GET'],
     '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -78,8 +77,11 @@ router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
+router.get('/users', mdw.authMiddleware, userController.getUser);
 router.post('/users', userController.registerUser);
 router.post('/users/check', userController.checkPassword);
+router.patch('/users', mdw.authMiddleware, mdw.conditionalProfilePictureUpload, userController.updateUser);
+router.delete('/users', mdw.authMiddleware, userController.deleteUser);
 //TODO - after this line every route should add middleware to verify token
 router.post('/banks', mdw.authMiddleware, bankAccountController.createBankAccount);
 router.get('/banks', mdw.authMiddleware, bankAccountController.getAllBankAccounts);
@@ -90,7 +92,7 @@ router.get('/fis/operating-banks', mdw.authMiddleware, fiController.getOperating
 router.get('/fi/:fi_code', mdw.authMiddleware, fiController.getFinancialInstitutionByCode);
 
 router.get('/slip/quota', mdw.authMiddleware, apiController.getQuotaInformation);
-router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalFileUpload, apiController.verifySlip);
+router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalSlipUpload, apiController.verifySlip);
 
 // Cache routes
 router.post('/cache', cacheController.set);
