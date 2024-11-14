@@ -312,7 +312,6 @@ class UserModel extends BaseModel {
                 logger.warn('User not found');
                 return null;
             }
-            delete user.national_id;
             delete user.hashed_password;
             delete user.role;
             delete user.auth_service;
@@ -338,6 +337,37 @@ class UserModel extends BaseModel {
         delete updatedUser.auth_service;
         logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
         return updatedUser;
+    }
+
+    async delete(primaryKeys) {
+        try {
+            logger.info('Deleting user');
+            logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys, null, 2)}`);
+
+            // Validate the national_id for delete operation
+            const validationResult = await super.validateSchema(
+                { national_id: primaryKeys.national_id },
+                'delete'
+            );
+            if (validationResult instanceof Error) {
+                throw validationResult;
+            }
+
+            // Delete the user
+            const deletedUser = await super.delete(primaryKeys);
+            if (!deletedUser) {
+                logger.error('User not found for deletion');
+                return null;
+            }
+
+            // Remove sensitive data before returning
+            delete deletedUser.hashed_password;
+            logger.debug(`deletedUser: ${JSON.stringify(deletedUser)}`);
+            return deletedUser;
+        } catch (error) {
+            logger.error(`Error deleting user: ${error.message}`);
+            throw error;
+        }
     }
 }
 module.exports = UserModel;
