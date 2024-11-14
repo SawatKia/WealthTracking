@@ -1,13 +1,39 @@
 const multer = require('multer');
+const fs = require('fs');
 
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
-const AuthController = require("../controllers/AuthController");
+const AuthUtils = require('../utilities/AuthUtils');
 const { json } = require('express');
 
-const upload = multer({ storage: multer.memoryStorage() });
-const authController = new AuthController();
+const slipToDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/slip-images/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
+  }
+});
+const profilePictureToDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/profile-pictures/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
+  }
+});
+const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
+const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
+const { verifyToken } = AuthUtils;
 const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -100,12 +126,15 @@ class Middlewares {
       let response;
       if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
         response = formatResponse(err.statusCode, err.message, err.data);
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
         response = formatResponse(500, err.message);
       } else {
         logger.error(`Unhandled error: ${err}`);
+        logger.error(`stack: ${err.stack}`);
         response = formatResponse(500, "Internal Server Error");
       }
       logger.debug(`sending Error response: ${JSON.stringify(response)}`);
@@ -137,9 +166,16 @@ class Middlewares {
     });
   }
 
-  conditionalFileUpload(req, res, next) {
+  conditionalSlipUpload(req, res, next) {
     if (req.is('multipart/form-data')) {
-      return upload.single('imageFile')(req, res, next);
+      return uploadSlipToDisk.single('imageFile')(req, res, next);
+    }
+    next();
+  };
+
+  conditionalProfilePictureUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
     }
     next();
   };
@@ -151,17 +187,28 @@ class Middlewares {
       next();
       return;
     }
+
     if (accessToken) {
-      authController.verifyToken(accessToken, appConfigs.accessTokenSecret, (err, user) => {
-        if (err) {
-          return next(err);
-        }
-        req.user = user; // Attach user info to request
+      try {
+        const user = verifyToken(accessToken, appConfigs.accessTokenSecret);
+        req.user = user;
+        logger.info(`User authenticated(req.user): ${JSON.stringify(req.user, null, 2)}`);
         next();
-      });
+      } catch (err) {
+        logger.warn('Invalid access token');
+        next(MyAppErrors.unauthorized(
+          AuthUtils.authenticationError.message,
+          null,
+          AuthUtils.authenticationError.headers
+        ));
+      }
     } else {
       logger.warn('No access token provided');
-      next(MyAppErrors.unauthorized('Authentication token is missing'));
+      next(MyAppErrors.unauthorized(
+        AuthUtils.authenticationError.message,
+        null,
+        AuthUtils.authenticationError.headers
+      ));
     }
   }
 
