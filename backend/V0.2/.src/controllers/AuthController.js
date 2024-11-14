@@ -3,6 +3,7 @@ const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uu
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 
+const AuthUtils = require('../utilities/AuthUtils');
 const UsedRefreshTokenModel = require('../models/UsedRefreshTokenModel');
 const BaseController = require('./BaseController');
 const UserModel = require('../models/UserModel');
@@ -11,6 +12,7 @@ const Utils = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 
 const { Logger, formatResponse } = Utils;
+const { verifyToken, decodeToken, createTokens, uuidValidateV4, authenticationError } = AuthUtils;
 const logger = Logger('AuthController');
 
 class AuthController extends BaseController {
@@ -39,94 +41,17 @@ class AuthController extends BaseController {
             maxAge: 7 * 24 * 60 * 60 * 1000
         };
 
-        this.authenticationError = {
-            statusCode: 401,
-            message: "Could not validate credentials",
-            headers: {
-                "WWW-Authenticate": 'Bearer'
-            }
-        };
+        this.authenticationError = authenticationError;
 
-        this._decodeToken = this._decodeToken.bind(this);
+        this._getGoogleUser = this._getGoogleUser.bind(this);
         this.login = this.login.bind(this);
         this.refresh = this.refresh.bind(this);
         this.logout = this.logout.bind(this);
         this.googleLogin = this.googleLogin.bind(this);
         this.googleCallback = this.googleCallback.bind(this);
-        this._getGoogleUser = this._getGoogleUser.bind(this);
 
         this.pendingStates = new Map();
         this.stateTokenExpiry = 5 * 60 * 1000; // 5 minutes in milliseconds
-    }
-
-    /**
-     * decodes the token without validation
-     * 
-     * @param {string} token - The token to be decoded.
-     * @returns {object} The decoded token.
-     */
-    _decodeToken(token) {
-        logger.debug('Decoding token');
-        try {
-            return jwt.decode(token);
-        } catch (error) {
-            logger.error(`Error decoding token: ${error.message}`);
-            throw error;
-        }
-    }
-
-    /**
-     * Verifies a given token against a secret.
-     * 
-     * @param {string} token - The token to be verified.
-     * @param {string} secret - The secret to verify the token against.
-     * @returns {object} The verified token.
-     */
-    _verifyToken(token, secret) {
-        logger.debug('Verifying token');
-        try {
-            return jwt.verify(token, secret, {
-                algorithms: [this.algorithm],
-                clockTolerance: 30,
-                issuer: this.domain
-            });
-        } catch (error) {
-            logger.error(`Error verifying token: ${error.message}`);
-            throw error;
-        }
-    }
-
-    /**
-     * Creates a new token pair for a user.
-     * 
-     * @param {string} userId - The ID of the user to create tokens for.
-     * @returns {object} An object containing the access token and refresh token.
-     */
-    _createTokens(userId) {
-        logger.debug(`Creating new token pair for user: ${userId}`);
-        const now = Math.floor(Date.now() / 1000);
-        const jti = uuidv4();
-
-        const accessToken = jwt.sign({
-            sub: userId,
-            iat: now,
-            nbf: now,
-            exp: now + (15 * 60),
-            iss: this.domain,
-        }, appConfigs.accessTokenSecret, { algorithm: this.algorithm });
-        logger.debug('Access token created');
-
-        const refreshToken = jwt.sign({
-            sub: userId,
-            iat: now,
-            nbf: appConfigs.environment != 'production' ? now : now + (10 * 60),
-            exp: now + (7 * 24 * 60 * 60),
-            jti: jti,
-            iss: this.domain,
-        }, appConfigs.refreshTokenSecret, { algorithm: this.algorithm });
-        logger.debug('Refresh token created');
-
-        return { accessToken, refreshToken };
     }
 
     async login(req, res, next) {
@@ -141,7 +66,7 @@ class AuthController extends BaseController {
             }
 
             logger.debug(`User ${user.national_id} authenticated successfully`);
-            const { accessToken, refreshToken } = this._createTokens(user.national_id);
+            const { accessToken, refreshToken } = createTokens(user.national_id);
 
             logger.debug('Setting authentication cookies');
             res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
@@ -171,7 +96,7 @@ class AuthController extends BaseController {
             }
 
             logger.debug('Verifying refresh token');
-            let decoded = this._decodeToken(refreshToken);
+            let decoded = decodeToken(refreshToken);
             logger.debug(`Decoded token JTI: ${decoded.jti}`);
 
             const now = Math.floor(Date.now() / 1000);
@@ -180,7 +105,7 @@ class AuthController extends BaseController {
                 logger.warn(`Token not yet valid. NBF: ${decoded.nbf}, Current: ${now}. Will be valid in ${timeUntilValid} seconds`);
                 throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
             }
-            decoded = this._verifyToken(refreshToken, appConfigs.refreshTokenSecret);
+            decoded = verifyToken(refreshToken, appConfigs.refreshTokenSecret);
 
             // Check if token is used
             const isUsed = await this.usedRefreshTokenModel.has(decoded.jti);
@@ -197,7 +122,7 @@ class AuthController extends BaseController {
             await this.usedRefreshTokenModel.add(decoded.jti, new Date(decoded.exp * 1000));
 
             logger.debug(`Creating new token pair for user: ${decoded.sub}`);
-            const { accessToken, refreshToken: newRefreshToken } = this._createTokens(decoded.sub);
+            const { accessToken, refreshToken: newRefreshToken } = createTokens(decoded.sub);
 
             logger.debug('Setting new authentication cookies');
             res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
@@ -233,7 +158,7 @@ class AuthController extends BaseController {
 
         try {
             if (refreshToken) {
-                const decoded = this._decodeToken(refreshToken);
+                const decoded = decodeToken(refreshToken);
                 if (decoded?.jti) {
                     logger.debug(`Adding refresh token ${decoded.jti} to used tokens`);
                     await this.usedRefreshTokenModel.add(decoded.jti, new Date(decoded.exp * 1000));
@@ -292,11 +217,6 @@ class AuthController extends BaseController {
         return stateToken;
     }
 
-    _uuidValidateV4(uuid) {
-        logger.info('Validating UUID v4');
-        logger.debug(`Validating UUID: ${uuid}`);
-        return uuidValidate(uuid) && uuidVersion(uuid) === 4;
-    }
 
     /**
      * Verifies a state token and returns the associated action if valid.
@@ -315,7 +235,7 @@ class AuthController extends BaseController {
             return null;
         }
 
-        if (!this._uuidValidateV4(stateToken)) {
+        if (!uuidValidateV4(stateToken)) {
             logger.warn('Invalid state token');
             return null;
         }
@@ -357,6 +277,7 @@ class AuthController extends BaseController {
             const stateToken = this._createStateToken(action);
             logger.debug(`State token created for action: ${action}, State token: ${stateToken}`);
 
+            //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
                 appConfigs.google.clientId,
                 appConfigs.google.clientSecret,
@@ -405,6 +326,7 @@ class AuthController extends BaseController {
                 throw MyAppErrors.unauthorized('Invalid or expired authentication request');
             }
 
+            //TODO - move to google servicew
             const oAuth2Client = new OAuth2Client(
                 appConfigs.google.clientId,
                 appConfigs.google.clientSecret,
@@ -439,7 +361,7 @@ class AuthController extends BaseController {
                     throw MyAppErrors.internalServerError('Failed to create user');
                 }
 
-                const { accessToken, refreshToken } = this._createTokens(createdUser.national_id);
+                const { accessToken, refreshToken } = createTokens(createdUser.national_id);
 
                 res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
                 res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
@@ -456,7 +378,7 @@ class AuthController extends BaseController {
                 }
                 logger.debug(`User ${existingUser.national_id} found`);
 
-                const { accessToken, refreshToken } = this._createTokens(existingUser.national_id);
+                const { accessToken, refreshToken } = createTokens(existingUser.national_id);
 
                 res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
                 res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
