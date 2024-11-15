@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: WealthTack API
-  description: API for user registration and check password.
+  title: WealthTrack API
+  description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
   version: "0.2"
 servers:
   - url: "http://localhost:3000/api/v0.2"

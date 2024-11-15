@@ -1,6 +1,7 @@
 const Utils = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const UserModel = require('../models/UserModel');
+const { log } = require('winston');
 
 const { Logger } = Utils;
 const logger = Logger('BaseController');
@@ -34,7 +35,13 @@ class BaseController {
             logger.debug(`req.user: ${JSON.stringify(req.user, null, 2)}`);
 
             if (!req.user) {
-                throw MyAppErrors.unauthorized('Access token or refresh token not found');
+                logger.info('req.user not found, getting from cookies');
+                const accessToken = req.cookies['access_token'];
+                if (!accessToken) {
+                    throw MyAppErrors.unauthorized('Access token not found');
+                }
+                req.user = await verifyToken(accessToken);
+                logger.debug(`req.user decodedfrom cookies: ${JSON.stringify(req.user, null, 2)}`);
             }
 
             const national_id = req.user.sub;
@@ -89,6 +96,7 @@ class BaseController {
                 if (body[field] === undefined || body[field] === null || !body[field]) {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
+                    // throw MyAppErrors.badRequest(`Missing required field: ${field}`);
                 }
             }
             logger.info(`all required fields are present`);

@@ -10,8 +10,7 @@ const UserModel = require('../models/UserModel');
 const { ValidationError } = require('../utilities/ValidationErrors');
 
 // Mock JWT token
-const mockToken = 'mockJWTtoken123';
-
+let accessToken;
 const newBankAccount = [
     //* success
     {
@@ -406,6 +405,10 @@ beforeAll(async () => {
     try {
         await userModel.createUser(mockUser);
         logger.info('Mock user created');
+        const response = await request(app)
+            .post('/api/v0.2/login')
+            .send({ email: mockUser.email, password: mockUser.password });
+        accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
     } catch (error) {
         if (error instanceof ValidationError) {
             logger.warn(`Validation error while creating mock user: ${error.message}`);
@@ -428,7 +431,7 @@ describe('Bank Account Creation', () => {
 
             const response = await request(app)
                 .post('/api/v0.2/banks')
-                .set('Authorization', `Bearer ${mockToken}`)
+                .set('Cookie', [accessToken])
                 .send(testCase.body);
 
             expect(response.status).toBe(testCase.expected.status);

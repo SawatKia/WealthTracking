@@ -47,11 +47,12 @@ class UserController extends BaseController {
 
     async registerUser(req, res, next) {
         try {
+            logger.info('requesting registerUser');
             const { username, email, password, confirm_password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
             // Verify all required fields 
-            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'];
+            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password'];
             await super.verifyField(req.body, requiredFields, this.userModel);
             // Check if password length is at least 8 characters
             if (password.length < 8) {

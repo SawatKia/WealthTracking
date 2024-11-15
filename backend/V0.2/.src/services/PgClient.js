@@ -116,6 +116,21 @@ class PgClient {
   }
 
   async release() {
+    if (appConfigs.environment === 'test') {
+      // delete all rows of all tables
+      const tables = [
+        'users',
+        'transaction_bank_account_relations',
+        'transactions',
+        'bank_accounts',
+        'debts',
+        'api_request_limits'
+      ]
+      for (const table of tables) {
+        await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
+        logger.debug(`All rows deleted from table: ${table}`);
+      }
+    }
     if (this.client) {
       this.client.release();
       logger.debug("Database client released");

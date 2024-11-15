@@ -181,12 +181,14 @@ class Middlewares {
   };
 
   authMiddleware(req, res, next) {
+    logger.info("Authenticating user");
     const accessToken = req.cookies['access_token'];
+    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
 
-    if (appConfigs.environment === 'test') {
-      next();
-      return;
-    }
+    // if (appConfigs.environment === 'test') {
+    //   next();
+    //   return;
+    // }
 
     if (accessToken) {
       try {

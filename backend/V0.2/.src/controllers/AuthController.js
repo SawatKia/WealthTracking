@@ -57,8 +57,8 @@ class AuthController extends BaseController {
     async login(req, res, next) {
         logger.info('Logging in');
         const { email, password } = req.body;
-        super.verifyField(req.body, ['email', 'password']);
         try {
+            await super.verifyField(req.body, ['email', 'password']);
             const { result, user } = await this.userModel.checkPassword(email, password);
             if (!result) {
                 logger.error('Invalid credentials');
@@ -79,6 +79,8 @@ class AuthController extends BaseController {
             logger.error(`Login error: ${error.message}`, { stack: error.stack });
             if (error instanceof MyAppErrors) {
                 next(error);
+            } else if (error.message.includes('Missing required field: ')) {
+                next(MyAppErrors.badRequest(error.message));
             } else {
                 next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
             }
