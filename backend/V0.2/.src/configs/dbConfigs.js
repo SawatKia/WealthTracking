@@ -4,7 +4,7 @@ module.exports = {
     development: {
         user: appConfigs.postgres.user,
         host: appConfigs.postgres.host,
-        database: appConfigs.postgres.databaseName,
+        database: appConfigs.postgres.databaseName.development,
         password: String(appConfigs.postgres.password),
         port: appConfigs.postgres.port,
         max: 20, // maximum number of connections in the pool connection
@@ -14,7 +14,7 @@ module.exports = {
     test: {
         user: appConfigs.postgres.user,
         host: 'localhost',
-        database: appConfigs.postgres.databaseName,
+        database: appConfigs.postgres.databaseName.test,
         password: appConfigs.postgres.password,
         port: appConfigs.postgres.port,
         max: 20, // maximum number of connections in the pool connection
@@ -24,7 +24,7 @@ module.exports = {
     production: {
         user: appConfigs.postgres.user,  // You can add specific production settings if different from dev/test
         host: appConfigs.postgres.host,
-        database: appConfigs.postgres.databaseName,
+        database: appConfigs.postgres.databaseName.production,
         password: String(appConfigs.postgres.password),
         port: appConfigs.postgres.port,
         max: 20, // maximum number of connections in the pool connection

@@ -26,8 +26,13 @@ const startServer = async () => {
 
     // Start Express server after database connection is established
     app.listen(PORT, "0.0.0.0", () => {
-      logger.info(`Environment: ${NODE_ENV}`);
-      logger.info(`App is listening on port ${PORT}`);
+      logger.debug('+---------------------------------------+');
+      logger.debug('|       Server started successfully     |');
+      logger.debug('+---------------------------------------+');
+      logger.debug(`| Environment: ${NODE_ENV}              |`);
+      logger.debug(`| App is listening on port ${PORT}         |`);
+      logger.debug('+---------------------------------------+');
+      logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
     });
   } catch (error) {
     logger.error("Failed to start the server:", error.message);

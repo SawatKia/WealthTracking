@@ -27,7 +27,7 @@ class UserModel extends BaseModel {
                 })
                 .messages({
                     'string.max': 'National ID cannot exceed 255 characters',
-                    'string.length': 'Local auth national ID must be 13 characters',
+                    'string.length': 'Local auth national ID must be 13 digit characters',
                     'string.pattern.name': 'Local auth national ID must be numeric',
                     'any.required': 'National ID is required for this operation.',
                 }),
@@ -186,6 +186,8 @@ class UserModel extends BaseModel {
             }
 
             logger.info('Password match');
+            delete userObject.role;
+            delete userObject.auth_service;
             delete userObject.hashed_password;
             return { result: true, user: userObject };
         } catch (error) {

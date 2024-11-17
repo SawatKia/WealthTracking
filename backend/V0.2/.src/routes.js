@@ -26,7 +26,7 @@ const apiController = new ApiController();
 const fiController = new FinancialInstitutionController();
 const authController = new AuthController();
 
-if (NODE_ENV != 'test') {
+if (NODE_ENV == 'development') {
     logger.info('Generating swagger documentation');
     const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
     // const file = fs.readFileSync('./swagger.yaml', 'utf8');
@@ -38,7 +38,6 @@ if (NODE_ENV != 'test') {
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/users/check': ['POST'],
     '/banks': ['POST', 'GET'],
     '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -69,30 +68,60 @@ router.use((req, res, next) => {
     logger.info(`entering the routing for ${req.method} ${req.url}`);
     next();
 })
-//TODO - ensure the middlewares is finished before goto the routes
+// Global middleware setup
 router.use(async (req, res, next) => {
-    await mdw.methodValidator(allowedMethods)(req, res, next);
+    try {
+        // First validate the method
+        await mdw.methodValidator(allowedMethods)(req, res, next);
+    } catch (error) {
+        next(error);
+    }
 });
 router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
-router.get('/users', mdw.authMiddleware, userController.getUser);
-router.post('/users', userController.registerUser);
-router.post('/users/check', userController.checkPassword);
-router.patch('/users', mdw.authMiddleware, mdw.conditionalProfilePictureUpload, userController.updateUser);
-router.delete('/users', mdw.authMiddleware, userController.deleteUser);
-//TODO - after this line every route should add middleware to verify token
-router.post('/banks', mdw.authMiddleware, bankAccountController.createBankAccount);
-router.get('/banks', mdw.authMiddleware, bankAccountController.getAllBankAccounts);
-router.get('/banks/:account_number/:fi_code', mdw.authMiddleware, bankAccountController.getBankAccount);
 
-router.get('/fis', mdw.authMiddleware, fiController.getAllFinancialInstitutions);
-router.get('/fis/operating-banks', mdw.authMiddleware, fiController.getOperatingThaiCommercialBanks);
-router.get('/fi/:fi_code', mdw.authMiddleware, fiController.getFinancialInstitutionByCode);
+// Public routes (no auth required)
+router.post('/login', authController.login);
+router.post('/users', userController.registerUser);  // Registration should be public
+router.post('/google/login', authController.googleLogin);
+router.get('/google/callback', authController.googleCallback);
 
-router.get('/slip/quota', mdw.authMiddleware, apiController.getQuotaInformation);
-router.post('/slip/verify', mdw.authMiddleware, mdw.conditionalSlipUpload, apiController.verifySlip);
+// Protected routes (auth required)
+router.use([
+    '/banks',
+    '/users',  // Only protect user operations AFTER registration
+    '/slip',
+    '/fis',
+    '/debts'
+], async (req, res, next) => {
+    try {
+        if (req.formattedResponse) {
+            next();
+        } else {
+            await mdw.authMiddleware(req, res, next);
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Protected routes definitions
+router.get('/users', userController.getUser);
+router.patch('/users', userController.updateUser);
+router.delete('/users', userController.deleteUser);
+
+router.post('/banks', bankAccountController.createBankAccount);
+router.get('/banks', bankAccountController.getAllBankAccounts);
+router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccount);
+
+router.get('/fis', fiController.getAllFinancialInstitutions);
+router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks);
+router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
+
+router.get('/slip/quota', apiController.getQuotaInformation);
+router.post('/slip/verify', mdw.conditionalSlipUpload, apiController.verifySlip);
 
 // Cache routes
 router.post('/cache', cacheController.set);
@@ -100,12 +129,8 @@ router.get('/cache/:key', cacheController.get);
 router.delete('/cache/:key', cacheController.delete);
 
 // Add login and logout routes
-router.post('/login', authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
-router.post('/google/login', authController.googleLogin);
-router.get('/google/callback', authController.googleCallback);
-
 
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);

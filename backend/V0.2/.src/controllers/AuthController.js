@@ -42,6 +42,7 @@ class AuthController extends BaseController {
         };
 
         this.authenticationError = authenticationError;
+        this.authorizationHeader = authenticationError.headers;
 
         this._getGoogleUser = this._getGoogleUser.bind(this);
         this.login = this.login.bind(this);
@@ -52,47 +53,75 @@ class AuthController extends BaseController {
 
         this.pendingStates = new Map();
         this.stateTokenExpiry = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+        // Add platform check options
+        this.platformTypes = {
+            WEB: 'web',
+            MOBILE: 'mobile'
+        };
     }
 
     async login(req, res, next) {
         logger.info('Logging in');
+        const platform = req.query.platform;
         const { email, password } = req.body;
-        super.verifyField(req.body, ['email', 'password']);
         try {
+            await super.verifyField(req.body, ['email', 'password']);
             const { result, user } = await this.userModel.checkPassword(email, password);
             if (!result) {
                 logger.error('Invalid credentials');
-                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
+            }
+            if (!platform) {
+                logger.warn('No platform specified, using default web platform');
+                throw MyAppErrors.badRequest('No platform specified');
             }
 
             logger.debug(`User ${user.national_id} authenticated successfully`);
             const { accessToken, refreshToken } = createTokens(user.national_id);
 
-            logger.debug('Setting authentication cookies');
-            res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
-            res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+            // Handle response based on platform
+            if (platform === this.platformTypes.MOBILE) {
+                logger.debug('Mobile platform detected, sending tokens in response body');
+                req.formattedResponse = formatResponse(200, 'Logged in successfully, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired.', {
+                    user,
+                    tokens: {
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    }
+                }, this.authorizationHeader);
+            } else {
+                logger.debug('Web platform detected, setting cookies');
+                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+                req.formattedResponse = formatResponse(200, 'Logged in successfully', user);
+            }
 
             logger.info(`User ${user.national_id} logged in successfully`);
-            req.formattedResponse = formatResponse(200, 'Logged in successfully', user, this.authenticationError.headers);
             next();
         } catch (error) {
             logger.error(`Login error: ${error.message}`, { stack: error.stack });
             if (error instanceof MyAppErrors) {
                 next(error);
+            } else if (error.message.includes('Missing required field: ')) {
+                next(MyAppErrors.badRequest(error.message));
             } else {
-                next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
+                next(MyAppErrors.internalServerError(error.message, null, this.authorizationHeader));
             }
         }
     }
 
     async refresh(req, res, next) {
         logger.info('Token refresh requested');
-        const refreshToken = req.cookies['refresh_token'];
+        const platform = req.query.platform;
+        const refreshToken = platform === this.platformTypes.MOBILE
+            ? req.headers['x-refresh-token']
+            : req.cookies['refresh_token'];
 
         try {
             if (!refreshToken) {
                 logger.warn('Refresh token missing from request');
-                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
             }
 
             logger.debug('Verifying refresh token');
@@ -103,7 +132,7 @@ class AuthController extends BaseController {
             if (decoded.nbf > now) {
                 const timeUntilValid = decoded.nbf - now;
                 logger.warn(`Token not yet valid. NBF: ${decoded.nbf}, Current: ${now}. Will be valid in ${timeUntilValid} seconds`);
-                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
             }
             decoded = verifyToken(refreshToken, appConfigs.refreshTokenSecret);
 
@@ -113,9 +142,12 @@ class AuthController extends BaseController {
 
             if (isUsed) {
                 logger.error(`Refresh token reuse detected for user: ${decoded.sub}, token: ${decoded.jti}`);
-                res.clearCookie('access_token', this.cookieOptions);
-                res.clearCookie('refresh_token', this.cookieOptions);
-                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                if (platform === this.platformTypes.WEB) {
+                    logger.debug('Web platform detected, clearing cookies');
+                    res.clearCookie('access_token', this.cookieOptions);
+                    res.clearCookie('refresh_token', this.cookieOptions);
+                }
+                throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
             }
 
             logger.debug(`Adding refresh token ${decoded.jti} as used tokens`);
@@ -124,12 +156,22 @@ class AuthController extends BaseController {
             logger.debug(`Creating new token pair for user: ${decoded.sub}`);
             const { accessToken, refreshToken: newRefreshToken } = createTokens(decoded.sub);
 
-            logger.debug('Setting new authentication cookies');
-            res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
-            res.cookie('refresh_token', newRefreshToken, this.refreshTokenCookieOptions);
+            if (platform === this.platformTypes.MOBILE) {
+                logger.debug('Mobile platform detected, sending tokens in response body');
+                req.formattedResponse = formatResponse(200, 'Tokens refreshed successfully', {
+                    tokens: {
+                        access_token: accessToken,
+                        refresh_token: newRefreshToken
+                    }
+                }, this.authorizationHeader);
+            } else {
+                logger.debug('Web platform detected, setting cookies');
+                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                res.cookie('refresh_token', newRefreshToken, this.refreshTokenCookieOptions);
+                req.formattedResponse = formatResponse(200, 'Tokens refreshed successfully');
+            }
 
             logger.info(`Tokens refreshed successfully for user: ${decoded.sub}`);
-            req.formattedResponse = formatResponse(200, 'Tokens refreshed successfully', null, this.authenticationError.headers);
             next();
         } catch (error) {
             if (!(error instanceof MyAppErrors)) {
@@ -142,10 +184,10 @@ class AuthController extends BaseController {
 
                 if (errorTypes.includes(error.constructor)) {
                     logger.error(`Invalid token refresh: ${errorMessages[error.constructor.name]}, ${error.message}`, { stack: error.stack });
-                    error = MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                    error = MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
                 } else {
                     logger.error(`Token refresh error: ${error.message}`, { stack: error.stack });
-                    error = MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers);
+                    error = MyAppErrors.internalServerError(error.message, null, this.authorizationHeader);
                 }
             }
             next(error);
@@ -154,7 +196,10 @@ class AuthController extends BaseController {
 
     async logout(req, res, next) {
         logger.info('Logout requested');
-        const refreshToken = req.cookies['refresh_token'];
+        const platform = req.query.platform;
+        const refreshToken = platform === this.platformTypes.MOBILE
+            ? req.headers.authorization?.split(' ')[1]
+            : req.cookies['refresh_token'];
 
         try {
             if (refreshToken) {
@@ -165,19 +210,25 @@ class AuthController extends BaseController {
                 }
             }
 
-            logger.debug('Clearing authentication cookies');
-            res.clearCookie('access_token', this.cookieOptions);
-            res.clearCookie('refresh_token', this.cookieOptions);
+            let message = 'Logged out successfully';
+            if (platform === this.platformTypes.WEB) {
+                logger.debug('Web platform detected, clearing cookies');
+                res.clearCookie('access_token', this.cookieOptions);
+                res.clearCookie('refresh_token', this.cookieOptions);
+            } else {
+                logger.debug('Mobile platform detected, sending logout response');
+                message = 'on mobile, just remove both refresh and access tokens from the your storage. no need to wait for response';
+            }
 
-            logger.info('User logged out successfully');
-            req.formattedResponse = formatResponse(200, 'Logged out successfully', null, this.authenticationError.headers);
+            logger.info(`User logged out successfully: ${message}`);
+            req.formattedResponse = formatResponse(200, message);
             next();
         } catch (error) {
             logger.error('Error during logout:', error);
             if (error instanceof MyAppErrors) {
                 next(error);
             } else {
-                next(MyAppErrors.internalServerError(error.message, null, this.authenticationError.headers));
+                next(MyAppErrors.internalServerError(error.message, null, this.authorizationHeader));
             }
         }
     }
@@ -197,16 +248,18 @@ class AuthController extends BaseController {
      * Creates a state token with uuidv4, expires after 5 minutes, and associates it with the given action.
      * 
      * @param {string} action - The action to be associated with the state token.
+     * @param {string} platform - The platform to be associated with the state token.
      * @returns {string} The created state token.
      */
-    _createStateToken(action) {
+    _createStateToken(action, platform = this.platformTypes.MOBILE) {
         logger.info('Creating state token');
         const stateToken = uuidv4();
         const expiryTime = Date.now() + this.stateTokenExpiry;
 
         this.pendingStates.set(stateToken, {
             action,
-            expiryTime
+            expiryTime,
+            platform
         });
         logger.debug(`this.pendingStates length: ${this.pendingStates.size}`);
         logger.debug(`this.pendingStates: ${JSON.stringify(Array.from(this.pendingStates.entries()))}`);
@@ -251,7 +304,7 @@ class AuthController extends BaseController {
         // Remove the used token
         this.pendingStates.delete(stateToken);
         logger.info(`State token ${stateToken} removed`);
-        return stateData.action;
+        return { action: stateData.action, platform: stateData.platform };
     }
 
     _cleanupExpiredStates() {
@@ -268,14 +321,14 @@ class AuthController extends BaseController {
     async googleLogin(req, res, next) {
         try {
             logger.info('Google login requested');
-            const action = req.query.action;
-            if (!action) {
-                logger.warn('Missing action parameter');
-                throw MyAppErrors.badRequest('Missing action parameter');
+            const { action, platform } = req.query;
+            if (!action || !platform) {
+                logger.warn('Missing action or platform parameter');
+                throw MyAppErrors.badRequest('Missing action or platform parameter');
             }
 
-            const stateToken = this._createStateToken(action);
-            logger.debug(`State token created for action: ${action}, State token: ${stateToken}`);
+            const stateToken = this._createStateToken(action, platform);
+            logger.debug(`State token created for action: ${action} for ${platform} platform, State token Id: ${stateToken}`);
 
             //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
@@ -292,11 +345,7 @@ class AuthController extends BaseController {
 
             logger.debug(`Google auth URL generated with state token: ${stateToken}`);
             res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
-            if (appConfigs.environment != 'production') {
-                req.formattedResponse = formatResponse(200, `redirect to this URL to login with Google. in production, will redirect to the url automatically`, url);
-            } else {
-                res.redirect(url);
-            }
+            req.formattedResponse = formatResponse(200, `redirect to this URL to ${action} with Google.`, url);
             next();
         } catch (error) {
             logger.error(`Error during Google login: ${error.message}`);
@@ -320,13 +369,13 @@ class AuthController extends BaseController {
             }
 
             // Verify state token and get action
-            const action = this._verifyStateToken(stateToken);
+            const { action, platform } = this._verifyStateToken(stateToken);
             if (!action) {
                 logger.warn('Invalid or expired state token');
                 throw MyAppErrors.unauthorized('Invalid or expired authentication request');
             }
 
-            //TODO - move to google servicew
+            //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
                 appConfigs.google.clientId,
                 appConfigs.google.clientSecret,
@@ -363,30 +412,45 @@ class AuthController extends BaseController {
 
                 const { accessToken, refreshToken } = createTokens(createdUser.national_id);
 
-                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
-                res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
-                if (appConfigs.environment != 'production') {
-                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google. in production, will redirect to "/home"', createdUser);
-                } else {
-                    res.redirect('/home');
+                if (platform === this.platformTypes.WEB) {
+                    res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                    res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google', createdUser);
+                } else if (platform === this.platformTypes.MOBILE) {
+                    logger.debug('Mobile platform detected, sending tokens in response body');
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google.', {
+                        user: createdUser
+                        // tokens: {
+                        //     access_token: accessToken,
+                        //     refresh_token: refreshToken
+                        // }
+                    });
                 }
             } else if (action === 'login') {
                 logger.info(`Logging in user with email: ${googleUser.email}`);
                 if (!existingUser) {
                     logger.warn(`No user found with email ${googleUser.email} or national_id ${googleUser.sub}`);
-                    throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authenticationError.headers);
+                    throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
                 }
                 logger.debug(`User ${existingUser.national_id} found`);
 
                 const { accessToken, refreshToken } = createTokens(existingUser.national_id);
 
-                res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
-                res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+                if (platform === this.platformTypes.WEB) {
+                    logger.debug('Web platform detected, setting cookies');
+                    res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
+                    res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
+                    req.formattedResponse = formatResponse(200, 'Logged in successfully with Google');
+                } else if (platform === this.platformTypes.MOBILE) {
+                    logger.debug('Mobile platform detected, sending tokens in response body');
 
-                if (appConfigs.environment != 'production') {
-                    req.formattedResponse = formatResponse(200, 'Logged in successfully with Google. in production, will redirect to "/home"');
-                } else {
-                    res.redirect('/home');
+                    req.formattedResponse = formatResponse(200, 'Logged in successfully with Google, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired.', {
+                        user: existingUser,
+                        tokens: {
+                            access_token: accessToken,
+                            refresh_token: refreshToken
+                        }
+                    }, this.authorizationHeader);
                 }
             }
 

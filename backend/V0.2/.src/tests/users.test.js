@@ -6,6 +6,16 @@ const Utils = require("../utilities/Utils");
 const { Logger, formatResponse } = Utils;
 const logger = Logger("users.test");
 
+let accessToken;
+const mockUser = {
+  national_id: "0000000000099",
+  username: "testuser",
+  email: "test@example.com",
+  password: "Password123!",
+  confirm_password: "Password123!",
+  date_of_birth: "1990-01-01"
+};
+
 const newUserBody = [
   {
     testName: "id < 13",
@@ -19,7 +29,7 @@ const newUserBody = [
     },
     expected: {
       status: 400,
-      message: "Invalid national ID",
+      message: "Local auth national ID must be 13 digit characters",
     }
   },
   {
@@ -34,7 +44,7 @@ const newUserBody = [
     },
     expected: {
       status: 400,
-      message: "Invalid national ID",
+      message: "Local auth national ID must be 13 digit characters",
     }
   },
   {
@@ -107,20 +117,6 @@ const newUserBody = [
       message: "Missing required field: confirm_password",
     }
   }, // missing confirm_password field
-  {
-    testName: "missing date_of_birth field",
-    body: {
-      national_id: "0000000000014",
-      username: "testuser",
-      email: "testii@example.com",
-      password: "Password123!",
-      confirm_password: "Password123!",
-    },
-    expected: {
-      status: 400,
-      message: "Missing required field: date_of_birth",
-    }
-  }, // missing date_of_birth field
   {
     testName: "missing all fields",
     body: {},
@@ -205,21 +201,6 @@ const newUserBody = [
     }
   }, // empty confirm_password value
   {
-    testName: "empty date_of_birth value",
-    body: {
-      national_id: "0000000000015",
-      username: "testuser",
-      email: "testii@example.com",
-      password: "Password123!",
-      confirm_password: "Password123!",
-      date_of_birth: "",
-    },
-    expected: {
-      status: 400,
-      message: "Missing required field: date_of_birth",
-    }
-  }, // empty date_of_birth value
-  {
     testName: "all field empty",
     body: {
       national_id: "",
@@ -246,7 +227,7 @@ const newUserBody = [
     },
     expected: {
       status: 400,
-      message: "Invalid national ID",
+      message: "Local auth national ID must be 13 digit characters",
     }
   }, // invalid national_id
   {
@@ -376,88 +357,172 @@ const newUserBody = [
   },
 ];
 
-const checkPassBody = [
+const updateUserBody = [
   {
-    testName: "missing password field",
-    body: { email: "testii@example.com" },
+    testName: "missing password",
+    body: {
+      email: "newemail@example.com"
+    },
     expected: {
       status: 400,
-      message: "Missing required field: password",
+      message: "Missing required field: password"
     }
-  }, // missing password field
+  },
   {
-    testName: "missing email field",
-    body: { password: "Password123!" },
-    expected: {
-      status: 400,
-      message: "Missing required field: email",
-    }
-  }, // missing email field
-  {
-    testName: "missing email value",
-    body: { email: "", password: "Password123!" },
-    expected: {
-      status: 400,
-      message: "Missing required field: email",
-    }
-  }, // missing email value
-  {
-    testName: "missing password value",
-    body: { email: "testii@example.com", password: "" },
-    expected: {
-      status: 400,
-      message: "Missing required field: password",
-    }
-  }, // missing password value
-  {
-    testName: "incorrect password",
-    body: { email: "testii@example.com", password: "Password123!123" },
+    testName: "incorrect current password",
+    body: {
+      password: "WrongPassword123!",
+      email: "newemail@example.com"
+    },
     expected: {
       status: 401,
-      message: "Invalid email or password",
+      message: "Invalid email or password"
     }
-  }, // incorrect password
+  },
   {
-    testName: "success",
-    body: { email: "testii@example.com", password: "Password123!" },
+    testName: "invalid new email format",
+    body: {
+      password: "Password123!",
+      email: "invalid.email@com"
+    },
+    expected: {
+      status: 400,
+      message: "Invalid email"
+    }
+  },
+  {
+    testName: "empty update fields",
+    body: {
+      password: "Password123!",
+      email: "",
+      username: "",
+      date_of_birth: ""
+    },
+    expected: {
+      status: 400,
+      message: "At least one field is required to update user information"
+    }
+  },
+  {
+    testName: "success update email",
+    body: {
+      password: "Password123!",
+      email: "updated@example.com"
+    },
     expected: {
       status: 200,
-      message: "Password check successful. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.",
-      data: true,
+      message: "User updated successfully",
+      data: {
+        email: "updated@example.com"
+      }
     }
-  }, //success
+  },
   {
-    testName: "missing both value",
-    body: { email: "", password: "" },
+    testName: "success update multiple fields",
+    body: {
+      password: "Password123!",
+      username: "updateduser",
+      date_of_birth: "1995-01-01"
+    },
+    expected: {
+      status: 200,
+      message: "User updated successfully",
+      data: {
+        username: "updateduser",
+        date_of_birth: "1995-01-01"
+      }
+    }
+  },
+  {
+    testName: "mismatched new passwords",
+    body: {
+      password: "Password123!",
+      newPassword: "NewPassword123!",
+      newConfirmPassword: "DifferentPassword123!"
+    },
     expected: {
       status: 400,
-      message: "Missing required field: email",
+      message: "newPassword and newConfirmPassword do not match"
     }
-  }, // missing both value
+  },
   {
-    testName: "invalid email",
-    body: { email: "testii@example.com123", password: "Password123!" },
+    testName: "change password",
+    body: {
+      password: "Password123!",
+      newPassword: "NewPassword123!",
+      newConfirmPassword: "NewPassword123!"
+    },
     expected: {
-      status: 400,
-      message: "Invalid email",
+      status: 200,
+      message: "User updated successfully"
     }
-  }, // invalid email
+  },
 ];
 
-beforeAll(async () => {
-  await pgClient.init();
-  logger.debug(`Database connected: ${pgClient.isConnected()}`);
-});
-
-afterAll(async () => {
-  await pgClient.release();
-  logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-});
+const deleteUserBody = [
+  {
+    testName: "missing password",
+    body: {},
+    expected: {
+      status: 400,
+      message: "Missing required field: password"
+    }
+  },
+  {
+    testName: "incorrect password",
+    body: {
+      password: "WrongPassword123!"
+    },
+    expected: {
+      status: 401,
+      message: "Invalid email or password"
+    }
+  },
+  {
+    testName: "success delete",
+    body: {
+      password: "NewPassword123!"
+    },
+    expected: {
+      status: 200,
+      message: "User deleted successfully"
+    }
+  }
+];
 
 describe("Users Endpoints", () => {
+  // Setup before all tests
+  beforeAll(async () => {
+    await pgClient.init();
+    logger.debug(`Database connected: ${pgClient.isConnected()}`);
+
+    // Register a test user
+    await request(app)
+      .post("/api/v0.2/users")
+      .send(mockUser);
+
+    // Login to get access token
+    const loginResponse = await request(app)
+      .post("/api/v0.2/login")
+      .send({
+        email: mockUser.email,
+        password: mockUser.password
+      });
+
+    accessToken = loginResponse.headers['set-cookie']
+      .find(cookie => cookie.includes('access_token'));
+  });
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await pgClient.release();
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+  });
+
   describe("connection to api", () => {
     describe("GET /health", () => {
       it("should return 200 OK text", async () => {
+        logger.info('connection test /health');
         const response = await request(app).get("/health").expect(200);
 
         expect(response.text).toEqual("OK");
@@ -465,6 +530,7 @@ describe("Users Endpoints", () => {
     });
     describe("GET /api", () => {
       it("should return 200 OK formatted message", async () => {
+        logger.info('connection test /api');
         const response = await request(app).get("/api").expect(200);
 
         expect(response.headers["content-type"]).toEqual(
@@ -479,8 +545,9 @@ describe("Users Endpoints", () => {
     });
     describe("GET /api/v0.2/", () => {
       it("should return 200 OK formatted message", async () => {
+        logger.info('connection test /api/v0.2/');
         const response = await request(app).get("/api/v0.2/");
-
+        logger.debug(`response: ${JSON.stringify(response, null, 2)}`);
         expect(response.statusCode).toBe(200);
         expect(response.headers["content-type"]).toEqual(
           expect.stringContaining("json")
@@ -516,21 +583,36 @@ describe("Users Endpoints", () => {
     });
   });
 
-  describe("POST /api/v0.2/users/check", () => {
-    checkPassBody.forEach((check, i) => {
-      test(`${i + 1}: ${check.testName}`, async () => {
-        logger.info(`Running test ${i + 1}: ${check.testName}`);
+  describe("PATCH /api/v0.2/users", () => {
+    updateUserBody.forEach((testCase, i) => {
+      test(`${i + 1}: ${testCase.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${testCase.testName}`);
         const response = await request(app)
-          .post("/api/v0.2/users/check")
-          .send(check.body);
+          .patch("/api/v0.2/users")
+          .set('Cookie', [accessToken])
+          .send(testCase.body);
 
-        expect(response.statusCode).toBe(check.expected.status);
-        expect(response.body).toHaveProperty("status_code", check.expected.status);
-        expect(response.body).toHaveProperty("message", check.expected.message);
+        expect(response.statusCode).toBe(testCase.expected.status);
+        expect(response.body).toHaveProperty("message", testCase.expected.message);
 
-        if (check.expected.data !== undefined) {
-          expect(response.body).toHaveProperty("data", check.expected.data);
+        if (testCase.expected.data) {
+          expect(response.body.data).toMatchObject(testCase.expected.data);
         }
+      });
+    });
+  });
+
+  describe("DELETE /api/v0.2/users", () => {
+    deleteUserBody.forEach((testCase, i) => {
+      test(`${i + 1}: ${testCase.testName}`, async () => {
+        logger.info(`Running test ${i + 1}: ${testCase.testName}`);
+        const response = await request(app)
+          .delete("/api/v0.2/users")
+          .set('Cookie', [accessToken])
+          .send(testCase.body);
+
+        expect(response.statusCode).toBe(testCase.expected.status);
+        expect(response.body).toHaveProperty("message", testCase.expected.message);
       });
     });
   });

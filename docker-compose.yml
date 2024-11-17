@@ -13,24 +13,23 @@ services:
       - "${APP_PORT}:${APP_PORT}"
       - "9229:9229"
     volumes:
-      - ./frontend/build:/usr/src/app/frontend_build
-      - /usr/src/app/node_modules
+      - /usr/src/WealthTrack/node_modules
     depends_on:
       postgres:
         condition: service_healthy
     command: npm run dev
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "5"
-    restart: always
+    restart: no
     networks:
       - app_network
 

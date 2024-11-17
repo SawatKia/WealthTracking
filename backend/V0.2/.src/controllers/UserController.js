@@ -47,11 +47,12 @@ class UserController extends BaseController {
 
     async registerUser(req, res, next) {
         try {
+            logger.info('requesting registerUser');
             const { username, email, password, confirm_password } = req.body;
             logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
 
             // Verify all required fields 
-            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password', 'date_of_birth'];
+            const requiredFields = ['national_id', 'username', 'email', 'password', 'confirm_password'];
             await super.verifyField(req.body, requiredFields, this.userModel);
             // Check if password length is at least 8 characters
             if (password.length < 8) {
@@ -143,12 +144,7 @@ class UserController extends BaseController {
         try {
             logger.info('updateUser');
             logger.debug(`req.body: ${JSON.stringify(req.body)}`);
-            const national_id = req.user.sub;
-            if (!national_id) {
-                throw MyAppErrors.badRequest('National ID is required');
-            }
-            logger.debug(`national_id: ${national_id}`);
-            const user = await this.userModel.findOne({ national_id });
+            const user = await super.getCurrentUser(req);
             if (!user) {
                 throw MyAppErrors.notFound('User not found');
             }
@@ -166,6 +162,16 @@ class UserController extends BaseController {
             // Check if there are any fields to update
             const updateFields = { ...req.body };
             delete updateFields.password;  // Remove current password from update fields
+            Object.keys(updateFields).forEach((field) => {
+                logger.debug(`field: ${field}`);
+                if (updateFields[field] === '' || updateFields[field] === null) {
+                    logger.debug(`field ${field} is empty or null, deleting the field`);
+                    delete updateFields[field];
+                }
+                if (updateFields.email && !(this.validateEmail(updateFields.email))) {
+                    throw MyAppErrors.badRequest('Invalid email');
+                }
+            });
             logger.debug(`updateFields request: ${JSON.stringify(updateFields)}`);
 
             if (Object.keys(updateFields).length === 0) {
@@ -188,13 +194,6 @@ class UserController extends BaseController {
             delete updateFields.newPassword;
             delete updateFields.newConfirmPassword;
 
-            // Validate email if provided
-            if (updateFields.email && updateFields.email !== '') {
-                if (!this.validateEmail(updateFields.email)) {
-                    throw MyAppErrors.badRequest('Invalid email');
-                }
-            }
-
             // Normalize username and email if provided
             const normalizedData = this.normalizeUsernameEmail(
                 updateFields.username,
@@ -205,7 +204,15 @@ class UserController extends BaseController {
             const finalUpdateFields = Object.entries({ ...updateFields, ...normalizedData })
                 .reduce((acc, [key, value]) => {
                     if (value !== '') {
-                        acc[key] = value;
+                        // Add timezone handling for date_of_birth
+                        if (key === 'date_of_birth') {
+                            // Add 7 hours to compensate for Bangkok timezone
+                            const date = new Date(value);
+                            date.setHours(7, 0, 0, 0);
+                            acc[key] = date;
+                        } else {
+                            acc[key] = value;
+                        }
                     }
                     return acc;
                 }, {});
@@ -213,10 +220,22 @@ class UserController extends BaseController {
             logger.debug(`finalUpdateFields: ${JSON.stringify(finalUpdateFields)}`);
 
             // Update user in database
-            const updatedUser = await this.userModel.updateUser(national_id, finalUpdateFields);
+            const updatedUser = await this.userModel.updateUser(user.national_id, finalUpdateFields);
+            logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
+            // Only return the fields that were actually updated
+            const updatedFields = {};
+            Object.keys(finalUpdateFields).forEach(key => {
+                if (key !== 'hashed_password') {  // Never return password-related fields
+                    updatedFields[key] = updatedUser[key];
+                }
+                delete updatedUser[key];
+            });
+            logger.debug(`returning updatedFields: ${JSON.stringify(updatedFields)}`);
 
-            req.formattedResponse = formatResponse(200, 'User updated successfully', { updatedUser });
-            next();
+            req.formattedResponse = formatResponse(200, 'User updated successfully',
+                Object.keys(updatedFields).length > 0 ? updatedFields : undefined
+            );
+            return next();
         } catch (error) {
             logger.error(`updateUser error: ${error.message}`);
             // Delete profile picture if it was uploaded but there was an error

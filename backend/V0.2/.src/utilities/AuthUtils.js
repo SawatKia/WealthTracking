@@ -14,7 +14,7 @@ class AuthUtils {
         statusCode: 401,
         message: "Could not validate credentials",
         headers: {
-            "WWW-Authenticate": 'Bearer'
+            "authorization": 'Bearer'
         }
     };
 

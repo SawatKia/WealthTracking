@@ -1,6 +1,7 @@
 const Utils = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const UserModel = require('../models/UserModel');
+const { log } = require('winston');
 
 const { Logger } = Utils;
 const logger = Logger('BaseController');
@@ -34,7 +35,13 @@ class BaseController {
             logger.debug(`req.user: ${JSON.stringify(req.user, null, 2)}`);
 
             if (!req.user) {
-                throw MyAppErrors.unauthorized('Access token or refresh token not found');
+                logger.info('req.user not found, getting from cookies');
+                const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
+                if (!accessToken) {
+                    throw MyAppErrors.unauthorized('Access token not found');
+                }
+                req.user = await verifyToken(accessToken);
+                logger.debug(`req.user decodedfrom cookies: ${JSON.stringify(req.user, null, 2)}`);
             }
 
             const national_id = req.user.sub;
@@ -89,6 +96,7 @@ class BaseController {
                 if (body[field] === undefined || body[field] === null || !body[field]) {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
+                    // throw MyAppErrors.badRequest(`Missing required field: ${field}`);
                 }
             }
             logger.info(`all required fields are present`);
@@ -136,14 +144,18 @@ class BaseController {
     }
 
     verifyOwnership(user, resource) {
+        logger.info('verifyOwnership');
         if (!user || !resource.length > 0) {
+            logger.error('User or resource are empty');
             throw new Error('User or resource are empty');
         }
         resource.map((i) => {
-            if (i.email !== user.email) {
+            if (i.national_id !== user.national_id) {
+                logger.error('User does not own the resource');
                 return false;
             }
         })
+        logger.info('User owns all the resources');
         return true;
     }
 }

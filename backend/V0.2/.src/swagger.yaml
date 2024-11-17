@@ -1,12 +1,13 @@
 openapi: 3.0.0
 info:
-  title: WealthTack API
-  description: API for user registration and check password.
+  title: WealthTrack API
+  description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
   version: "0.2"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
 paths:
+  # Connection/Health Check Endpoints
   /api:
     get:
       tags:
@@ -62,14 +63,26 @@ paths:
                 message: "You are connected to the /api/v0.2/"
                 data: null
 
-  /users/check:
+  # Authentication Endpoints
+  /login:
     post:
       tags:
-        - "User"
-      summary: Check user password (Development Mode Only)
-      description: Validates user's email and password.
+        - "Authentication"
+      summary: Login user
+      description: |
+        Authenticates user and returns JWT tokens:
+        - Web platform: Sets tokens in HTTP-only cookies
+        - Mobile platform: Returns tokens in response body
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+      security: [] # No security for login endpoint
       requestBody:
-        description: User login data.
         required: true
         content:
           application/json:
@@ -82,57 +95,233 @@ paths:
                 email:
                   type: string
                   format: email
-                  description: User's email address.
                   example: "johndoe@example.com"
                 password:
                   type: string
                   format: password
-                  description: User's password.
                   example: "securePassword123"
       responses:
         "200":
-          description: Password check successful.
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: object # For web platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/User"
+                          - type: object # For mobile platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/User"
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully"
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully, store the token in secure storage..."
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /refresh:
+    post:
+      tags:
+        - "Authentication"
+      summary: Refresh access token
+      description: |
+        Uses refresh token to generate new access and refresh tokens:
+        - Web platform: Uses refresh_token from HTTP-only cookie
+        - Mobile platform: Uses refresh token from x-refresh-token header
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+        - in: header
+          name: x-refresh-token
+          schema:
+            type: string
+          description: Refresh token (required for mobile platform)
+          required: false
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: "null" # For web platform
+                          - type: object # For mobile platform
+                            properties:
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags:
+        - "Authentication"
+      summary: Logout user
+      description: Invalidates the current refresh token and handles platform-specific cleanup
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate logout handling
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged out successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "on mobile, just remove both refresh and access tokens from the your storage..."
+                    data: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /google/login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Initiate Google OAuth login
+      description: Generates a Google OAuth URL for login or registration
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [login, register]
+          description: Specifies whether the user wants to login or register
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+      responses:
+        200:
+          description: Successfully generated Google OAuth URL
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status_code:
+                  status:
                     type: integer
                     example: 200
                   message:
                     type: string
-                    example: "Password check successful"
+                    example: redirect to this URL to login with Google
                   data:
-                    type: boolean
-                    example: true
-        "400":
-          description: Bad request due to missing required fields or invalid email address.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
                     type: string
-                    example: "Missing required field: email"
-        "401":
-          description: Unauthorized due to incorrect password.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 401
-                  message:
-                    type: string
-                    example: "Invalid email or password"
+                    example: https://accounts.google.com/o/oauth2/v2/auth?...
+        # "302":
+        #   description: Redirect to Google OAuth consent screen
+        #   headers:
+        #     Location:
+        #       schema:
+        #         type: string
+        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+        400:
+          description: Missing or invalid action parameter
+        500:
+          description: Internal server error
 
+  /google/callback:
+    get:
+      tags:
+        - "Authentication"
+      summary: Google OAuth callback
+      description: Handles the OAuth callback from Google
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: Authorization code from Google
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Logged in with Google"
+                data:
+                  email: "user@example.com"
+                  name: "John Doe"
+                  picture: "https://..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # User Management Endpoints
   /users:
     post:
       tags:
@@ -238,10 +427,14 @@ paths:
     get:
       tags:
         - "User"
-      summary: Get current user from cookie
-      description: Retrieves user information based on cookie.
+      summary: Get current user
+      description: |
+        Retrieves user information based on authentication:
+        - Web platform: Uses cookie authentication
+        - Mobile platform: Uses Bearer token authentication
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: User retrieved successfully.
@@ -264,6 +457,7 @@ paths:
     patch:
       security:
         - cookieAuth: []
+        - bearerAuth: []
       tags:
         - "User"
       summary: Update user information
@@ -330,6 +524,7 @@ paths:
       description: Deletes the current authenticated user. Requires current password for verification.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -386,6 +581,231 @@ paths:
                 message: "User not found"
                 data: null
 
+  /users/check:
+    post:
+      tags:
+        - "User"
+      summary: Check user password (Development Mode Only)
+      description: Validates user's email and password.
+      requestBody:
+        description: User login data.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: User's password.
+                  example: "securePassword123"
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Password check successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password check successful"
+                  data:
+                    type: boolean
+                    example: true
+        "400":
+          description: Bad request due to missing required fields or invalid email address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
+        "401":
+          description: Unauthorized due to incorrect password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+
+  # Bank Account Endpoints
+  /banks:
+    post:
+      tags:
+        - "Bank Account"
+      summary: Create a new bank account
+      description: Creates a new bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountInput"
+      responses:
+        "201":
+          description: Bank account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get all bank accounts
+      description: Retrieves all bank accounts for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of bank accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /banks/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get a specific bank account
+      description: Retrieves a specific bank account by account number and financial institution code.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # Financial Institution Endpoints
+  /fis:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get all financial institutions (Development Mode Only)
+      description: Retrieves a list of all financial institutions.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of financial institutions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fis/operating-banks:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get operating Thai commercial banks
+      description: Retrieves a list of operating Thai commercial banks.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of operating Thai commercial banks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fi/{fi_code}:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get a specific financial institution (Development Mode Only)
+      description: Retrieves a specific financial institution by its code.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of financial institution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Slip Management Endpoints
   /slip/verify:
     post:
       summary: Verify slip data
@@ -393,9 +813,10 @@ paths:
         - Slip
       description: |
         Verifies slip data using payload, image file, **or** base64 encoded image. 
-        You can test by sending any preferred format which does not need to be correct slip file format.
+        You can test by sending any preferred format which does not need to be valid slip file format.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -413,12 +834,14 @@ paths:
                 base64Image:
                   type: string
                   description: Base64 encoded image of the slip
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAQABADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AP/2Q=="
       parameters:
         - in: query
           name: payload
           schema:
             type: string
           description: QR code payload data
+          example: "00000000000000000000000000000000000000000000000000000000000"
       responses:
         "200":
           description: Successful verification
@@ -446,6 +869,7 @@ paths:
         - Slip
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Successful response
@@ -460,321 +884,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /banks:
-    post:
-      tags:
-        - "Bank Account"
-      summary: Create a new bank account
-      description: Creates a new bank account for the authenticated user.
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/BankAccountInput"
-      responses:
-        "201":
-          description: Bank account created successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "409":
-          $ref: "#/components/responses/Conflict"
-    get:
-      tags:
-        - "Bank Account"
-      summary: Get all bank accounts
-      description: Retrieves all bank accounts for the authenticated user.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of bank accounts
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountsListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /banks/{account_number}/{fi_code}:
-    get:
-      tags:
-        - "Bank Account"
-      summary: Get a specific bank account
-      description: Retrieves a specific bank account by account number and financial institution code.
-      security:
-        - cookieAuth: []
-      parameters:
-        - in: path
-          name: account_number
-          required: true
-          schema:
-            type: string
-          description: The bank account number
-        - in: path
-          name: fi_code
-          required: true
-          schema:
-            type: string
-          description: The financial institution code
-      responses:
-        "200":
-          description: Successful retrieval of bank account
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /fis:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get all financial institutions (Development Mode Only)
-      description: Retrieves a list of all financial institutions.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of financial institutions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /fis/operating-banks:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get operating Thai commercial banks
-      description: Retrieves a list of operating Thai commercial banks.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of operating Thai commercial banks
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /fi/{fi_code}:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get a specific financial institution (Development Mode Only)
-      description: Retrieves a specific financial institution by its code.
-      security:
-        - cookieAuth: []
-      parameters:
-        - in: path
-          name: fi_code
-          required: true
-          schema:
-            type: string
-          description: The financial institution code
-      responses:
-        "200":
-          description: Successful retrieval of financial institution
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /login:
-    post:
-      tags:
-        - "Authentication"
-      summary: Login user
-      description: Authenticates user and returns JWT tokens in cookies
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "johndoe@example.com"
-                password:
-                  type: string
-                  format: password
-                  example: "securePassword123"
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /refresh:
-    post:
-      tags:
-        - "Authentication"
-      summary: Refresh access token
-      description: Uses refresh token to generate new access and refresh tokens
-      responses:
-        "200":
-          description: Tokens refreshed successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Tokens refreshed successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /logout:
-    post:
-      tags:
-        - "Authentication"
-      summary: Logout user
-      description: Invalidates the current refresh token and clears authentication cookies
-      responses:
-        "200":
-          description: Logout successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged out successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /google/login:
-    post:
-      tags:
-        - "Authentication"
-      summary: Initiate Google OAuth login
-      description: Generates a Google OAuth URL for login or registration
-      parameters:
-        - in: query
-          name: action
-          required: true
-          schema:
-            type: string
-            enum: [login, register]
-          description: Specifies whether the user wants to login or register
-      responses:
-        200:
-          description: Successfully generated Google OAuth URL
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: redirect to this URL to login with Google
-                  data:
-                    type: string
-                    example: https://accounts.google.com/o/oauth2/v2/auth?...
-        # "302":
-        #   description: Redirect to Google OAuth consent screen
-        #   headers:
-        #     Location:
-        #       schema:
-        #         type: string
-        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
-        400:
-          description: Missing or invalid action parameter
-        500:
-          description: Internal server error
-
-  /google/callback:
-    get:
-      tags:
-        - "Authentication"
-      summary: Google OAuth callback
-      description: Handles the OAuth callback from Google
-      parameters:
-        - in: query
-          name: code
-          schema:
-            type: string
-          required: true
-          description: Authorization code from Google
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in with Google"
-                data:
-                  email: "user@example.com"
-                  name: "John Doe"
-                  picture: "https://..."
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
 components:
   securitySchemes:
-    # bearerAuth:
-    #   type: http
-    #   scheme: bearer
-    #   bearerFormat: JWT
-    cookieAuth:
+    bearerAuth: # For mobile platform
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth: # For web platform
       type: apiKey
       in: cookie
       name: access_token
@@ -1056,24 +1172,26 @@ components:
     BankAccountInput:
       type: object
       required:
-        - bankAccountName
-        - bankAccountDisplayName
-        - bankName
-        - bankAccountNumber
+        - account_number
+        - fi_code
+        - display_name
+        - account_name
         - balance
       properties:
-        bankAccountName:
-          type: string
-          example: "My Savings Account"
-        bankAccountDisplayName:
-          type: string
-          example: "Savings"
-        bankName:
-          type: string
-          example: "Example Bank"
-        bankAccountNumber:
+        account_number:
           type: string
           example: "1234567890"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        display_name:
+          type: string
+          example: "Savings"
+        account_name:
+          type: string
+          example: "My Savings Account"
         balance:
           type: number
           format: float
@@ -1103,9 +1221,11 @@ components:
         bankAccountDisplayName:
           type: string
           example: "Savings"
-        bankName:
+        fiCode:
           type: string
-          example: "Example Bank"
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
         bankAccountNumber:
           type: string
           example: "1234567890"
@@ -1131,47 +1251,116 @@ components:
     DebtInput:
       type: object
       required:
-        - debtName
-        - amount
-        - interestRate
-        - startDate
-        - endDate
+        - debt_number
+        - fi_code
+        - debt_name
+        - start_date
+        - total_installments
+        - loan_principle
+        - loan_balance
       properties:
-        debtName:
+        debt_number:
           type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
           example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtUpdateInput:
       type: object
       properties:
-        amount:
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 13
+        loan_balance:
           type: number
-          format: float
-          example: 18000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.0
-        endDate:
+          format: decimal
+          minimum: 0
+          example: 780000.00
+
+    Debt:
+      type: object
+      required:
+        - debt_number
+        - fi_code
+        - national_id
+        - debt_name
+        - start_date
+        - current_installment
+        - total_installments
+        - loan_principle
+        - loan_balance
+      properties:
+        debt_number:
+          type: string
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        national_id:
+          type: string
+          description: "13-digit national ID"
+          example: "1234567890123"
+          pattern: "^[0-9]{13}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
-          example: "2027-01-01"
+          example: "2023-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtResponse:
       type: object
@@ -1184,32 +1373,6 @@ components:
           example: "Debt retrieved successfully"
         data:
           $ref: "#/components/schemas/Debt"
-
-    Debt:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "def456"
-        debtName:
-          type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
-          type: string
-          format: date
-          example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
 
     DebtsListResponse:
       type: object
@@ -1227,16 +1390,22 @@ components:
 
     FinancialInstitution:
       type: object
+      required:
+        - fi_code
       properties:
         fi_code:
           type: string
-          example: "KBANK"
-        name:
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        name_th:
           type: string
-          example: "Kasikornbank"
-        short_name:
+          description: "Thai bank name"
+          example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+        name_en:
           type: string
-          example: "KBank"
+          description: "English bank name"
+          example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
 
     FinancialInstitutionResponse:
       type: object
@@ -1263,6 +1432,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FinancialInstitution"
+          example:
+            - fi_code: "002"
+              name_th: "ธนาคารกรุงเทพ จำกัด (มหาชน)"
+              name_en: "BANGKOK BANK PUBLIC COMPANY LTD."
+            - fi_code: "004"
+              name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+              name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+            - fi_code: "006"
+              name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
+              name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
+            - fi_code: "014"
+              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหาชน)"
+              name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
 
   responses:
     BadRequest:
