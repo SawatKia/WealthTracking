@@ -69,7 +69,19 @@ paths:
       tags:
         - "Authentication"
       summary: Login user
-      description: Authenticates user and returns JWT tokens in cookies
+      description: |
+        Authenticates user and returns JWT tokens:
+        - Web platform: Sets tokens in HTTP-only cookies
+        - Mobile platform: Returns tokens in response body
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+      security: [] # No security for login endpoint
       requestBody:
         required: true
         content:
@@ -94,16 +106,51 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: object # For web platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/User"
+                          - type: object # For mobile platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/User"
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully"
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully, store the token in secure storage..."
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -112,23 +159,48 @@ paths:
       tags:
         - "Authentication"
       summary: Refresh access token
-      description: Uses refresh token to generate new access and refresh tokens
+      description: |
+        Uses refresh token to generate new access and refresh tokens:
+        - Web platform: Uses refresh_token from HTTP-only cookie
+        - Mobile platform: Uses refresh token from x-refresh-token header
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+        - in: header
+          name: x-refresh-token
+          schema:
+            type: string
+          description: Refresh token (required for mobile platform)
+          required: false
       responses:
         "200":
           description: Tokens refreshed successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Tokens refreshed successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: "null" # For web platform
+                          - type: object # For mobile platform
+                            properties:
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -137,7 +209,18 @@ paths:
       tags:
         - "Authentication"
       summary: Logout user
-      description: Invalidates the current refresh token and clears authentication cookies
+      description: Invalidates the current refresh token and handles platform-specific cleanup
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate logout handling
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Logout successful
@@ -145,15 +228,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged out successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged out successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "on mobile, just remove both refresh and access tokens from the your storage..."
+                    data: null
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -171,6 +256,12 @@ paths:
             type: string
             enum: [login, register]
           description: Specifies whether the user wants to login or register
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
       responses:
         200:
           description: Successfully generated Google OAuth URL
@@ -336,10 +427,14 @@ paths:
     get:
       tags:
         - "User"
-      summary: Get current user from cookie
-      description: Retrieves user information based on cookie.
+      summary: Get current user
+      description: |
+        Retrieves user information based on authentication:
+        - Web platform: Uses cookie authentication
+        - Mobile platform: Uses Bearer token authentication
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: User retrieved successfully.
@@ -362,6 +457,7 @@ paths:
     patch:
       security:
         - cookieAuth: []
+        - bearerAuth: []
       tags:
         - "User"
       summary: Update user information
@@ -428,6 +524,7 @@ paths:
       description: Deletes the current authenticated user. Requires current password for verification.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -511,6 +608,9 @@ paths:
                   format: password
                   description: User's password.
                   example: "securePassword123"
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Password check successful.
@@ -564,6 +664,7 @@ paths:
       description: Creates a new bank account for the authenticated user.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -590,6 +691,7 @@ paths:
       description: Retrieves all bank accounts for the authenticated user.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Successful retrieval of bank accounts
@@ -608,6 +710,7 @@ paths:
       description: Retrieves a specific bank account by account number and financial institution code.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: path
           name: account_number
@@ -642,6 +745,7 @@ paths:
       description: Retrieves a list of all financial institutions.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Successful retrieval of financial institutions
@@ -660,6 +764,7 @@ paths:
       description: Retrieves a list of operating Thai commercial banks.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Successful retrieval of operating Thai commercial banks
@@ -680,6 +785,7 @@ paths:
       description: Retrieves a specific financial institution by its code.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: path
           name: fi_code
@@ -710,6 +816,7 @@ paths:
         You can test by sending any preferred format which does not need to be valid slip file format.
       security:
         - cookieAuth: []
+        - bearerAuth: []
       requestBody:
         content:
           multipart/form-data:
@@ -762,6 +869,7 @@ paths:
         - Slip
       security:
         - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Successful response
@@ -778,11 +886,11 @@ paths:
 
 components:
   securitySchemes:
-    # bearerAuth:
-    #   type: http
-    #   scheme: bearer
-    #   bearerFormat: JWT
-    cookieAuth:
+    bearerAuth: # For mobile platform
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth: # For web platform
       type: apiKey
       in: cookie
       name: access_token
@@ -1064,26 +1172,26 @@ components:
     BankAccountInput:
       type: object
       required:
-        - bankAccountName
-        - bankAccountDisplayName
-        - fiCode
-        - bankAccountNumber
+        - account_number
+        - fi_code
+        - display_name
+        - account_name
         - balance
       properties:
-        bankAccountName:
+        account_number:
           type: string
-          example: "My Savings Account"
-        bankAccountDisplayName:
-          type: string
-          example: "Savings"
-        fiCode:
+          example: "1234567890"
+        fi_code:
           type: string
           description: "3-digit bank code"
           example: "004"
           pattern: "^[0-9]{3}$"
-        bankAccountNumber:
+        display_name:
           type: string
-          example: "1234567890"
+          example: "Savings"
+        account_name:
+          type: string
+          example: "My Savings Account"
         balance:
           type: number
           format: float

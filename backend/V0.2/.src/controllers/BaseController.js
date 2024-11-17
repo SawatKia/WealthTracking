@@ -36,7 +36,7 @@ class BaseController {
 
             if (!req.user) {
                 logger.info('req.user not found, getting from cookies');
-                const accessToken = req.cookies['access_token'];
+                const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
                 if (!accessToken) {
                     throw MyAppErrors.unauthorized('Access token not found');
                 }
@@ -144,14 +144,18 @@ class BaseController {
     }
 
     verifyOwnership(user, resource) {
+        logger.info('verifyOwnership');
         if (!user || !resource.length > 0) {
+            logger.error('User or resource are empty');
             throw new Error('User or resource are empty');
         }
         resource.map((i) => {
-            if (i.email !== user.email) {
+            if (i.national_id !== user.national_id) {
+                logger.error('User does not own the resource');
                 return false;
             }
         })
+        logger.info('User owns all the resources');
         return true;
     }
 }

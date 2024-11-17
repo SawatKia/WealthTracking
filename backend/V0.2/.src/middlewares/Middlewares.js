@@ -111,7 +111,8 @@ class Middlewares {
       Data: ${data ? JSON.stringify(data, null, 6) : 'No data'}
       `;
       logger.debug(responseLogMessage);
-      res.set(headers || {}).status(status_code).json(formatResponse(status_code, message, data));
+
+      res.set(headers).status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();
     }
@@ -182,13 +183,11 @@ class Middlewares {
 
   authMiddleware(req, res, next) {
     logger.info("Authenticating user");
-    const accessToken = req.cookies['access_token'];
-    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
 
-    // if (appConfigs.environment === 'test') {
-    //   next();
-    //   return;
-    // }
+    // Check for token in both cookie and Authorization header
+    const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
+
+    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
 
     if (accessToken) {
       try {
@@ -224,7 +223,6 @@ class Middlewares {
     // Prepare the body for logging 
     let logBody;
     if (body && body.base64Image) {
-      // Truncate the base64Image value to show only the first 50 characters
       logBody = {
         ...body,
         base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
@@ -233,22 +231,29 @@ class Middlewares {
       logBody = body;
     }
 
+    // Format headers with truncated values
+    const formattedHeaders = Object.entries(headers)
+      .map(([key, value]) => {
+        const truncatedValue = value && value.length > 50
+          ? `${value.substring(0, 50)}... [truncated]`
+          : value;
+        return `      ${key.padEnd(16)}: ${truncatedValue}`;
+      })
+      .join('\n');
+
     // Prepare a human-friendly log message
     const requestLogMessage = `
     Incoming Request:
     ----------------
     ${ip} => ${method} ${requestPath}
     Headers:
-      Host: ${headers.host}
-      Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
-      Content-Type: ${headers['content-type']}
-      Content-Length: ${headers['content-length']}
+${formattedHeaders}
     Cookies: 
       ${Object.keys(req.cookies)
         .map(key => {
           const cookieValue = req.cookies[key];
           const displayValue = typeof cookieValue === 'string'
-            ? cookieValue.substring(0, 20)
+            ? cookieValue.substring(0, 50)
             : String(cookieValue);
           return `${key}: ${displayValue}...`;
         })
