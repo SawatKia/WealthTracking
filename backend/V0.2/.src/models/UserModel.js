@@ -186,6 +186,8 @@ class UserModel extends BaseModel {
             }
 
             logger.info('Password match');
+            delete userObject.role;
+            delete userObject.auth_service;
             delete userObject.hashed_password;
             return { result: true, user: userObject };
         } catch (error) {
