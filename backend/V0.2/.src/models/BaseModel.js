@@ -97,7 +97,7 @@ class BaseModel {
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error creating record: %s", error);
+      logger.error("Error creating record: ", error);
       throw error;
     }
   }
@@ -184,16 +184,17 @@ class BaseModel {
         const sql = `UPDATE ${this.tableName} 
           SET ${updatePlaceholders} 
           WHERE ${conditionPlaceholders} 
-          RETURNING *`;
+          RETURNING ${updateKeys.join(", ")}`;
 
         logger.debug(`Update SQL: ${sql}`);
-        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(updateValues, primaryValues))}`);
+        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(primaryValues))}`);
 
         const result = await this.pgClient.query(sql, [
           ...updateValues,
           ...primaryValues,
         ]);
         logger.debug("Update result: " + JSON.stringify(result.rows[0]));
+
         return result.rows[0];
       });
     } catch (error) {
