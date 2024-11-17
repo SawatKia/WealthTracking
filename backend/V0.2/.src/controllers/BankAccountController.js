@@ -164,18 +164,100 @@ class BankAccountController extends BaseController {
         }
     }
 
-
     async updateBankAccount(req, res, next) {
-        //TODO - extract query string
-        //TODO - verify fields of bank account Pk
-        //TODO - destructure req.body
-        //TODO - verify existing fields if it valid
-        //TODO - get current user
-        //TODO - model findOne
-        //TODO - not found error
-        //TODO - verify ownership
-        //TODO - model update
-        //TODO - send response
+        logger.info('Updating bank account...');
+        try {
+            // Extract and verify query parameters
+            const { account_number, fi_code } = req.params;
+            logger.debug(`Params received: account_number=${account_number}, fi_code=${fi_code}`);
+
+            const validationResult = this.BankAccountUtils.validateAccountNumber(account_number, fi_code);
+            logger.debug(`validationResult: ${JSON.stringify(validationResult)}`);
+            if (!validationResult.isValid) {
+                logger.error(`validationResult.isValid is false, throwing badRequest error`);
+                throw MyAppErrors.badRequest(validationResult.error);
+            }
+
+            const updateData = {
+                ...req.body,
+                ...req.params
+            }
+            logger.debug(`RAW updateData: ${JSON.stringify(updateData)}`);
+
+            // Verify required fields in params
+            const requiredParams = ['account_number', 'fi_code'];
+            let convertedUpdateData;
+            try {
+                convertedUpdateData = await super.verifyField(updateData, requiredParams, this.BankAccountModel);
+            } catch (error) {
+                throw new ValidationError(error.message);
+            }
+
+            Object.keys(convertedUpdateData).forEach((field) => {
+                logger.debug(`field: ${field}`);
+                if (convertedUpdateData[field] === '' || convertedUpdateData[field] === null) {
+                    logger.debug(`field ${field} is empty or null, deleting the field`);
+                    delete convertedUpdateData[field];
+                }
+            });
+            logger.debug(`convertedUpdateData after deleting empty fields: ${JSON.stringify(convertedUpdateData)}`);
+
+            // Destructure and validate request body
+            if (Object.keys(convertedUpdateData).length === 0) {
+                logger.error('convertedUpdateData is empty');
+                throw MyAppErrors.badRequest('At least one field is required to update bank account information');
+            }
+
+            // Get current user
+            const currentUser = await super.getCurrentUser(req);
+            if (!currentUser) {
+                throw MyAppErrors.userNotFound();
+            }
+            logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
+
+            // Find existing bank account
+            const existingAccount = await this.BankAccountModel.get(convertedUpdateData.account_number, convertedUpdateData.fi_code);
+            logger.debug(`existingAccount: ${JSON.stringify(existingAccount)}`);
+            if (!existingAccount) {
+                logger.error('existingAccount not found');
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+            logger.info('existingAccount found');
+
+            // Verify ownership
+            const isOwner = await super.verifyOwnership(currentUser, [existingAccount]);
+            if (!isOwner) {
+                logger.error('verifyOwnership failed');
+                throw MyAppErrors.forbidden('You are not allowed to access this resource');
+            }
+            logger.info('verifyOwnership passed');
+
+            // Update bank account
+            const updatedAccount = await this.BankAccountModel.update(
+                {
+                    account_number: convertedUpdateData.account_number,
+                    fi_code: convertedUpdateData.fi_code
+                },
+                convertedUpdateData
+            );
+            logger.debug(`updatedAccount: ${JSON.stringify(updatedAccount)}`);
+            // Format and send response
+            req.formattedResponse = formatResponse(
+                200,
+                'Bank account updated successfully',
+                { updatedAccount }
+            );
+            next();
+        } catch (error) {
+            logger.error(`Failed to update bank account: ${error.message}`);
+            if (error instanceof ValidationError) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.code === '23505') {
+                next(MyAppErrors.conflict('Bank account with these details already exists'));
+            } else {
+                next(error);
+            }
+        }
     }
 
     async deleteBankAccount(req, res, next) {
