@@ -10,7 +10,11 @@ const config = {
         host: process.env.POSTGRES_HOST,
         password: process.env.POSTGRES_PASSWORD || 'password',
         port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-        databaseName: process.env.NODE_ENV === 'test' ? process.env.POSTGRES_TEST_DB_NAME || 'test_database_name' : process.env.POSTGRES_DB,
+        databaseName: {
+            test: process.env.POSTGRES_TEST_DB_NAME || 'test_database_name',
+            development: process.env.POSTGRES_DB || 'app_database_name',
+            production: process.env.POSTGRES_DB || 'production_database_name',
+        },
     },
     pgAdmin: {
         email: process.env.PGADMIN_DEFAULT_EMAIL,
@@ -32,7 +36,8 @@ const config = {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    }
+    },
+    databaseReset: process.env.FORCE_DEV_DB_RESET || false,
 };
 
 module.exports = config;
