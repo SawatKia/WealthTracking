@@ -2,6 +2,8 @@ const { development, test, production } = require("../configs/dbConfigs");
 const Utils = require("../utilities/Utils");
 const Pool = require("pg-pool");
 const appConfigs = require("../configs/AppConfigs");
+const fs = require('fs');
+const path = require('path');
 
 const NODE_ENV = appConfigs.environment;
 const TEST_DB = appConfigs.postgres.databaseName;
@@ -51,10 +53,10 @@ class PgClient {
   async init() {
     try {
       logger.info("Initialize PgClient");
-      if (NODE_ENV === "test") {
-        // Create test database if it doesn't exist
-        logger.info("Checking if test database exists...");
-        await this.createTestDatabase();
+      if (NODE_ENV === "test" || NODE_ENV === "development") {
+        // Create database if it doesn't exist
+        logger.info(`Checking if ${NODE_ENV} database exists...`);
+        await this.createDatabase(NODE_ENV);
       }
 
       // Connect to the database
@@ -63,7 +65,7 @@ class PgClient {
       if (!this.client) {
         throw new Error("Database connection failed");
       }
-      logger.debug("Database connected successfully");
+      logger.info("Database connected successfully");
 
       await this.createAllTables();
     } catch (error) {
@@ -82,12 +84,19 @@ class PgClient {
     return this.transactionStarted;
   }
 
-  async query(sql, params) {
-    logger.info('received query request');
-    if (!this.client) await this.init();
-    logger.debug(`sql: ${sql}`);
-    logger.debug(`params: ${JSON.stringify(params)}`);
-    logger.info('querying...');
+  async query(sql, params, options = { silent: false }) {
+    if (!this.client) {
+      logger.error("Database not initialized. Call init() first.");
+      throw new Error("Database not initialized. Call init() first.");
+    }
+
+    if (!options.silent) {
+      logger.info('received query request');
+      logger.debug(`sql: ${sql}`);
+      logger.debug(`params: ${JSON.stringify(params)}`);
+      logger.info('querying...');
+    }
+
     return this.client.query(sql, params);
   }
 
@@ -137,37 +146,77 @@ class PgClient {
     }
   }
 
-  async createTestDatabase() {
+  /**
+   * Create a database if it doesn't exist.
+   * 
+   * For test and development environments:
+   * 
+   *  - If database exists: It will be deleted and recreated with new configurations
+   *  - If database doesn't exist: It will be created
+   * 
+   * For production environment:
+   * 
+   *  - If database exists: No changes will be made
+   *  - If database doesn't exist: It will be created
+   * 
+   * @param {string} environment - The environment to create the database in. Must be either "test", "development" or "production".
+   * @returns {Promise<void>}
+   */
+  async createDatabase(environment = 'test') {
+    if (!['test', 'development', 'production'].includes(environment)) {
+      throw new Error('Invalid environment. Must be either "test", "development" or "production"');
+    }
+
+    const config = environment === 'test' ? test : (environment === 'development' ? development : production);
+    const dbName = config.database;
+
     const adminPool = new Pool({
-      ...test,
+      ...config,
       database: "postgres", // Use 'postgres' as the default admin database
     });
 
-    logger.info(`Creating test database '${TEST_DB}'...`);
+    let adminClient;
+    logger.info(`start creating ${environment} database name: '${dbName}' process...`);
     try {
-      const adminClient = await adminPool.connect();
-      // Check if the test database exists
-      logger.info(`Checking if test database '${TEST_DB}' exists...`);
+      adminClient = await adminPool.connect();
+      // Check if the database exists
+      logger.info(`checking if ${environment} database name: '${dbName}' exists?`);
       const checkDbQuery = `SELECT 1 FROM pg_database WHERE datname = $1`;
-      const result = await adminClient.query(checkDbQuery, [TEST_DB]);
+      const result = await adminClient.query(checkDbQuery, [dbName]);
 
       if (result.rowCount > 0) {
-        logger.info(`Test database '${TEST_DB}' already exists`);
-        adminClient.release();
-        return; // Exit if the database exists
+        logger.info(`${environment} database name: '${dbName}' already exists`);
+        const forceDbReset = String(appConfigs.databaseReset).toLowerCase() === 'true';
+        logger.warn(`force db reset: ${forceDbReset ? 'enable' : 'disable'} db reset`);
+
+        // Only delete the database if it's not production and FORCE_DB_RESET is true 
+        if (environment != 'production' && forceDbReset) {
+          const deleteDbQuery = `DROP DATABASE "${dbName}"`;
+          await adminClient.query(deleteDbQuery);
+          logger.warn(`${environment} database name: '${dbName}' deleted successfully`);
+        }
+        else {
+          logger.info('skipping database deletion and recreation');
+          return;
+        }
       }
-      await adminClient.query(`CREATE DATABASE ${TEST_DB}`);
-      logger.info(`Test database '${TEST_DB}' created successfully`);
-      this.createAllTables();
-      adminClient.release();
+
+      // Only create database if it doesn't exist
+      const createDbQuery = `CREATE DATABASE "${dbName}"`;
+      await adminClient.query(createDbQuery);
+      logger.info(`${environment} database name: '${dbName}' created successfully with new configurations(if any)`);
+
     } catch (error) {
       if (error.code !== "42P04") {
         // 42P04 is the code for 'database already exists'
-        logger.error(`Error creating test database: ${error.message}`);
+        logger.error(`Error creating ${environment} database: ${error.message}`);
         throw error;
       }
-      logger.info(`Test database '${TEST_DB}' already exists`);
+      logger.info(`${environment} database name: '${dbName}' already exists`);
     } finally {
+      if (adminClient) {
+        adminClient.release();
+      }
       await adminPool.end();
     }
   }
@@ -185,133 +234,42 @@ class PgClient {
       "api_request_limits",
       "used_refresh_tokens"
     ];
+
     for (const table of tables) {
       try {
         // Check if the table exists
         await this.client.query(`SELECT 1 FROM ${table}`);
-        logger.info(`Table [${table}] exists, skip creating table...`);
+        logger.debug(`Table [${table}] exists, skip creating table...`);
       } catch (error) {
         // The table doesn't exist, create it
         logger.debug(`Table [${table}] does not exist`);
-        logger.info(`Creating table: [${table}]`);
-        await this.createTableIfNotExist(table);
+        logger.debug(`Creating table: [${table}]`);
+        await this.createTable(table);
       }
+    }
+
+    // After creating all tables, create triggers
+    try {
+      const triggerSQL = fs.readFileSync(path.join(__dirname, '../../sql/triggers.sql'), 'utf8');
+      await this.client.query(triggerSQL);
+      logger.info('Database triggers created successfully');
+    } catch (error) {
+      logger.error(`Error creating triggers: ${error.message}`);
+      throw error;
     }
   }
 
-
-  async createTableIfNotExist(tableName) {
-    const createTableQuery = {
-      users: `CREATE TABLE IF NOT EXISTS users (
-              national_id VARCHAR(255) PRIMARY KEY,
-              email VARCHAR(255) NOT NULL,
-              username VARCHAR(50) NOT NULL,
-              hashed_password VARCHAR(255),
-              role VARCHAR(20) NOT NULL,
-              member_since TIMESTAMP NOT NULL,
-              date_of_birth DATE,
-              auth_service VARCHAR(20) DEFAULT 'local',
-              profile_picture_uri VARCHAR(255),
-              CONSTRAINT check_auth_service CHECK (auth_service IN ('local', 'google', 'facebook', 'apple')),
-              CONSTRAINT check_password_requirement CHECK (
-                  (auth_service = 'local' AND hashed_password IS NOT NULL) OR 
-                  (auth_service != 'local')
-              )
-          );`,
-      financial_institutions: `CREATE TABLE IF NOT EXISTS financial_institutions (
-                fi_code VARCHAR(20) PRIMARY KEY,
-                name_th VARCHAR(255) NOT NULL,
-                name_en VARCHAR(255) NOT NULL
-            );`,
-      bank_accounts: `CREATE TABLE IF NOT EXISTS bank_accounts (
-                account_number VARCHAR(20) NOT NULL,
-                fi_code VARCHAR(20) NOT NULL,
-                national_id CHAR(13) NOT NULL,
-                display_name VARCHAR(100) NOT NULL,
-                account_name VARCHAR(100) NOT NULL,
-                balance DECIMAL(15, 2) NOT NULL,
-                PRIMARY KEY (account_number, fi_code),
-                FOREIGN KEY (national_id) REFERENCES users(national_id) 
-                    ON DELETE CASCADE ON UPDATE CASCADE,
-                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
-                    ON UPDATE CASCADE ON DELETE CASCADE
-            );`,
-      debts: `CREATE TABLE IF NOT EXISTS debts (
-                debt_number VARCHAR(50) NOT NULL,
-                fi_code VARCHAR(20) NOT NULL,
-                national_id CHAR(13) NOT NULL,
-                debt_name VARCHAR(100) NOT NULL,
-                start_date DATE NOT NULL,
-                current_installment INT NOT NULL,
-                total_installments INT NOT NULL,
-                loan_principle DECIMAL(15, 2) NOT NULL,
-                loan_balance DECIMAL(15, 2) NOT NULL,
-                PRIMARY KEY (debt_number, fi_code),
-                FOREIGN KEY (national_id) REFERENCES users(national_id)
-                    ON DELETE CASCADE ON UPDATE CASCADE,
-                FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
-                    ON UPDATE CASCADE ON DELETE CASCADE
-            );`,
-      transactions: `CREATE TABLE IF NOT EXISTS transactions (
-                transaction_id SERIAL PRIMARY KEY,
-                transaction_datetime TIMESTAMP NOT NULL,
-                category VARCHAR(50) NOT NULL,
-                type VARCHAR(20) NOT NULL,
-                amount DECIMAL(15, 2) NOT NULL,
-                note TEXT,
-                national_id CHAR(13) NOT NULL,
-                debt_number VARCHAR(50),
-                fi_code VARCHAR(20),
-                FOREIGN KEY (national_id) REFERENCES users(national_id)
-                    ON DELETE CASCADE ON UPDATE CASCADE,
-                FOREIGN KEY (debt_number, fi_code) REFERENCES debts(debt_number, fi_code) 
-                    ON UPDATE CASCADE ON DELETE CASCADE
-            );`,
-      transaction_bank_account_relations: `CREATE TABLE IF NOT EXISTS transaction_bank_account_relations (
-                transaction_id INT NOT NULL,
-                account_number VARCHAR(20) NOT NULL,
-                fi_code VARCHAR(20) NOT NULL,
-                role VARCHAR(20) NOT NULL,
-                PRIMARY KEY (account_number, fi_code, transaction_id),
-                FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) 
-                    ON UPDATE CASCADE ON DELETE CASCADE,
-                FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) 
-                    ON UPDATE CASCADE ON DELETE CASCADE
-            );`,
-      api_request_limits: `CREATE TABLE IF NOT EXISTS api_request_limits (
-                service_name VARCHAR(255) NOT NULL,
-                request_date DATE NOT NULL,
-                request_count INTEGER NOT NULL DEFAULT 0,
-                PRIMARY KEY (service_name, request_date)
-            );`,
-      used_refresh_tokens: `CREATE TABLE IF NOT EXISTS used_refresh_tokens (
-                jti TEXT PRIMARY KEY,
-                created_at TIMESTAMP NOT NULL,
-                expires_at TIMESTAMP NOT NULL
-      );`,
-    }[tableName];
-
-    if (!createTableQuery)
-      throw new Error(`No create table query for table ${tableName}`);
-
-    logger.info(`Creating table ${tableName} if not exist...`);
+  async createTable(tableName) {
+    logger.info(`Creating table ${tableName}...`);
     try {
-      // Check if table exists
-      const tableExistsQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = $1
-        );
-      `;
-      const { rows } = await this.client.query(tableExistsQuery, [tableName]);
+      const sqlPath = path.join(__dirname, '../../sql/tables', `${tableName}.sql`);
+      logger.debug(`finding sqlPath: ${sqlPath}`);
+      const createTableSQL = fs.readFileSync(sqlPath, 'utf8');
 
-      if (!rows[0].exists) {
-        await this.client.query(createTableQuery);
-        logger.debug(`Table ${tableName} created`);
-      } else {
-        logger.debug(`Table ${tableName} already exists`);
-      }
+      // Remove the table name comment and execute the CREATE TABLE statement
+      const sqlStatement = createTableSQL.replace(/-- TABLE: \w+\n/, '').trim();
+      await this.client.query(sqlStatement);
+      logger.debug(`Table ${tableName} created`);
     } catch (error) {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
       throw error;
