@@ -26,7 +26,7 @@ const apiController = new ApiController();
 const fiController = new FinancialInstitutionController();
 const authController = new AuthController();
 
-if (NODE_ENV != 'test') {
+if (NODE_ENV == 'development') {
     logger.info('Generating swagger documentation');
     const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
     // const file = fs.readFileSync('./swagger.yaml', 'utf8');
