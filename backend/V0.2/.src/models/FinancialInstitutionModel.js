@@ -45,7 +45,7 @@ class FinancialInstitutionModel extends BaseModel {
   async _isTableEmpty() {
     logger.info("Checking if table is empty...");
     const result = await pgClient.query(
-      `SELECT COUNT(*) FROM ${this.tableName}`
+      `SELECT COUNT(*) FROM ${this.tableName}`, [], { silent: true }
     );
     return parseInt(result.rows[0].count) === 0;
   }
