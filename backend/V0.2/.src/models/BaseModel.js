@@ -104,13 +104,13 @@ class BaseModel {
 
   /**
    * Finds all records in the table that belong to the given user email.
-   * @param {string} userEmail - Email of the user to find records for
+   * @param {string} nationalId - National ID of the user to find records for
    * @returns {Promise<Array<Object>>} - Array of records found
    */
-  async findAll(userEmail) {
+  async findAll(nationalId) {
     try {
-      const sql = `SELECT * FROM ${this.tableName} WHERE userEmail = $1`;
-      const result = await this.pgClient.query(sql, [userEmail]);
+      const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
+      const result = await this.pgClient.query(sql, [nationalId]);
       return result.rows;
     } catch (error) {
       logger.error("Error finding all records: %s", error);
@@ -161,17 +161,22 @@ class BaseModel {
    */
   async update(primaryKeys, data) {
     try {
+      logger.info("Updating record...");
+      logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
+      logger.debug(`data: ${JSON.stringify(data)}`);
+      const dataToUpdate = { ...primaryKeys, ...data };
+      logger.debug(`dataToUpdate: ${JSON.stringify(dataToUpdate)}`);
       return await this.executeWithTransaction(async () => {
-        const validated = await this.validateSchema(data, "update");
-        logger.debug("Validated data: " + JSON.stringify(validated));
+        const validated = await this.validateSchema(dataToUpdate, "update");
+        logger.debug(`Validated data: ${JSON.stringify(validated)}`);
         if (typeof primaryKeys !== "object" || primaryKeys === null) {
           throw new Error("primaryKeys must be a non-null object");
         }
 
         const keys = Object.keys(primaryKeys);
         const primaryValues = Object.values(primaryKeys);
-        const updateKeys = Object.keys(validated);
-        const updateValues = Object.values(validated);
+        const updateKeys = Object.keys(data);
+        const updateValues = Object.values(data);
 
         const updatePlaceholders = updateKeys
           .map((key, index) => `"${key}" = $${index + 1}`)
