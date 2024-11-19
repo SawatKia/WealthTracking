@@ -128,6 +128,7 @@ class UserController extends BaseController {
     async getUser(req, res, next) {
         try {
             const user = await super.getCurrentUser(req);
+            //TODO - examine the profile picture uri and return the file path or image(or Buffer) if it exists
             req.formattedResponse = formatResponse(200, 'User retrieved successfully', user);
             next();
         }
@@ -244,7 +245,7 @@ class UserController extends BaseController {
                     if (err) {
                         logger.error(`Failed to delete profile picture: ${err.message}`);
                     } else {
-                        logger.info('Profile picture deleted');
+                        logger.info('update user error, profile picture deleted');
                     }
                 });
             }
