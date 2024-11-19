@@ -112,18 +112,26 @@ class BankAccountController extends BaseController {
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
             }
+            logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
 
+            logger.info('Retrieving all bank accounts...');
             const bankAccounts = await this.BankAccountModel.getAll(currentUser.national_id);
             if (!bankAccounts || bankAccounts.length === 0) {
-                throw MyAppErrors.notFound('Bank accounts not found');
+                logger.info('No bank accounts found');
+                req.formattedResponse = formatResponse(200, 'No bank accounts found', []);
+                next();
+                return;
             }
+
+            logger.debug(`bankAccounts: ${JSON.stringify(bankAccounts)}`);
 
             const isOwner = await super.verifyOwnership(currentUser, bankAccounts);
             if (!isOwner) {
                 throw MyAppErrors.forbidden('You are not allowed to access this resource');
             }
-
-            req.formattedResponse = formatResponse(200, 'Bank accounts retrieved successfully', { bankAccounts });
+            const message = `Retrieved ${bankAccounts.length} bank account${bankAccounts.length > 1 ? 's' : ''} successfully`;
+            logger.debug(`message: ${message}`);
+            req.formattedResponse = formatResponse(200, message, { bankAccounts });
             next();
         } catch (error) {
             logger.error(`Failed to retrieve bank accounts: ${error.message}`);
@@ -133,29 +141,35 @@ class BankAccountController extends BaseController {
 
     async getBankAccount(req, res, next) {
         try {
+            logger.info('Getting a bank account...');
+            logger.debug(`req.params: ${JSON.stringify(req.params)}`);
             const requiredFields = ['account_number', 'fi_code'];
-            const convertedParams = super.verifyField(req.params, requiredFields, this.BankAccountModel);
-
-            if (!convertedParams.account_number || !convertedParams.fi_code) {
-                throw MyAppErrors.badRequest('Account number and financial institution code are required');
-            }
+            const convertedParams = await super.verifyField(req.params, requiredFields, this.BankAccountModel);
+            logger.debug(`convertedParams: ${JSON.stringify(convertedParams)}`);
 
             const { account_number, fi_code } = convertedParams;
+            logger.info('extracted params:');
+            logger.debug(`account_number: ${account_number}, fi_code: ${fi_code}`);
+
             const currentUser = await super.getCurrentUser(req);
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
             }
+            logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
 
-            const bankAccount = await this.BankAccountModel.get(account_number, fi_code);
+            const convertedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(account_number);
+            logger.debug(`convertedAccountNumber: ${convertedAccountNumber}`);
+            const bankAccount = await this.BankAccountModel.get(convertedAccountNumber, fi_code);
             if (!bankAccount) {
                 throw MyAppErrors.notFound('Bank account not found');
             }
+            logger.debug(`bankAccount retrieved: ${JSON.stringify(bankAccount)}`);
 
             const isOwner = await super.verifyOwnership(currentUser, [bankAccount]);
             if (!isOwner) {
                 throw MyAppErrors.forbidden('You are not allowed to access this resource');
             }
-
+            logger.debug(`isOwner: ${isOwner}, ${isOwner ? "sending response" : "not sending response"} to client`);
             req.formattedResponse = formatResponse(200, 'Bank account retrieved successfully', { bankAccount });
             next();
         } catch (error) {
@@ -189,6 +203,7 @@ class BankAccountController extends BaseController {
             let convertedUpdateData;
             try {
                 convertedUpdateData = await super.verifyField(updateData, requiredParams, this.BankAccountModel);
+                convertedUpdateData.account_number = this.BankAccountUtils.normalizeAccountNumber(convertedUpdateData.account_number);
             } catch (error) {
                 throw new ValidationError(error.message);
             }
@@ -233,14 +248,30 @@ class BankAccountController extends BaseController {
             logger.info('verifyOwnership passed');
 
             // Update bank account
-            const updatedAccount = await this.BankAccountModel.update(
-                {
-                    account_number: convertedUpdateData.account_number,
-                    fi_code: convertedUpdateData.fi_code
-                },
+            const primaryKeys = {
+                national_id: currentUser.national_id,
+                account_number: convertedUpdateData.account_number,
+                fi_code: convertedUpdateData.fi_code
+            }
+            delete convertedUpdateData.account_number;
+            delete convertedUpdateData.fi_code;
+            let updatedAccount = await this.BankAccountModel.update(
+                primaryKeys,
                 convertedUpdateData
             );
             logger.debug(`updatedAccount: ${JSON.stringify(updatedAccount)}`);
+
+            if (updatedAccount.account_number) {
+                logger.info('account_number was updated, need to format it');
+                // Get complete account information after update
+                const getUpdatedAccount = await this.BankAccountModel.get(updatedAccount.account_number, updatedAccount.fi_code);
+                logger.debug(`getUpdatedAccount: ${JSON.stringify(getUpdatedAccount)}`);
+
+                // Format account number
+                updatedAccount.account_number = await this.BankAccountUtils.formatAccountNumber(getUpdatedAccount.account_number, getUpdatedAccount.fi_code);
+                logger.debug(`updatedAccount after formatting: ${JSON.stringify(updatedAccount)}`);
+            }
+
             // Format and send response
             req.formattedResponse = formatResponse(
                 200,
@@ -261,14 +292,51 @@ class BankAccountController extends BaseController {
     }
 
     async deleteBankAccount(req, res, next) {
-        //TODO - extract query string
-        //TODO - verify fields of bank account Pk
-        //TODO - get current user
-        //TODO - model findOne
-        //TODO - not found error
-        //TODO - verify ownership
-        //TODO - model delete
-        //TODO - send response
+        logger.info('Deleting bank account...');
+        try {
+            // Extract and verify query parameters
+            const requiredFields = ['account_number', 'fi_code'];
+            const convertedParams = await super.verifyField(req.params, requiredFields, this.BankAccountModel);
+            logger.debug(`Verified params: ${JSON.stringify(convertedParams)}`);
+
+            // Clean up account number
+            const cleanedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(convertedParams.account_number);
+            convertedParams.account_number = cleanedAccountNumber;
+
+            // Get current user
+            const currentUser = await super.getCurrentUser(req);
+            if (!currentUser) {
+                throw MyAppErrors.userNotFound();
+            }
+            logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
+
+            // Find existing bank account
+            const existingAccount = await this.BankAccountModel.get(convertedParams.account_number, convertedParams.fi_code);
+            if (!existingAccount) {
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+            logger.debug(`Existing account found: ${JSON.stringify(existingAccount)}`);
+
+            // Verify ownership
+            const isOwner = await super.verifyOwnership(currentUser, [existingAccount]);
+            if (!isOwner) {
+                throw MyAppErrors.forbidden('You are not allowed to access this resource');
+            }
+
+            // Delete bank account
+            await this.BankAccountModel.delete({
+                national_id: currentUser.national_id,
+                account_number: convertedParams.account_number,
+                fi_code: convertedParams.fi_code
+            });
+
+            // Format and send response
+            req.formattedResponse = formatResponse(200, 'Bank account deleted successfully');
+            next();
+        } catch (error) {
+            logger.error(`Failed to delete bank account: ${error.message}`);
+            next(error);
+        }
     }
 }
 
