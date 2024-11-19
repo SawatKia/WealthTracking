@@ -217,7 +217,7 @@ class AuthController extends BaseController {
                 res.clearCookie('refresh_token', this.cookieOptions);
             } else {
                 logger.debug('Mobile platform detected, sending logout response');
-                message = 'on mobile, just remove both refresh and access tokens from the your storage. no need to wait for response';
+                message = 'on mobile, just remove both refresh and access tokens from your storage';
             }
 
             logger.info(`User logged out successfully: ${message}`);
@@ -418,7 +418,7 @@ class AuthController extends BaseController {
                     req.formattedResponse = formatResponse(201, 'User registered successfully with Google', createdUser);
                 } else if (platform === this.platformTypes.MOBILE) {
                     logger.debug('Mobile platform detected, sending tokens in response body');
-                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google.', {
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google, please try to login. to get access_token and refresh_token', {
                         user: createdUser
                         // tokens: {
                         //     access_token: accessToken,
