@@ -48,6 +48,13 @@ class AuthUtils {
                 algorithms: [AuthUtils.algorithm],
                 clockTolerance: 30,
                 issuer: AuthUtils.domain
+            }, (error, decoded) => {
+                if (error) {
+                    logger.error(`${error.name}: ${error.message}`);
+                    throw error;
+                }
+                logger.debug(`Token verified: ${JSON.stringify(decoded)}`);
+                return decoded;
             });
         } catch (error) {
             logger.error(`Error verifying token: ${error.message}`);
@@ -71,7 +78,7 @@ class AuthUtils {
                 sub: userId,
                 iat: now,
                 nbf: now,
-                exp: now + (15 * 60),
+                exp: appConfigs.environment !== 'production' ? now + (24 * 60 * 60) : now + (15 * 60),
                 iss: AuthUtils.domain,
             }, appConfigs.accessTokenSecret, { algorithm: AuthUtils.algorithm });
             logger.debug('Access token created');
