@@ -186,9 +186,9 @@ class UserModel extends BaseModel {
             }
 
             logger.info('Password match');
-            delete userObject.role;
-            delete userObject.auth_service;
-            delete userObject.hashed_password;
+            if ('hashed_password' in userObject) delete userObject.hashed_password;
+            if ('role' in userObject) delete userObject.role;
+            if ('auth_service' in userObject) delete userObject.auth_service;
             return { result: true, user: userObject };
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);
@@ -314,9 +314,9 @@ class UserModel extends BaseModel {
                 logger.warn('User not found');
                 return null;
             }
-            delete user.hashed_password;
-            delete user.role;
-            delete user.auth_service;
+            if ('hashed_password' in user) delete user.hashed_password;
+            if ('role' in user) delete user.role;
+            if ('auth_service' in user) delete user.auth_service;
             logger.debug(`user found: ${JSON.stringify(user)}`);
             return user;
         } catch (error) {
@@ -333,10 +333,10 @@ class UserModel extends BaseModel {
             delete updateFields.password;
         }
         const updatedUser = await super.update({ national_id }, updateFields);
-        delete updatedUser.national_id;
-        delete updatedUser.hashed_password;
-        delete updatedUser.role;
-        delete updatedUser.auth_service;
+        if ('national_id' in updatedUser) delete updatedUser.national_id;
+        if ('hashed_password' in updatedUser) delete updatedUser.hashed_password;
+        if ('role' in updatedUser) delete updatedUser.role;
+        if ('auth_service' in updatedUser) delete updatedUser.auth_service;
         logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
         return updatedUser;
     }
@@ -363,7 +363,9 @@ class UserModel extends BaseModel {
             }
 
             // Remove sensitive data before returning
-            delete deletedUser.hashed_password;
+            if ('hashed_password' in deletedUser) delete deletedUser.hashed_password;
+            if ('role' in deletedUser) delete deletedUser.role;
+            if ('auth_service' in deletedUser) delete deletedUser.auth_service;
             logger.debug(`deletedUser: ${JSON.stringify(deletedUser)}`);
             return deletedUser;
         } catch (error) {
