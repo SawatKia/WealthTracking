@@ -122,8 +122,8 @@ class Middlewares {
    * Middleware to handle errors in a consistent format
    */
   errorHandler(err, req, res, next) {
+    logger.info("Handling error");
     if (!res.headersSent) {
-      logger.info("Handling error");
       let response;
       if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
@@ -263,6 +263,15 @@ ${formattedHeaders}
     `;
 
     logger.info(requestLogMessage);
+    next();
+  }
+
+  unknownRouteHandler(req, res, next) {
+    logger.info('Checking if the route is unknown...');
+    if (!req.formattedResponse) {
+      logger.error(`Unknown route: ${req.method} ${req.url}`);
+      next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+    }
     next();
   }
 }
