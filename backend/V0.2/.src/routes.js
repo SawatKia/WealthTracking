@@ -107,14 +107,16 @@ router.use([
     }
 });
 
-// Protected routes definitions
+//!SECTION Protected routes definitions
 router.get('/users', userController.getUser);
-router.patch('/users', userController.updateUser);
+router.patch('/users', mdw.conditionalProfilePictureUpload, userController.updateUser);
 router.delete('/users', userController.deleteUser);
 
 router.post('/banks', bankAccountController.createBankAccount);
 router.get('/banks', bankAccountController.getAllBankAccounts);
 router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccount);
+router.patch('/banks/:account_number/:fi_code', bankAccountController.updateBankAccount);
+router.delete('/banks/:account_number/:fi_code', bankAccountController.deleteBankAccount);
 
 router.get('/fis', fiController.getAllFinancialInstitutions);
 router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks);
@@ -132,6 +134,7 @@ router.delete('/cache/:key', cacheController.delete);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 
+router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
 

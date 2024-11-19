@@ -736,6 +736,121 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    patch:
+      tags:
+        - "Bank Account"
+      summary: Update a bank account
+      description: Updates a specific bank account's information for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  example: "My Updated Savings"
+                account_name:
+                  type: string
+                  example: "Updated Savings Account"
+                balance:
+                  type: number
+                  format: float
+                  example: 2000.75
+      responses:
+        "200":
+          description: Bank account updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BankAccount"
+              example:
+                status_code: 200
+                message: "Bank account updated successfully"
+                data:
+                  id: "abc123"
+                  bankAccountName: "Updated Savings Account"
+                  bankAccountDisplayName: "My Updated Savings"
+                  fiCode: "004"
+                  bankAccountNumber: "1234567890"
+                  balance: 2000.75
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Bank Account"
+      summary: Delete a bank account
+      description: Deletes a specific bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Bank account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Bank account deleted successfully"
+                data: null
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden - User does not own this bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 403
+                message: "You are not allowed to access this resource"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Financial Institution Endpoints
   /fis:
     get:
@@ -1443,7 +1558,7 @@ components:
               name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
               name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
             - fi_code: "014"
-              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหาชน)"
+              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหชน)"
               name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
 
   responses:
