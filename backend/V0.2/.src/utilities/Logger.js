@@ -85,7 +85,7 @@ class Logger {
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[${info.caller ? `${info.caller}` : info.label}] ${info.level}: ${info.message}`;
+                    return `[${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
                 })
             )
         }));
