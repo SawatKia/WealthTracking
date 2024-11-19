@@ -5,7 +5,7 @@ services:
     build:
       context: ./backend/V0.2
       args:
-        NODE_ENV: development
+        NODE_ENV: ${NODE_ENV}
     container_name: node-container
     env_file: 
       - ./.env
