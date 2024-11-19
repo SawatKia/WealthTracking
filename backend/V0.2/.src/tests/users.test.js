@@ -509,8 +509,7 @@ describe("Users Endpoints", () => {
         password: mockUser.password
       });
 
-    accessToken = loginResponse.headers['set-cookie']
-      .find(cookie => cookie.includes('access_token'));
+    accessToken = loginResponse.headers['set-cookie']?.[0];
   });
 
   // Clean up after all tests
