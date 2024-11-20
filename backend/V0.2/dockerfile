@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as the base image
 FROM node:20-alpine
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Set the working directory
 WORKDIR /usr/src/WealthTrack
 
@@ -18,8 +21,7 @@ COPY ./statics ./statics
 COPY ./sql ./sql
 
 # Expose the port the app runs on
-EXPOSE ${PORT}
+EXPOSE 3000
 
 # Default command for starting the app
-# CMD ["node", "index.js"]
 CMD ["npm", "run", "dev"]

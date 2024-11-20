@@ -3,27 +3,28 @@ version: "3.8"
 services:
   node-server:
     build:
-      context: ./backend/V0.2
+      context: ./backend/V0.2/ 
       args:
-        NODE_ENV: ${NODE_ENV}
+        NODE_ENV: development
     container_name: node-container
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "3000:3000"
       - "9229:9229"
     volumes:
       - /usr/src/WealthTrack/node_modules
+      - ./uploads:/usr/src/WealthTrack/uploads
     depends_on:
       postgres:
         condition: service_healthy
     command: npm run dev
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 40s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging:
       driver: "json-file"
       options:
