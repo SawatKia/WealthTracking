@@ -34,10 +34,17 @@ if (!isDev) {
 // Serve static files from the frontend build directory
 app.use("/", express.static(path.join(__dirname, "./frontend_build")));
 
-// API Routes
+// Health check endpoint (before other routes)
 app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: NODE_ENV
+  });
 });
+
+// API Routes
 app.use("/api/v0.2", routes);
 app.get("/api", (req, res, next) => {
   req.formattedResponse = formatResponse(
