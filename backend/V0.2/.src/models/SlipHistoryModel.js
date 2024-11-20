@@ -22,9 +22,10 @@ class SlipHistoryModel extends BaseModel {
             logger.debug(`payload: ${payload}`);
 
             const result = await this.findOne({ payload });
-            logger.debug(`duplicate check result: ${JSON.stringify(result)}`);
+            logger.debug(`duplicate check's RAW result: ${JSON.stringify(result)}`);
 
-            return result !== null;
+            // Return true if the slip is found, false otherwise
+            return result.rowCount != 0;
         } catch (error) {
             logger.error(`Error checking duplicate slip: ${error.message}`);
             throw error;
