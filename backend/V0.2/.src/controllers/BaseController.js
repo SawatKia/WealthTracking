@@ -1,9 +1,8 @@
-const Utils = require('../utilities/Utils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const UserModel = require('../models/UserModel');
 const { log } = require('winston');
 
-const { Logger } = Utils;
 const logger = Logger('BaseController');
 
 class BaseController {

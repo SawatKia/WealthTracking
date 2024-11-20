@@ -1,9 +1,8 @@
 const request = require('supertest');
 const app = require('../app');
-const Utils = require('../utilities/Utils');
+const { Logger } = require('../utilities/Utils');
 const pgClient = require("../services/PgClient");
 
-const { Logger } = Utils;
 const logger = Logger('AuthenticationTest');
 
 const testUser = {

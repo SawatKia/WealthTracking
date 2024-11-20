@@ -1,13 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const Utils = require('../utilities/Utils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const UserModel = require('../models/UserModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const { log } = require('console');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('UserController');
 
 class UserController extends BaseController {

@@ -2,10 +2,9 @@ const bcrypt = require('bcrypt');
 const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
-const Utils = require('../utilities/Utils');
+const { Logger } = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('UserModel');
 
 class UserModel extends BaseModel {

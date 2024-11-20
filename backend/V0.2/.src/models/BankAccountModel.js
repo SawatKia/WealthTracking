@@ -1,11 +1,10 @@
 const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
-const Utils = require('../utilities/Utils');
+const { Logger } = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('BankAccountModel');
 
 class BankAccountModel extends BaseModel {

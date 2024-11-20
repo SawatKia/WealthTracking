@@ -1,10 +1,9 @@
-const Utils = require('../utilities/Utils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const appConfigs = require('../configs/AppConfigs');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('FinancialInstitutionController');
 
 class FinancialInstitutionController extends BaseController {

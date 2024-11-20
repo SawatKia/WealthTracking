@@ -1,18 +1,16 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 
-const AuthUtils = require('../utilities/AuthUtils');
 const UsedRefreshTokenModel = require('../models/UsedRefreshTokenModel');
 const BaseController = require('./BaseController');
 const UserModel = require('../models/UserModel');
 const appConfigs = require('../configs/AppConfigs');
-const Utils = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 
-const { Logger, formatResponse } = Utils;
-const { verifyToken, decodeToken, createTokens, uuidValidateV4, authenticationError } = AuthUtils;
+const { verifyToken, decodeToken, createTokens, uuidValidateV4, authenticationError } = require('../utilities/AuthUtils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const logger = Logger('AuthController');
 
 class AuthController extends BaseController {
