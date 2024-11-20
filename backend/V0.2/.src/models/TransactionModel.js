@@ -3,10 +3,9 @@ const pgClient = require("../services/PgClient");
 const redis = require("redis");
 
 const BaseModel = require("./BaseModel");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const appConfigs = require("../configs/AppConfigs");
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("TransactionModel");
 
 class TransactionModel extends BaseModel {

@@ -1,5 +1,5 @@
 const BaseController = require("./BaseController");
-const Utils = require("../utilities/Utils");
+const { Logger, formatResponse } = require("../utilities/Utils");
 const BankAccountModel = require("../models/BankAccountModel");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const { ValidationError } = require("../utilities/ValidationErrors");
@@ -7,7 +7,6 @@ const FinancialInstitutionModel = require('../models/FinancialInstitutionModel')
 const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 const UserModel = require('../models/UserModel');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("BankAccountController");
 
 class BankAccountController extends BaseController {

@@ -1,5 +1,5 @@
 const { development, test, production } = require("../configs/dbConfigs");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const Pool = require("pg-pool");
 const appConfigs = require("../configs/AppConfigs");
 const fs = require('fs');
@@ -7,7 +7,6 @@ const path = require('path');
 
 const NODE_ENV = appConfigs.environment;
 const TEST_DB = appConfigs.postgres.databaseName;
-const { Logger } = Utils;
 const logger = Logger("PgClient");
 
 class PgClient {

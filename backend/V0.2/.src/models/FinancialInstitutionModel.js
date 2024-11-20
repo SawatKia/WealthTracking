@@ -4,11 +4,10 @@ const fs = require("fs");
 const { parse } = require("csv-parse");
 
 const BaseModel = require("./BaseModel");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const appConfigs = require("../configs/AppConfigs");
 const pgClient = require("../services/PgClient");
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("FinancialInstitutionModel");
 
 class FinancialInstitutionModel extends BaseModel {

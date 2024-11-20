@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const APP_ROOT = '/usr/src/WealthTrack';
 
-const Utils = require("../utilities/Utils");
+const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
 const AuthUtils = require('../utilities/AuthUtils');
@@ -36,7 +36,6 @@ const profilePictureToDiskStorage = multer.diskStorage({
 const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
 const { verifyToken } = AuthUtils;
-const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
 

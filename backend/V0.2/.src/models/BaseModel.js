@@ -1,9 +1,8 @@
 const Joi = require("joi");
 const pgClient = require("../services/PgClient");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const { ValidationError } = require("../utilities/ValidationErrors");
 
-const { Logger } = Utils;
 const logger = Logger("BaseModel");
 
 class BaseModel {

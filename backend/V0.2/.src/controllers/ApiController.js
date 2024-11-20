@@ -4,12 +4,11 @@ const path = require('path');
 
 const EasySlipService = require("../services/EasySlip");
 const APIRequestLimitModel = require("../models/APIRequestLimitModel");
-const Utils = require("../utilities/Utils");
+const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const SlipHistoryModel = require('../models/SlipHistoryModel');
 const QRCodeReader = require('../utilities/QRCodeReader');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("ApiController");
 
 class ApiController {
