@@ -16,7 +16,7 @@ services:
       - "9229:9229"
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
-      - ./uploads:/usr/src/${APP_DOMAIN}/uploads
+      - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
     depends_on:
       postgres:
         condition: service_healthy
