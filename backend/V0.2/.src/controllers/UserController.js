@@ -1,9 +1,11 @@
 const fs = require('fs');
+const path = require('path');
 
 const Utils = require('../utilities/Utils');
 const UserModel = require('../models/UserModel');
 const BaseController = require('./BaseController');
-const MyAppErrors = require('../utilities/MyAppErrors')
+const MyAppErrors = require('../utilities/MyAppErrors');
+const { log } = require('console');
 
 const { Logger, formatResponse } = Utils;
 const logger = Logger('UserController');
@@ -21,6 +23,7 @@ class UserController extends BaseController {
         this.getUser = this.getUser.bind(this);
         this.updateUser = this.updateUser.bind(this);
         this.deleteUser = this.deleteUser.bind(this);
+        this.getLocalProfilePicture = this.getLocalProfilePicture.bind(this);
     }
 
     normalizeUsernameEmail(username = null, email = null) {
@@ -127,16 +130,93 @@ class UserController extends BaseController {
 
     async getUser(req, res, next) {
         try {
+            logger.info('request received for getUser');
             const user = await super.getCurrentUser(req);
-            //TODO - examine the profile picture uri and return the file path or image(or Buffer) if it exists
+
+            // Handle profile picture if it exists
+            logger.debug(`Processing profile picture: ${user.profile_picture_uri}`);
+            if (user.profile_picture_uri?.startsWith('http')) {
+                logger.debug('External profile picture URL detected');
+                user.profile_picture_url = user.profile_picture_uri;
+                logger.info('profile_picture_url set to external URL');
+                delete user.profile_picture_uri;
+            } else if (user.profile_picture_uri?.includes('uploads/')) {
+                logger.debug(`Processing internal profile picture: ${user.profile_picture_uri}`);
+                // Extract the original filename from the stored path
+                const pathParts = user.profile_picture_uri.split('/');
+                logger.debug(`pathParts: ${pathParts.join(', ')}`);
+                const filename = pathParts[pathParts.length - 1];
+                logger.debug(`filename: ${filename}`);
+
+                // Split by first two dashes to get the original filename
+                const matches = filename.match(/^(\d+)-([^-]+)-(.+)$/);
+                logger.debug(`matches: ${JSON.stringify(matches)}`);
+                if (matches && matches[2] === user.national_id) {
+                    const originalFilename = matches[3];
+                    logger.debug(`originalFilename: ${originalFilename}`);
+                    // Check if file exists
+                    logger.debug(`Checking if file exists: ${user.profile_picture_uri}`);
+                    if (fs.existsSync(user.profile_picture_uri)) {
+                        // Create a secure URL for the profile picture
+                        const baseUrl = `${req.protocol}://${req.get('host')}`;
+                        user.profile_picture_url = `${baseUrl}/api/v0.2/users/profile-picture`;
+                        logger.debug(`profile_picture_url: ${user.profile_picture_url}`);
+                        user.profile_picture_name = originalFilename;
+                        logger.debug(`profile_picture_name: ${user.profile_picture_name}`);
+                    } else {
+                        logger.warn(`Profile picture file not found: ${user.profile_picture_uri}`);
+                        user.profile_picture_uri = null;
+                    }
+                } else {
+                    logger.error('Invalid profile picture filename format or unauthorized access');
+                    user.profile_picture_uri = null;
+                }
+            } else {
+                logger.warn('No profile picture to process');
+            }
+            logger.debug(`user after profile picture processing: ${JSON.stringify(user)}`);
+
+            delete user.profile_picture_uri; // Don't expose internal file paths
             req.formattedResponse = formatResponse(200, 'User retrieved successfully', user);
             next();
         }
         catch (error) {
+            logger.error(`Error in getUser: ${error.message}`);
             if (error instanceof MyAppErrors) {
                 next(error);
             } else {
                 next(MyAppErrors.internalServerError('Error retrieving user', { details: error.message }));
+            }
+        }
+    }
+
+    async getLocalProfilePicture(req, res, next) {
+        try {
+            logger.info('request received for getLocalProfilePicture');
+            const user = await super.getCurrentUser(req);
+            logger.debug(`user: ${JSON.stringify(user)}`);
+            if (!user.profile_picture_uri || user.profile_picture_uri.startsWith('http')) {
+                logger.error('the profile picture uri is not locally stored');
+                throw MyAppErrors.notFound('the profile picture uri is not locally stored');
+            }
+
+            logger.debug(`finding path: ${user.profile_picture_uri}`);
+            const exists = await fs.existsSync(user.profile_picture_uri);
+            logger.debug(`exists: ${exists}`);
+            if (!exists) {
+                logger.error('Profile picture file not found');
+                throw MyAppErrors.notFound('Profile picture file not found');
+            }
+            logger.info('Profile picture file found');
+
+            logger.debug(`sending file: ${path.resolve(user.profile_picture_uri)}`);
+            // Modified this line to use absolute path without root option
+            res.sendFile(path.resolve(user.profile_picture_uri));
+        } catch (error) {
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError('Error retrieving profile picture', { details: error.message }));
             }
         }
     }
@@ -175,7 +255,10 @@ class UserController extends BaseController {
             });
             logger.debug(`updateFields request: ${JSON.stringify(updateFields)}`);
 
-            if (Object.keys(updateFields).length === 0) {
+            const keys = Object.keys({ ...updateFields, ...(req.file ? { file: req.file } : {}) });
+            logger.debug(`keys to update: ${keys.join(', ')}`);
+            logger.debug(`keys.length: ${keys.length}`);
+            if (keys.length === 0) {
                 throw MyAppErrors.badRequest('At least one field is required to update user information');
             }
 
