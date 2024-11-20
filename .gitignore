@@ -3,7 +3,7 @@ settings.json
 
 # Database data
 postgres_data/*
-uploads/*
+backend/V0.2/uploads/*
 
 # Ignore the report folder and all its subfolders and files
 report/
