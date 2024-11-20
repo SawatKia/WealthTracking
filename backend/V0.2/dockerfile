@@ -5,7 +5,7 @@ FROM node:20-alpine
 RUN apk add --no-cache curl
 
 # Set the working directory
-WORKDIR /usr/src/WealthTrack
+WORKDIR /usr/src/${APP_DOMAIN}
 
 # Copy the package.json and package-lock.json
 COPY package*.json ./
@@ -15,13 +15,17 @@ RUN npm install
 
 # Copy the rest of the application code
 COPY ./.src ./.src
-
 COPY ./statics ./statics
-
 COPY ./sql ./sql
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Expose the port from env
+EXPOSE ${APP_PORT}
 
 # Default command for starting the app
-CMD ["npm", "run", "dev"]
+CMD if [ "$NODE_ENV" = "production" ]; then \
+    npm run start; \
+    elif [ "$NODE_ENV" = "test" ]; then \
+    npm run test; \
+    else \
+    npm run dev; \
+    fi
