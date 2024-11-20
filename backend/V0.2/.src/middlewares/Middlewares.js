@@ -1,5 +1,7 @@
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
+const APP_ROOT = '/usr/src/WealthTrack';
 
 const Utils = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
@@ -9,7 +11,7 @@ const { json } = require('express');
 
 const slipToDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/slip-images/';
+    const uploadDir = path.join(APP_ROOT, 'uploads/slip-images/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -21,7 +23,7 @@ const slipToDiskStorage = multer.diskStorage({
 });
 const profilePictureToDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/profile-pictures/';
+    const uploadDir = path.join(APP_ROOT, 'uploads/profile-pictures/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
