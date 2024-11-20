@@ -999,6 +999,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /users/profile-picture:
+    get:
+      tags:
+        - "User"
+      summary: Get local user profile picture
+      description: Retrieves the profile picture for the current user that authenticated by local login. the user who use google login already have their profile picture in google's server (get with GET /users).
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile picture retrieved successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth: # For mobile platform
@@ -1558,7 +1580,7 @@ components:
               name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
               name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
             - fi_code: "014"
-              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหชน)"
+              name_th: "ธนาคารไทยพาณิชย์ จำกัด (มหาชน)"
               name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
 
   responses:
@@ -1614,3 +1636,13 @@ components:
           example:
             status_code: 500
             message: "An unexpected error occurred"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 403
+            message: "You are not allowed to access this resource"

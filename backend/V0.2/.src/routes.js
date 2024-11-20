@@ -38,6 +38,7 @@ if (NODE_ENV == 'development') {
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
+    '/users/profile-picture': ['GET'],
     '/banks': ['POST', 'GET'],
     '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -107,7 +108,8 @@ router.use([
     }
 });
 
-//!SECTION Protected routes definitions
+// SECTION Protected routes definitions
+router.get('/users/profile-picture', userController.getLocalProfilePicture);
 router.get('/users', userController.getUser);
 router.patch('/users', mdw.conditionalProfilePictureUpload, userController.updateUser);
 router.delete('/users', userController.deleteUser);
@@ -115,7 +117,7 @@ router.delete('/users', userController.deleteUser);
 router.post('/banks', bankAccountController.createBankAccount);
 router.get('/banks', bankAccountController.getAllBankAccounts);
 router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccount);
-router.patch('/banks/:account_number/:fi_code', bankAccountController.updateBankAccount);
+router.patch('/banks/:account_number/:fi_code', mdw.conditionalProfilePictureUpload, bankAccountController.updateBankAccount);
 router.delete('/banks/:account_number/:fi_code', bankAccountController.deleteBankAccount);
 
 router.get('/fis', fiController.getAllFinancialInstitutions);
@@ -137,5 +139,6 @@ router.post('/logout', authController.logout);
 router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
+
 
 module.exports = router;
