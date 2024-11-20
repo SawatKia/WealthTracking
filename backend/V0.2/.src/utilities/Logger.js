@@ -20,14 +20,33 @@ const getCaller = () => {
     const stackLines = stack.split('\n');
     if (stackLines.length < 4) return ''; // Make sure there's enough stack info
     const callerLine = stackLines[3].trim(); // 3rd line usually contains the caller info
-    // Extract filename and line number from the caller line
-    const match = callerLine.match(/\((.+):(\d+):\d+\)$/);
+
+    // Extract filename, line number, and column number from the caller line
+    const match = callerLine.match(/(?:at\s+)?(?:.*\s+\()?([^(]+):(\d+):(\d+)(?:\)?$)/);
     if (match) {
-        const [, filePath, lineNumber] = match;
+        const [, filePath, lineNumber, columnNumber] = match;
+        // Get just the filename from the full path
         const fileName = path.basename(filePath);
         return `${fileName}:${lineNumber}`;
     }
-    return callerLine; // Return the full line if we can't extract filename and line number
+
+    // If we can't extract in the preferred format, try to clean up the full path
+    const fullPathMatch = callerLine.match(/at\s+(.+?)\s+\((.+):(\d+):(\d+)\)/);
+    if (fullPathMatch) {
+        const [, , fullPath, lineNum, colNum] = fullPathMatch;
+        const cleanPath = path.basename(fullPath);
+        return `${cleanPath}:${lineNum}`;
+    }
+
+    // If all else fails, try to extract filename and line number
+    const lastSlashIndex = callerLine.lastIndexOf('/');
+    if (lastSlashIndex >= 0) {
+        const fileAndLineCol = callerLine.substring(lastSlashIndex + 1);
+        const lineColMatch = fileAndLineCol.match(/(.+?):(\d+):(\d+)/);
+        return lineColMatch ? `${lineColMatch[1]}:${lineColMatch[2]}` : fileAndLineCol;
+    }
+
+    return 'unknown:0:0'; // fallback if we can't parse the caller info
 }
 
 class Logger {
