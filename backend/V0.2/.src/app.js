@@ -12,6 +12,20 @@ const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+  return parts.join(' ') || seconds;
+}
 
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
@@ -32,14 +46,14 @@ if (!isDev) {
 }
 
 // Serve static files from the frontend build directory
-app.use("/", express.static(path.join(__dirname, "./frontend_build")));
+// app.use("/", express.static(path.join(__dirname, "./frontend_build")));
 
 // Health check endpoint (before other routes)
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: formatUptime(process.uptime()),
     environment: NODE_ENV
   });
 });
@@ -61,3 +75,4 @@ app.use(mdw.responseHandler);
 // Error handling middleware
 app.use(mdw.errorHandler);
 module.exports = app;
+
