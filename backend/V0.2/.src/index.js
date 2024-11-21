@@ -14,7 +14,7 @@ const PORT = appConfigs.appPort || 3000;
  * Function to start the server
  */
 const startServer = async () => {
-  logger.info("Starting server...");
+  logger.info("=".repeat(20) + " Starting server " + "=".repeat(20));
   try {
     logger.info("Connecting to database...");
 
@@ -25,7 +25,7 @@ const startServer = async () => {
     await fi.initializeData();
 
     // Start Express server after database connection is established
-    const server = app.listen(PORT, "0.0.0.0", () => {
+    const server = app.listen(PORT, () => {
       logger.debug('+---------------------------------------+');
       logger.debug('|       Server started successfully     |');
       logger.debug('+---------------------------------------+');
