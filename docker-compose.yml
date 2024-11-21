@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "127.0.0.1:${APP_PORT}:${APP_PORT}"
       - "9229:9229"
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
@@ -21,7 +21,8 @@ services:
       postgres:
         condition: service_healthy
     command: >
-      sh -c "if [ \"$NODE_ENV\" = \"production\" ]; then
+      sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' &&
+             if [ \"$NODE_ENV\" = \"production\" ]; then
                npm run start;
              elif [ \"$NODE_ENV\" = \"test\" ]; then
                npm run test;
