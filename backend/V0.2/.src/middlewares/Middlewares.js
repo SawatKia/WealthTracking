@@ -40,6 +40,11 @@ const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
 
 class Middlewares {
+  constructor() {
+    this.healthCheck = this.healthCheck.bind(this);
+    this.formatUptime = this.formatUptime.bind(this);
+  }
+
   /**
    * Middleware to validate the allowed methods for a specific path
    * @param {Object} allowedMethods - Object with allowed methods for each path
@@ -275,6 +280,55 @@ ${formattedHeaders}
     }
     next();
   }
+
+  formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+    return parts.join(' ') || seconds;
+  }
+
+  /**
+   * Health check middleware to check the health of the server
+   * 
+   * it provides:
+   * 
+   * - the current time in Bangkok
+   * - the uptime of the server
+   * - the environment
+   */
+  healthCheck(req, res, next) {
+    const bkkTime = new Date().toLocaleString('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    req.formattedResponse = formatResponse(
+      200,
+      "you are connected to the /health, running in Environment: " + NODE_ENV,
+      {
+        status: "healthy",
+        timestamp: bkkTime,
+        uptime: this.formatUptime(process.uptime()) || process.uptime(),
+        environment: appConfigs.environment
+      }
+    );
+    next();
+  };
 }
 
 module.exports = new Middlewares();
