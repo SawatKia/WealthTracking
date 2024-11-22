@@ -113,7 +113,9 @@ class BaseController {
                     try {
                         switch (fieldSchema.type) {
                             case 'number':
-                                convertedBody[key] = value === '' ? null : Number(value);
+                                // Remove commas from number strings before conversion
+                                const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
+                                convertedBody[key] = cleanValue === '' ? null : Number(cleanValue);
                                 if (isNaN(convertedBody[key])) {
                                     throw new Error(`Invalid number format for field: ${key}`);
                                 }
