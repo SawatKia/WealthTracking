@@ -144,20 +144,65 @@ class BaseController {
         return body;
     }
 
+    /**
+     * Verifies if the user owns the resource
+     * @param {Object} user - The user object
+     * @param {Object|Array} resource - The resource object or array of resource objects
+     * @returns {Boolean} - True if the user owns the resource, false otherwise
+     */
     verifyOwnership(user, resource) {
         logger.info('verifyOwnership');
-        if (!user || !resource.length > 0) {
-            logger.error('User or resource are empty');
-            throw new Error('User or resource are empty');
+
+        if (!user || typeof user !== 'object') {
+            logger.error('User is empty or not an object');
+            throw new Error('User is empty or not an object');
         }
-        resource.map((i) => {
-            if (i.national_id !== user.national_id) {
-                logger.error('User does not own the resource');
-                return false;
+        logger.info(`user is valid`);
+        logger.debug(`user: ${JSON.stringify(user, null, 2)}`);
+
+        if (!resource || typeof resource !== 'object' || typeof resource !== 'array') {
+            logger.error('Resource is empty or not an object or array');
+            throw new Error('Resource is empty or not an object or array');
+        }
+        logger.info(`resource is valid`);
+        // Convert single object to array if needed
+        const resourceArray = Array.isArray(resource) ? resource : [resource];
+        if (!resourceArray || resourceArray.length === 0) {
+            logger.error('Resource is empty');
+            throw new Error('Resource is empty');
+        }
+        logger.debug(`resourceArray: ${JSON.stringify(resourceArray, null, 2).slice(0, 5)}, ...remaining: ${resourceArray.length - 5} items...`);
+
+
+        // Check if any resource doesn't match the user's national_id
+        const hasUnauthorizedAccess = resourceArray.some(item => {
+            if (item.national_id !== user.national_id) {
+                logger.error(`User does not own resource with national_id: ${item.national_id}`);
+                return true;    // Found an unauthorized item
             }
-        })
+            return false;       // This item is authorized
+        });
+
+        if (hasUnauthorizedAccess) {
+            logger.error('User does not own one or more resources');
+            return false;
+        }
+
         logger.info('User owns all the resources');
         return true;
+    }
+
+    filterUserData(user) {
+        logger.info('Filtering user data for client');
+        if (!user) return null;
+
+        const allowedFields = ['national_id', 'email', 'username', 'date_of_birth', 'profile_picture_url'];
+        return Object.keys(user)
+            .filter(key => allowedFields.includes(key))
+            .reduce((obj, key) => {
+                obj[key] = user[key];
+                return obj;
+            }, {});
     }
 }
 module.exports = BaseController;
