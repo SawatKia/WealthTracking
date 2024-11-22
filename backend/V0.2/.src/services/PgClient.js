@@ -75,7 +75,7 @@ class PgClient {
       if (!this.client) {
         throw new Error("Database connection failed");
       }
-      logger.info("Database connected successfully");
+      logger.info(`Database connected successfully`);
 
       await this.createAllTables();
     } catch (error) {
