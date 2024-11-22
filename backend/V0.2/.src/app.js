@@ -49,13 +49,29 @@ if (!isDev) {
 // app.use("/", express.static(path.join(__dirname, "./frontend_build")));
 
 // Health check endpoint (before other routes)
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: formatUptime(process.uptime()),
-    environment: NODE_ENV
+app.get("/health", (req, res, next) => {
+  const bkkTime = new Date().toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
   });
+  req.formattedResponse = formatResponse(
+    200,
+    "you are connected to the /health, running in Environment: " + NODE_ENV,
+    {
+      status: "healthy",
+      timestamp: bkkTime,
+      uptime: formatUptime(process.uptime()),
+      environment: NODE_ENV
+    }
+  );
+  next();
 });
 
 // API Routes
@@ -69,10 +85,23 @@ app.get("/api", (req, res, next) => {
   next();
 });
 
+// Set connection timeout to 5 seconds
+app.use((req, res, next) => {
+  res.setTimeout(5000, () => {
+    res.status(408).json({
+      status: "error",
+      message: "Request timeout"
+    });
+  });
+  next();
+});
+
 // Global response handler
 app.use(mdw.responseHandler);
 
 // Error handling middleware
 app.use(mdw.errorHandler);
+
+
 module.exports = app;
 
