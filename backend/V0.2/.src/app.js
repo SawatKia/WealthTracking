@@ -12,20 +12,6 @@ const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 
-function formatUptime(seconds) {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-
-  const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
-
-  return parts.join(' ') || seconds;
-}
 
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
