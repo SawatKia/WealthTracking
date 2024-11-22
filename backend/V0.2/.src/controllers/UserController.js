@@ -83,8 +83,10 @@ class UserController extends BaseController {
             const createdUser = await this.userModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
 
+            const filteredUser = this.filterUserData(createdUser);
+
             // Success response
-            req.formattedResponse = formatResponse(201, 'User created successfully', createdUser);
+            req.formattedResponse = formatResponse(201, 'User created successfully', filteredUser);
             next();
         } catch (error) {
             logger.error(`Error registering user: ${error.message}`);
@@ -111,7 +113,11 @@ class UserController extends BaseController {
             const { result, user } = await this.userModel.checkPassword(normalizedEmail['email'], password);
             logger.debug(`Password check result: ${result}, user: ${JSON.stringify(user)}`);
             if (!result) throw MyAppErrors.passwordError();
-            req.formattedResponse = formatResponse(200, 'Password check successful. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', result);
+
+            // Filter user data before sending to client
+            const filteredUser = this.filterUserData(user);
+
+            req.formattedResponse = formatResponse(200, 'Password check successful', { result, user: filteredUser });
             next();
         }
         catch (error) {
@@ -171,10 +177,10 @@ class UserController extends BaseController {
             } else {
                 logger.warn('No profile picture to process');
             }
-            logger.debug(`user after profile picture processing: ${JSON.stringify(user)}`);
+            const filteredUser = this.filterUserData(user);
+            logger.debug(`user after profile picture processing: ${JSON.stringify(filteredUser)}`);
 
-            delete user.profile_picture_uri; // Don't expose internal file paths
-            req.formattedResponse = formatResponse(200, 'User retrieved successfully', user);
+            req.formattedResponse = formatResponse(200, 'User retrieved successfully', filteredUser);
             next();
         }
         catch (error) {
@@ -303,19 +309,10 @@ class UserController extends BaseController {
             // Update user in database
             const updatedUser = await this.userModel.updateUser(user.national_id, finalUpdateFields);
             logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
-            // Only return the fields that were actually updated
-            const updatedFields = {};
-            Object.keys(finalUpdateFields).forEach(key => {
-                if (key !== 'hashed_password') {  // Never return password-related fields
-                    updatedFields[key] = updatedUser[key];
-                }
-                delete updatedUser[key];
-            });
-            logger.debug(`returning updatedFields: ${JSON.stringify(updatedFields)}`);
 
-            req.formattedResponse = formatResponse(200, 'User updated successfully',
-                Object.keys(updatedFields).length > 0 ? updatedFields : undefined
-            );
+            // Only return the fields that were actually updated
+            const filteredUpdatedUser = this.filterUserData(updatedUser);
+            req.formattedResponse = formatResponse(200, 'User updated successfully', filteredUpdatedUser);
             return next();
         } catch (error) {
             logger.error(`updateUser error: ${error.message}`);
@@ -385,8 +382,9 @@ class UserController extends BaseController {
             }
             logger.info('User deleted successfully');
 
+            const filteredDeletedUser = this.filterUserData(deletedUser);
             // Format success response
-            req.formattedResponse = formatResponse(200, 'User deleted successfully');
+            req.formattedResponse = formatResponse(200, 'User deleted successfully', filteredDeletedUser);
             next();
         } catch (error) {
             logger.error(`deleteUser error: ${error.message}`);
