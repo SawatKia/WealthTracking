@@ -511,7 +511,7 @@ paths:
   /users/check:
     post:
       tags:
-        - "User"
+        - "Users"
       summary: Check user password (Development Mode Only)
       description: Validates user's email and password.
       requestBody:
@@ -983,7 +983,7 @@ paths:
   /users/profile-picture:
     get:
       tags:
-        - "User"
+        - "Users"
       summary: Get local user profile picture
       description: Retrieves the profile picture for the current user that authenticated by local login. the user who use google login already have their profile picture in google's server (get with GET /users).
       security:
@@ -1132,6 +1132,115 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    patch:
+      tags:
+        - "Debt"
+      summary: Update a specific debt
+      description: Updates a specific debt by its ID (partial updates allowed)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  maxLength: 20
+                  description: "Financial institution code (numeric only)"
+                  example: "004"
+                debt_name:
+                  type: string
+                  maxLength: 100
+                  description: "Name of the debt"
+                  example: "Home mortgage"
+                start_date:
+                  type: string
+                  format: date
+                  description: "Start date of the debt"
+                  example: "2024-03-15"
+                current_installment:
+                  type: integer
+                  minimum: 0
+                  description: "Current installment number"
+                  example: 1
+                total_installments:
+                  type: integer
+                  minimum: 1
+                  description: "Total number of installments"
+                  example: 60
+                loan_principle:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Initial loan amount (max 2 decimal places)"
+                  example: 1000000.00
+                loan_balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Current loan balance (max 2 decimal places)"
+                  example: 1000000.00
+      responses:
+        "200":
+          description: Debt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Debt"
+      summary: Delete a specific debt
+      description: Deletes a specific debt by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth: # For mobile platform
@@ -1178,11 +1287,6 @@ components:
           pattern: "^[a-zA-Z0-9@.]*$"
           description: "Email address"
           example: "john.doe@example.com"
-        member_since:
-          type: string
-          format: date-time
-          description: "Registration timestamp (auto-generated)"
-          example: "2024-03-15T10:25:22.650Z"
         date_of_birth:
           type: string
           format: date
@@ -1644,9 +1748,41 @@ components:
           example: 200
         message:
           type: string
-          example: "Debt retrieved successfully"
+          example: "Operation successful"
         data:
-          $ref: "#/components/schemas/Debt"
+          type: object
+          properties:
+            debt_id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            fi_code:
+              type: string
+              example: "004"
+            national_id:
+              type: string
+              example: "1234567890123"
+            debt_name:
+              type: string
+              example: "Home mortgage"
+            start_date:
+              type: string
+              format: date
+              example: "2024-03-15"
+            current_installment:
+              type: integer
+              example: 1
+            total_installments:
+              type: integer
+              example: 60
+            loan_principle:
+              type: number
+              format: float
+              example: 1000000.00
+            loan_balance:
+              type: number
+              format: float
+              example: 1000000.00
 
     DebtsListResponse:
       type: object
