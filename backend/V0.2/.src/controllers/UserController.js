@@ -5,8 +5,6 @@ const { Logger, formatResponse } = require('../utilities/Utils');
 const UserModel = require('../models/UserModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
-const { log } = require('console');
-
 const logger = Logger('UserController');
 
 class UserController extends BaseController {
