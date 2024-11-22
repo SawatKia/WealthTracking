@@ -70,10 +70,13 @@ class DebtController extends BaseController {
             const debt_id = req.params.debt_id;
             logger.debug(`debt_id: ${debt_id}`);
             const validatedDebtId = await super.verifyField({ debt_id }, ['debt_id'], this.DebtModel);
-            if (!uuidValidateV4(validatedDebtId)) {
+            logger.debug('verifyField successful');
+            logger.info('start validating debt_id by uuidValidateV4');
+            if (!uuidValidateV4(validatedDebtId.debt_id)) {
                 logger.error('invalid debt_id');
                 throw MyAppErrors.badRequest('invalid debt_id');
             }
+            logger.info('debt_id validated successfully');
 
             const currentUser = await super.getCurrentUser(req);
             if (!currentUser) {
@@ -81,7 +84,8 @@ class DebtController extends BaseController {
                 throw MyAppErrors.unauthorized('user not found');
             }
 
-            const debt = await this.DebtModel.findOne({ debt_id });
+            const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
+            logger.debug(`debt retrieved: ${JSON.stringify(debt, null, 2)}`);
             if (!debt) {
                 logger.error('debt not found');
                 throw MyAppErrors.notFound('debt not found');
@@ -96,7 +100,11 @@ class DebtController extends BaseController {
             next();
         } catch (error) {
             logger.error(`error getting debt: ${error}`);
-            next(error);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
         }
     }
 
@@ -124,14 +132,96 @@ class DebtController extends BaseController {
             next();
         } catch (error) {
             logger.error(`error getting all debts: ${error}`);
-            next(error);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
         }
     }
 
     async updateDebt(req, res, next) {
+        try {
+            logger.info('request to update debt');
+            const debt_id = req.params.debt_id;
+            logger.debug(`debt_id: ${debt_id}`);
+
+            const validatedDebtId = await super.verifyField({ debt_id }, ['debt_id'], this.DebtModel);
+            logger.debug(`validatedDebtId: ${validatedDebtId}`);
+            if (!uuidValidateV4(validatedDebtId.debt_id)) {
+                logger.error('invalid debt_id');
+                throw MyAppErrors.badRequest('invalid debt_id');
+            }
+            logger.info('debt_id validated successfully');
+
+            const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
+            logger.debug(`debt: ${JSON.stringify(debt, null, 2)}`);
+            if (!debt) {
+                logger.error('the requested debt not found');
+                throw MyAppErrors.notFound('the requested debt not found');
+            }
+            logger.info('the requested debt found');
+
+            const debtData = req.body;
+            logger.debug(`extracted debtData: ${JSON.stringify(debtData, null, 2)}`);
+
+            Object.keys(debtData).forEach((field) => {
+                logger.debug(`field: ${field}`);
+                if (debtData[field] === '' || debtData[field] === null) {
+                    logger.debug(`field ${field} is empty or null, deleting the field`);
+                    delete debtData[field];
+                }
+            });
+            logger.debug(`debtData after deleting empty fields: ${JSON.stringify(debtData, null, 2)}`);
+
+            const updatedDebt = await this.DebtModel.update({ debt_id: validatedDebtId.debt_id }, debtData);
+            logger.debug(`updatedDebt: ${JSON.stringify(updatedDebt, null, 2)}`);
+
+            req.formattedResponse = formatResponse(200, "debt updated successfully", updatedDebt);
+            next();
+        } catch (error) {
+            logger.error(`error updating debt: ${error}`);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
+        }
     }
 
     async deleteDebt(req, res, next) {
+        try {
+            logger.info('request to delete debt');
+            const debt_id = req.params.debt_id;
+            logger.debug(`debt_id: ${debt_id}`);
+            const validatedDebtId = await super.verifyField({ debt_id }, ['debt_id'], this.DebtModel);
+            logger.debug(`validatedDebtId: ${validatedDebtId}`);
+            if (!uuidValidateV4(validatedDebtId.debt_id)) {
+                logger.error('invalid debt_id');
+                throw MyAppErrors.badRequest('invalid debt_id');
+            }
+            logger.info('debt_id validated successfully');
+
+            const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
+            logger.debug(`debt: ${JSON.stringify(debt, null, 2)}`);
+            if (!debt) {
+                logger.error('the requested debt not found');
+                throw MyAppErrors.notFound('the requested debt not found');
+            }
+
+            const result = await this.DebtModel.delete({ debt_id: validatedDebtId.debt_id });
+            logger.debug(`result: ${JSON.stringify(result, null, 2)}`);
+
+            req.formattedResponse = formatResponse(200, "debt deleted successfully", result);
+            next();
+        } catch (error) {
+            logger.error(`error deleting debt: ${error}`);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
+        }
     }
 }
 
