@@ -14,12 +14,12 @@ class BaseModel {
 
   async validateSchema(data, operation = "create") {
     logger.info("Validating schema...");
-    logger.debug("schema: ", this.schema);
-    logger.debug("data type: ", typeof data);
-    logger.debug("Data to be validated: ", JSON.stringify(data, null, 2));
-    logger.debug(`operation: ${operation}`);
 
     try {
+      if (!data || typeof data !== 'object') {
+        logger.error("Data is empty or not an object");
+        throw new ValidationError("Data is empty or not an object");
+      }
       if (!this.schema) {
         logger.error("Schema is not defined for this model.");
         throw new ValidationError("Schema is not defined for this model.");
@@ -78,6 +78,10 @@ class BaseModel {
    */
   async create(data) {
     try {
+      if (!data || typeof data !== 'object') {
+        logger.error("Data is empty or not an object");
+        throw new ValidationError("Data is empty or not an object");
+      }
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "create");
         logger.debug("Validated data: " + JSON.stringify(validated));
@@ -108,6 +112,10 @@ class BaseModel {
    */
   async list(nationalId) {
     try {
+      if (!nationalId || typeof nationalId !== 'string') {
+        logger.error("National ID is empty or not a string");
+        throw new ValidationError("National ID is empty or not a string");
+      }
       const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
       const result = await this.pgClient.query(sql, [nationalId]);
       return result.rows;
@@ -126,7 +134,8 @@ class BaseModel {
   async findOne(primaryKeys) {
     try {
       if (typeof primaryKeys !== "object" || primaryKeys === null) {
-        throw new Error("primaryKeys must be a non-null object");
+        logger.error("primaryKeys must be a non-null object");
+        throw new ValidationError("primaryKeys must be a non-null object");
       }
 
       logger.info("Finding one...");
@@ -169,7 +178,12 @@ class BaseModel {
         const validated = await this.validateSchema(dataToUpdate, "update");
         logger.debug(`Validated data: ${JSON.stringify(validated)}`);
         if (typeof primaryKeys !== "object" || primaryKeys === null) {
-          throw new Error("primaryKeys must be a non-null object");
+          logger.error("primaryKeys must be a non-null object");
+          throw new ValidationError("primaryKeys must be a non-null object");
+        }
+        if (typeof data !== "object" || data === null) {
+          logger.error("data must be a non-null object");
+          throw new ValidationError("data must be a non-null object");
         }
 
         const keys = Object.keys(primaryKeys);
@@ -188,7 +202,7 @@ class BaseModel {
         const sql = `UPDATE ${this.tableName} 
           SET ${updatePlaceholders} 
           WHERE ${conditionPlaceholders} 
-          RETURNING ${updateKeys.join(", ")}`;
+          RETURNING *`; //  RETURNING ${updateKeys.join(", ")} to return only the updated fields
 
         logger.debug(`Update SQL: ${sql}`);
         logger.debug(`Update params: ${JSON.stringify(updateValues.concat(primaryValues))}`);
@@ -216,13 +230,13 @@ class BaseModel {
   async delete(primaryKeys) {
     try {
       logger.info("Deleting record...");
+      if (typeof primaryKeys !== "object" || primaryKeys === null) {
+        logger.error("primaryKeys must be a non-null object");
+        throw new ValidationError("primaryKeys must be a non-null object");
+      }
       logger.debug("primaryKeys:", primaryKeys);
 
       return await this.executeWithTransaction(async () => {
-        if (typeof primaryKeys !== "object" || primaryKeys === null) {
-          throw new Error("primaryKeys must be a non-null object");
-        }
-
         const keys = Object.keys(primaryKeys);
         const values = Object.values(primaryKeys);
         logger.debug("keys:", keys);
