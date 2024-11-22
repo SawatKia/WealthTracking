@@ -167,7 +167,6 @@ class UserModel extends BaseModel {
             logger.info('Checking password');
             logger.debug(`User to check password, email: ${email}`);
 
-            // Validate only the email for this operation
             const validationResult = await super.validateSchema({ email }, 'check');
             if (validationResult instanceof Error) throw validationResult;
 
@@ -185,9 +184,6 @@ class UserModel extends BaseModel {
             }
 
             logger.info('Password match');
-            if ('hashed_password' in userObject) delete userObject.hashed_password;
-            if ('role' in userObject) delete userObject.role;
-            if ('auth_service' in userObject) delete userObject.auth_service;
             return { result: true, user: userObject };
         } catch (error) {
             logger.error(`Error checking password: ${error.message}`);
@@ -224,12 +220,6 @@ class UserModel extends BaseModel {
             }
 
             let createdResult = await super.create(newUserData);
-            createdResult = {
-                national_id: createdResult.national_id,
-                email: createdResult.email,
-                date_of_birth: createdResult.date_of_birth,
-            }
-            logger.debug(`create result: ${JSON.stringify(createdResult)}`);
             return createdResult;
         } catch (error) {
             if (!(error instanceof Error)) {
@@ -303,21 +293,8 @@ class UserModel extends BaseModel {
                 throw validationResult;
             }
 
-            // find a user by national ID
-            const query = `SELECT * FROM users 
-            WHERE national_id = $1
-            LIMIT 1`;
-            const result = await super.executeQuery(query, [national_id]);
-            const user = result.rows[0];
-            if (!user) {
-                logger.warn('User not found');
-                return null;
-            }
-            if ('hashed_password' in user) delete user.hashed_password;
-            if ('role' in user) delete user.role;
-            if ('auth_service' in user) delete user.auth_service;
-            logger.debug(`user found: ${JSON.stringify(user)}`);
-            return user;
+            const result = await super.findOne({ national_id });
+            return result;
         } catch (error) {
             logger.error(`Error finding user by national_id: ${error.message}`);
             throw error;
@@ -332,10 +309,6 @@ class UserModel extends BaseModel {
             delete updateFields.password;
         }
         const updatedUser = await super.update({ national_id }, updateFields);
-        if ('national_id' in updatedUser) delete updatedUser.national_id;
-        if ('hashed_password' in updatedUser) delete updatedUser.hashed_password;
-        if ('role' in updatedUser) delete updatedUser.role;
-        if ('auth_service' in updatedUser) delete updatedUser.auth_service;
         logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
         return updatedUser;
     }
@@ -361,10 +334,6 @@ class UserModel extends BaseModel {
                 return null;
             }
 
-            // Remove sensitive data before returning
-            if ('hashed_password' in deletedUser) delete deletedUser.hashed_password;
-            if ('role' in deletedUser) delete deletedUser.role;
-            if ('auth_service' in deletedUser) delete deletedUser.auth_service;
             logger.debug(`deletedUser: ${JSON.stringify(deletedUser)}`);
             return deletedUser;
         } catch (error) {
