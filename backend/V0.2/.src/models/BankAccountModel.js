@@ -118,10 +118,9 @@ class BankAccountModel extends BaseModel {
 
     async getAll(nationalId) {
         try {
-            const results = await this.findAll(nationalId);
+            const results = await super.list(nationalId);
             return results.map(account => {
                 account.account_number = this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
-                // Convert balance to number, format to 2 decimal places, then back to string
                 account.balance = Number(account.balance).toFixed(2).toString();
                 return account;
             });

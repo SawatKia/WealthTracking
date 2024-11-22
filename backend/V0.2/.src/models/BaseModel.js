@@ -106,13 +106,13 @@ class BaseModel {
    * @param {string} nationalId - National ID of the user to find records for
    * @returns {Promise<Array<Object>>} - Array of records found
    */
-  async findAll(nationalId) {
+  async list(nationalId) {
     try {
       const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
       const result = await this.pgClient.query(sql, [nationalId]);
       return result.rows;
     } catch (error) {
-      logger.error("Error finding all records: %s", error);
+      logger.error("Error listing records: %s", error);
       throw error;
     }
   }
