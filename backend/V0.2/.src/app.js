@@ -49,30 +49,7 @@ if (!isDev) {
 // app.use("/", express.static(path.join(__dirname, "./frontend_build")));
 
 // Health check endpoint (before other routes)
-app.get("/health", (req, res, next) => {
-  const bkkTime = new Date().toLocaleString('en-GB', {
-    timeZone: 'Asia/Bangkok',
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-  req.formattedResponse = formatResponse(
-    200,
-    "you are connected to the /health, running in Environment: " + NODE_ENV,
-    {
-      status: "healthy",
-      timestamp: bkkTime,
-      uptime: formatUptime(process.uptime()),
-      environment: NODE_ENV
-    }
-  );
-  next();
-});
+app.get("/health", mdw.healthCheck);
 
 // API Routes
 app.use("/api/v0.2", routes);
@@ -85,15 +62,22 @@ app.get("/api", (req, res, next) => {
   next();
 });
 
-// Set connection timeout to 5 seconds
+// Set connection timeout to 3 seconds
 app.use((req, res, next) => {
-  res.setTimeout(5000, () => {
+  res.setTimeout(3000, () => {
     res.status(408).json({
       status: "error",
       message: "Request timeout"
     });
   });
   next();
+});
+
+app.get("/api/test-timeout", (req, res) => {
+  setTimeout(() => { // send a response after 5 seconds
+    if (res.headersSent) return;
+    res.json({ message: "This should never be sent due to timeout in 3 seconds" });
+  }, 5000);
 });
 
 // Global response handler
