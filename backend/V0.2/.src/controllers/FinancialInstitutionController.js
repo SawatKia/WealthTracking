@@ -24,7 +24,7 @@ class FinancialInstitutionController extends BaseController {
                 throw MyAppErrors.forbidden('This endpoint is not available in production');
             }
 
-            const institutions = await this.model.findAll();
+            const institutions = await this.model.list();
             req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully. CAUTION!!: This endpoint is available for development purposes only.', institutions);
             next();
         } catch (error) {
