@@ -1,18 +1,16 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 
-const AuthUtils = require('../utilities/AuthUtils');
 const UsedRefreshTokenModel = require('../models/UsedRefreshTokenModel');
 const BaseController = require('./BaseController');
 const UserModel = require('../models/UserModel');
 const appConfigs = require('../configs/AppConfigs');
-const Utils = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 
-const { Logger, formatResponse } = Utils;
-const { verifyToken, decodeToken, createTokens, uuidValidateV4, authenticationError } = AuthUtils;
+const { verifyToken, decodeToken, createTokens, uuidValidateV4, authenticationError } = require('../utilities/AuthUtils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const logger = Logger('AuthController');
 
 class AuthController extends BaseController {
@@ -217,7 +215,7 @@ class AuthController extends BaseController {
                 res.clearCookie('refresh_token', this.cookieOptions);
             } else {
                 logger.debug('Mobile platform detected, sending logout response');
-                message = 'on mobile, just remove both refresh and access tokens from the your storage. no need to wait for response';
+                message = 'on mobile, just remove both refresh and access tokens from your storage';
             }
 
             logger.info(`User logged out successfully: ${message}`);
@@ -418,7 +416,7 @@ class AuthController extends BaseController {
                     req.formattedResponse = formatResponse(201, 'User registered successfully with Google', createdUser);
                 } else if (platform === this.platformTypes.MOBILE) {
                     logger.debug('Mobile platform detected, sending tokens in response body');
-                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google.', {
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google, please try to login. to get access_token and refresh_token', {
                         user: createdUser
                         // tokens: {
                         //     access_token: accessToken,

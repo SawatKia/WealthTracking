@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
 //NOTE - Load the Mermaid diagrams
 document.addEventListener("DOMContentLoaded", async function () {
   // Initialize Mermaid
-  mermaid.initialize({ startOnLoad: false });
+  mermaid.initialize({ startOnLoad: true });
   if (typeof mermaid !== "object") {
     console.error("Mermaid not loaded.");
   }
@@ -379,33 +379,58 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Add a small delay before starting to load diagrams
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // Create an array of promises for fetching diagrams
-  const fetchPromises = diagrams.map(async (diagram) => {
-    // Function to load diagram from a Mermaid file with fallback to SVG
+  async function loadDiagram(diagram) {
     const skeleton = document.getElementById(diagram.loadingId);
+    const container = document.getElementById(diagram.id);
+
     try {
-      const response = await fetch(diagram.mmdPath);
-      if (!response.ok) {
-        throw new Error("Failed to fetch Mermaid file.");
+      // First attempt: Try Mermaid rendering
+      const mermaidResponse = await fetch(diagram.mmdPath);
+      if (mermaidResponse.ok) {
+        const text = await mermaidResponse.text();
+        container.textContent = text;
+
+        await mermaid.init(undefined, `#${diagram.id}`);
+        const renderedSvg = container.querySelector('svg');
+
+        if (renderedSvg) {
+          console.log(`${diagram.no})${diagram.id} loaded and rendered successfully.`);
+          return; // Exit if successful
+        }
+        console.warn(`${diagram.id}: Mermaid rendered but no SVG produced, trying SVG fallback`);
       }
-      const text = await response.text();
-      document.getElementById(diagram.id).textContent = text;
-      mermaid.init(undefined, `#${diagram.id}`);
-      console.log(
-        `${diagram.no})${diagram.id} loaded and rendered successfully.`
-      );
+
+      // Second attempt: SVG fallback
+      const svgResponse = await fetch(diagram.svgPath);
+      if (svgResponse.ok) {
+        const svgText = await svgResponse.text();
+        container.innerHTML = svgText; // Directly insert the SVG markup
+
+        // Apply white background to the SVG (to match Mermaid rendered SVGs)
+        const svg = container.querySelector('svg');
+        if (svg) {
+          svg.style.backgroundColor = '#ffffff';
+        }
+
+        console.log(`${diagram.id} successfully loaded using SVG fallback`);
+        return; // Exit if successful
+      }
+
+      // If both attempts fail, throw error
+      throw new Error("Both Mermaid and SVG fallback failed");
+
     } catch (error) {
-      console.error(
-        `Mermaid file cannot load ${diagram.id}, falling back to SVG:${error}`
-      );
-      document.getElementById(
-        diagram.id
-      ).innerHTML = `<img src="${diagram.svgPath}" alt="Diagram">`;
+      console.error(`Failed to load diagram ${diagram.id}:`, error);
+      container.innerHTML = `<div class="error-message">Failed to load diagram. Please try refreshing the page.</div>`;
+
     } finally {
-      skeleton.style.display = "none"; // Hide skeleton indicator on success
+      skeleton.style.display = "none";
       updateLoadingProgress(diagram);
     }
-  });
+  }
+
+  // Create an array of promises for fetching diagrams
+  const fetchPromises = diagrams.map(diagram => loadDiagram(diagram));
 
   // Execute all fetch requests simultaneously
   await Promise.all(fetchPromises);

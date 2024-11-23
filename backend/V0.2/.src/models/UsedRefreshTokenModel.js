@@ -1,9 +1,9 @@
 const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
-const Utils = require('../utilities/Utils');
+const { Logger } = require('../utilities/Utils');
 
-const logger = Utils.Logger('UsedRefreshTokenModel');
+const logger = Logger('UsedRefreshTokenModel');
 
 class UsedRefreshTokenModel extends BaseModel {
     constructor() {

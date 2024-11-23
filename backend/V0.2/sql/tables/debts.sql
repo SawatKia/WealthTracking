@@ -1,7 +1,7 @@
 -- TABLE: debts
 CREATE TABLE
     IF NOT EXISTS debts (
-        debt_number VARCHAR(50) PRIMARY KEY,
+        debt_id VARCHAR(50) PRIMARY KEY,
         fi_code VARCHAR(20) NOT NULL,
         national_id CHAR(13) NOT NULL,
         debt_name VARCHAR(100) NOT NULL,

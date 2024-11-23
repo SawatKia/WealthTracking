@@ -1,5 +1,5 @@
 const { development, test, production } = require("../configs/dbConfigs");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const Pool = require("pg-pool");
 const appConfigs = require("../configs/AppConfigs");
 const fs = require('fs');
@@ -7,13 +7,23 @@ const path = require('path');
 
 const NODE_ENV = appConfigs.environment;
 const TEST_DB = appConfigs.postgres.databaseName;
-const { Logger } = Utils;
 const logger = Logger("PgClient");
 
 class PgClient {
   constructor() {
     logger.info("Initializing PgClient instance");
     logger.debug(`Running Environment: ${NODE_ENV}`);
+    this.tables = [
+      'users',
+      'financial_institutions',
+      'bank_accounts',
+      'debts',
+      'transactions',
+      'transaction_bank_account_relations',
+      'api_request_limits',
+      'used_refresh_tokens',
+      'slip_history'
+    ];
 
     let config;
     if (NODE_ENV === "development") {
@@ -65,7 +75,7 @@ class PgClient {
       if (!this.client) {
         throw new Error("Database connection failed");
       }
-      logger.info("Database connected successfully");
+      logger.info(`Database connected successfully`);
 
       await this.createAllTables();
     } catch (error) {
@@ -127,15 +137,7 @@ class PgClient {
   async release() {
     if (appConfigs.environment === 'test') {
       // delete all rows of all tables
-      const tables = [
-        'users',
-        'transaction_bank_account_relations',
-        'transactions',
-        'bank_accounts',
-        'debts',
-        'api_request_limits'
-      ]
-      for (const table of tables) {
+      for (const table of this.tables) {
         await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
         logger.debug(`All rows deleted from table: ${table}`);
       }
@@ -224,18 +226,9 @@ class PgClient {
   async createAllTables() {
     // Check if tables exist and create them if they don't
     logger.info("Checking if tables exist...");
-    const tables = [
-      "users",
-      "financial_institutions",
-      "bank_accounts",
-      "debts",
-      "transactions",
-      "transaction_bank_account_relations",
-      "api_request_limits",
-      "used_refresh_tokens"
-    ];
+    let createdTables = [];
 
-    for (const table of tables) {
+    for (const table of this.tables) {
       try {
         // Check if the table exists
         await this.client.query(`SELECT 1 FROM ${table}`);
@@ -244,8 +237,26 @@ class PgClient {
         // The table doesn't exist, create it
         logger.debug(`Table [${table}] does not exist`);
         logger.debug(`Creating table: [${table}]`);
-        await this.createTable(table);
+        const createdTable = await this.createTable(table);
+        createdTables.push(createdTable);
       }
+    }
+    const tableCount = createdTables.length;
+    if (tableCount > 0) {
+      logger.info(`+${'-'.repeat(40)}+`);
+      logger.info(`| ${'Tables Created Successfully'.padEnd(39)}|`);
+      logger.info(`+${'-'.repeat(40)}+`);
+      createdTables.forEach(table => {
+        const tableLength = table.length;
+        if (tableLength > 40) {
+          logger.info(`| ${table.substring(0, 37)}... |`);
+        } else {
+          logger.info(`| ${table.padEnd(39)}|`);
+        }
+      });
+      logger.info(`+${'-'.repeat(40)}+`);
+      logger.info(`| ${`Total Tables Created: ${tableCount}`.padEnd(39)}|`);
+      logger.info(`+${'-'.repeat(40)}+`);
     }
 
     // After creating all tables, create triggers
@@ -257,6 +268,7 @@ class PgClient {
       logger.error(`Error creating triggers: ${error.message}`);
       throw error;
     }
+    logger.info('All database triggers created successfully');
   }
 
   async createTable(tableName) {
@@ -270,6 +282,7 @@ class PgClient {
       const sqlStatement = createTableSQL.replace(/-- TABLE: \w+\n/, '').trim();
       await this.client.query(sqlStatement);
       logger.debug(`Table ${tableName} created`);
+      return tableName;
     } catch (error) {
       logger.error(`Error creating table ${tableName}: ${error.message}`);
       throw error;
@@ -292,16 +305,8 @@ class PgClient {
   async end() {
     if (NODE_ENV === 'test') {
       logger.info('Test environment detected. Dropping all rows from data tables...');
-      const tables = [
-        'transaction_bank_account_relations',
-        'transactions',
-        'bank_accounts',
-        'debts',
-        'users',
-        'api_request_limits'
-      ];
 
-      for (const table of tables) {
+      for (const table of this.tables) {
         try {
           await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
           logger.debug(`All rows deleted from table: ${table}`);

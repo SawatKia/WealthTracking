@@ -32,12 +32,12 @@ if (!isDev) {
 }
 
 // Serve static files from the frontend build directory
-app.use("/", express.static(path.join(__dirname, "./frontend_build")));
+// app.use("/", express.static(path.join(__dirname, "./frontend_build")));
+
+// Health check endpoint (before other routes)
+app.get("/health", mdw.healthCheck);
 
 // API Routes
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
-});
 app.use("/api/v0.2", routes);
 app.get("/api", (req, res, next) => {
   req.formattedResponse = formatResponse(
@@ -48,9 +48,30 @@ app.get("/api", (req, res, next) => {
   next();
 });
 
+// Set connection timeout to 3 seconds
+app.use((req, res, next) => {
+  res.setTimeout(3000, () => {
+    res.status(408).json({
+      status: "error",
+      message: "Request timeout"
+    });
+  });
+  next();
+});
+
+app.get("/api/test-timeout", (req, res) => {
+  setTimeout(() => { // send a response after 5 seconds
+    if (res.headersSent) return;
+    res.json({ message: "This should never be sent due to timeout in 3 seconds" });
+  }, 5000);
+});
+
 // Global response handler
 app.use(mdw.responseHandler);
 
 // Error handling middleware
 app.use(mdw.errorHandler);
+
+
 module.exports = app;
+

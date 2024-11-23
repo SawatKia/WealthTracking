@@ -4,16 +4,18 @@ const path = require('path');
 
 const EasySlipService = require("../services/EasySlip");
 const APIRequestLimitModel = require("../models/APIRequestLimitModel");
-const Utils = require("../utilities/Utils");
+const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
+const SlipHistoryModel = require('../models/SlipHistoryModel');
+const QRCodeReader = require('../utilities/QRCodeReader');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("ApiController");
 
 class ApiController {
   constructor() {
     this.easySlipService = EasySlipService;
     this.apiRequestLimitModel = new APIRequestLimitModel();
+    this.slipHistoryModel = new SlipHistoryModel();
     this.mockDataResponse = {
       payload: "00000000000000000000000000000000000000000000000000000000000",
       transRef: "68370160657749I376388B35",
@@ -284,7 +286,8 @@ class ApiController {
     logger.info("Processing unified slip verification request");
     try {
       let result;
-      logger.debug(`req.query: ${req.query}`);
+      let payload;
+      logger.debug(`req.query: ${JSON.stringify(req.query)}`);
       logger.debug(`req.file: ${JSON.stringify(req.file)}`);
       logger.debug(`req.body: ${JSON.stringify(req.body)}`);
 
@@ -293,33 +296,75 @@ class ApiController {
       logger.debug(`sanitizedQuery: ${JSON.stringify(sanitizedQuery)}`);
 
       if (sanitizedQuery.payload) {
+        // For direct payload input
+        payload = sanitizedQuery.payload;
         // Validate payload
-        if (!this._isValidPayload(sanitizedQuery.payload)) {
+        if (!this._isValidPayload(payload)) {
           throw MyAppErrors.badRequest("The provided payload format is invalid.");
         }
-        logger.debug(`payload: ${sanitizedQuery.payload.substring(0, 50)}...[truncated]`);
-        result = await this.extractSlipDataByPayload(sanitizedQuery.payload);
+        logger.debug(`payload: ${payload.substring(0, 50)}...[truncated]`);
+
       } else if (req.file) {
-        // Validate file
+        // For file upload
         if (!this._isValidFile(req.file)) {
           throw MyAppErrors.badRequest("The uploaded file is invalid or exceeds the size limit.");
         }
-        logger.debug(`file: { filename: ${req.file.originalname}, size: ${req.file.size} } `);
-        result = await this.extractSlipDataByFile(req.file);
+        logger.debug(`file: { filename: ${req.file.originalname}, size: ${req.file.size} }`);
+
+        // Extract payload from QR in image using the new utility
+        payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
+        if (!payload) {
+          throw MyAppErrors.badRequest("Could not extract QR code from image");
+        }
+        logger.debug(`extracted payload from image: ${payload}`);
+
       } else if (req.body && req.body.base64Image) {
         // Validate base64 image
         if (!this._isValidBase64Image(req.body.base64Image)) {
           throw MyAppErrors.badRequest("The provided base64 image format is invalid.");
         }
         logger.debug(`base64Image: ${req.body.base64Image.substring(0, 50)}...[truncated]`);
-        result = await this.extractSlipDataByBase64(req.body.base64Image);
+
+        // Extract payload from base64 image using the new utility
+        payload = await QRCodeReader.extractPayloadFromBase64(req.body.base64Image);
+        if (!payload) {
+          throw MyAppErrors.badRequest("Could not extract QR code from base64 image");
+        }
+        logger.debug(`extracted payload from base64: ${payload}`);
+
       } else {
         throw MyAppErrors.badRequest("At least one of the following is required: payload, file, or base64 image.");
       }
 
-      if (!result) {
-        throw MyAppErrors.badRequest("Failed to verify slip");
+      // Check for duplicate slip using the extracted/provided payload
+      const isDuplicate = await this.slipHistoryModel.checkDuplicateSlip(payload);
+      if (isDuplicate) {
+        throw MyAppErrors.badRequest("This slip has already been used");
       }
+      logger.info("Slip is not duplicate, proceed to extract slip data");
+
+      // Process the slip based on the original input method
+      // This is to ensure that the slip data is extracted using the same method as the input
+      // to prevent any data corruption during the extraction process
+      if (sanitizedQuery.payload) {
+        result = await this.extractSlipDataByPayload(payload);
+      } else if (req.file) {
+        result = await this.extractSlipDataByFile(req.file);
+      } else {
+        result = await this.extractSlipDataByBase64(req.body.base64Image);
+      }
+
+      if (!result) {
+        throw MyAppErrors.badRequest(result.message || "Failed to verify slip");
+      }
+
+      // Record the slip usage after successful verification
+      await this.slipHistoryModel.recordSlipUsage(
+        payload,
+        result.data.transRef,
+        req.user.sub
+      );
+      logger.info("Slip usage recorded successfully");
 
       req.formattedResponse = formatResponse(200, result.message, result.data);
       next();

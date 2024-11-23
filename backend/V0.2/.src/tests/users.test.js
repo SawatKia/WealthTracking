@@ -2,8 +2,7 @@ const request = require("supertest");
 const app = require("../app");
 const pgClient = require("../services/PgClient");
 const { test: testConfig } = require("../configs/dbConfigs");
-const Utils = require("../utilities/Utils");
-const { Logger, formatResponse } = Utils;
+const { Logger, formatResponse } = require("../utilities/Utils");
 const logger = Logger("users.test");
 
 let accessToken;
@@ -509,8 +508,7 @@ describe("Users Endpoints", () => {
         password: mockUser.password
       });
 
-    accessToken = loginResponse.headers['set-cookie']
-      .find(cookie => cookie.includes('access_token'));
+    accessToken = loginResponse.headers['set-cookie']?.[0];
   });
 
   // Clean up after all tests

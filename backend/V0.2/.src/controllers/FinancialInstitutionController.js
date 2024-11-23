@@ -1,10 +1,9 @@
-const Utils = require('../utilities/Utils');
+const { Logger, formatResponse } = require('../utilities/Utils');
 const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const appConfigs = require('../configs/AppConfigs');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('FinancialInstitutionController');
 
 class FinancialInstitutionController extends BaseController {
@@ -25,7 +24,7 @@ class FinancialInstitutionController extends BaseController {
                 throw MyAppErrors.forbidden('This endpoint is not available in production');
             }
 
-            const institutions = await this.model.findAll();
+            const institutions = await this.model.list();
             req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully. CAUTION!!: This endpoint is available for development purposes only.', institutions);
             next();
         } catch (error) {

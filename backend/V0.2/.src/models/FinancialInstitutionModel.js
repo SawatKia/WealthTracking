@@ -4,11 +4,10 @@ const fs = require("fs");
 const { parse } = require("csv-parse");
 
 const BaseModel = require("./BaseModel");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const appConfigs = require("../configs/AppConfigs");
 const pgClient = require("../services/PgClient");
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("FinancialInstitutionModel");
 
 class FinancialInstitutionModel extends BaseModel {
@@ -45,7 +44,7 @@ class FinancialInstitutionModel extends BaseModel {
   async _isTableEmpty() {
     logger.info("Checking if table is empty...");
     const result = await pgClient.query(
-      `SELECT COUNT(*) FROM ${this.tableName}`
+      `SELECT COUNT(*) FROM ${this.tableName}`, [], { silent: true }
     );
     return parseInt(result.rows[0].count) === 0;
   }
