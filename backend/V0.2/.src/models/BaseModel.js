@@ -174,6 +174,7 @@ class BaseModel {
       logger.debug(`data: ${JSON.stringify(data)}`);
       const dataToUpdate = { ...primaryKeys, ...data };
       logger.debug(`dataToUpdate: ${JSON.stringify(dataToUpdate)}`);
+
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(dataToUpdate, "update");
         logger.debug(`Validated data: ${JSON.stringify(validated)}`);
@@ -192,7 +193,12 @@ class BaseModel {
         const updateValues = Object.values(data);
 
         const updatePlaceholders = updateKeys
-          .map((key, index) => `"${key}" = $${index + 1}`)
+          .map((key, index) => {
+            if (key === 'date_of_birth') {
+              return `"${key}" = $${index + 1}::DATE`;
+            }
+            return `"${key}" = $${index + 1}`;
+          })
           .join(", ");
 
         const conditionPlaceholders = keys
