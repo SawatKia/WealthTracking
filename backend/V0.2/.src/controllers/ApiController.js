@@ -339,6 +339,7 @@ class ApiController {
       // Check for duplicate slip using the extracted/provided payload
       const isDuplicate = await this.slipHistoryModel.checkDuplicateSlip(payload);
       if (isDuplicate) {
+        logger.warn("This slip has already been used");
         throw MyAppErrors.badRequest("This slip has already been used");
       }
       logger.info("Slip is not duplicate, proceed to extract slip data");
