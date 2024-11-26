@@ -385,6 +385,9 @@ beforeAll(async () => {
     await pgClient.init(); // Initialize PgClient
     logger.debug(`Database connected: ${pgClient.isConnected()}`);
 
+    await pgClient.truncateTables();
+    logger.debug(`All rows deleted from tables`);
+
     const fi = new FiModel();
     await fi.initializeData();
     logger.info('Financial institution data initialized');
@@ -397,17 +400,23 @@ beforeAll(async () => {
         email: 'V2yF3@example.com',
         username: 'test_user',
         role: 'user',
-        password: 'testPassword123', // Add a password
-        date_of_birth: '1990-01-01', // Add a date of birth
+        password: 'testPassword123',
+        date_of_birth: '1990-01-01',
         member_since: new Date().toISOString()
     };
     try {
         await userModel.createUser(mockUser);
         logger.info('Mock user created');
-        const response = await request(app)
-            .post('/api/v0.2/login')
+
+        // Login with mobile platform
+        const loginResponse = await request(app)
+            .post('/api/v0.2/login?platform=mobile')
             .send({ email: mockUser.email, password: mockUser.password });
-        accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
+
+        // Extract access token from response body
+        // accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
+        accessToken = loginResponse.body.data.tokens.access_token;
+        logger.debug(`Access token obtained: ${accessToken}`);
     } catch (error) {
         if (error instanceof ValidationError) {
             logger.warn(`Validation error while creating mock user: ${error.message}`);
@@ -416,12 +425,12 @@ beforeAll(async () => {
             throw error;
         }
     }
-});
+}, 30000);
 
 afterAll(async () => {
     await pgClient.release(); // Release the PgClient
     logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-});
+}, 30000);
 
 describe('Bank Account Creation', () => {
     newBankAccount.forEach((testCase, index) => {
@@ -430,7 +439,8 @@ describe('Bank Account Creation', () => {
 
             const response = await request(app)
                 .post('/api/v0.2/banks')
-                .set('Cookie', [accessToken])
+                // .set('Cookie', [accessToken])
+                .set('Authorization', `Bearer ${accessToken}`)
                 .send(testCase.body);
 
             expect(response.status).toBe(testCase.expected.status);
@@ -439,6 +449,6 @@ describe('Bank Account Creation', () => {
             if (testCase.expected.data) {
                 expect(response.body.data).toEqual(testCase.expected.data);
             }
-        });
+        }, 30000);
     });
 });

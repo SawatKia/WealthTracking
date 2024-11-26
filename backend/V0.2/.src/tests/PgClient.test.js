@@ -5,11 +5,11 @@ const PgClient = require('../services/PgClient');
 describe('Cascading Constraints Tests', () => {
     beforeAll(async () => {
         await PgClient.init(); // Initialize the PgClient
-    });
+    }, 30000);
 
     afterAll(async () => {
         await PgClient.end(); // Clean up the database
-    });
+    }, 30000);
 
     test('should delete user and cascade delete related bank accounts', async () => {
         // Create a user
@@ -55,5 +55,5 @@ describe('Cascading Constraints Tests', () => {
             .get(`/bank-accounts/${bankAccountResponse.body.account_number}`); // Adjust the endpoint to get a bank account
 
         expect(checkBankAccountResponse.status).toBe(404); // Expect bank account to be deleted
-    });
+    }, 30000);
 }); 

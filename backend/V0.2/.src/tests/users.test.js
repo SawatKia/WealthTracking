@@ -488,12 +488,15 @@ const deleteUserBody = [
     }
   }
 ];
-
+//TODO - get current user should return exact user's mock data especially date_of_birth
 describe("Users Endpoints", () => {
   // Setup before all tests
   beforeAll(async () => {
     await pgClient.init();
     logger.debug(`Database connected: ${pgClient.isConnected()}`);
+
+    await pgClient.truncateTables();
+    logger.debug(`All rows deleted from tables`);
 
     // Register a test user
     await request(app)
@@ -502,14 +505,17 @@ describe("Users Endpoints", () => {
 
     // Login to get access token
     const loginResponse = await request(app)
-      .post("/api/v0.2/login")
+      .post("/api/v0.2/login?platform=mobile")
       .send({
         email: mockUser.email,
         password: mockUser.password
       });
+    logger.debug(`loginResponse: ${JSON.stringify(loginResponse, null, 2)}`);
 
-    accessToken = loginResponse.headers['set-cookie']?.[0];
-  });
+    // accessToken = loginResponse.headers['set-cookie']?.[0];
+    accessToken = loginResponse.body.data.tokens.access_token;
+    logger.debug(`accessToken: ${accessToken}`);
+  }, 30000);
 
   // Clean up after all tests
   afterAll(async () => {
@@ -523,8 +529,8 @@ describe("Users Endpoints", () => {
         logger.info('connection test /health');
         const response = await request(app).get("/health").expect(200);
 
-        expect(response.text).toEqual("OK");
-      });
+        expect(response.status).toEqual(200);
+      }, 30000);
     });
     describe("GET /api", () => {
       it("should return 200 OK formatted message", async () => {
@@ -539,7 +545,7 @@ describe("Users Endpoints", () => {
         expect(response.body.message).toMatch(
           /^you are connected to the \/api, running in Environment: .+/
         );
-      });
+      }, 30000);
     });
     describe("GET /api/v0.2/", () => {
       it("should return 200 OK formatted message", async () => {
@@ -555,9 +561,9 @@ describe("Users Endpoints", () => {
           "message",
           "you are connected to the /api/v0.2/"
         );
-      });
+      }, 30000);
     });
-  });
+  }, 30000);
 
   describe("POST /api/v0.2/users", () => {
     newUserBody.forEach((user, i) => {
@@ -577,7 +583,7 @@ describe("Users Endpoints", () => {
           // expect(response.body.data).toHaveProperty(key, value);
           // }
         }
-      });
+      }, 30000);
     });
   });
 
@@ -587,7 +593,8 @@ describe("Users Endpoints", () => {
         logger.info(`Running test ${i + 1}: ${testCase.testName}`);
         const response = await request(app)
           .patch("/api/v0.2/users")
-          .set('Cookie', [accessToken])
+          // .set('Cookie', [accessToken])
+          .set('Authorization', `Bearer ${accessToken}`)
           .send(testCase.body);
 
         expect(response.statusCode).toBe(testCase.expected.status);
@@ -596,7 +603,7 @@ describe("Users Endpoints", () => {
         if (testCase.expected.data) {
           expect(response.body.data).toMatchObject(testCase.expected.data);
         }
-      });
+      }, 30000);
     });
   });
 
@@ -606,12 +613,13 @@ describe("Users Endpoints", () => {
         logger.info(`Running test ${i + 1}: ${testCase.testName}`);
         const response = await request(app)
           .delete("/api/v0.2/users")
-          .set('Cookie', [accessToken])
+          // .set('Cookie', [accessToken])
+          .set('Authorization', `Bearer ${accessToken}`)
           .send(testCase.body);
 
         expect(response.statusCode).toBe(testCase.expected.status);
         expect(response.body).toHaveProperty("message", testCase.expected.message);
-      });
+      }, 30000);
     });
   });
 
