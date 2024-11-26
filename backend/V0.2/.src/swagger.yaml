@@ -225,6 +225,20 @@ paths:
                                   refresh_token:
                                     type: string
                                     example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Tokens refreshed successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Tokens refreshed successfully"
+                    data:
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
         "401":
           $ref: "#/components/responses/Unauthorized"
 
