@@ -21,7 +21,7 @@ class SlipHistoryModel extends BaseModel {
             logger.info('Checking for duplicate slip');
             logger.debug(`payload: ${payload}`);
             const recentSlips = await this.executeQuery(`SELECT * FROM ${this.tableName} ORDER BY created_at DESC LIMIT 10`);
-            logger.debug(`recentSlips: ${JSON.stringify(recentSlips.rows.join(','))}`);
+            logger.debug(`recentSlips: ${JSON.stringify(recentSlips.rows)}`);
 
             const result = await this.findOne({ payload });
             logger.debug(`duplicate check's RAW result: ${JSON.stringify(result)}`);
