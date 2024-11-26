@@ -197,12 +197,27 @@ class BaseController {
         if (!user) return null;
 
         const allowedFields = ['national_id', 'email', 'username', 'date_of_birth', 'profile_picture_url'];
-        return Object.keys(user)
+        const filteredUser = Object.keys(user)
             .filter(key => allowedFields.includes(key))
             .reduce((obj, key) => {
-                obj[key] = user[key];
+                // Convert date_of_birth to Bangkok time and extract only the date part
+                if (key === 'date_of_birth' && user[key]) {
+                    const utcDate = new Date(user[key]);
+                    // Add 7 hours to convert to Bangkok time
+                    utcDate.setHours(utcDate.getHours() + 7);
+                    // Format date as YYYY-MM-DD
+                    const year = utcDate.getFullYear();
+                    const month = String(utcDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(utcDate.getDate()).padStart(2, '0');
+                    obj[key] = `${year}-${month}-${day}`;
+                } else {
+                    obj[key] = user[key];
+                }
                 return obj;
             }, {});
+
+        logger.debug(`Filtered user data: ${JSON.stringify(filteredUser)}`);
+        return filteredUser;
     }
 }
 module.exports = BaseController;
