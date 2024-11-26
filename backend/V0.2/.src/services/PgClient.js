@@ -63,19 +63,19 @@ class PgClient {
   async init() {
     try {
       logger.info("Initialize PgClient");
-      if (NODE_ENV === "test" || NODE_ENV === "development") {
-        // Create database if it doesn't exist
-        logger.info(`Checking if ${NODE_ENV} database exists...`);
-        await this.createDatabase(NODE_ENV);
-      }
-
-      // Connect to the database
       logger.info("Connecting to the database...");
       this.client = await this.pool.connect();
       if (!this.client) {
         throw new Error("Database connection failed");
       }
       logger.info(`Database connected successfully`);
+      if (NODE_ENV === "development" || NODE_ENV === "test") {
+        // Create database if it doesn't exist
+        logger.info(`Checking if ${NODE_ENV} database exists...`);
+        await this.createDatabase(NODE_ENV);
+      }
+
+      // Connect to the database
 
       await this.createAllTables();
     } catch (error) {
@@ -102,8 +102,8 @@ class PgClient {
 
     if (!options.silent) {
       logger.info('received query request');
-      logger.debug(`sql: ${sql}`);
-      logger.debug(`params: ${JSON.stringify(params)}`);
+      logger.debug(`sql: ${sql} `);
+      logger.debug(`params: ${JSON.stringify(params)} `);
       logger.info('querying...');
     }
 
@@ -134,13 +134,17 @@ class PgClient {
     }
   }
 
+  async truncateTables() {
+    logger.info("Truncating all tables...");
+    for (const table of this.tables) {
+      await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
+      logger.debug(`All rows deleted from table: ${table} `);
+    }
+  }
+
   async release() {
     if (appConfigs.environment === 'test') {
-      // delete all rows of all tables
-      for (const table of this.tables) {
-        await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
-        logger.debug(`All rows deleted from table: ${table}`);
-      }
+      await this.truncateTables();
     }
     if (this.client) {
       this.client.release();
@@ -165,6 +169,7 @@ class PgClient {
    * @returns {Promise<void>}
    */
   async createDatabase(environment = 'test') {
+    logger.info(`Creating ${environment} database...`);
     if (!['test', 'development', 'production'].includes(environment)) {
       throw new Error('Invalid environment. Must be either "test", "development" or "production"');
     }
@@ -172,19 +177,12 @@ class PgClient {
     const config = environment === 'test' ? test : (environment === 'development' ? development : production);
     const dbName = config.database;
 
-    const adminPool = new Pool({
-      ...config,
-      database: "postgres", // Use 'postgres' as the default admin database
-    });
-
-    let adminClient;
     logger.info(`start creating ${environment} database name: '${dbName}' process...`);
     try {
-      adminClient = await adminPool.connect();
       // Check if the database exists
-      logger.info(`checking if ${environment} database name: '${dbName}' exists?`);
+      logger.info(`checking if ${environment} database name: '${dbName}' exists ? `);
       const checkDbQuery = `SELECT 1 FROM pg_database WHERE datname = $1`;
-      const result = await adminClient.query(checkDbQuery, [dbName]);
+      const result = await this.client.query(checkDbQuery, [dbName]);
 
       if (result.rowCount > 0) {
         logger.info(`${environment} database name: '${dbName}' already exists`);
@@ -194,7 +192,7 @@ class PgClient {
         // Only delete the database if it's not production and FORCE_DB_RESET is true 
         if (environment != 'production' && forceDbReset) {
           const deleteDbQuery = `DROP DATABASE "${dbName}"`;
-          await adminClient.query(deleteDbQuery);
+          await this.client.query(deleteDbQuery);
           logger.warn(`${environment} database name: '${dbName}' deleted successfully`);
         }
         else {
@@ -205,21 +203,16 @@ class PgClient {
 
       // Only create database if it doesn't exist
       const createDbQuery = `CREATE DATABASE "${dbName}"`;
-      await adminClient.query(createDbQuery);
+      await this.client.query(createDbQuery);
       logger.info(`${environment} database name: '${dbName}' created successfully with new configurations(if any)`);
 
     } catch (error) {
       if (error.code !== "42P04") {
         // 42P04 is the code for 'database already exists'
-        logger.error(`Error creating ${environment} database: ${error.message}`);
+        logger.error(`Error creating ${environment} database: ${error.message} `);
         throw error;
       }
       logger.info(`${environment} database name: '${dbName}' already exists`);
-    } finally {
-      if (adminClient) {
-        adminClient.release();
-      }
-      await adminPool.end();
     }
   }
 
@@ -231,11 +224,11 @@ class PgClient {
     for (const table of this.tables) {
       try {
         // Check if the table exists
-        await this.client.query(`SELECT 1 FROM ${table}`);
-        logger.debug(`Table [${table}] exists, skip creating table...`);
+        await this.client.query(`SELECT 1 FROM ${table} `);
+        logger.debug(`Table[${table}]exists, skip creating table...`);
       } catch (error) {
         // The table doesn't exist, create it
-        logger.debug(`Table [${table}] does not exist`);
+        logger.debug(`Table[${table}] does not exist`);
         logger.debug(`Creating table: [${table}]`);
         const createdTable = await this.createTable(table);
         createdTables.push(createdTable);
@@ -243,20 +236,20 @@ class PgClient {
     }
     const tableCount = createdTables.length;
     if (tableCount > 0) {
-      logger.info(`+${'-'.repeat(40)}+`);
-      logger.info(`| ${'Tables Created Successfully'.padEnd(39)}|`);
-      logger.info(`+${'-'.repeat(40)}+`);
+      logger.info(`+ ${'-'.repeat(40)} +`);
+      logger.info(`| ${'Tables Created Successfully'.padEnd(39)}| `);
+      logger.info(`+ ${'-'.repeat(40)} +`);
       createdTables.forEach(table => {
         const tableLength = table.length;
         if (tableLength > 40) {
-          logger.info(`| ${table.substring(0, 37)}... |`);
+          logger.info(`| ${table.substring(0, 37)}... | `);
         } else {
-          logger.info(`| ${table.padEnd(39)}|`);
+          logger.info(`| ${table.padEnd(39)}| `);
         }
       });
-      logger.info(`+${'-'.repeat(40)}+`);
-      logger.info(`| ${`Total Tables Created: ${tableCount}`.padEnd(39)}|`);
-      logger.info(`+${'-'.repeat(40)}+`);
+      logger.info(`+ ${'-'.repeat(40)} +`);
+      logger.info(`| ${`Total Tables Created: ${tableCount}`.padEnd(39)}| `);
+      logger.info(`+ ${'-'.repeat(40)} +`);
     }
 
     // After creating all tables, create triggers
@@ -265,7 +258,7 @@ class PgClient {
       await this.client.query(triggerSQL);
       logger.info('Database triggers created successfully');
     } catch (error) {
-      logger.error(`Error creating triggers: ${error.message}`);
+      logger.error(`Error creating triggers: ${error.message} `);
       throw error;
     }
     logger.info('All database triggers created successfully');
@@ -275,7 +268,7 @@ class PgClient {
     logger.info(`Creating table ${tableName}...`);
     try {
       const sqlPath = path.join(__dirname, '../../sql/tables', `${tableName}.sql`);
-      logger.debug(`finding sqlPath: ${sqlPath}`);
+      logger.debug(`finding sqlPath: ${sqlPath} `);
       const createTableSQL = fs.readFileSync(sqlPath, 'utf8');
 
       // Remove the table name comment and execute the CREATE TABLE statement
@@ -284,7 +277,7 @@ class PgClient {
       logger.debug(`Table ${tableName} created`);
       return tableName;
     } catch (error) {
-      logger.error(`Error creating table ${tableName}: ${error.message}`);
+      logger.error(`Error creating table ${tableName}: ${error.message} `);
       throw error;
     }
   }
@@ -309,9 +302,9 @@ class PgClient {
       for (const table of this.tables) {
         try {
           await this.client.query(`TRUNCATE TABLE ${table} CASCADE`);
-          logger.debug(`All rows deleted from table: ${table}`);
+          logger.debug(`All rows deleted from table: ${table} `);
         } catch (error) {
-          logger.error(`Error deleting rows from table ${table}: ${error.message}`);
+          logger.error(`Error deleting rows from table ${table}: ${error.message} `);
         }
       }
       logger.info('All rows deleted from all tables in test environment');
