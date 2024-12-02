@@ -2,12 +2,16 @@ const request = require("supertest");
 const app = require("../app");
 const pgClient = require("../services/PgClient");
 const { test: testConfig } = require("../configs/dbConfigs");
-const Utils = require("../utilities/Utils");
-const { Logger, formatResponse } = Utils;
+const { Logger, formatResponse } = require("../utilities/Utils");
+const UserModel = require('../models/UserModel');
 const logger = Logger("slip-verify.test");
 // Mock JWT token
-const mockToken = 'mockJWTtoken123';
-
+const mockUser = {
+    national_id: '1234567890123',
+    username: 'test_user',
+    email: 'V2yF3@example.com',
+    password: 'testPassword123',
+}
 const verifySlipTestCases = [
     {
         testName: "success with payload",
@@ -67,10 +71,18 @@ const verifySlipTestCases = [
         expectedMessage: "At least one of the following is required: payload, file, or base64 image."
     }
 ];
-
+let accessToken;
 beforeAll(async () => {
     await pgClient.init(); // Initialize PgClient
     logger.debug(`Database connected: ${pgClient.isConnected()}`);
+    const userModel = new UserModel();
+    await userModel.createUser(mockUser);
+    logger.info("User registered");
+    const response = await request(app)
+        .post('/api/v0.2/login')
+        .send({ email: mockUser.email, password: mockUser.password });
+    logger.debug(`login response: ${JSON.stringify(response, null, 2)}`);
+    accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
 });
 
 afterAll(async () => {
@@ -88,21 +100,21 @@ describe("Slip Verification API Endpoint", () => {
                 if (testCase.method === 'GET') {
                     response = await request(app)
                         .get("/api/v0.2/slip/verify")
-                        .set('Authorization', `Bearer ${mockToken}`)
+                        .set('Cookie', [accessToken])
                         .query(testCase.query);
                 } else {
-                    const req = request(app)
+                    let req = request(app)
                         .post("/api/v0.2/slip/verify")
-                        .set('Authorization', `Bearer ${mockToken}`);
+                        .set('Cookie', [accessToken]);
 
                     if (testCase.query) {
-                        req.query(testCase.query);
+                        req = req.query(testCase.query);
                     }
 
                     if (testCase.file) {
-                        req.attach('imageFile', testCase.file.buffer, testCase.file.originalname);
+                        req = req.attach('imageFile', testCase.file.buffer, testCase.file.originalname);
                     } else if (testCase.body) {
-                        req.send(testCase.body);
+                        req = req.send(testCase.body);
                     }
 
                     response = await req;

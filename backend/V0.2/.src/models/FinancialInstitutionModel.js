@@ -4,11 +4,10 @@ const fs = require("fs");
 const { parse } = require("csv-parse");
 
 const BaseModel = require("./BaseModel");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const appConfigs = require("../configs/AppConfigs");
 const pgClient = require("../services/PgClient");
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger("FinancialInstitutionModel");
 
 class FinancialInstitutionModel extends BaseModel {
@@ -45,7 +44,7 @@ class FinancialInstitutionModel extends BaseModel {
   async _isTableEmpty() {
     logger.info("Checking if table is empty...");
     const result = await pgClient.query(
-      `SELECT COUNT(*) FROM ${this.tableName}`
+      `SELECT COUNT(*) FROM ${this.tableName}`, [], { silent: true }
     );
     return parseInt(result.rows[0].count) === 0;
   }
@@ -53,10 +52,7 @@ class FinancialInstitutionModel extends BaseModel {
   async _importCSVData() {
     logger.info("Importing CSV data...");
     // Define the CSV file path based on the environment whether it is test or in docker
-    const csvFilePath = appConfigs.environment === 'test'
-      ? path.join(__dirname, "../../statics/FI_CODE.csv")
-      : path.join(__dirname, "../statics/FI_CODE.csv");
-
+    const csvFilePath = path.join(__dirname, "../../statics/FI_CODE.csv")
     // Check if the CSV file exists
     if (!fs.existsSync(csvFilePath)) {
       logger.error(`CSV file not found: ${csvFilePath}`);
@@ -123,7 +119,7 @@ class FinancialInstitutionModel extends BaseModel {
             sanitizedData.fi_code,
             sanitizedData.name_th,
             sanitizedData.name_en,
-          ]);
+          ], { silent: true });
         } catch (error) {
           if (error.code === "23505") {
             logger.warn(

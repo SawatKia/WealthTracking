@@ -6,7 +6,7 @@ class Utils {
             status_code: status_code,
             message: message,
             data: data,
-            headers: headers
+            ...(headers || {}),
         }
     }
 

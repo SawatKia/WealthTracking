@@ -72,7 +72,7 @@ class BankAccountUtils {
      * Validates a bank account number based on the bank's code
      * @param {string} accountNumber - Raw input bank account number
      * @param {string} bankCode - Bank's code
-     * @returns {Object} - Validation result
+     * @returns {Object} - Validation result with isValid, error, and formattedNumber
      */
     validateAccountNumber(accountNumber, bankCode) {
         try {
@@ -84,8 +84,8 @@ class BankAccountUtils {
 
             if (!formattedNumber) {
                 const bank = this._getBankFormat(bankCode);
-                logger.error(`Invalid account number for ${bank.displayName}`);
-                return this._validationResult(false, `Invalid format for ${bank.displayName}. Expected format: ${bank.example}`);
+                logger.warn(`Invalid account number for ${bank.displayName} expected format: ${bank.example} received: ${accountNumber}, returning original number`);
+                return this._validationResult(true, 'cannot be formatted', cleanedNumber);
             }
 
             return this._validationResult(true, null, formattedNumber);
@@ -139,7 +139,7 @@ class BankAccountUtils {
      * @param {boolean} isValid - Validation status
      * @param {string|null} error - Error message if any
      * @param {string|null} formattedNumber - Formatted account number if valid
-     * @returns {Object} - Validation result object
+     * @returns {Object} - Validation result object with isValid, error, and formattedNumber
      */
     _validationResult(isValid, error = null, formattedNumber = null) {
         return { isValid, error, formattedNumber };

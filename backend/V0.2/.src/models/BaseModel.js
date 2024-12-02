@@ -1,9 +1,8 @@
 const Joi = require("joi");
 const pgClient = require("../services/PgClient");
-const Utils = require("../utilities/Utils");
+const { Logger } = require("../utilities/Utils");
 const { ValidationError } = require("../utilities/ValidationErrors");
 
-const { Logger } = Utils;
 const logger = Logger("BaseModel");
 
 class BaseModel {
@@ -15,12 +14,12 @@ class BaseModel {
 
   async validateSchema(data, operation = "create") {
     logger.info("Validating schema...");
-    logger.debug("schema: ", this.schema);
-    logger.debug("data type: ", typeof data);
-    logger.debug("Data to be validated: ", JSON.stringify(data, null, 2));
-    logger.debug(`operation: ${operation}`);
 
     try {
+      if (!data || typeof data !== 'object') {
+        logger.error("Data is empty or not an object");
+        throw new ValidationError("Data is empty or not an object");
+      }
       if (!this.schema) {
         logger.error("Schema is not defined for this model.");
         throw new ValidationError("Schema is not defined for this model.");
@@ -79,6 +78,10 @@ class BaseModel {
    */
   async create(data) {
     try {
+      if (!data || typeof data !== 'object') {
+        logger.error("Data is empty or not an object");
+        throw new ValidationError("Data is empty or not an object");
+      }
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(data, "create");
         logger.debug("Validated data: " + JSON.stringify(validated));
@@ -97,23 +100,27 @@ class BaseModel {
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error creating record: %s", error);
+      logger.error("Error creating record: ", error);
       throw error;
     }
   }
 
   /**
    * Finds all records in the table that belong to the given user email.
-   * @param {string} userEmail - Email of the user to find records for
+   * @param {string} nationalId - National ID of the user to find records for
    * @returns {Promise<Array<Object>>} - Array of records found
    */
-  async findAll(userEmail) {
+  async list(nationalId) {
     try {
-      const sql = `SELECT * FROM ${this.tableName} WHERE userEmail = $1`;
-      const result = await this.pgClient.query(sql, [userEmail]);
+      if (!nationalId || typeof nationalId !== 'string') {
+        logger.error("National ID is empty or not a string");
+        throw new ValidationError("National ID is empty or not a string");
+      }
+      const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
+      const result = await this.pgClient.query(sql, [nationalId]);
       return result.rows;
     } catch (error) {
-      logger.error("Error finding all records: %s", error);
+      logger.error("Error listing records: %s", error);
       throw error;
     }
   }
@@ -127,7 +134,8 @@ class BaseModel {
   async findOne(primaryKeys) {
     try {
       if (typeof primaryKeys !== "object" || primaryKeys === null) {
-        throw new Error("primaryKeys must be a non-null object");
+        logger.error("primaryKeys must be a non-null object");
+        throw new ValidationError("primaryKeys must be a non-null object");
       }
 
       logger.info("Finding one...");
@@ -161,17 +169,27 @@ class BaseModel {
    */
   async update(primaryKeys, data) {
     try {
+      logger.info("Updating record...");
+      logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
+      logger.debug(`data: ${JSON.stringify(data)}`);
+      const dataToUpdate = { ...primaryKeys, ...data };
+      logger.debug(`dataToUpdate: ${JSON.stringify(dataToUpdate)}`);
       return await this.executeWithTransaction(async () => {
-        const validated = await this.validateSchema(data, "update");
-        logger.debug("Validated data: " + JSON.stringify(validated));
+        const validated = await this.validateSchema(dataToUpdate, "update");
+        logger.debug(`Validated data: ${JSON.stringify(validated)}`);
         if (typeof primaryKeys !== "object" || primaryKeys === null) {
-          throw new Error("primaryKeys must be a non-null object");
+          logger.error("primaryKeys must be a non-null object");
+          throw new ValidationError("primaryKeys must be a non-null object");
+        }
+        if (typeof data !== "object" || data === null) {
+          logger.error("data must be a non-null object");
+          throw new ValidationError("data must be a non-null object");
         }
 
         const keys = Object.keys(primaryKeys);
         const primaryValues = Object.values(primaryKeys);
-        const updateKeys = Object.keys(validated);
-        const updateValues = Object.values(validated);
+        const updateKeys = Object.keys(data);
+        const updateValues = Object.values(data);
 
         const updatePlaceholders = updateKeys
           .map((key, index) => `"${key}" = $${index + 1}`)
@@ -184,16 +202,17 @@ class BaseModel {
         const sql = `UPDATE ${this.tableName} 
           SET ${updatePlaceholders} 
           WHERE ${conditionPlaceholders} 
-          RETURNING *`;
+          RETURNING *`; //  RETURNING ${updateKeys.join(", ")} to return only the updated fields
 
         logger.debug(`Update SQL: ${sql}`);
-        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(updateValues, primaryValues))}`);
+        logger.debug(`Update params: ${JSON.stringify(updateValues.concat(primaryValues))}`);
 
         const result = await this.pgClient.query(sql, [
           ...updateValues,
           ...primaryValues,
         ]);
         logger.debug("Update result: " + JSON.stringify(result.rows[0]));
+
         return result.rows[0];
       });
     } catch (error) {
@@ -211,13 +230,13 @@ class BaseModel {
   async delete(primaryKeys) {
     try {
       logger.info("Deleting record...");
+      if (typeof primaryKeys !== "object" || primaryKeys === null) {
+        logger.error("primaryKeys must be a non-null object");
+        throw new ValidationError("primaryKeys must be a non-null object");
+      }
       logger.debug("primaryKeys:", primaryKeys);
 
       return await this.executeWithTransaction(async () => {
-        if (typeof primaryKeys !== "object" || primaryKeys === null) {
-          throw new Error("primaryKeys must be a non-null object");
-        }
-
         const keys = Object.keys(primaryKeys);
         const values = Object.values(primaryKeys);
         logger.debug("keys:", keys);

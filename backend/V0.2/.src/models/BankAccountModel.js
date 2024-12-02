@@ -1,11 +1,10 @@
 const Joi = require('joi');
 
 const BaseModel = require('./BaseModel');
-const Utils = require('../utilities/Utils');
+const { Logger } = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 
-const { Logger, formatResponse } = Utils;
 const logger = Logger('BankAccountModel');
 
 class BankAccountModel extends BaseModel {
@@ -41,16 +40,21 @@ class BankAccountModel extends BaseModel {
                 }),
 
             national_id: Joi.string()
-                .length(13)
-                .pattern(/^[0-9]*$/, 'numeric characters only')
+                .max(255)
+                .when('auth_service', {
+                    is: 'local',
+                    then: Joi.string().length(13).pattern(/^[0-9]*$/, 'numeric characters only'),
+                    otherwise: Joi.string().max(255)
+                })
                 .when(Joi.ref('$operation'), {
                     is: Joi.valid('create', 'read', 'update', 'delete'),
                     then: Joi.required(),
                     otherwise: Joi.optional(),
                 })
                 .messages({
-                    'string.length': 'National ID must be 13 characters long.',
-                    'string.pattern.name': 'National ID must contain only numeric characters.',
+                    'string.max': 'National ID cannot exceed 255 characters',
+                    'string.length': 'Local auth national ID must be 13 digit characters',
+                    'string.pattern.name': 'Local auth national ID must be numeric',
                     'any.required': 'National ID is required for this operation.',
                 }),
 
@@ -97,6 +101,8 @@ class BankAccountModel extends BaseModel {
 
     async get(accountNumber, fiCode) {
         try {
+            logger.info(`get bankAccount`);
+            logger.debug(`accountNumber: ${accountNumber}, fiCode: ${fiCode}`);
             const result = await this.findOne({ account_number: accountNumber, fi_code: fiCode });
             if (result) {
                 result.account_number = this.bankAccountUtils.formatAccountNumber(result.account_number, result.fi_code);
@@ -112,10 +118,9 @@ class BankAccountModel extends BaseModel {
 
     async getAll(nationalId) {
         try {
-            const results = await this.findAll({ national_id: nationalId });
+            const results = await super.list(nationalId);
             return results.map(account => {
                 account.account_number = this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
-                // Convert balance to number, format to 2 decimal places, then back to string
                 account.balance = Number(account.balance).toFixed(2).toString();
                 return account;
             });

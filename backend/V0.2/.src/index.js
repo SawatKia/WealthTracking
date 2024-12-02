@@ -14,7 +14,7 @@ const PORT = appConfigs.appPort || 3000;
  * Function to start the server
  */
 const startServer = async () => {
-  logger.info("Starting server...");
+  logger.info("=".repeat(20) + " Starting server " + "=".repeat(20));
   try {
     logger.info("Connecting to database...");
 
@@ -25,13 +25,34 @@ const startServer = async () => {
     await fi.initializeData();
 
     // Start Express server after database connection is established
-    app.listen(PORT, "0.0.0.0", () => {
-      logger.info(`Environment: ${NODE_ENV}`);
-      logger.info(`App is listening on port ${PORT}`);
+    const server = app.listen(PORT, () => {
+      logger.debug('+---------------------------------------+');
+      logger.debug('|       Server started successfully     |');
+      logger.debug('+---------------------------------------+');
+      logger.debug(`| Environment: ${NODE_ENV}              |`);
+      logger.debug(`| App is listening on port ${PORT}         |`);
+      logger.debug('+---------------------------------------+');
+      logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
     });
+
+    // Add error handler for the server
+    server.on('error', (error) => {
+      logger.error('Server error:', error);
+      process.exit(1);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      logger.info('SIGTERM signal received: closing HTTP server');
+      server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+      });
+    });
+
   } catch (error) {
     logger.error("Failed to start the server:", error.message);
-    process.exit(1); // Exit process if server fails to start
+    process.exit(1);
   }
 };
 

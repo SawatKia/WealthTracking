@@ -1,7 +1,9 @@
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
+const APP_ROOT = '/usr/src/WealthTrack';
 
-const Utils = require("../utilities/Utils");
+const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
 const AuthUtils = require('../utilities/AuthUtils');
@@ -9,7 +11,7 @@ const { json } = require('express');
 
 const slipToDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/slip-images/';
+    const uploadDir = path.join(APP_ROOT, 'uploads/slip-images/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -21,7 +23,7 @@ const slipToDiskStorage = multer.diskStorage({
 });
 const profilePictureToDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/profile-pictures/';
+    const uploadDir = path.join(APP_ROOT, 'uploads/profile-pictures/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -34,11 +36,15 @@ const profilePictureToDiskStorage = multer.diskStorage({
 const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
 const { verifyToken } = AuthUtils;
-const { Logger, formatResponse } = Utils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
 
 class Middlewares {
+  constructor() {
+    this.healthCheck = this.healthCheck.bind(this);
+    this.formatUptime = this.formatUptime.bind(this);
+  }
+
   /**
    * Middleware to validate the allowed methods for a specific path
    * @param {Object} allowedMethods - Object with allowed methods for each path
@@ -111,7 +117,8 @@ class Middlewares {
       Data: ${data ? JSON.stringify(data, null, 6) : 'No data'}
       `;
       logger.debug(responseLogMessage);
-      res.set(headers || {}).status(status_code).json(formatResponse(status_code, message, data));
+
+      res.set(headers).status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();
     }
@@ -121,8 +128,8 @@ class Middlewares {
    * Middleware to handle errors in a consistent format
    */
   errorHandler(err, req, res, next) {
+    logger.info("Handling error");
     if (!res.headersSent) {
-      logger.info("Handling error");
       let response;
       if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
@@ -181,12 +188,12 @@ class Middlewares {
   };
 
   authMiddleware(req, res, next) {
-    const accessToken = req.cookies['access_token'];
+    logger.info("Authenticating user");
 
-    if (appConfigs.environment === 'test') {
-      next();
-      return;
-    }
+    // Check for token in both cookie and Authorization header
+    const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
+
+    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
 
     if (accessToken) {
       try {
@@ -222,7 +229,6 @@ class Middlewares {
     // Prepare the body for logging 
     let logBody;
     if (body && body.base64Image) {
-      // Truncate the base64Image value to show only the first 50 characters
       logBody = {
         ...body,
         base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
@@ -231,22 +237,29 @@ class Middlewares {
       logBody = body;
     }
 
+    // Format headers with truncated values
+    const formattedHeaders = Object.entries(headers)
+      .map(([key, value]) => {
+        const truncatedValue = value && value.length > 50
+          ? `${value.substring(0, 50)}... [truncated]`
+          : value;
+        return `      ${key.padEnd(16)}: ${truncatedValue}`;
+      })
+      .join('\n');
+
     // Prepare a human-friendly log message
     const requestLogMessage = `
     Incoming Request:
     ----------------
     ${ip} => ${method} ${requestPath}
     Headers:
-      Host: ${headers.host}
-      Authorization: ${headers.authorization ? headers.authorization.substring(0, 20) + '...' : 'Not present'}
-      Content-Type: ${headers['content-type']}
-      Content-Length: ${headers['content-length']}
+${formattedHeaders}
     Cookies: 
       ${Object.keys(req.cookies)
         .map(key => {
           const cookieValue = req.cookies[key];
           const displayValue = typeof cookieValue === 'string'
-            ? cookieValue.substring(0, 20)
+            ? cookieValue.substring(0, 50)
             : String(cookieValue);
           return `${key}: ${displayValue}...`;
         })
@@ -258,6 +271,64 @@ class Middlewares {
     logger.info(requestLogMessage);
     next();
   }
+
+  unknownRouteHandler(req, res, next) {
+    logger.info('Checking if the route is unknown...');
+    if (!req.formattedResponse) {
+      logger.error(`Unknown route: ${req.method} ${req.url}`);
+      next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+    }
+    next();
+  }
+
+  formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+    return parts.join(' ') || seconds;
+  }
+
+  /**
+   * Health check middleware to check the health of the server
+   * 
+   * it provides:
+   * 
+   * - the current time in Bangkok
+   * - the uptime of the server
+   * - the environment
+   */
+  healthCheck(req, res, next) {
+    const bkkTime = new Date().toLocaleString('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    req.formattedResponse = formatResponse(
+      200,
+      "you are connected to the /health, running in Environment: " + NODE_ENV,
+      {
+        status: "healthy",
+        timestamp: bkkTime,
+        uptime: this.formatUptime(process.uptime()) || process.uptime(),
+        environment: appConfigs.environment
+      }
+    );
+    next();
+  };
 }
 
 module.exports = new Middlewares();

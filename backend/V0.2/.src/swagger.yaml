@@ -1,12 +1,13 @@
 openapi: 3.0.0
 info:
-  title: WealthTack API
-  description: API for user registration and check password.
+  title: WealthTrack API
+  description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
   version: "0.2"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
 paths:
+  # Connection/Health Check Endpoints
   /api:
     get:
       tags:
@@ -32,17 +33,41 @@ paths:
       tags:
         - "Connection"
       summary: Health check
-      description: Returns a plain text string to confirm the API is running.
+      description: Returns health status information including environment, uptime, and timestamp
       servers:
         - url: "http://localhost:3000"
       responses:
         "200":
-          description: Healthy response in plain text.
+          description: Health check response
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: "OK"
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "you are connected to the /health, running in Environment: development"
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "healthy"
+                      timestamp:
+                        type: string
+                        description: "Bangkok timezone (en-GB format)"
+                        example: "Thu, 14/03/2024, 15:30:45"
+                      uptime:
+                        type: string
+                        description: "Server uptime in d/h/m/s format"
+                        example: "2d 5h 30m 15s"
+                      environment:
+                        type: string
+                        enum: ["development", "production", "test"]
+                        example: "development"
 
   /:
     get:
@@ -62,552 +87,25 @@ paths:
                 message: "You are connected to the /api/v0.2/"
                 data: null
 
-  /users/check:
-    post:
-      tags:
-        - "User"
-      summary: Check user password (Development Mode Only)
-      description: Validates user's email and password.
-      requestBody:
-        description: User login data.
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                  description: User's email address.
-                  example: "johndoe@example.com"
-                password:
-                  type: string
-                  format: password
-                  description: User's password.
-                  example: "securePassword123"
-      responses:
-        "200":
-          description: Password check successful.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: "Password check successful"
-                  data:
-                    type: boolean
-                    example: true
-        "400":
-          description: Bad request due to missing required fields or invalid email address.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
-                    type: string
-                    example: "Missing required field: email"
-        "401":
-          description: Unauthorized due to incorrect password.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 401
-                  message:
-                    type: string
-                    example: "Invalid email or password"
-
-  /users:
-    post:
-      tags:
-        - "User"
-      summary: Register a new user
-      description: Creates a new user with the provided information.
-      requestBody:
-        description: User registration data.
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - national_id
-                - username
-                - email
-                - password
-                - confirm_password
-                - date_of_birth
-              properties:
-                national_id:
-                  type: string
-                  description: National ID (13 numeric characters).
-                  example: "1234567890123"
-                username:
-                  type: string
-                  description: Username (alphanumeric, no special characters).
-                  example: "johndoe"
-                email:
-                  type: string
-                  format: email
-                  description: Valid email address.
-                  example: "johndoe@example.com"
-                password:
-                  type: string
-                  format: password
-                  description: Password (minimum 8 characters).
-                  example: "securePassword123"
-                confirm_password:
-                  type: string
-                  format: password
-                  description: Password confirmation (must match password).
-                  example: "securePassword123"
-                date_of_birth:
-                  type: string
-                  format: date
-                  description: User's date of birth.
-                  example: "1990-01-01"
-      responses:
-        "201":
-          description: User created successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: "User created successfully"
-                  data:
-                    type: object
-                    properties:
-                      national_id:
-                        type: string
-                        example: "1234567890123"
-                      email:
-                        type: string
-                        example: "johndoe@example.com"
-                      date_of_birth:
-                        type: string
-                        format: date
-                        example: "1990-01-01"
-        "400":
-          description: Bad request due to missing required fields, invalid email address, or password mismatch.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
-                    type: string
-                    example: "Missing required field: username"
-        "409":
-          description: Conflict due to duplicate user.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 409
-                  message:
-                    type: string
-                    example: "national_id or email are already taken"
-    get:
-      tags:
-        - "User"
-      summary: Get current user from cookie
-      description: Retrieves user information based on cookie.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: User retrieved successfully.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-        "400":
-          description: Bad request due to invalid National ID.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      security:
-        - cookieAuth: []
-      tags:
-        - "User"
-      summary: Update user information
-      description: Update authenticated user's information
-      requestBody:
-        description: Fields to update.
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                password:
-                  type: string
-                  description: Current password for verification
-                  required: true
-                  example: "securePassword123"
-                newPassword:
-                  type: string
-                  description: New password (optional)
-                  example: "newSecurePassword123"
-                newConfirmPassword:
-                  type: string
-                  description: Confirm new password
-                  example: "newSecurePassword123"
-                email:
-                  type: string
-                  format: email
-                  example: "newEmail@example.com"
-                username:
-                  type: string
-                  example: "newUsername"
-                date_of_birth:
-                  type: string
-                  format: date
-                  example: "1990-01-01"
-                profilePicture:
-                  type: string
-                  format: binary
-                  description: Profile picture file
-      responses:
-        "200":
-          description: User updated successfully.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-        "400":
-          description: Bad request due to invalid input.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    delete:
-      tags:
-        - "User"
-      summary: Delete current user
-      description: Deletes the current authenticated user. Requires current password for verification.
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - password
-              properties:
-                password:
-                  type: string
-                  format: password
-                  description: Current password for verification
-                  example: "securePassword123"
-      responses:
-        "200":
-          description: User deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "User deleted successfully"
-                data: null
-        "400":
-          description: Bad request due to missing password
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status_code: 400
-                message: "Missing required field: password"
-                data: null
-        "401":
-          description: Unauthorized due to incorrect password
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status_code: 401
-                message: "Invalid username or password"
-                data: null
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status_code: 404
-                message: "User not found"
-                data: null
-
-  /slip/verify:
-    post:
-      summary: Verify slip data
-      tags:
-        - Slip
-      description: |
-        Verifies slip data using payload, image file, **or** base64 encoded image. 
-        You can test by sending any preferred format which does not need to be correct slip file format.
-      security:
-        - cookieAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                imageFile:
-                  type: string
-                  format: binary
-                  description: Image file of the slip
-          application/json:
-            schema:
-              type: object
-              properties:
-                base64Image:
-                  type: string
-                  description: Base64 encoded image of the slip
-      parameters:
-        - in: query
-          name: payload
-          schema:
-            type: string
-          description: QR code payload data
-      responses:
-        "200":
-          description: Successful verification
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SlipDataResponse"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "429":
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /slip/quota:
-    get:
-      summary: Get quota information
-      tags:
-        - Slip
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QuotaResponse"
-        "503":
-          description: Service unavailable
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /banks:
-    post:
-      tags:
-        - "Bank Account"
-      summary: Create a new bank account
-      description: Creates a new bank account for the authenticated user.
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/BankAccountInput"
-      responses:
-        "201":
-          description: Bank account created successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "409":
-          $ref: "#/components/responses/Conflict"
-    get:
-      tags:
-        - "Bank Account"
-      summary: Get all bank accounts
-      description: Retrieves all bank accounts for the authenticated user.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of bank accounts
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountsListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /banks/{account_number}/{fi_code}:
-    get:
-      tags:
-        - "Bank Account"
-      summary: Get a specific bank account
-      description: Retrieves a specific bank account by account number and financial institution code.
-      security:
-        - cookieAuth: []
-      parameters:
-        - in: path
-          name: account_number
-          required: true
-          schema:
-            type: string
-          description: The bank account number
-        - in: path
-          name: fi_code
-          required: true
-          schema:
-            type: string
-          description: The financial institution code
-      responses:
-        "200":
-          description: Successful retrieval of bank account
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BankAccountResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /fis:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get all financial institutions (Development Mode Only)
-      description: Retrieves a list of all financial institutions.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of financial institutions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /fis/operating-banks:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get operating Thai commercial banks
-      description: Retrieves a list of operating Thai commercial banks.
-      security:
-        - cookieAuth: []
-      responses:
-        "200":
-          description: Successful retrieval of operating Thai commercial banks
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /fi/{fi_code}:
-    get:
-      tags:
-        - "Financial Institution"
-      summary: Get a specific financial institution (Development Mode Only)
-      description: Retrieves a specific financial institution by its code.
-      security:
-        - cookieAuth: []
-      parameters:
-        - in: path
-          name: fi_code
-          required: true
-          schema:
-            type: string
-          description: The financial institution code
-      responses:
-        "200":
-          description: Successful retrieval of financial institution
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FinancialInstitutionResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+  # Authentication Endpoints
   /login:
     post:
       tags:
         - "Authentication"
       summary: Login user
-      description: Authenticates user and returns JWT tokens in cookies
+      description: |
+        Authenticates user and returns JWT tokens:
+        - Web platform: Sets tokens in HTTP-only cookies
+        - Mobile platform: Returns tokens in response body
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+      security: [] # No security for login endpoint
       requestBody:
         required: true
         content:
@@ -632,16 +130,51 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged in successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: object # For web platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/UserBase"
+                          - type: object # For mobile platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/UserBase"
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully"
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully, store the token in secure storage..."
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "johndoe@example.com"
+                        username: "johndoe"
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -650,23 +183,48 @@ paths:
       tags:
         - "Authentication"
       summary: Refresh access token
-      description: Uses refresh token to generate new access and refresh tokens
+      description: |
+        Uses refresh token to generate new access and refresh tokens:
+        - Web platform: Uses refresh_token from HTTP-only cookie
+        - Mobile platform: Uses refresh token from x-refresh-token header
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+        - in: header
+          name: x-refresh-token
+          schema:
+            type: string
+          description: Refresh token (required for mobile platform)
+          required: false
       responses:
         "200":
           description: Tokens refreshed successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Tokens refreshed successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=xxx; HttpOnly; Secure; SameSite=Strict"
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: "null" # For web platform
+                          - type: object # For mobile platform
+                            properties:
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -675,7 +233,18 @@ paths:
       tags:
         - "Authentication"
       summary: Logout user
-      description: Invalidates the current refresh token and clears authentication cookies
+      description: Invalidates the current refresh token and handles platform-specific cleanup
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate logout handling
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Logout successful
@@ -683,15 +252,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response"
-              example:
-                status_code: 200
-                message: "Logged out successfully"
-                data: null
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: "access_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged out successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "on mobile, just remove both refresh and access tokens from the your storage..."
+                    data: null
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -709,6 +280,12 @@ paths:
             type: string
             enum: [login, register]
           description: Specifies whether the user wants to login or register
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
       responses:
         200:
           description: Successfully generated Google OAuth URL
@@ -768,13 +345,909 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  # User Management Endpoints
+  /users:
+    post:
+      tags:
+        - "Users"
+      summary: "Register new user"
+      description: "Create a new user account with local authentication"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistrationRequest"
+      responses:
+        "201":
+          description: "User created successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  data:
+                    $ref: "#/components/schemas/UserBase"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: "User already exists"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 409
+                message: "User with this email or national ID already exists"
+    get:
+      tags:
+        - "Users"
+      summary: "Get current user profile"
+      description: "Retrieve the profile of the currently authenticated user"
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: "User profile retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "User profile retrieved successfully"
+                  data:
+                    $ref: "#/components/schemas/UserBase"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - "Users"
+      summary: "Update user profile"
+      description: "Update the current user's profile information"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UserUpdateRequest"
+                - type: object
+                  properties:
+                    profile_picture:
+                      type: string
+                      format: binary
+                      description: "Profile picture file (jpg, jpeg, png)"
+      responses:
+        "200":
+          description: "User updated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "User updated successfully"
+                  data:
+                    type: object
+                    description: "Only returns fields that were actually updated"
+                    properties:
+                      username:
+                        type: string
+                        example: "new.username"
+                      email:
+                        type: string
+                        example: "new.email@example.com"
+                      date_of_birth:
+                        type: string
+                        format: date
+                        example: "1990-01-01"
+                      profile_picture_url:
+                        type: string
+                        example: "/uploads/profile-pictures/user123.jpg"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags:
+        - "Users"
+      summary: "Delete user account"
+      description: "Delete the current user's account (requires password confirmation)"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  example: "currentPassword123"
+      responses:
+        "200":
+          description: "User deleted successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /users/check:
+    post:
+      tags:
+        - "Users"
+      summary: Check user password (Development Mode Only)
+      description: Validates user's email and password.
+      requestBody:
+        description: User login data.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address.
+                  example: "johndoe@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: User's password.
+                  example: "securePassword123"
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Password check successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password check successful"
+                  data:
+                    type: boolean
+                    example: true
+        "400":
+          description: Bad request due to missing required fields or invalid email address.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: "Missing required field: email"
+        "401":
+          description: Unauthorized due to incorrect password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: "Invalid email or password"
+
+  # Bank Account Endpoints
+  /banks:
+    post:
+      tags:
+        - "Bank Account"
+      summary: Create a new bank account
+      description: Creates a new bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - account_number
+                - fi_code
+                - display_name
+                - account_name
+                - balance
+              properties:
+                account_number:
+                  type: string
+                  pattern: "^[\\d-]+$"
+                  maxLength: 20
+                  description: "Bank account number (digits only or digits with dashes)"
+                  example: "123-4-56789-0"
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  description: "3-digit financial institution code"
+                  example: "004"
+                display_name:
+                  type: string
+                  maxLength: 100
+                  example: "My Savings"
+                account_name:
+                  type: string
+                  maxLength: 100
+                  example: "Primary Savings Account"
+                balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Account balance (max 2 decimal places)"
+                  example: 1000.50
+      responses:
+        "201":
+          description: Bank account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: "Bank account created successfully"
+                  data:
+                    $ref: "#/components/schemas/BankAccount"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get all bank accounts
+      description: Retrieves all bank accounts for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of bank accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /banks/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get a specific bank account
+      description: Retrieves a specific bank account by account number and financial institution code.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - "Bank Account"
+      summary: Update a bank account
+      description: Updates a specific bank account's information for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  example: "My Updated Savings"
+                account_name:
+                  type: string
+                  example: "Updated Savings Account"
+                balance:
+                  type: number
+                  format: float
+                  example: 2000.75
+      responses:
+        "200":
+          description: Bank account updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BankAccount"
+              example:
+                status_code: 200
+                message: "Bank account updated successfully"
+                data:
+                  updatedAccount:
+                    account_number: "123-4-56789-0"
+                    fi_code: "004"
+                    display_name: "My Updated Savings"
+                    account_name: "Updated Savings Account"
+                    balance: "2000.75"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - "Bank Account"
+      summary: Delete a bank account
+      description: Deletes a specific bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Bank account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Bank account deleted successfully"
+                data: null
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden - User does not own this bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 403
+                message: "You are not allowed to access this resource"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Financial Institution Endpoints
+  /fis:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get all financial institutions (Development Mode Only)
+      description: Retrieves a list of all financial institutions.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of financial institutions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fis/operating-banks:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get operating Thai commercial banks
+      description: Retrieves a list of operating Thai commercial banks.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful retrieval of operating Thai commercial banks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionsListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fi/{fi_code}:
+    get:
+      tags:
+        - "Financial Institution"
+      summary: Get a specific financial institution (Development Mode Only)
+      description: Retrieves a specific financial institution by its code.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of financial institution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialInstitutionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Slip Management Endpoints
+  /slip/verify:
+    post:
+      summary: Verify slip data
+      tags:
+        - Slip
+      description: |
+        Verifies slip data using payload, image file, **or** base64 encoded image. 
+        You can test by sending any preferred format which does not need to be valid slip file format.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imageFile:
+                  type: string
+                  format: binary
+                  description: Image file of the slip
+          application/json:
+            schema:
+              type: object
+              properties:
+                base64Image:
+                  type: string
+                  description: Base64 encoded image of the slip
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAQABADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AP/2Q=="
+      parameters:
+        - in: query
+          name: payload
+          schema:
+            type: string
+          description: QR code payload data
+          example: "00000000000000000000000000000000000000000000000000000000000"
+      responses:
+        "200":
+          description: Successful verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlipDataResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /slip/quota:
+    get:
+      summary: Get quota information
+      tags:
+        - Slip
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaResponse"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/profile-picture:
+    get:
+      tags:
+        - "Users"
+      summary: Get local user profile picture
+      description: Retrieves the profile picture for the current user that authenticated by local login. the user who use google login already have their profile picture in google's server (get with GET /users).
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile picture retrieved successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # Debt Management Endpoints
+  /debts:
+    post:
+      tags:
+        - "Debt"
+      summary: Create a new debt
+      description: Creates a new debt record for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fi_code
+                - debt_name
+                - start_date
+                - current_installment
+                - total_installments
+                - loan_principle
+                - loan_balance
+              properties:
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  maxLength: 20
+                  description: "Financial institution code (numeric only)"
+                  example: "004"
+                debt_name:
+                  type: string
+                  maxLength: 100
+                  description: "Name of the debt"
+                  example: "Home mortgage"
+                start_date:
+                  type: string
+                  format: date
+                  description: "Start date of the debt"
+                  example: "2024-03-15"
+                current_installment:
+                  type: integer
+                  minimum: 0
+                  description: "Current installment number"
+                  example: 1
+                total_installments:
+                  type: integer
+                  minimum: 1
+                  description: "Total number of installments"
+                  example: 60
+                loan_principle:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Initial loan amount (max 2 decimal places)"
+                  example: 1000000.00
+                loan_balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Current loan balance (max 2 decimal places)"
+                  example: 1000000.00
+      responses:
+        "201":
+          description: Debt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    get:
+      tags:
+        - "Debt"
+      summary: Get all debts
+      description: Retrieves all debts for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Debts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /debts/{debt_id}:
+    get:
+      tags:
+        - "Debt"
+      summary: Get a specific debt
+      description: Retrieves a specific debt by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Debt"
+      summary: Update a specific debt
+      description: Updates a specific debt by its ID (partial updates allowed)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  maxLength: 20
+                  description: "Financial institution code (numeric only)"
+                  example: "004"
+                debt_name:
+                  type: string
+                  maxLength: 100
+                  description: "Name of the debt"
+                  example: "Home mortgage"
+                start_date:
+                  type: string
+                  format: date
+                  description: "Start date of the debt"
+                  example: "2024-03-15"
+                current_installment:
+                  type: integer
+                  minimum: 0
+                  description: "Current installment number"
+                  example: 1
+                total_installments:
+                  type: integer
+                  minimum: 1
+                  description: "Total number of installments"
+                  example: 60
+                loan_principle:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Initial loan amount (max 2 decimal places)"
+                  example: 1000000.00
+                loan_balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Current loan balance (max 2 decimal places)"
+                  example: 1000000.00
+      responses:
+        "200":
+          description: Debt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Debt"
+      summary: Delete a specific debt
+      description: Deletes a specific debt by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
-    # bearerAuth:
-    #   type: http
-    #   scheme: bearer
-    #   bearerFormat: JWT
-    cookieAuth:
+    bearerAuth: # For mobile platform
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth: # For web platform
       type: apiKey
       in: cookie
       name: access_token
@@ -795,53 +1268,101 @@ components:
             example: "refresh_token=abc...; HttpOnly; Secure; SameSite=Strict"
 
   schemas:
-    User:
+    UserBase:
       type: object
+      description: "Base user information returned from most endpoints"
       properties:
         national_id:
           type: string
-          description: National ID of the user (13 characters).
+          description: "National ID (13 digits for Thai citizens, or OAuth ID for social login)"
           example: "1234567890123"
         username:
           type: string
-          description: Username of the user.
-          example: "johndoe"
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          description: "Username (alphanumeric, dots, spaces, underscores allowed)"
+          example: "john.doe"
         email:
           type: string
           format: email
-          description: Email address of the user.
-          example: "johndoe@example.com"
-        password:
-          type: string
-          format: password
-          description: Password (this is client-side input only, hashed on the server side).
-          example: "securePassword123"
-        confirm_password:
-          type: string
-          format: password
-          description: Password confirmation (must match the password).
-          example: "securePassword123"
-        role:
-          type: string
-          description: Role assigned to the user (auto-assigned, not client-specified).
-          example: "user"
-        member_since:
-          type: string
-          format: date-time
-          description: Date and time when the user was registered (auto-assigned).
-          example: "2024-09-09T10:25:22.650Z"
+          pattern: "^[a-zA-Z0-9@.]*$"
+          description: "Email address"
+          example: "john.doe@example.com"
         date_of_birth:
           type: string
           format: date
-          description: User's date of birth.
+          description: "User's birth date"
           example: "1990-01-01"
+        profile_picture_url:
+          type: string
+          description: "URL to profile picture (for external images)"
+          example: "https://example.com/profile.jpg"
+
+    UserRegistrationRequest:
+      type: object
       required:
         - national_id
         - username
         - email
         - password
         - confirm_password
-        - date_of_birth
+      properties:
+        national_id:
+          type: string
+          pattern: "^[0-9]{13}$"
+          description: "13-digit Thai national ID"
+          example: "1234567890123"
+        username:
+          type: string
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "securePassword123"
+        confirm_password:
+          type: string
+          format: password
+          example: "securePassword123"
+        date_of_birth:
+          type: string
+          format: date
+          example: "1990-01-01"
+
+    UserUpdateRequest:
+      type: object
+      description: "Fields that can be updated (all optional)"
+      properties:
+        username:
+          type: string
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          example: "john.doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        date_of_birth:
+          type: string
+          format: date
+          example: "1990-01-01"
+        currentPassword:
+          type: string
+          format: password
+          description: "Required when updating user information"
+          example: "oldPass123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "newPass123"
+        newConfirmPassword:
+          type: string
+          format: password
+          example: "newPass123"
 
     Response:
       type: object
@@ -898,15 +1419,6 @@ components:
             currentCredit:
               type: number
               example: 1000
-
-    SlipDataRequest:
-      type: object
-      required:
-        - base64Image
-      properties:
-        base64Image:
-          type: string
-          description: Base64 encoded image data
 
     SlipDataResponse:
       type: object
@@ -1053,31 +1565,34 @@ components:
                           type: string
                           example: "123xxxxxxxx4567"
 
-    BankAccountInput:
+    BankAccount:
       type: object
-      required:
-        - bankAccountName
-        - bankAccountDisplayName
-        - bankName
-        - bankAccountNumber
-        - balance
       properties:
-        bankAccountName:
+        account_number:
           type: string
-          example: "My Savings Account"
-        bankAccountDisplayName:
+          description: "Formatted bank account number"
+          example: "123-4-56789-0"
+        fi_code:
           type: string
-          example: "Savings"
-        bankName:
+          pattern: "^\\d{3}$"
+          description: "3-digit financial institution code"
+          example: "004"
+        national_id:
           type: string
-          example: "Example Bank"
-        bankAccountNumber:
+          description: "13-digit national ID for local auth, or OAuth ID for social login"
+          example: "1234567890123"
+        display_name:
           type: string
-          example: "1234567890"
+          maxLength: 100
+          example: "My Savings"
+        account_name:
+          type: string
+          maxLength: 100
+          example: "Primary Savings Account"
         balance:
-          type: number
-          format: float
-          example: 1000.50
+          type: string
+          description: "Account balance formatted to 2 decimal places"
+          example: "1000.50"
 
     BankAccountResponse:
       type: object
@@ -1089,30 +1604,10 @@ components:
           type: string
           example: "Bank account retrieved successfully"
         data:
-          $ref: "#/components/schemas/BankAccount"
-
-    BankAccount:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "abc123"
-        bankAccountName:
-          type: string
-          example: "My Savings Account"
-        bankAccountDisplayName:
-          type: string
-          example: "Savings"
-        bankName:
-          type: string
-          example: "Example Bank"
-        bankAccountNumber:
-          type: string
-          example: "1234567890"
-        balance:
-          type: number
-          format: float
-          example: 1000.50
+          type: object
+          properties:
+            bankAccount:
+              $ref: "#/components/schemas/BankAccount"
 
     BankAccountsListResponse:
       type: object
@@ -1122,56 +1617,128 @@ components:
           example: 200
         message:
           type: string
-          example: "Bank accounts retrieved successfully"
+          example: "Retrieved 2 bank accounts successfully"
         data:
-          type: array
-          items:
-            $ref: "#/components/schemas/BankAccount"
+          type: object
+          properties:
+            bankAccounts:
+              type: array
+              items:
+                $ref: "#/components/schemas/BankAccount"
 
     DebtInput:
       type: object
       required:
-        - debtName
-        - amount
-        - interestRate
-        - startDate
-        - endDate
+        - debt_number
+        - fi_code
+        - debt_name
+        - start_date
+        - total_installments
+        - loan_principle
+        - loan_balance
       properties:
-        debtName:
+        debt_number:
           type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
           example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtUpdateInput:
       type: object
       properties:
-        amount:
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 13
+        loan_balance:
           type: number
-          format: float
-          example: 18000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.0
-        endDate:
+          format: decimal
+          minimum: 0
+          example: 780000.00
+
+    Debt:
+      type: object
+      required:
+        - debt_number
+        - fi_code
+        - national_id
+        - debt_name
+        - start_date
+        - current_installment
+        - total_installments
+        - loan_principle
+        - loan_balance
+      properties:
+        debt_number:
+          type: string
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        national_id:
+          type: string
+          description: "13-digit national ID"
+          example: "1234567890123"
+          pattern: "^[0-9]{13}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
           type: string
           format: date
-          example: "2027-01-01"
+          example: "2023-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
 
     DebtResponse:
       type: object
@@ -1181,35 +1748,41 @@ components:
           example: 200
         message:
           type: string
-          example: "Debt retrieved successfully"
+          example: "Operation successful"
         data:
-          $ref: "#/components/schemas/Debt"
-
-    Debt:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "def456"
-        debtName:
-          type: string
-          example: "Car Loan"
-        amount:
-          type: number
-          format: float
-          example: 20000.00
-        interestRate:
-          type: number
-          format: float
-          example: 5.5
-        startDate:
-          type: string
-          format: date
-          example: "2023-01-01"
-        endDate:
-          type: string
-          format: date
-          example: "2028-01-01"
+          type: object
+          properties:
+            debt_id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            fi_code:
+              type: string
+              example: "004"
+            national_id:
+              type: string
+              example: "1234567890123"
+            debt_name:
+              type: string
+              example: "Home mortgage"
+            start_date:
+              type: string
+              format: date
+              example: "2024-03-15"
+            current_installment:
+              type: integer
+              example: 1
+            total_installments:
+              type: integer
+              example: 60
+            loan_principle:
+              type: number
+              format: float
+              example: 1000000.00
+            loan_balance:
+              type: number
+              format: float
+              example: 1000000.00
 
     DebtsListResponse:
       type: object
@@ -1227,16 +1800,22 @@ components:
 
     FinancialInstitution:
       type: object
+      required:
+        - fi_code
       properties:
         fi_code:
           type: string
-          example: "KBANK"
-        name:
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        name_th:
           type: string
-          example: "Kasikornbank"
-        short_name:
+          description: "Thai bank name"
+          example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+        name_en:
           type: string
-          example: "KBank"
+          description: "English bank name"
+          example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
 
     FinancialInstitutionResponse:
       type: object
@@ -1263,6 +1842,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FinancialInstitution"
+          example:
+            - fi_code: "002"
+              name_th: "ธนาคารกรุงเทพ จำกัด (มหาชน)"
+              name_en: "BANGKOK BANK PUBLIC COMPANY LTD."
+            - fi_code: "004"
+              name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+              name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+            - fi_code: "006"
+              name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
+              name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
+            - fi_code: "014"
+              name_th: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+              name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
 
   responses:
     BadRequest:
@@ -1317,3 +1909,13 @@ components:
           example:
             status_code: 500
             message: "An unexpected error occurred"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 403
+            message: "You are not allowed to access this resource"

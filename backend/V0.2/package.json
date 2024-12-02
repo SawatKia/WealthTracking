@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage --detectOpenHandles",
+    "testfile": "cross-env NODE_ENV=test jest .src/tests/timeout.test.js --coverage --detectOpenHandles",
     "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
-    "dev": "node index.js",
+    "dev": "node .src/index.js",
     "debug": "node --inspect=0.0.0.0:9229 .src/index.js",
     "start": "cross-env NODE_ENV=production node .src/index.js"
   },
@@ -40,14 +40,18 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "google-auth-library": "^9.14.2",
+    "jest": "^29.7.0",
+    "jimp": "^0.22.12",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
+    "jsqr": "^1.4.0",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.12.0",
     "pg-pool": "^3.6.2",
     "redis": "^4.7.0",
     "request-to-curl": "^0.1.6",
     "sanitize-html": "^2.13.0",
+    "supertest": "^7.0.0",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.0.2",
     "validator": "^13.12.0",
@@ -57,9 +61,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "jest": "^29.7.0",
     "jest-html-reporters": "^3.1.7",
-    "nodemon": "^3.1.4",
-    "supertest": "^7.0.0"
+    "nodemon": "^3.1.4"
   }
 }
