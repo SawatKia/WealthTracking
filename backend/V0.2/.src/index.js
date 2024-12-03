@@ -25,13 +25,16 @@ const startServer = async () => {
     await fi.initializeData();
 
     // Start Express server after database connection is established
-    const server = app.listen(PORT, () => {
-      logger.debug('+---------------------------------------+');
-      logger.debug('|       Server started successfully     |');
-      logger.debug('+---------------------------------------+');
-      logger.debug(`| Environment: ${NODE_ENV}              |`);
-      logger.debug(`| App is listening on port ${PORT}         |`);
-      logger.debug('+---------------------------------------+');
+    const server = app.app.listen(PORT, () => {
+      const endTime = Date.now(); // End the timer
+      const timeTaken = endTime - app.startTime; // Calculate time taken
+      logger.debug('┌──────────────────────────────────────────┐');
+      logger.debug('│       Server started successfully        │');
+      logger.debug('├──────────────────────────────────────────┤');
+      logger.debug(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
+      logger.debug(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
+      logger.debug(`│ Startup time: ${timeTaken} ms`.padEnd(43) + '│');
+      logger.debug('└──────────────────────────────────────────┘');
       logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
     });
 
