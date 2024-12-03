@@ -74,15 +74,16 @@ class AuthController extends BaseController {
                 logger.warn('No platform specified, using default web platform');
                 throw MyAppErrors.badRequest('No platform specified');
             }
+            const filteredUser = super.filterUserData(user);
 
-            logger.debug(`User ${user.national_id} authenticated successfully`);
+            logger.debug(`User ${filteredUser.national_id} authenticated successfully`);
             const { accessToken, refreshToken } = createTokens(user.national_id);
 
             // Handle response based on platform
             if (platform === this.platformTypes.MOBILE) {
                 logger.debug('Mobile platform detected, sending tokens in response body');
                 req.formattedResponse = formatResponse(200, 'Logged in successfully, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired.', {
-                    user,
+                    user: filteredUser,
                     tokens: {
                         access_token: accessToken,
                         refresh_token: refreshToken
@@ -92,7 +93,7 @@ class AuthController extends BaseController {
                 logger.debug('Web platform detected, setting cookies');
                 res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
                 res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
-                req.formattedResponse = formatResponse(200, 'Logged in successfully', user);
+                req.formattedResponse = formatResponse(200, 'Logged in successfully', filteredUser);
             }
 
             logger.info(`User ${user.national_id} logged in successfully`);
@@ -408,20 +409,18 @@ class AuthController extends BaseController {
                     throw MyAppErrors.internalServerError('Failed to create user');
                 }
 
+                const filteredUser = super.filterUserData(createdUser);
+
                 const { accessToken, refreshToken } = createTokens(createdUser.national_id);
 
                 if (platform === this.platformTypes.WEB) {
                     res.cookie('access_token', accessToken, this.accessTokenCookieOptions);
                     res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
-                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google', createdUser);
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google', filteredUser);
                 } else if (platform === this.platformTypes.MOBILE) {
-                    logger.debug('Mobile platform detected, sending tokens in response body');
+                    logger.debug('Mobile platform detected, sending user data in response body');
                     req.formattedResponse = formatResponse(201, 'User registered successfully with Google, please try to login. to get access_token and refresh_token', {
-                        user: createdUser
-                        // tokens: {
-                        //     access_token: accessToken,
-                        //     refresh_token: refreshToken
-                        // }
+                        user: filteredUser,
                     });
                 }
             } else if (action === 'login') {
@@ -440,10 +439,10 @@ class AuthController extends BaseController {
                     res.cookie('refresh_token', refreshToken, this.refreshTokenCookieOptions);
                     req.formattedResponse = formatResponse(200, 'Logged in successfully with Google');
                 } else if (platform === this.platformTypes.MOBILE) {
+                    const filteredUser = super.filterUserData(existingUser);
                     logger.debug('Mobile platform detected, sending tokens in response body');
-
                     req.formattedResponse = formatResponse(200, 'Logged in successfully with Google, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired.', {
-                        user: existingUser,
+                        user: filteredUser,
                         tokens: {
                             access_token: accessToken,
                             refresh_token: refreshToken
