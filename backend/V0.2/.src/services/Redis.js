@@ -77,7 +77,12 @@ class RedisService {
         }
     }
 
-    // Helper method to set a key with expiration
+    /**
+     * Sets a JSON object with an expiration time.
+     * @param {string} key - The key to set
+     * @param {object} value - The value to set
+     * @param {number} expireSeconds - The expiration time in seconds
+     */
     async setJsonEx(key, value, expireSeconds) {
         try {
             logger.debug(`Setting JSON with expiration - Key: ${key}, ExpireSeconds: ${expireSeconds}`);
@@ -92,7 +97,11 @@ class RedisService {
         }
     }
 
-    // Helper method to get and parse JSON value
+    /**
+     * Gets a JSON object from Redis.
+     * @param {string} key - The key to get
+     * @returns {object} - The parsed JSON value
+     */
     async getJson(key) {
         try {
             logger.debug(`Getting JSON - Key: ${key}`);
@@ -103,6 +112,49 @@ class RedisService {
             return parsedValue;
         } catch (error) {
             logger.error(`Error getting JSON - Key: ${key}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Deletes a key from Redis.
+     * @param {string} key - The key to delete
+     */
+    async delete(key) {
+        try {
+            logger.debug(`Deleting key - Key: ${key}`);
+            const client = await this.getClient();
+            await client.del(key);
+            logger.debug(`Successfully deleted key - Key: ${key}`);
+        } catch (error) {
+            logger.error(`Error deleting key - Key: ${key}:`, error);
+            throw error;
+        }
+    }
+
+    async listCache() {
+        try {
+            logger.info('Listing all cache entries using scan iterator');
+            const client = await this.getClient();
+
+            const results = [];
+            for await (const key of client.scanIterator()) {
+                try {
+                    const value = await this.getJson(key);
+                    if (value !== null) {
+                        results.push({ key, value });
+                    }
+                } catch (error) {
+                    logger.warn(`Error getting value for key ${key}: ${error.message}`);
+                    // Continue with next key even if one fails
+                    continue;
+                }
+            }
+
+            logger.debug(`Found ${results.length} valid cache entries`);
+            return results;
+        } catch (error) {
+            logger.error('Error listing cache entries:', error);
             throw error;
         }
     }

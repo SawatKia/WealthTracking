@@ -25,7 +25,12 @@ class FinancialInstitutionController extends BaseController {
             }
 
             const institutions = await this.model.list();
-            req.formattedResponse = Utils.formatResponse(200, 'Financial institutions fetched successfully. CAUTION!!: This endpoint is available for development purposes only.', institutions);
+            req.formattedResponse = formatResponse(200,
+                '[DEV ONLY] Financial institutions fetched successfully', {
+                warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                data: institutions
+            }
+            );
             next();
         } catch (error) {
             logger.error(`Failed to fetch financial institutions: ${error.message}`);
@@ -43,7 +48,12 @@ class FinancialInstitutionController extends BaseController {
             const { fi_code } = req.params;
             const institution = await this.model.findOne({ fi_code });
             if (institution) {
-                req.formattedResponse = Utils.formatResponse(200, 'Financial institution fetched successfully. CAUTION!!: This endpoint is available for development purposes only.', institution);
+                req.formattedResponse = formatResponse(200,
+                    '[DEV ONLY] Financial institution fetched successfully', {
+                    warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                    data: institution
+                }
+                );
             } else {
                 throw MyAppErrors.notFound('Financial institution not found');
             }
@@ -62,17 +72,23 @@ class FinancialInstitutionController extends BaseController {
             }
 
             const operatingThaiCommercialBankCodes = [
-                '002', '004', '006', '009', '011', '014', '017', '018', '020', '022',
-                '024', '025', '030', '031', '033', '034', '039', '045', '052', '066',
-                '067', '069', '070', '071', '073', '098'
+                '002', '004', '006', '011', '014', '017', '018', '020', '022',
+                '024', '025', '029', '030', '031', '032', '033', '034', '039',
+                '045', '052', '066', '067', '069', '070', '071', '073', '098'
             ];
             const institutions = await Promise.all(operatingThaiCommercialBankCodes.map(code =>
                 this.model.findOne({ fi_code: code })
             ));
-            logger.debug('Operating commercial banks:', JSON.stringify(institutions, null, 2));
 
             if (institutions.length > 0) {
-                req.formattedResponse = Utils.formatResponse(200, 'Operating Thai commercial banks fetched successfully. CAUTION!!: This endpoint is available for development purposes only. Do not rely on it in production. If you have any questions, please contact the developer.', institutions);
+                const referenceLink = 'https://apiportal.kasikornbank.com/bucket/SiteCollectionDocuments/assets/page/apiproducts/corporate-fund-transfer/BankCode-CorpAPI.pdf';
+                req.formattedResponse = formatResponse(200,
+                    '[DEV ONLY] Operating Thai commercial banks fetched successfully', {
+                    warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                    reference: referenceLink,
+                    data: institutions
+                }
+                );
             } else {
                 throw MyAppErrors.notFound('No operating Thai commercial banks found');
             }
