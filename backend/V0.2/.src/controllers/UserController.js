@@ -311,7 +311,6 @@ class UserController extends BaseController {
             const updatedUser = await this.userModel.updateUser(user.national_id, finalUpdateFields);
             logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
 
-            // Only return the fields that were actually updated
             const filteredUpdatedUser = this.filterUserData(updatedUser);
             req.formattedResponse = formatResponse(200, 'User updated successfully', filteredUpdatedUser);
             return next();
