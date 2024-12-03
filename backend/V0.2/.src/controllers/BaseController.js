@@ -160,7 +160,7 @@ class BaseController {
         logger.info(`user is valid`);
         logger.debug(`user: ${JSON.stringify(user, null, 2)}`);
 
-        if (!resource || typeof resource !== 'object' || typeof resource !== 'array') {
+        if (!resource || (typeof resource !== 'object' && !Array.isArray(resource))) {
             logger.error('Resource is empty or not an object or array');
             throw new Error('Resource is empty or not an object or array');
         }
