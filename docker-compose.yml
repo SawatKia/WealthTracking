@@ -18,8 +18,11 @@ services:
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
+      - ./frontend/build:/usr/src/${APP_DOMAIN}/frontend_build
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     command: >
       sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' &&
@@ -55,7 +58,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,9 +90,10 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 3s
       retries: 5
+      start_period: 10s
     restart: always
     networks:
       - app_network

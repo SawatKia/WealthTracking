@@ -74,24 +74,35 @@ class BankAccountUtils {
      * @param {string} bankCode - Bank's code
      * @returns {Object} - Validation result with isValid, error, and formattedNumber
      */
-    validateAccountNumber(accountNumber, bankCode) {
+    async validateAccountNumber(accountNumber, bankCode) {
         try {
             logger.info(`Validating account number: ${accountNumber} for bank code: ${bankCode}`);
 
-            const cleanedNumber = this.normalizeAccountNumber(accountNumber);
-
-            const formattedNumber = this.formatAccountNumber(cleanedNumber, bankCode);
+            const cleanedNumber = await this.normalizeAccountNumber(accountNumber);
+            const formattedNumber = await this.formatAccountNumber(cleanedNumber, bankCode);
 
             if (!formattedNumber) {
-                const bank = this._getBankFormat(bankCode);
+                const bank = await this._getBankFormat(bankCode);
                 logger.warn(`Invalid account number for ${bank.displayName} expected format: ${bank.example} received: ${accountNumber}, returning original number`);
-                return this._validationResult(true, 'cannot be formatted', cleanedNumber);
+                return {
+                    isValid: false,
+                    error: `Invalid account number format. Expected format: ${bank.example}`,
+                    formattedNumber: null
+                };
             }
 
-            return this._validationResult(true, null, formattedNumber);
+            return {
+                isValid: true,
+                error: null,
+                formattedNumber
+            };
         } catch (error) {
             logger.error(`Error validating account number: ${error.message}`);
-            return this._validationResult(false, `Validation error: ${error.message}`);
+            return {
+                isValid: false,
+                error: error.message,
+                formattedNumber: null
+            };
         }
     }
 
@@ -102,7 +113,7 @@ class BankAccountUtils {
      * @returns {string} - Cleaned account number with only digits
      * @throws {Error} If the input contains characters other than digits or dashes
      */
-    normalizeAccountNumber(accountNumber) {
+    async normalizeAccountNumber(accountNumber) {
         try {
             logger.info(`Normalizing account number: ${accountNumber}`);
             if (/^[\d-]+$/.test(accountNumber)) {
@@ -111,11 +122,10 @@ class BankAccountUtils {
                 return normalizedNumber;
             } else {
                 logger.error(`Invalid account number format: ${accountNumber}, account number should contain only digits or digits with dashes`);
-                throw new Error('Account number should contain only digits or digits with dashes');
+                throw new Error('Invalid account number, It should contain only digits or digits with dashes');
             }
         } catch (error) {
             logger.error(`Error in normalizeAccountNumber: ${error.message}`);
-            logger.error(`Error normalizing account number: ${error.message}`);
             throw new Error(`Normalization error: ${error.message}`);
         }
     }
@@ -125,9 +135,11 @@ class BankAccountUtils {
      * @param {string} bankCode - Bank's code
      * @returns {Object|null} - Bank format or null if not found
      */
-    _getBankFormat(bankCode) {
+    async _getBankFormat(bankCode) {
         try {
-            return Object.values(this.bankFormats).find(bank => bank.code === bankCode);
+            return this.bankFormats[Object.keys(this.bankFormats).find(bank =>
+                this.bankFormats[bank].code === bankCode
+            )] || null;
         } catch (error) {
             logger.error(`Error getting bank format: ${error.message}`);
             throw new Error(`Bank format retrieval error: ${error.message}`);
@@ -174,17 +186,17 @@ class BankAccountUtils {
      * @param {string} fiCode - Bank's code
      * @returns {string} - Formatted account number
      */
-    formatAccountNumber(accountNumber, fiCode) {
+    async formatAccountNumber(accountNumber, fiCode) {
         try {
-            const bank = this._getBankFormat(fiCode);
+            const bank = await this._getBankFormat(fiCode);
             logger.debug(`bank: ${JSON.stringify(bank, null, 2)}`);
 
             if (!bank || !bank.format) {
                 logger.warn(`Unknown bank code or format missing: ${fiCode}`);
-                return accountNumber; // Return original if bank not found or format is missing
+                return accountNumber;
             }
 
-            const cleanedNumber = this.normalizeAccountNumber(accountNumber);
+            const cleanedNumber = await this.normalizeAccountNumber(accountNumber);
 
             // Get the example format and split it by "-" to determine positions of separators
             const formatExample = bank.example;
@@ -220,7 +232,7 @@ class BankAccountUtils {
             return formattedNumber;
         } catch (error) {
             logger.error(`Error formatting account number: ${error.message}`);
-            return accountNumber; // Return original number in case of error
+            return accountNumber;
         }
     }
 

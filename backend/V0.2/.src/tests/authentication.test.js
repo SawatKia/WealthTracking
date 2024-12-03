@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const { app } = require('../app');
 const { Logger } = require('../utilities/Utils');
 const pgClient = require("../services/PgClient");
 
@@ -21,6 +21,11 @@ describe('Authentication Flow', () => {
     beforeAll(async () => {
         // Register a test user first
         await pgClient.init();
+        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+
+        await pgClient.truncateTables();
+        logger.debug(`All rows deleted from tables`);
+
         await request(app)
             .post('/api/v0.2/users')
             .send(testUser);
@@ -88,18 +93,18 @@ describe('Authentication Flow', () => {
             test(`${i + 1}: ${testCase.testName}`, async () => {
                 logger.info(`Running login test ${i + 1}: ${testCase.testName}`);
                 const response = await request(app)
-                    .post('/api/v0.2/login')
+                    .post('/api/v0.2/login?platform=mobile')
                     .send(testCase.body);
 
-                logger.debug(`response from ${i + 1}) ${testCase.testName}: ${JSON.stringify(response, null, 2)}`);
+                logger.debug(`response from ${i + 1}) ${testCase.testName}: ${JSON.stringify(response.body, null, 2)}`);
                 expect(response.status).toBe(testCase.expected.status);
                 expect(response.body.message).toContain(testCase.expected.message);
 
                 if (testCase.expected.status === 200) {
-                    expect(response.headers['set-cookie']).toBeDefined();
-                    const cookies = response.headers['set-cookie'];
-                    accessToken = cookies.find(cookie => cookie.includes('access_token'));
-                    refreshToken = cookies.find(cookie => cookie.includes('refresh_token'));
+                    expect(response.body.data).toBeDefined();
+                    expect(response.body.data.tokens).toBeDefined();
+                    accessToken = response.body.data.tokens.access_token;
+                    refreshToken = response.body.data.tokens.refresh_token;
                     expect(accessToken).toBeDefined();
                     expect(refreshToken).toBeDefined();
                 }
@@ -111,7 +116,7 @@ describe('Authentication Flow', () => {
         const refreshCases = [
             {
                 testName: "successful refresh",
-                cookies: () => [refreshToken],
+                getHeaders: () => ({ 'x-refresh-token': refreshToken }),
                 expected: {
                     status: 200,
                     message: "Tokens refreshed successfully"
@@ -119,7 +124,7 @@ describe('Authentication Flow', () => {
             },
             {
                 testName: "missing refresh token",
-                cookies: () => ({}),
+                getHeaders: () => ({}),
                 expected: {
                     status: 401,
                     message: "Could not validate credentials"
@@ -131,17 +136,17 @@ describe('Authentication Flow', () => {
             test(`${i + 1}: ${testCase.testName}`, async () => {
                 logger.info(`Running refresh_token test ${i + 1}: ${testCase.testName}`);
                 const response = await request(app)
-                    .post('/api/v0.2/refresh')
-                    .set('Cookie', [testCase.cookies()]);
+                    .post('/api/v0.2/refresh?platform=mobile')
+                    .set(testCase.getHeaders());
 
                 expect(response.status).toBe(testCase.expected.status);
                 expect(response.body.message).toContain(testCase.expected.message);
 
                 if (testCase.expected.status === 200) {
-                    expect(response.headers['set-cookie']).toBeDefined();
-                    const cookies = response.headers['set-cookie'];
-                    accessToken = cookies.find(cookie => cookie.includes('access_token'));
-                    refreshToken = cookies.find(cookie => cookie.includes('refresh_token'));
+                    expect(response.body.data).toBeDefined();
+                    expect(response.body.data.tokens).toBeDefined();
+                    accessToken = response.body.data.tokens.access_token;
+                    refreshToken = response.body.data.tokens.refresh_token;
                     expect(accessToken).toBeDefined();
                     expect(refreshToken).toBeDefined();
                 }
@@ -152,16 +157,11 @@ describe('Authentication Flow', () => {
     describe('Logout Tests', () => {
         test('successful logout', async () => {
             const response = await request(app)
-                .post('/api/v0.2/logout')
-                .set('Cookie', [accessToken, refreshToken]);
+                .post('/api/v0.2/logout?platform=mobile')
+                .set('Authorization', `Bearer ${refreshToken}`);
 
             expect(response.status).toBe(200);
-            expect(response.body.message).toBe('Logged out successfully');
-
-            // Verify cookies are cleared
-            const cookies = response.headers['set-cookie'];
-            expect(cookies.some(cookie => cookie.includes('access_token=;'))).toBe(true);
-            expect(cookies.some(cookie => cookie.includes('refresh_token=;'))).toBe(true);
+            expect(response.body.message).toContain('on mobile, just remove both refresh and access tokens from your storage');
         });
     });
 

@@ -1,7 +1,8 @@
 const Jimp = require('jimp');
 const jsQR = require('jsqr');
-const { Logger } = require('./Utils');
 
+const { Logger } = require('./Utils');
+const appConfigs = require('../configs/AppConfigs');
 const logger = Logger('QRCodeReader');
 
 class QRCodeReader {
@@ -14,22 +15,46 @@ class QRCodeReader {
         try {
             logger.info('Extracting QR code from image buffer');
 
-            // Load the image with Jimp
-            const image = await Jimp.read(imageBuffer);
+            // For testing environment, return mock payload
+            // if (appConfigs.environment === 'test') {
+            //     logger.info('Test environment detected, returning mock payload');
+            //     return "00020101021229370016A000000677010111011300668960066896007802TH53037646304";
+            // }
 
-            // Get the image data in the format jsQR expects
-            const imageData = {
-                data: new Uint8ClampedArray(image.bitmap.data),
-                width: image.bitmap.width,
-                height: image.bitmap.height,
-            };
+            // Validate buffer
+            if (!Buffer.isBuffer(imageBuffer)) {
+                logger.error('Invalid input: imageBuffer is not a Buffer');
+                throw new Error('Invalid input: imageBuffer is not a Buffer');
+            }
+
+
+            // Create a buffer copy to ensure we have a proper Buffer instance
+            const buffer = Buffer.from(imageBuffer);
+
+            // Load the image with Jimp
+            const image = await Jimp.read(buffer);
+
+            // Convert RGBA to grayscale for better QR detection
+            image.grayscale();
+
+            // Get image data in the format jsQR expects
+            const { width, height, data } = image.bitmap;
+
+            // Ensure we have valid image dimensions
+            if (width <= 0 || height <= 0) {
+                logger.error('Invalid image dimensions');
+                throw new Error('Invalid image dimensions');
+            }
+
+            // Create Uint8ClampedArray from buffer
+            const imageData = new Uint8ClampedArray(data.buffer);
 
             // Decode the QR code
-            const decodedQR = jsQR(imageData.data, imageData.width, imageData.height);
+            const decodedQR = jsQR(imageData, width, height);
 
             if (!decodedQR) {
                 logger.warn('No QR code found in image');
-                return null;
+                throw new Error('No QR code found in image');
             }
 
             logger.debug(`QR code data extracted: ${decodedQR.data}`);
@@ -49,11 +74,21 @@ class QRCodeReader {
         try {
             logger.info('Extracting QR code from base64 image');
 
+            // For testing environment, return mock payload
+            // if (appConfigs.environment === 'test') {
+            //     logger.info('Test environment detected, returning mock payload');
+            //     return "00020101021229370016A000000677010111011300668960066896007802TH53037646304";
+            // }
+
+            if (!base64Image || typeof base64Image !== 'string') {
+                logger.error('Invalid base64 image string');
+                throw new Error('Invalid base64 image string');
+            }
+
+
             // Convert base64 to buffer
-            const imageBuffer = Buffer.from(
-                base64Image.replace(/^data:image\/[a-z]+;base64,/, ''),
-                'base64'
-            );
+            const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+            const imageBuffer = Buffer.from(base64Data, 'base64');
 
             return await this.extractPayloadFromBuffer(imageBuffer);
         } catch (error) {

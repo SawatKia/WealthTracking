@@ -7,7 +7,7 @@ const logger = Logger("BaseModel");
 
 class BaseModel {
   constructor(tableName, schema) {
-    this.tableName = `"${tableName}"`;
+    this.tableName = tableName;
     this.schema = schema;
     this.pgClient = pgClient;
   }
@@ -112,7 +112,13 @@ class BaseModel {
    */
   async list(nationalId) {
     try {
-      if (!nationalId || typeof nationalId !== 'string') {
+      logger.info(`Listing records from ${this.tableName}`);
+      if (this.tableName === 'financial_institutions') {
+        logger.debug(`Listing financial institutions data`);
+        const result = await this.pgClient.query(`SELECT * FROM ${this.tableName}`);
+        logger.debug(`Listing financial institutions data result: ${JSON.stringify(result.rows)}`);
+        return result.rows;
+      } else if (!nationalId || typeof nationalId !== 'string') { // For other tables
         logger.error("National ID is empty or not a string");
         throw new ValidationError("National ID is empty or not a string");
       }
@@ -171,9 +177,9 @@ class BaseModel {
     try {
       logger.info("Updating record...");
       logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
-      logger.debug(`data: ${JSON.stringify(data)}`);
+      logger.debug(`data to update: ${JSON.stringify(data)}`);
       const dataToUpdate = { ...primaryKeys, ...data };
-      logger.debug(`dataToUpdate: ${JSON.stringify(dataToUpdate)}`);
+
       return await this.executeWithTransaction(async () => {
         const validated = await this.validateSchema(dataToUpdate, "update");
         logger.debug(`Validated data: ${JSON.stringify(validated)}`);
@@ -192,7 +198,12 @@ class BaseModel {
         const updateValues = Object.values(data);
 
         const updatePlaceholders = updateKeys
-          .map((key, index) => `"${key}" = $${index + 1}`)
+          .map((key, index) => {
+            if (key === 'date_of_birth') {
+              return `"${key}" = $${index + 1}::DATE`;
+            }
+            return `"${key}" = $${index + 1}`;
+          })
           .join(", ");
 
         const conditionPlaceholders = keys

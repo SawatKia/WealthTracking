@@ -51,11 +51,13 @@ class DebtController extends BaseController {
             req.formattedResponse = formatResponse(201, "debt created successfully", result);
             next();
         } catch (error) {
-            logger.error(`error creating debt: ${error}`);
+            logger.error(`error creating debt: ${error.message}`);
             if (error.message.includes('duplicate key value')) {
-                throw MyAppErrors.conflict('debt already exists');
-            } else if (error.message.includes('missing required field')) {
-                throw MyAppErrors.badRequest(error.message);
+                next(MyAppErrors.conflict('debt already exists'));
+            } else if (error.message.toLowerCase().includes('missing required field')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error instanceof ValidationError) {
+                next(MyAppErrors.badRequest(error.message));
             } else if (error instanceof MyAppErrors) {
                 next(error);
             } else {
@@ -87,8 +89,9 @@ class DebtController extends BaseController {
             const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
             logger.debug(`debt retrieved: ${JSON.stringify(debt, null, 2)}`);
             if (!debt) {
-                logger.error('debt not found');
-                throw MyAppErrors.notFound('debt not found');
+                logger.info('No debt found');
+                req.formattedResponse = formatResponse(200, 'No debt found', null);
+                return next();
             }
 
             if (!super.verifyOwnership(currentUser, debt)) {
@@ -96,7 +99,7 @@ class DebtController extends BaseController {
                 throw MyAppErrors.forbidden('user does not own the debt');
             }
 
-            req.formattedResponse = formatResponse(200, "debt retrieved successfully", debt);
+            req.formattedResponse = formatResponse(200, "Debt retrieved successfully", debt);
             next();
         } catch (error) {
             logger.error(`error getting debt: ${error}`);
@@ -119,16 +122,20 @@ class DebtController extends BaseController {
 
             const debts = await this.DebtModel.list(currentUser.national_id);
             logger.debug(`debts: ${JSON.stringify(debts, null, 2)}`);
-            if (!debts) {
-                logger.error('no debts found');
-                throw MyAppErrors.notFound('no debts found');
+
+            if (!debts || debts.length === 0) {
+                logger.info('No debts found');
+                req.formattedResponse = formatResponse(200, 'No debts found', []);
+                return next();
             }
+
             if (!super.verifyOwnership(currentUser, debts)) {
                 logger.error('user does not own the debts');
                 throw MyAppErrors.forbidden('user does not own the debts');
             }
-            const message = debts.length > 0 ? `${debts.length} debts retrieved successfully` : "no debts found";
-            req.formattedResponse = formatResponse(200, message, debts);
+
+            const message = `Retrieved ${debts.length} debt${debts.length > 1 ? 's' : ''} successfully`;
+            req.formattedResponse = formatResponse(200, message, { debts });
             next();
         } catch (error) {
             logger.error(`error getting all debts: ${error}`);
@@ -183,6 +190,8 @@ class DebtController extends BaseController {
             logger.error(`error updating debt: ${error}`);
             if (error instanceof MyAppErrors) {
                 next(error);
+            } else if (error instanceof ValidationError) {
+                next(MyAppErrors.badRequest(error.message));
             } else {
                 next(MyAppErrors.internalServerError(error.message));
             }

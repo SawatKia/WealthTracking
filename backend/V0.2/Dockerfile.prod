@@ -1,0 +1,53 @@
+# Build stage
+FROM node:20-alpine AS builder
+
+# Define build arguments
+ARG APP_DOMAIN
+ARG NODE_ENV=production
+
+WORKDIR /usr/src/${APP_DOMAIN}
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with clean install and production only
+RUN npm ci --only=production
+
+# Copy application files
+COPY ./.src ./.src
+COPY ./statics ./statics
+COPY ./sql ./sql
+COPY ../frontend/build ./frontend_build
+
+# Final stage
+FROM node:20-alpine
+
+ARG APP_DOMAIN
+ARG APP_PORT
+ENV NODE_ENV=production
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl && \
+    addgroup -S appgroup && \
+    adduser -S appuser -G appgroup
+
+WORKDIR /usr/src/${APP_DOMAIN}
+
+# Copy from builder
+COPY --from=builder --chown=appuser:appgroup /usr/src/${APP_DOMAIN} ./
+
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads && chown -R appuser:appgroup uploads
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE ${APP_PORT}
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${APP_PORT}/health || exit 1
+
+# Start application
+CMD ["npm", "run", "start"] 

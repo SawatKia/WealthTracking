@@ -1,7 +1,7 @@
 -- TABLE: transactions
 CREATE TABLE
     IF NOT EXISTS transactions (
-        transaction_id SERIAL PRIMARY KEY,
+        transaction_id VARCHAR(50) PRIMARY KEY,
         transaction_datetime TIMESTAMP NOT NULL,
         category VARCHAR(50) NOT NULL,
         type VARCHAR(20) NOT NULL,
