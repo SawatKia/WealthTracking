@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const { app } = require('../app');
 
 describe('Timeout Tests', () => {
     it('should timeout after 5 seconds', async () => {
