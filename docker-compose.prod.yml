@@ -1,93 +1,70 @@
-version: "3"
+version: "3.8"
 services:
   node-server:
     build:
-      context: ./backend/V0.2
+      context: ./backend/V0.2/
+      dockerfile: Dockerfile.prod
       args:
-        NODE_ENV: production # Set production mode
-    container_name: node-container
+        - NODE_ENV=production
+        - APP_PORT=${APP_PORT}
+        - APP_DOMAIN=${APP_DOMAIN}
+    container_name: ${APP_DOMAIN}_prod
     env_file: 
-      - ./.env
+      - ./.env.production
     ports:
-      - "${APP_PORT}:${APP_PORT}"
-      - "9229:9229"
+      - "127.0.0.1:${APP_PORT}:${APP_PORT}"
     volumes:
-      - ./frontend/build:/usr/src/app/frontend_build
-      - /usr/src/app/node_modules
+      - uploads_data:/usr/src/${APP_DOMAIN}/uploads
     depends_on:
-      - postgres
-    command: npm run start # Production command
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+      restart_policy:
+        condition: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${APP_PORT} || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
       start_period: 40s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "5"
-    restart: On-Failure
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"  # Limit to half a CPU
-          memory: "512M" # Limit to 512MB of RAM
+        max-file: "3"
     networks:
-      - app_network
+      - prod_network
 
   postgres:
-    image: postgres:15
-    container_name: postgres_container
+    image: postgres:15-alpine
+    container_name: postgres_prod
     env_file: 
-      - ./.env
-    ports:
-      - "5432:5432"
+      - ./.env.production
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    restart: unless-stopped
+      start_period: 10s
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: "512M"
+          cpus: '0.75'
+          memory: 1G
+      restart_policy:
+        condition: unless-stopped
     networks:
-      - app_network
-
-  pgadmin:
-    container_name: pgadmin4_container
-    image: dpage/pgadmin4
-    restart: unless-stopped
-    env_file:
-      - ./.env
-    ports:
-      - "5050:80"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: "256M"
-    networks:
-      - app_network
+      - prod_network
 
   redis:
     image: redis:alpine
-    container_name: redis_container
-    ports:
-      - "6379:6379"
+    container_name: redis_prod
     volumes:
       - redis_data:/data
     healthcheck:
@@ -95,19 +72,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "256M"
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: unless-stopped
     networks:
-      - app_network
+      - prod_network
 
 volumes:
+  uploads_data:
+    driver: local
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
 
 networks:
-  app_network:
+  prod_network:
     driver: bridge
+    internal: true  # Only internal communication between containers
