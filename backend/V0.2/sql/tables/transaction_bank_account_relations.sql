@@ -1,7 +1,7 @@
 -- TABLE: transaction_bank_account_relations
 CREATE TABLE
     IF NOT EXISTS transaction_bank_account_relations (
-        transaction_id INT NOT NULL,
+        transaction_id VARCHAR(50) NOT NULL,
         account_number VARCHAR(20) NOT NULL,
         fi_code VARCHAR(20) NOT NULL,
         role VARCHAR(20) NOT NULL,
