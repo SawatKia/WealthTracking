@@ -3,6 +3,7 @@ settings.json
 
 # Database data and all its files
 postgres_data/*
+log/
 
 # All files and subfolders in the uploads folder
 backend/V0.2/uploads/
