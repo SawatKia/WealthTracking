@@ -1,4 +1,5 @@
 ﻿fi_code,name_th,name_en,OPEN_DATE
+000,เงินสด,CASH ACCOUNT,20240101
 001,ธนาคารแห่งประเทศไทย,BANK OF THAILAND,24851210
 002,ธนาคารกรุงเทพ จำกัด (มหาชน),BANGKOK BANK PUBLIC COMPANY LTD.,24871201
 004,ธนาคารกสิกรไทย จำกัด (มหาชน),KASIKORNBANK PUBLIC COMPANY LIMITED,24880608
@@ -120,7 +121,7 @@
 452,บริษัทเงินทุน แอ็ดวานซ์ จำกัด (มหาชน),ADVANCE FINANCE PUBLIC COMPANY LIMITED,25170912
 608,บริษัทเครดิตฟองซิเอร์ เอสเบ จำกัด,SBEY CREDIT FONCIER COMPANY LIMITED,25210824
 610,บริษัทเครดิตฟองซิเอร์ เวิลด์ จำกัด,"WORLD CREDIT FONCIER CO., LTD.",25160921
-613,บริษัทเครดิตฟองซิเอร์ แคปปิตอล ลิ้งค์ จำกัด,CAPITAL LINK CREDIT FONCIER LIMITED,25160711
+613,บริษัท��ครดิต��องซิเอร์ แคปปิตอล ลิ้งค์ จำกัด,CAPITAL LINK CREDIT FONCIER LIMITED,25160711
 635,เดอะ ชิกะ แบ๊งค์ ลิมิเต็ด,THE SHIGA BANK LIMITED,25550209
 636,เดอะ โฮคุริคุ แบ๊งค์ ลิมิเต็ด,THE HOKURIKU BANK LIMITED,25550320
 637,เดอะ แบ๊งค์ ออฟ ฟุกุโอกะ ลิมิเต็ด,"THE BANK OF FUKUOKA, LTD.",25550327
@@ -176,7 +177,7 @@
 731,บริษัทบริหารสินทรัพย์ ที เอส จำกัด,TS ASSET MANAGEMENT COMPANY LIMITED,25540518
 732,บริษัทบริหารสินทรัพย์ ไอคอน แคปปิตอล (ประเทศไทย) จำกัด,"AIQON CAPITAL ASSET MANAGEMENT (THAILAND) CO., LTD.",25540901
 734,บริษัทบริหารสินทรัพย์ ซีเอฟ เอเชีย จำกัด,"CF ASIA ASSET MANAGEMENT CO., LTD.",25560409
-735,บริษัทบริหารสินทรัพย์ ธนภัทร จำกัด,"THANAPATS ASSET MANAGEMENT CO., LTD.",25570401
+735,บริษัทบริหารสินทรัพย์ ธนภ��ทร จำกัด,"THANAPATS ASSET MANAGEMENT CO., LTD.",25570401
 736,บริษัทบริหารสินทรัพย์ รักษณาสยาม จำกัด,RAKSANA SIAM ASSET MANAGEMENT LTD.,25560522
 738,บริษัทบริหารสินทรัพย์ เจ จำกัด,"J ASSET MANAGEMENT CO., LTD.",25560618
 739,บริษัทบริหารสินทรัพย์ เอเซีย จำกัด,"ASIA ASSET MANAGEMENT CO., LTD.",25560809
@@ -244,7 +245,7 @@
 882,NATIXIS,NATIXIS,25440523
 883,คาเธ่ย์ ยูไนเต็ด แบงก์,CATHAY UNITED BANK,25410504
 885,THE BANK OF NEW YORK MELLON,THE BANK OF NEW YORK MELLON,25470730
-886,ดีอีจี-ด้อยท์เช่ อินเวสติซิโอนส์-อุนด์ เอ็นวิกคลุงส์เกเซลชัฟท์ เอ็มบีเอช,DEG - DEUTSCHE INVESTITIONS - UND ENTWICKLUNGSGESELLSCHAFT MBH,25471001
+886,ดีอีจี-ด้อยท์เช่ อินเวสติซิโอนส์-อุนด์ เอ็นวิกคลุงส์เก���ซลชัฟท์ เอ็มบีเอช,DEG - DEUTSCHE INVESTITIONS - UND ENTWICKLUNGSGESELLSCHAFT MBH,25471001
 893,เดอะ ฮาชิจูนิ แบ๊งค์ ลิมิเต็ด จำกัด,"THE HACHIJUNI BANK, LTD.",25501001
 896,เจแปน ไฟแนนซ์ คอร์ปอเรชั่น,JAPAN FINANCE CORPORATION,25511001
 897,เดอะ ฮิโรชิม่า แบ๊งค์ ลิมิเต็ด,THE HIROSHIMA BANK LIMITED,25520424
@@ -253,7 +254,7 @@
 906,บริษัท บัตรกรุงศรีอยุธยา จำกัด,"KRUNG SRIAYUDHYA CARD CO., LTD.",25460317
 907,บริษัท อิออน ธนสินทรัพย์ (ไทยแลนด์) จำกัด (มหาชน),AEON THANA SINSAP (THAILAND) PUBLIC COMPANY LIMITED,25460317
 908,บริษัท เจเนอรัล คาร์ด เซอร์วิสเซส จำกัด,GENERAL CARD SERVICES LIMITED,25460317
-909,บริษัท โลตัสส์ มันนี่ เซอร์วิสเซส จำกัด,LOTUS’S MONEY SERVICES LIMITED,25460317
+909,บริษัท โลตัสส์ มันนี่ เซอร์วิสเซส จำกัด,LOTUS'S MONEY SERVICES LIMITED,25460317
 910,บริษัท อยุธยา แคปปิตอล เซอร์วิสเซส จำกัด,AYUDHYA CAPITAL SERVICES COMPANY LIMITED,25371109
 911,บริษัท อีซี่ บาย จำกัด (มหาชน),EASY BUY PUBLIC COMPANY LIMITED,25440629
 912,บริษัท แคปปิตอล โอเค จำกัด,CAPITAL OK COMPANY LIMITED,25470702
@@ -312,7 +313,7 @@
 981,บริษัท อินเตอร์เนชั่นแนล คอมเมอร์เชียล โคออร์ดิเนชั่น จำกัด,"INTERNATIONAL COMMERCIAL COORDINATION CO.,LTD.",25310829
 982,บริษัท เอก-ชัย ดีสทริบิวชั่น ซิสเทม จำกัด,"EK-CHAI DISTRIBUTION SYSTEMS CO., LTD.",25520513
 983,บริษัท เอเชีย เพย์ (ประเทศไทย) จำกัด,ASIA PAY (THAILAND) LIMITED,25520513
-984,บริษัท ระบบขนส่งมวลชนกรุงเทพ จำกัด (มหาชน),"BANGKOK MASS TRANSIT SYSTEM PUBLIC CO., LTD.",25520818
+984,บริษัท ระบบขนส่งมวลชนกรุงเทพ จำกั��� (มหาชน),"BANGKOK MASS TRANSIT SYSTEM PUBLIC CO., LTD.",25520818
 985,บริษัท สำนักหักบัญชี (ประเทศไทย) จำกัด,"THAILAND CLEARING HOUSE CO., LTD.",25530205
 986,บริษัท โกลบอล เซอร์วิส เซ็นเตอร์ จำกัด,GLOBAL SERVICE CENTER,25530305
 987,บริษัท กสท โทรคมนาคม จำกัด (มหาชน),CAT TELECOM PUBLIC COMPANY LIMITED,25530205
