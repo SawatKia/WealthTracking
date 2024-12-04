@@ -9,11 +9,52 @@ const appConfigs = require("../configs/AppConfigs");
 const AuthUtils = require('../utilities/AuthUtils');
 const { json } = require('express');
 
-const slipToDiskStorage = multer.diskStorage({
+// Custom storage engine that combines memory and disk storage
+class CustomStorage {
+  constructor(options) {
+    this.diskStorage = multer.diskStorage({
+      destination: options.destination,
+      filename: options.filename
+    });
+    this.memoryStorage = multer.memoryStorage();
+  }
+
+  _handleFile(req, file, cb) {
+    // First, store in memory
+    this.memoryStorage._handleFile(req, file, (memoryError, memoryInfo) => {
+      if (memoryError) return cb(memoryError);
+
+      // Keep the buffer in the file object
+      file.buffer = memoryInfo.buffer;
+
+      // Then, store on disk
+      this.diskStorage._handleFile(req, file, (diskError, diskInfo) => {
+        if (diskError) return cb(diskError);
+
+        // Log message to show file was saved to disk at <path>
+        logger.debug(`File saved to disk at ${diskInfo.path}`);
+
+        // Combine memory and disk info
+        cb(null, {
+          ...diskInfo,
+          buffer: memoryInfo.buffer
+        });
+      });
+    });
+  }
+
+  _removeFile(req, file, cb) {
+    this.diskStorage._removeFile(req, file, cb);
+  }
+}
+
+// Create storage instance
+const hybridSlipStorage = new CustomStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(APP_ROOT, 'uploads/slip-images/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
+      logger.debug(`Created directory for slip images at ${uploadDir}`);
     }
     cb(null, uploadDir);
   },
@@ -21,11 +62,33 @@ const slipToDiskStorage = multer.diskStorage({
     cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
   }
 });
+
+// Create multer instance with hybrid storage
+const uploadSlip = multer({
+  storage: hybridSlipStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
+// const slipToDiskStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = path.join(APP_ROOT, 'uploads/slip-images/');
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });
+//     }
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
+//   }
+// });
 const profilePictureToDiskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(APP_ROOT, 'uploads/profile-pictures/');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
+      logger.debug(`Created directory for profile pictures at ${uploadDir}`);
     }
     cb(null, uploadDir);
   },
@@ -33,7 +96,7 @@ const profilePictureToDiskStorage = multer.diskStorage({
     cb(null, `${Date.now()}-${req.user.sub}-${file.originalname}`);
   }
 });
-const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
+// const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
@@ -175,7 +238,7 @@ class Middlewares {
 
   conditionalSlipUpload(req, res, next) {
     if (req.is('multipart/form-data')) {
-      return uploadSlipToDisk.single('imageFile')(req, res, next);
+      return uploadSlip.single('imageFile')(req, res, next);
     }
     next();
   };

@@ -291,12 +291,13 @@ class UserController extends BaseController {
             const finalUpdateFields = Object.entries({ ...updateFields, ...normalizedData })
                 .reduce((acc, [key, value]) => {
                     if (value !== '') {
-                        // Add timezone handling for date_of_birth
+                        logger.debug(`before handling date_of_birth key: ${key}, value: ${value}`);
+                        // Store date_of_birth in UTC
                         if (key === 'date_of_birth') {
-                            // Add 7 hours to compensate for Bangkok timezone
                             const date = new Date(value);
-                            date.setHours(7, 0, 0, 0);
+                            date.setUTCHours(0, 0, 0, 0);
                             acc[key] = date;
+                            logger.debug(`after handling date_of_birth key: ${key}, value: ${date}`);
                         } else {
                             acc[key] = value;
                         }
@@ -310,7 +311,6 @@ class UserController extends BaseController {
             const updatedUser = await this.userModel.updateUser(user.national_id, finalUpdateFields);
             logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
 
-            // Only return the fields that were actually updated
             const filteredUpdatedUser = this.filterUserData(updatedUser);
             req.formattedResponse = formatResponse(200, 'User updated successfully', filteredUpdatedUser);
             return next();

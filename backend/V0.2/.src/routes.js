@@ -14,6 +14,7 @@ const FinancialInstitutionController = require('./controllers/FinancialInstituti
 const cacheController = require('./controllers/CacheController');
 const AuthController = require('./controllers/AuthController');
 const DebtController = require('./controllers/DebtController');
+const TransactionController = require('./controllers/TransactionController');
 
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse } = Utils;
@@ -27,6 +28,7 @@ const apiController = new ApiController();
 const fiController = new FinancialInstitutionController();
 const authController = new AuthController();
 const debtController = new DebtController();
+const transactionController = new TransactionController();
 if (NODE_ENV == 'development') {
     logger.info('Generating swagger documentation');
     const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
@@ -57,13 +59,16 @@ const allowedMethods = {
     '/logout': ['POST'],
     '/google/login': ['POST'],
     '/google/callback': ['GET'],
+    '/transactions': ['GET', 'POST'],
+    '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
 }
 
 if (NODE_ENV != 'production') {
-    allowedMethods['/users/check'] = ['POST'];
     allowedMethods['/fis'] = ['GET'];
     allowedMethods['/fi/:fi_code'] = ['GET'];
     allowedMethods['/fis/operating-banks'] = ['GET'];
+    allowedMethods['/cache'] = ['GET', 'POST'];
+    allowedMethods['/cache/:key'] = ['GET', 'DELETE'];
 }
 
 router.use((req, res, next) => {
@@ -96,7 +101,8 @@ router.use([
     '/users',  // Only protect user operations AFTER registration
     '/slip',
     '/fis',
-    '/debts'
+    '/debts',
+    '/transactions'
 ], async (req, res, next) => {
     try {
         if (req.formattedResponse) {
@@ -121,9 +127,6 @@ router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccou
 router.patch('/banks/:account_number/:fi_code', mdw.conditionalProfilePictureUpload, bankAccountController.updateBankAccount);
 router.delete('/banks/:account_number/:fi_code', bankAccountController.deleteBankAccount);
 
-router.get('/fis', fiController.getAllFinancialInstitutions);
-router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks);
-router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 
 router.get('/slip/quota', apiController.getQuotaInformation);
 router.post('/slip/verify', mdw.conditionalSlipUpload, apiController.verifySlip);
@@ -134,13 +137,26 @@ router.get('/debts/:debt_id', debtController.getDebt);
 router.patch('/debts/:debt_id', debtController.updateDebt);
 router.delete('/debts/:debt_id', debtController.deleteDebt);
 // Cache routes
-router.post('/cache', cacheController.set);
-router.get('/cache/:key', cacheController.get);
-router.delete('/cache/:key', cacheController.delete);
+if (NODE_ENV !== 'production') {
+    router.get('/fis', fiController.getAllFinancialInstitutions);
+    router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks);
+    router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
+
+    router.post('/cache', cacheController.set);
+    router.get('/cache', cacheController.getAll);
+    router.get('/cache/:key', cacheController.get);
+    router.delete('/cache/:key', cacheController.delete);
+}
 
 // Add login and logout routes
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
+
+router.post('/transactions', transactionController.createTransaction);
+router.get('/transactions', transactionController.getAllTransactions);
+router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
+router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
+router.delete('/transactions/:transaction_id', transactionController.deleteTransaction);
 
 router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);

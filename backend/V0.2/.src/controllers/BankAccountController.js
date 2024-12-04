@@ -27,64 +27,65 @@ class BankAccountController extends BaseController {
     async createBankAccount(req, res, next) {
         logger.info('Creating bank account...');
         try {
-            const { fi_code, account_number, balance } = req.body;
-            logger.debug(`Destructuring req.body: ${JSON.stringify(req.body)}`);
-
+            // 1. Verify required fields first
             const requiredFields = ["account_number", "fi_code", "display_name", "account_name", "balance"];
-            let convertedBody;
-            try {
-                convertedBody = await super.verifyField(req.body, requiredFields, this.BankAccountModel);
-            } catch (error) {
-                if (error.message.startsWith('Invalid number format for field:')) {
-                    throw new ValidationError(error.message);
-                }
-                throw error;
-            }
+            const convertedBody = await super.verifyField(req.body, requiredFields, this.BankAccountModel);
+            logger.debug(`Converted body: ${JSON.stringify(convertedBody)}`);
 
-            // Verify balance is a valid number
+            // 2. Normalize the account number
+            const cleanedAccountNumber = await this.BankAccountUtils.normalizeAccountNumber(convertedBody.account_number);
+            logger.debug(`Normalized account number: ${cleanedAccountNumber}`);
+
+            // 3. Update the body with normalized account number
+            const updatedBody = {
+                ...convertedBody,
+                account_number: cleanedAccountNumber
+            };
+            logger.debug(`Updated request body: ${JSON.stringify(updatedBody)}`);
+
+            // 4. Validate balance
+            const { balance, fi_code } = updatedBody;
             if (isNaN(parseFloat(balance))) {
-                throw new ValidationError("balance must be a valid number.");
+                throw new ValidationError("Invalid balance.");
             }
-
-            // Verify balance is not negative
             if (parseFloat(balance) < 0) {
-                throw new ValidationError("balance must not be negative.");
+                throw new ValidationError("Invalid balance.");
             }
 
             // Verify balance has at most 2 decimal places
             if (!/^\d+(\.\d{1,2})?$/.test(balance)) {
-                throw new ValidationError("Balance must have at most 2 decimal places.");
+                throw new ValidationError("Invalid balance.");
             }
 
-            // Clean up the account number before further processing
-            const cleanedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(account_number);
-            convertedBody.account_number = cleanedAccountNumber;
-            logger.debug(`convertedBody after normalized account_number: ${JSON.stringify(convertedBody)}`);
-            logger.debug(`Searching for bank data with fi_code: ${fi_code}, type: ${typeof fi_code}`);
-            const bankData = await this.FiModel.findOne({ fi_code: fi_code });
+            // 5. Verify bank exists
+            logger.debug(`Searching for bank data with fi_code: ${fi_code}`);
+            const bankData = await this.FiModel.findOne({ fi_code });
             if (!bankData) {
-                logger.debug('Bank data not found');
-                logger.error(`Financial institution with fi_code '${fi_code}' not found. To get a list of available fi_codes, please use the /fi/ endpoint.`);
+                logger.error(`Financial institution with fi_code '${fi_code}' not found`);
                 throw MyAppErrors.notFound(`Financial institution with fi_code '${fi_code}' not found. To get a list of available fi_codes, please use the /fi/ endpoint.`);
             }
             logger.debug(`Bank data found: ${JSON.stringify(bankData)}`);
 
+            // 6. Get current user
             const currentUser = await super.getCurrentUser(req);
-            logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
             }
+            logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
 
+            // 7. Create bank account
             const bankAccountData = {
-                ...convertedBody,
-                national_id: currentUser.national_id,
-            }
-            logger.debug(`bankAccountData to be create: ${JSON.stringify(bankAccountData)}`);
+                ...updatedBody,
+                national_id: currentUser.national_id
+            };
+            logger.debug(`Bank account data to create: ${JSON.stringify(bankAccountData)}`);
 
             const createResult = await this.BankAccountModel.create(bankAccountData);
-            logger.debug(`createResult: ${JSON.stringify(createResult)}`);
+            logger.debug(`Create result: ${JSON.stringify(createResult)}`);
+
             const result = await this.BankAccountModel.get(createResult.account_number, createResult.fi_code);
-            logger.debug(`get create result: ${JSON.stringify(result), null, 2}`);
+            logger.debug(`Get create result: ${JSON.stringify(result)}`);
+
             req.formattedResponse = formatResponse(201, 'Bank account created successfully', result);
             next();
         } catch (error) {
@@ -98,6 +99,8 @@ class BankAccountController extends BaseController {
             } else if (error.message.includes('Account number should contain only digits or digits with dashes')) {
                 next(MyAppErrors.badRequest(error.message));
             } else if (error instanceof ValidationError) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('Invalid')) {
                 next(MyAppErrors.badRequest(error.message));
             } else {
                 next(error);
@@ -142,33 +145,39 @@ class BankAccountController extends BaseController {
         try {
             logger.info('Getting a bank account...');
             logger.debug(`req.params: ${JSON.stringify(req.params)}`);
-            const requiredFields = ['account_number', 'fi_code'];
-            const convertedParams = await super.verifyField(req.params, requiredFields, this.BankAccountModel);
-            logger.debug(`convertedParams: ${JSON.stringify(convertedParams)}`);
 
-            const { account_number, fi_code } = convertedParams;
-            logger.info('extracted params:');
-            logger.debug(`account_number: ${account_number}, fi_code: ${fi_code}`);
-
+            // 1. Get current user first to fail fast if not authenticated
             const currentUser = await super.getCurrentUser(req);
             if (!currentUser) {
                 throw MyAppErrors.userNotFound();
             }
             logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
 
-            const convertedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(account_number);
+            // 2. Verify and convert parameters
+            const requiredFields = ['account_number', 'fi_code'];
+            const convertedParams = await super.verifyField(req.params, requiredFields, this.BankAccountModel);
+            logger.debug(`convertedParams: ${JSON.stringify(convertedParams)}`);
+
+            const { account_number, fi_code } = convertedParams;
+            logger.debug(`account_number: ${account_number}, fi_code: ${fi_code}`);
+
+            // 3. Get bank account with normalized account number
+            const convertedAccountNumber = await this.BankAccountUtils.normalizeAccountNumber(account_number);
             logger.debug(`convertedAccountNumber: ${convertedAccountNumber}`);
+
             const bankAccount = await this.BankAccountModel.get(convertedAccountNumber, fi_code);
             if (!bankAccount) {
                 throw MyAppErrors.notFound('Bank account not found');
             }
             logger.debug(`bankAccount retrieved: ${JSON.stringify(bankAccount)}`);
 
-            const isOwner = await super.verifyOwnership(currentUser, [bankAccount]);
+            // 4. Verify ownership before proceeding
+            const isOwner = await super.verifyOwnership(currentUser, bankAccount);
             if (!isOwner) {
                 throw MyAppErrors.forbidden('You are not allowed to access this resource');
             }
-            logger.debug(`isOwner: ${isOwner}, ${isOwner ? "sending response" : "not sending response"} to client`);
+
+            // 5. Send response
             req.formattedResponse = formatResponse(200, 'Bank account retrieved successfully', { bankAccount });
             next();
         } catch (error) {
@@ -180,35 +189,57 @@ class BankAccountController extends BaseController {
     async updateBankAccount(req, res, next) {
         logger.info('Updating bank account...');
         try {
-            // Extract and verify query parameters
+            // 1. Get current user first to fail fast if not authenticated
+            const currentUser = await super.getCurrentUser(req);
+            if (!currentUser) {
+                throw MyAppErrors.userNotFound();
+            }
+            logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
+
+            // 2. Extract and validate parameters
             const { account_number, fi_code } = req.params;
             logger.debug(`Params received: account_number=${account_number}, fi_code=${fi_code}`);
 
-            const validationResult = this.BankAccountUtils.validateAccountNumber(account_number, fi_code);
+            const validationResult = await this.BankAccountUtils.validateAccountNumber(account_number, fi_code);
             logger.debug(`validationResult: ${JSON.stringify(validationResult)}`);
             if (!validationResult.isValid) {
                 logger.error(`validationResult.isValid is false, throwing badRequest error`);
                 throw MyAppErrors.badRequest(validationResult.error);
             }
 
+            // 3. Find existing bank account before processing updates
+            const existingAccount = await this.BankAccountModel.get(
+                await this.BankAccountUtils.normalizeAccountNumber(account_number),
+                fi_code
+            );
+            if (!existingAccount) {
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+            logger.debug(`existingAccount: ${JSON.stringify(existingAccount)}`);
+
+            // 4. Verify ownership before proceeding with update
+            const isOwner = await super.verifyOwnership(currentUser, existingAccount);
+            if (!isOwner) {
+                throw MyAppErrors.forbidden('You are not allowed to access this resource');
+            }
+
+            // 5. Process update data
             const updateData = {
                 ...req.body,
-                ...req.params
-            }
-            logger.debug(`RAW updateData: ${JSON.stringify(updateData)}`);
+                account_number: validationResult.formattedNumber || account_number,
+                fi_code
+            };
 
-            // Verify required fields in params
+            // 6. Verify and convert fields
             const requiredParams = ['account_number', 'fi_code'];
-            let convertedUpdateData;
-            try {
-                convertedUpdateData = await super.verifyField(updateData, requiredParams, this.BankAccountModel);
-                convertedUpdateData.account_number = this.BankAccountUtils.normalizeAccountNumber(convertedUpdateData.account_number);
-            } catch (error) {
-                throw new ValidationError(error.message);
-            }
+            const convertedUpdateData = await super.verifyField(
+                updateData,
+                requiredParams,
+                this.BankAccountModel
+            );
 
-            Object.keys(convertedUpdateData).forEach((field) => {
-                logger.debug(`field: ${field}`);
+            // 7. Remove empty fields
+            Object.keys(convertedUpdateData).forEach(field => {
                 if (convertedUpdateData[field] === '' || convertedUpdateData[field] === null) {
                     logger.debug(`field ${field} is empty or null, deleting the field`);
                     delete convertedUpdateData[field];
@@ -216,62 +247,35 @@ class BankAccountController extends BaseController {
             });
             logger.debug(`convertedUpdateData after deleting empty fields: ${JSON.stringify(convertedUpdateData)}`);
 
-            // Destructure and validate request body
-            if (Object.keys(convertedUpdateData).length === 0) {
-                logger.error('convertedUpdateData is empty');
+            if (Object.keys(convertedUpdateData).length <= 2) { // Only has account_number and fi_code
                 throw MyAppErrors.badRequest('At least one field is required to update bank account information');
             }
 
-            // Get current user
-            const currentUser = await super.getCurrentUser(req);
-            if (!currentUser) {
-                throw MyAppErrors.userNotFound();
-            }
-            logger.debug(`currentUser: ${JSON.stringify(currentUser)}`);
-
-            // Find existing bank account
-            const existingAccount = await this.BankAccountModel.get(convertedUpdateData.account_number, convertedUpdateData.fi_code);
-            logger.debug(`existingAccount: ${JSON.stringify(existingAccount)}`);
-            if (!existingAccount) {
-                logger.error('existingAccount not found');
-                throw MyAppErrors.notFound('Bank account not found');
-            }
-            logger.info('existingAccount found');
-
-            // Verify ownership
-            const isOwner = await super.verifyOwnership(currentUser, [existingAccount]);
-            if (!isOwner) {
-                logger.error('verifyOwnership failed');
-                throw MyAppErrors.forbidden('You are not allowed to access this resource');
-            }
-            logger.info('verifyOwnership passed');
-
-            // Update bank account
+            // 8. Perform update
             const primaryKeys = {
                 national_id: currentUser.national_id,
                 account_number: convertedUpdateData.account_number,
                 fi_code: convertedUpdateData.fi_code
-            }
+            };
+
+            // Remove keys that are part of primary key from update data
             delete convertedUpdateData.account_number;
             delete convertedUpdateData.fi_code;
-            let updatedAccount = await this.BankAccountModel.update(
+
+            const updatedAccount = await this.BankAccountModel.update(
                 primaryKeys,
                 convertedUpdateData
             );
-            logger.debug(`updatedAccount: ${JSON.stringify(updatedAccount)}`);
 
+            // 9. Format response
             if (updatedAccount.account_number) {
-                logger.info('account_number was updated, need to format it');
-                // Get complete account information after update
-                const getUpdatedAccount = await this.BankAccountModel.get(updatedAccount.account_number, updatedAccount.fi_code);
-                logger.debug(`getUpdatedAccount: ${JSON.stringify(getUpdatedAccount)}`);
-
-                // Format account number
-                updatedAccount.account_number = await this.BankAccountUtils.formatAccountNumber(getUpdatedAccount.account_number, getUpdatedAccount.fi_code);
-                logger.debug(`updatedAccount after formatting: ${JSON.stringify(updatedAccount)}`);
+                const formattedAccount = await this.BankAccountModel.get(
+                    updatedAccount.account_number,
+                    updatedAccount.fi_code
+                );
+                updatedAccount.account_number = formattedAccount.account_number;
             }
 
-            // Format and send response
             req.formattedResponse = formatResponse(
                 200,
                 'Bank account updated successfully',
@@ -299,7 +303,7 @@ class BankAccountController extends BaseController {
             logger.debug(`Verified params: ${JSON.stringify(convertedParams)}`);
 
             // Clean up account number
-            const cleanedAccountNumber = this.BankAccountUtils.normalizeAccountNumber(convertedParams.account_number);
+            const cleanedAccountNumber = await this.BankAccountUtils.normalizeAccountNumber(convertedParams.account_number);
             convertedParams.account_number = cleanedAccountNumber;
 
             // Get current user

@@ -1,3 +1,5 @@
+const startTime = Date.now();
+
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -32,7 +34,9 @@ if (!isDev) {
 }
 
 // Serve static files from the frontend build directory
-// app.use("/", express.static(path.join(__dirname, "./frontend_build")));
+//NOTE - the frontend_build directory is mounted as a volume in the docker-compose.yml file
+logger.info(`Serving static files from: ${path.join(__dirname, "../frontend_build")}`);
+app.use("/", express.static(path.join(__dirname, "../frontend_build")));
 
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);
@@ -73,5 +77,5 @@ app.use(mdw.responseHandler);
 app.use(mdw.errorHandler);
 
 
-module.exports = app;
+module.exports = { app, startTime };
 

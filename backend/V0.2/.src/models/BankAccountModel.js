@@ -105,8 +105,7 @@ class BankAccountModel extends BaseModel {
             logger.debug(`accountNumber: ${accountNumber}, fiCode: ${fiCode}`);
             const result = await this.findOne({ account_number: accountNumber, fi_code: fiCode });
             if (result) {
-                result.account_number = this.bankAccountUtils.formatAccountNumber(result.account_number, result.fi_code);
-                // Convert balance to number, format to 2 decimal places, then back to string
+                result.account_number = await this.bankAccountUtils.formatAccountNumber(result.account_number, result.fi_code);
                 result.balance = Number(result.balance).toFixed(2).toString();
             }
             return result;
@@ -119,11 +118,12 @@ class BankAccountModel extends BaseModel {
     async getAll(nationalId) {
         try {
             const results = await super.list(nationalId);
-            return results.map(account => {
-                account.account_number = this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
+            const formattedResults = await Promise.all(results.map(async account => {
+                account.account_number = await this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
                 account.balance = Number(account.balance).toFixed(2).toString();
                 return account;
-            });
+            }));
+            return formattedResults;
         } catch (error) {
             logger.error(`Error in getAll method: ${error.message}`);
             throw error;

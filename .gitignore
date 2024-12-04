@@ -1,9 +1,13 @@
 extensions.json
 settings.json
 
-# Database data
+# Database data and all its files
 postgres_data/*
-backend/V0.2/uploads/*
+
+# All files and subfolders in the uploads folder
+backend/V0.2/uploads/
+
+test-data/
 
 # Ignore the report folder and all its subfolders and files
 report/

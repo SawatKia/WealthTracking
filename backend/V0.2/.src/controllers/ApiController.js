@@ -287,9 +287,9 @@ class ApiController {
     try {
       let result;
       let payload;
-      logger.debug(`req.query: ${JSON.stringify(req.query)}`);
-      logger.debug(`req.file: ${JSON.stringify(req.file)}`);
-      logger.debug(`req.body: ${JSON.stringify(req.body)}`);
+      logger.debug(`Request Query: ${JSON.stringify(req.query)}`);
+      logger.debug(`Request File: ${req.file ? JSON.stringify(req.file).substring(0, 500) + "...[truncated]" : "No file uploaded"}`);
+      logger.debug(`Request Body: ${req.body ? JSON.stringify(req.body).substring(0, 500) + "...[truncated]" : "No body provided"}`);
 
       // Validate and sanitize query parameters
       const sanitizedQuery = this._sanitizeObject(req.query);
@@ -339,6 +339,7 @@ class ApiController {
       // Check for duplicate slip using the extracted/provided payload
       const isDuplicate = await this.slipHistoryModel.checkDuplicateSlip(payload);
       if (isDuplicate) {
+        logger.warn("This slip has already been used");
         throw MyAppErrors.badRequest("This slip has already been used");
       }
       logger.info("Slip is not duplicate, proceed to extract slip data");
@@ -418,7 +419,7 @@ class ApiController {
     if (!file) {
       throw MyAppErrors.badRequest("No file provided");
     }
-    logger.debug(`file: ${JSON.stringify(file, null, 2)}`);
+    logger.debug(`file: ${JSON.stringify(file, null, 2).substring(0, 100)}...[truncated]`);
 
     const isQuotaAvailable = await this._checkQuotaAvailability();
     if (!isQuotaAvailable) {
