@@ -93,7 +93,8 @@ POSTGRES_HOST=postgres # docker service name
 POSTGRES_TEST_NAME=test_database_name
 POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
-POSTGRES_DB=your_database_name
+POSTGRES_DB=WealthTrack_DB
+# POSTGRES_DB=your_database_name
 FORCE_DEV_DB_RESET=false
 
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
