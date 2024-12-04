@@ -1,0 +1,35 @@
+{
+    "Expense": [
+        "Food",
+        "Transport",
+        "Travel",
+        "Groceries",
+        "House",
+        "Borrowed",
+        "Cure",
+        "Pet",
+        "Education",
+        "Clothes",
+        "Cosmetics",
+        "Accessories",
+        "Insurance",
+        "Hobby",
+        "Utilities",
+        "Vehicle",
+        "Fee",
+        "Business",
+        "Game"
+    ],
+    "Income": [
+        "Dividend",
+        "Refund",
+        "Gift",
+        "Revenue",
+        "Business",
+        "Salary",
+        "Other"
+    ],
+    "Transfer": [
+        "Transfer"
+    ]
+}
