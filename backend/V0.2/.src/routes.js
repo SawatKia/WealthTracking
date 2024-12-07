@@ -61,6 +61,7 @@ const allowedMethods = {
     '/google/callback': ['GET'],
     '/transactions': ['GET', 'POST'],
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
+    '/transactions/:account_number/:fi_code': ['GET'],
 }
 
 if (NODE_ENV != 'production') {
@@ -157,6 +158,7 @@ router.get('/transactions', transactionController.getAllTransactions);
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
 router.delete('/transactions/:transaction_id', transactionController.deleteTransaction);
+router.get('/transactions/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 
 router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);

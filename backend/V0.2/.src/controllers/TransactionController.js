@@ -22,6 +22,7 @@ class TransactionController extends BaseController {
         this.getOneTransaction = this.getOneTransaction.bind(this);
         this.updateTransaction = this.updateTransaction.bind(this);
         this.deleteTransaction = this.deleteTransaction.bind(this);
+        this.getTransactionsByAccount = this.getTransactionsByAccount.bind(this);
 
         this.validateBankAccounts = this.validateBankAccounts.bind(this);
         this.validateBankAccountBalance = this.validateBankAccountBalance.bind(this);
@@ -404,6 +405,49 @@ class TransactionController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Error deleting transaction: ${error.message}`);
+            next(error);
+        }
+    }
+
+    async getTransactionsByAccount(req, res, next) {
+        try {
+            logger.info('Getting transactions by account');
+
+            // Use verifyField to validate required fields
+            const validatedData = await super.verifyField(
+                req.params,
+                ['account_number', 'fi_code'],
+                this.bankAccountModel
+            );
+            logger.debug(`Validated account data: ${JSON.stringify(validatedData)}`);
+
+            // Get current user
+            const user = await super.getCurrentUser(req);
+
+            // Verify user owns this account
+            const bankAccount = await this.bankAccountModel.get(validatedData.account_number, validatedData.fi_code);
+            if (!bankAccount) {
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+
+            if (!super.verifyOwnership(user, bankAccount)) {
+                throw MyAppErrors.forbidden('You do not have permission to view transactions for this account');
+            }
+
+            // Get transactions
+            const transactions = await this.transactionModel.getAllTransactionsForAccount(
+                validatedData.account_number,
+                validatedData.fi_code
+            );
+
+            const message = transactions.length > 0
+                ? `Retrieved ${transactions.length} transaction${transactions.length > 1 ? 's' : ''} successfully`
+                : 'No transactions found for this account';
+
+            req.formattedResponse = formatResponse(200, message, { transactions });
+            next();
+        } catch (error) {
+            logger.error(`Error getting transactions by account: ${error.message}`);
             next(error);
         }
     }

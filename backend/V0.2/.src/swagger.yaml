@@ -1639,6 +1639,124 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /transactions/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get transactions for a specific bank account
+      description: Retrieves all transactions associated with a specific bank account (both sent and received)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{3}$"
+          description: The financial institution code
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Transactions retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transaction_id:
+                          type: string
+                          format: uuid
+                          example: "123e4567-e89b-12d3-a456-426614174000"
+                        transaction_datetime:
+                          type: string
+                          format: date-time
+                          example: "2024-03-15T14:30:00Z"
+                        category:
+                          type: string
+                          enum: ["Income", "Expense", "Transfer"]
+                          example: "Transfer"
+                        type:
+                          type: string
+                          example: "Bank Transfer"
+                        amount:
+                          type: number
+                          format: float
+                          example: 1000.00
+                        note:
+                          type: string
+                          example: "Monthly rent payment"
+                        national_id:
+                          type: string
+                          example: "1234567890123"
+                        sender:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "123-4-56789-0"
+                            fi_code:
+                              type: string
+                              example: "004"
+                            display_name:
+                              type: string
+                              example: "My Savings Account"
+                            account_name:
+                              type: string
+                              example: "JOHN DOE"
+                            bank_name_en:
+                              type: string
+                              example: "Kasikorn Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกสิกรไทย"
+                        receiver:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "098-7-65432-1"
+                            fi_code:
+                              type: string
+                              example: "002"
+                            display_name:
+                              type: string
+                              example: "Rent Account"
+                            account_name:
+                              type: string
+                              example: "JANE SMITH"
+                            bank_name_en:
+                              type: string
+                              example: "Bangkok Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกรุงเทพ"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth: # For mobile platform
@@ -2747,7 +2865,7 @@ components:
                 display_name: "My Savings Account"
                 account_name: "JOHN DOE"
                 bank_name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
-                bank_name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+                bank_name_th: "ธ��าคารกสิกรไทย จำกัด (มหาชน)"
               receiver:
                 account_number: "987-6-54321-0"
                 fi_code: "014"
