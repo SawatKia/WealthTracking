@@ -13,7 +13,7 @@ const { Logger, formatResponse } = Utils;
 const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
-
+logger.info(`Imports completed after ${Date.now() - startTime}ms`);
 
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
