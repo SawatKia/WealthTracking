@@ -93,13 +93,8 @@ class TransactionModel extends BaseModel {
           "any.required": "National ID is required for this operation.",
         }),
 
-      debt_number: Joi.string().max(50).allow(null, "").optional().messages({
+      debt_id: Joi.string().max(50).allow(null, "").optional().messages({
         "string.max": "Debt number must not exceed 50 characters.",
-      }),
-
-      fi_code: Joi.string().max(20).allow(null, "").optional().messages({
-        "string.max":
-          "Financial institution code must not exceed 20 characters.",
       }),
 
       sender_account_number: Joi.string()
@@ -341,21 +336,26 @@ class TransactionModel extends BaseModel {
       const transaction = await super.create(data);
 
       // Cache the new transaction only if not in test environment
-      if (this.useCache) {
-        const cacheKey = `${this.cachePrefix}${transaction.transaction_id}`;
-        await Redis.setJsonEx(cacheKey, transaction, this.cacheDuration);
-      }
 
       // Get the complete transaction details after creation
-      // const query = this.getTransactionWithDetailsQuery();
-      // const result = await this.executeQuery(query, [transaction.transaction_id]);
+      const query = this.getTransactionWithDetailsQuery();
+      const result = await this.executeQuery(query, [transaction.transaction_id]);
+      logger.debug(`joined created transaction: ${JSON.stringify(result)}`);
 
-      // if (result.rows.length === 0) {
-      //   throw new Error('Failed to retrieve created transaction');
-      // }
+      if (result.rows.length === 0) {
+        throw new Error('Failed to retrieve created transaction');
+      }
 
-      // return this.formatTransactionData(result.rows[0]);
-      return transaction;
+      const formattedTransaction = this.formatTransactionData(result.rows[0]);
+
+      if (this.useCache) {
+        const cacheKey = `${this.cachePrefix}${transaction.transaction_id}`;
+        logger.debug(`caching created transaction => ${cacheKey}: ${JSON.stringify(formattedTransaction, null, 2)}`);
+        await Redis.setJsonEx(cacheKey, formattedTransaction, this.cacheDuration);
+      }
+
+      return formattedTransaction;
+      // return transaction;
     } catch (error) {
       logger.error(`Error creating transaction: ${error.message}`);
       throw error;
@@ -445,6 +445,24 @@ class TransactionModel extends BaseModel {
       return result;
     } catch (error) {
       logger.error(`Error deleting transaction: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getAllTransactionsForAccount(accountNumber, fiCode) {
+    try {
+      logger.info(`Getting all transactions for account: ${accountNumber}, FI: ${fiCode}`);
+
+      const query = `
+        SELECT * FROM transactions
+        WHERE (sender_account_number = $1 AND sender_fi_code = $2)
+        OR (receiver_account_number = $1 AND receiver_fi_code = $2)
+      `;
+      const result = await this.executeQuery(query, [accountNumber, fiCode]);
+
+      return result.rows.map(transaction => this.formatTransactionData(transaction));
+    } catch (error) {
+      logger.error(`Error getting transactions for account: ${error.message}`);
       throw error;
     }
   }
