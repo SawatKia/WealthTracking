@@ -111,11 +111,27 @@ services:
     networks:
       - app_network
 
+  ollama:
+    image: ollama/ollama:0.5.0
+    container_name: ollama_container
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
   redis_data:
   redisinsight_data:
+  ollama_data:
 
 networks:
   app_network:
