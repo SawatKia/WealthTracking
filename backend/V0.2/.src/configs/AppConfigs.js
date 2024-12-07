@@ -38,6 +38,13 @@ const config = {
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
     databaseReset: process.env.FORCE_DEV_DB_RESET || false,
+    tesseract: {
+        memoryPerJob: process.env.TESSERACT_MEMORY_PER_JOB || 10,
+    },
+    ollama: {
+        host: process.env.OLLAMA_HOST || 'http://localhost:11434',
+        model: process.env.OLLAMA_MODEL || 'llama3.2',
+    },
 };
 
 module.exports = config;
