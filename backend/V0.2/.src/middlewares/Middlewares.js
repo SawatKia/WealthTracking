@@ -177,7 +177,7 @@ class Middlewares {
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
       Message: ${message}
-      Data: ${data ? JSON.stringify(data, null, 6) : 'No data'}
+      Data: ${data ? JSON.stringify(data, null, 6).substring(0, 100) + (JSON.stringify(data, null, 6).length > 100 ? '...[truncated]...' : '') : 'No data'}
       `;
       logger.debug(responseLogMessage);
 
