@@ -28,10 +28,12 @@ class TesseractService {
 
         // Initialize scheduler and workers pool
         this.scheduler = null;
-        this.workerLimit = os.cpus().length;
+        this.workerLimit = Math.min(os.cpus().length, 4);
         this.jobCounter = 0;
         this.MAX_JOBS_BEFORE_RESET = Math.min(500, Math.floor(os.freemem() / appConfigs.tesseract.memoryPerJob));
 
+        const tessProperties = 'WorkerLimit: ' + this.workerLimit + ', MaxJobsBeforeReset: ' + this.MAX_JOBS_BEFORE_RESET;
+        logger.debug(`Tesseract properties: ${tessProperties}`);
         logger.debug(`Tesseract config: ${JSON.stringify(this.params)}`);
     }
 
