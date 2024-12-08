@@ -106,19 +106,24 @@ class PgClient {
   }
 
   async query(sql, params, options = { silent: false }) {
-    if (!this.client) {
-      logger.error("Database not initialized. Call init() first.");
-      throw new Error("Database not initialized. Call init() first.");
-    }
+    try {
+      if (!this.client) {
+        logger.error("Database not initialized. Call init() first.");
+        throw new Error("Database not initialized. Call init() first.");
+      }
 
-    if (!options.silent) {
-      logger.info('received query request');
-      logger.debug(`sql: ${sql} `);
-      logger.debug(`params: ${JSON.stringify(params)} `);
-      logger.info('querying...');
-    }
+      if (!options.silent) {
+        logger.info('received query request');
+        logger.debug(`sql: ${sql} `);
+        logger.debug(`params: ${JSON.stringify(params)} `);
+        logger.info('querying...');
+      }
 
-    return this.client.query(sql, params);
+      return this.client.query(sql, params);
+    } catch (error) {
+      logger.error(`Error querying database: ${error.message} `);
+      throw error;
+    }
   }
 
   async beginTransaction() {
@@ -163,9 +168,9 @@ class PgClient {
         await this.client.query(`TRUNCATE TABLE ${t} CASCADE`);
         logger.debug(`All rows deleted from table: ${t}`);
       } else {
-        logger.info('!'.repeat(40));
-        logger.info(`! ${`Skipping table: ${t}`.padEnd(38)}!`);
-        logger.info('!'.repeat(40));
+        logger.info('!'.repeat(42));
+        logger.info(`! ${`Skipping table: ${t}`.padEnd(39)} !`);
+        logger.info('!'.repeat(42));
       }
     }
   }
