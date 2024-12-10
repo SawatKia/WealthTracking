@@ -95,7 +95,8 @@ POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
 POSTGRES_DB=WealthTrack_DB
 # POSTGRES_DB=your_database_name
-FORCE_DEV_DB_RESET=false
+FORCE_DEV_DB_RESET=false # usually use when there is a new configuration in any part of the db either triggering function or table schema
+LOAD_MOCK_DATA=false
 
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=root
