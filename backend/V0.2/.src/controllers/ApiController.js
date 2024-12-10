@@ -14,7 +14,7 @@ const QRCodeReader = require('../utilities/QRCodeReader');
 const TesseractService = require('../services/Tesseract');
 const OllamaService = require('../services/OllamaService');
 const appConfigs = require('../configs/AppConfigs');
-const types = require('../utilities/types.json');
+const types = require('../../statics/types.json');
 
 const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");

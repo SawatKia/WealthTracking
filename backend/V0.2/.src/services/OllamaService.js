@@ -1,7 +1,7 @@
 const { Ollama } = require('ollama');
 const { Logger } = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
-const transactionTypes = require('../utilities/types.json');
+const transactionTypes = require('../../statics/types.json');
 const logger = Logger('OllamaService');
 
 class OllamaService {
