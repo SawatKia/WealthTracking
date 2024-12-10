@@ -60,8 +60,10 @@ const allowedMethods = {
     '/google/login': ['POST'],
     '/google/callback': ['GET'],
     '/transactions': ['GET', 'POST'],
+    '/transactions/list/types': ['GET'],
+    '/transactions/summary/monthly': ['GET'],
+    '/transactions/account/:account_number/:fi_code': ['GET'],
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
-    '/transactions/:account_number/:fi_code': ['GET'],
 }
 
 if (NODE_ENV != 'production') {
@@ -155,10 +157,12 @@ router.post('/logout', authController.logout);
 
 router.post('/transactions', transactionController.createTransaction);
 router.get('/transactions', transactionController.getAllTransactions);
+router.get('/transactions/list/types', transactionController.getAllTypes);
+router.get('/transactions/summary/monthly', transactionController.getMonthlySummary);
+router.get('/transactions/account/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
 router.delete('/transactions/:transaction_id', transactionController.deleteTransaction);
-router.get('/transactions/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 
 router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);
