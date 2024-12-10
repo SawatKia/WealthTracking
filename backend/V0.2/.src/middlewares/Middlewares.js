@@ -340,6 +340,8 @@ ${formattedHeaders}
     if (!req.formattedResponse) {
       logger.error(`Unknown route: ${req.method} ${req.url}`);
       next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+    } else {
+      logger.info('route was handled and returned a response');
     }
     next();
   }
