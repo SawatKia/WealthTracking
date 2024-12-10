@@ -13,6 +13,7 @@ const { Logger, formatResponse } = Utils;
 const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
+logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.info(`Imports completed after ${Date.now() - startTime}ms`);
 
 // Middleware to parse JSON
