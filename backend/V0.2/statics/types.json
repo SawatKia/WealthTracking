@@ -18,7 +18,9 @@
         "Vehicle",
         "Fee",
         "Business",
-        "Game"
+        "Game",
+        "Debt Payment",
+        "Other Expense"
     ],
     "Income": [
         "Dividend",
@@ -27,7 +29,7 @@
         "Revenue",
         "Business",
         "Salary",
-        "Other"
+        "Other Income"
     ],
     "Transfer": [
         "Transfer"
