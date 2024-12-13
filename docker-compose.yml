@@ -12,8 +12,8 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "127.0.0.1:${APP_PORT}:${APP_PORT}" # Bind to localhost to avoid exposing the port to the host machine
-      # - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
+      # - "127.0.0.1:${APP_PORT}:${APP_PORT}" # Bind to localhost to avoid exposing the port to the host machine
+      - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
       - "9229:9229"
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
@@ -75,9 +75,17 @@ services:
       - ./.env
     ports:
       - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "http://localhost:80/misc/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - app_network
 
@@ -111,11 +119,28 @@ services:
     networks:
       - app_network
 
+  ollama:
+    image: ollama/ollama:0.5.0
+    container_name: ollama_container
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
   redis_data:
   redisinsight_data:
+  ollama_data:
+  pgadmin_data:
 
 networks:
   app_network:

@@ -191,7 +191,7 @@ class UserModel extends BaseModel {
         }
     }
 
-    async createUser(newUserData) {
+    async createUser(newUserData, options = { silent: false }) {
         try {
             logger.info('Creating new user from Raw data');
             logger.debug(`newUserData: ${JSON.stringify(newUserData)}`);
@@ -219,7 +219,7 @@ class UserModel extends BaseModel {
                 throw validationResult;
             }
 
-            let createdResult = await super.create(newUserData);
+            let createdResult = await super.create(newUserData, options);
             return createdResult;
         } catch (error) {
             if (!(error instanceof Error)) {

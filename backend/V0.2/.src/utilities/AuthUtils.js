@@ -81,7 +81,10 @@ class AuthUtils {
                 exp: appConfigs.environment !== 'production' ? now + (24 * 60 * 60) : now + (15 * 60),
                 iss: AuthUtils.domain,
             }, appConfigs.accessTokenSecret, { algorithm: AuthUtils.algorithm });
-            logger.debug('Access token created');
+            const expDate = new Date((appConfigs.environment !== 'production' ? now + (24 * 60 * 60) : now + (15 * 60)) * 1000);
+            expDate.setHours(expDate.getHours() + 7); // Adjust for BKK timezone
+            const formattedExpDate = `${expDate.getDate()}/${(expDate.getMonth() + 1).toString().padStart(2, '0')}/${expDate.getFullYear()} ${expDate.getHours().toString().padStart(2, '0')}:${expDate.getMinutes().toString().padStart(2, '0')}:${expDate.getSeconds().toString().padStart(2, '0')}`;
+            logger.debug(`Access token created with exp: ${formattedExpDate}`);
 
             const refreshToken = jwt.sign({
                 sub: userId,

@@ -18,6 +18,7 @@ DECLARE
     sender_balance DECIMAL;
     receiver_balance DECIMAL;
 BEGIN
+    RAISE DEBUG 'update_bank_account_balance function called';
     -- For new transactions
     IF TG_OP = 'INSERT' THEN
         -- Handle different transaction categories
@@ -173,12 +174,11 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF NEW.category = 'debt_payment' AND NEW.debt_number IS NOT NULL THEN
-        -- Update debt balance and increment installment
+    IF NEW.category = 'Expense' AND NEW.type = 'Debt Payment' AND NEW.debt_id IS NOT NULL THEN
         UPDATE debts
         SET loan_balance = loan_balance - NEW.amount,
             current_installment = current_installment + 1
-        WHERE debt_number = NEW.debt_number;
+        WHERE debt_id = NEW.debt_id;
     END IF;
     
     RETURN NEW;
@@ -191,6 +191,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    RAISE DEBUG 'manage_transaction_relations function called';
     -- For updates where sender/receiver are swapped in a transfer
     IF TG_OP = 'UPDATE' AND NEW.category = 'Transfer' AND OLD.category = 'Transfer' THEN
         -- If the sender account became the receiver account
@@ -293,5 +294,5 @@ EXECUTE FUNCTION update_bank_account_balance();
 CREATE TRIGGER after_debt_payment
 AFTER INSERT OR UPDATE ON transactions
 FOR EACH ROW
-WHEN (NEW.category = 'debt_payment')
+WHEN (NEW.type = 'Debt Payment')
 EXECUTE FUNCTION update_debt_payment(); 
