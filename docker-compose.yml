@@ -12,8 +12,8 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "127.0.0.1:${APP_PORT}:${APP_PORT}" # Bind to localhost to avoid exposing the port to the host machine
-      # - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
+      # - "127.0.0.1:${APP_PORT}:${APP_PORT}" # Bind to localhost to avoid exposing the port to the host machine
+      - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
       - "9229:9229"
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
