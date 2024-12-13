@@ -16,6 +16,12 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.info(`Imports completed after ${Date.now() - startTime}ms`);
 
+// Apply CORS before other middleware
+app.use(mdw.corsMiddleware);
+
+// For preflight requests
+app.options('*', mdw.corsMiddleware);
+
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
 app.use(express.json({ limit: "10mb" }));
@@ -23,6 +29,17 @@ app.use(cookieParser());
 
 // Request logger middleware
 app.use(mdw.requestLogger);
+app.use((err, req, res, next) => {
+  logger.error(`Error: ${err.message}`);
+  if (err.message === 'Not allowed by CORS') {
+    res.status(403).json({
+      status: "error",
+      message: "Not allowed by CORS"
+    });
+  } else {
+    next(err);
+  }
+});
 
 //TODO -  Set connection timeout to 10 seconds
 app.disable("x-powered-by");

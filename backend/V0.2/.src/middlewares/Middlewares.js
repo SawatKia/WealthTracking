@@ -2,6 +2,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const APP_ROOT = '/usr/src/WealthTrack';
+const cors = require('cors');
 
 const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
@@ -106,6 +107,46 @@ class Middlewares {
   constructor() {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
+
+    // Add CORS configuration
+    this.corsOptions = {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, Postman)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        const allowedOrigins = [
+          // Add your allowed origins here
+          'http://localhost:3000',          // Development
+          'exp://localhost:19000',          // Expo development server
+          'exp://192.168.x.x:19000', // Local network IP for mobile device testing
+          // 'https://your-production-domain.com', // Production web client
+          // 'capacitor://localhost',          // Capacitor/Ionic
+          // 'ionic://localhost',              // Ionic specific
+        ];
+
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'X-Refresh-Token', // For refresh token
+        'Accept',
+      ],
+      credentials: true, // Allow credentials (cookies)
+      maxAge: 86400, // Cache preflight requests for 24 hours
+      exposedHeaders: ['Content-Length', 'X-Rate-Limit'] // Headers that can be exposed to the client
+    };
+
+    // Create CORS middleware
+    this.corsMiddleware = cors(this.corsOptions);
   }
 
   /**
@@ -170,9 +211,20 @@ class Middlewares {
     logger.info("Handling response");
     if (req.formattedResponse) {
       const { status_code, message, data, headers } = req.formattedResponse;
+
+      // Add security headers
+      const securityHeaders = {
+        // 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', // Forces HTTPS connections
+        'X-Content-Type-Options': 'nosniff', // Prevents MIME type sniffing, Ensures files are treated exactly as declared
+        'X-Frame-Options': 'DENY', // Prevents clickjacking attacks
+        'X-XSS-Protection': '1; mode=block', // Prevents XSS attacks
+        'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`, // Restricts the sources of content that can be loaded
+        ...headers
+      };
+
       const responseLogMessage = `
       Outgoing Response:
-      Headers: ${headers ? JSON.stringify(headers, null, 2) : 'xxx No header xxx'}
+      Headers: ${JSON.stringify(securityHeaders, null, 2)}
       ------------------
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
@@ -181,7 +233,7 @@ class Middlewares {
       `;
       logger.debug(responseLogMessage);
 
-      res.set(headers).status(status_code).json(formatResponse(status_code, message, data));
+      res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
     } else {
       next();
     }
