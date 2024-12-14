@@ -452,7 +452,7 @@ paths:
       tags:
         - "Users"
       summary: "Get current user profile"
-      description: "Retrieve the profile of the currently authenticated user"
+      description: "Retrieve the profile of the currently authenticated user, including profile picture data for local auth users"
       security:
         - BearerAuth: []
       responses:
@@ -470,7 +470,14 @@ paths:
                     type: string
                     example: "User profile retrieved successfully"
                   data:
-                    $ref: "#/components/schemas/UserBase"
+                    allOf:
+                      - $ref: "#/components/schemas/UserBase"
+                      - type: object
+                        properties:
+                          profile_picture_data:
+                            type: string
+                            description: "Base64 encoded image data (only for local auth users)"
+                            example: "data:image/jpeg;base64,..."
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1033,28 +1040,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /users/profile-picture:
-    get:
-      tags:
-        - "Users"
-      summary: Get local user profile picture
-      description: Retrieves the profile picture for the current user that authenticated by local login. the user who use google login already have their profile picture in google's server (get with GET /users).
-      security:
-        - cookieAuth: []
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Profile picture retrieved successfully
-          content:
-            image/*:
-              schema:
-                type: string
-                format: binary
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
 
   # Debt Management Endpoints
   /debts:

@@ -176,10 +176,10 @@ class UserController extends BaseController {
                     // Check if file exists
                     logger.debug(`Checking if file exists: ${user.profile_picture_uri}`);
                     if (fs.existsSync(user.profile_picture_uri)) {
-                        // Create a secure URL for the profile picture
-                        const baseUrl = `${req.protocol}://${req.get('host')}`;
-                        user.profile_picture_url = `${baseUrl}/api/v0.2/users/profile-picture`;
-                        logger.debug(`profile_picture_url: ${user.profile_picture_url}`);
+                        // Read and encode the image file
+                        const imageBuffer = fs.readFileSync(user.profile_picture_uri);
+                        const imageBase64 = imageBuffer.toString('base64');
+                        user.profile_picture_data = `data:image/jpeg;base64,${imageBase64}`;
                         user.profile_picture_name = originalFilename;
                         logger.debug(`profile_picture_name: ${user.profile_picture_name}`);
                     } else {
@@ -205,37 +205,6 @@ class UserController extends BaseController {
                 next(error);
             } else {
                 next(MyAppErrors.internalServerError('Error retrieving user', { details: error.message }));
-            }
-        }
-    }
-
-    async getLocalProfilePicture(req, res, next) {
-        try {
-            logger.info('request received for getLocalProfilePicture');
-            const user = await super.getCurrentUser(req);
-            logger.debug(`user: ${JSON.stringify(user)}`);
-            if (!user.profile_picture_uri || user.profile_picture_uri.startsWith('http')) {
-                logger.error('the profile picture uri is not locally stored');
-                throw MyAppErrors.notFound('the profile picture uri is not locally stored');
-            }
-
-            logger.debug(`finding path: ${user.profile_picture_uri}`);
-            const exists = await fs.existsSync(user.profile_picture_uri);
-            logger.debug(`exists: ${exists}`);
-            if (!exists) {
-                logger.error('Profile picture file not found');
-                throw MyAppErrors.notFound('Profile picture file not found');
-            }
-            logger.info('Profile picture file found');
-
-            logger.debug(`sending file: ${path.resolve(user.profile_picture_uri)}`);
-            // Modified this line to use absolute path without root option
-            res.sendFile(path.resolve(user.profile_picture_uri));
-        } catch (error) {
-            if (error instanceof MyAppErrors) {
-                next(error);
-            } else {
-                next(MyAppErrors.internalServerError('Error retrieving profile picture', { details: error.message }));
             }
         }
     }

@@ -43,7 +43,6 @@ if (NODE_ENV == 'development') {
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/users/profile-picture': ['GET'],
     '/banks': ['POST', 'GET'],
     '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -124,7 +123,6 @@ router.use([
 });
 
 // SECTION Protected routes definitions
-router.get('/users/profile-picture', userController.getLocalProfilePicture);
 router.get('/users', userController.getUser);
 router.patch('/users', mdw.conditionalProfilePictureUpload, userController.updateUser);
 router.delete('/users', userController.deleteUser);
