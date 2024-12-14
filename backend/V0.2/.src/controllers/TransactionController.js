@@ -270,6 +270,11 @@ class TransactionController extends BaseController {
                 req.formattedResponse = formatResponse(200, 'No transaction found', null);
                 return next();
             }
+            if (fs.existsSync(transaction.slip_uri)) {
+                const imageBuffer = fs.readFileSync(transaction.slip_uri);
+                const imageBase64 = imageBuffer.toString('base64');
+                transaction.slip_data = `data:image/jpeg;base64,${imageBase64}`;
+            }
 
             const user = await super.getCurrentUser(req);
             if (!super.verifyOwnership(user, transaction)) {
