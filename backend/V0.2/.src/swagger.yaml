@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: WealthTrack API
   description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
-  version: "0.2.1"
+  version: "0.2.3"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
@@ -1868,6 +1868,144 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /budgets:
+    post:
+      tags:
+        - "Budget"
+      summary: Create a new budget
+      description: Creates a new budget for a specific expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - expense_type
+                - monthly_limit
+              properties:
+                expense_type:
+                  type: string
+                  description: Type of expense for this budget
+                  example: "FOOD"
+                monthly_limit:
+                  type: number
+                  description: Monthly spending limit
+                  example: 5000
+      responses:
+        "201":
+          description: Budget created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags:
+        - "Budget"
+      summary: Get all budgets
+      description: Retrieves all budgets for the current user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budgets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /budgets/{expenseType}:
+    parameters:
+      - in: path
+        name: expenseType
+        required: true
+        schema:
+          type: string
+        description: Type of expense
+    get:
+      tags:
+        - "Budget"
+      summary: Get specific budget
+      description: Retrieves a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budget retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Budget"
+      summary: Update specific budget
+      description: Updates a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                monthly_limit:
+                  type: number
+                  description: New monthly spending limit
+                  example: 6000
+      responses:
+        "200":
+          description: Budget updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Budget"
+      summary: Delete specific budget
+      description: Deletes a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budget deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth: # For mobile platform
@@ -2984,6 +3122,66 @@ components:
                 account_name: "JOHN DOE"
                 bank_name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
                 bank_name_th: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+
+    BudgetResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budget operation successful"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            national_id:
+              type: string
+              example: "1234567890123"
+            expense_type:
+              type: string
+              example: "FOOD"
+            monthly_limit:
+              type: number
+              example: 5000
+            current_spending:
+              type: number
+              example: 2500
+            month:
+              type: string
+              format: date
+              example: "2024-03-01"
+
+    BudgetsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budgets retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetResponse/properties/data"
+          example:
+            - id: "123e4567-e89b-12d3-a456-426614174000"
+              national_id: "1234567890123"
+              expense_type: "FOOD"
+              monthly_limit: 5000
+              current_spending: 2500
+              month: "2024-03-01"
+            - id: "987f6543-e21b-42d3-a456-556642440000"
+              national_id: "1234567890123"
+              expense_type: "ENTERTAINMENT"
+              monthly_limit: 3000
+              current_spending: 1500
+              month: "2024-03-01"
 
   responses:
     BadRequest:

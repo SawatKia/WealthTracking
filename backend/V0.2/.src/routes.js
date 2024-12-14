@@ -15,6 +15,7 @@ const cacheController = require('./controllers/CacheController');
 const AuthController = require('./controllers/AuthController');
 const DebtController = require('./controllers/DebtController');
 const TransactionController = require('./controllers/TransactionController');
+const BudgetController = require('./controllers/BudgetController');
 
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse } = Utils;
@@ -29,6 +30,7 @@ const fiController = new FinancialInstitutionController();
 const authController = new AuthController();
 const debtController = new DebtController();
 const transactionController = new TransactionController();
+const budgetController = new BudgetController();
 if (NODE_ENV == 'development') {
     logger.info('Generating swagger documentation');
     const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
@@ -64,6 +66,8 @@ const allowedMethods = {
     '/transactions/summary/monthly': ['GET'],
     '/transactions/account/:account_number/:fi_code': ['GET'],
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
+    '/budgets': ['GET', 'POST'],
+    '/budgets/:expenseType': ['GET', 'PATCH', 'DELETE'],
 }
 
 if (NODE_ENV != 'production') {
@@ -105,7 +109,8 @@ router.use([
     '/slip',
     '/fis',
     '/debts',
-    '/transactions'
+    '/transactions',
+    '/budgets'
 ], async (req, res, next) => {
     try {
         if (req.formattedResponse) {
@@ -163,6 +168,12 @@ router.get('/transactions/account/:account_number/:fi_code', transactionControll
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
 router.delete('/transactions/:transaction_id', transactionController.deleteTransaction);
+
+router.post('/budgets', budgetController.createBudget);
+router.get('/budgets', budgetController.getAllBudgets);
+router.get('/budgets/:expenseType', budgetController.getBudget);
+router.patch('/budgets/:expenseType', budgetController.updateBudget);
+router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 
 router.use(mdw.unknownRouteHandler);
 router.use(mdw.responseHandler);
