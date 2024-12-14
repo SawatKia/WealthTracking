@@ -496,6 +496,20 @@ class TransactionModel extends BaseModel {
     }
   }
 
+  /**
+   * Get monthly transaction summary
+   * @param {string} nationalId - National ID of the user
+   * @param {string} type - Type of transactions. if null, get all type
+   * @param {number} monthCount - Number of months to get summary. default is 12
+   * @returns {Promise<Array<Object>>} - Monthly summary by type
+   * @example
+   * // Get monthly summary for current month
+   * await getMonthlySummary('1234567890123');
+   * // Get monthly summary for current month for income type
+   * await getMonthlySummary('1234567890123', 'Income');
+   * // Get monthly summary for last 6 months
+   * await getMonthlySummary('1234567890123', null, 6);
+   */
   async getMonthlySummary(nationalId, type = null, monthCount = 12) {
     try {
       logger.info('Getting monthly transaction summary');
@@ -520,12 +534,13 @@ class TransactionModel extends BaseModel {
           FROM transactions
           WHERE national_id = $1
           ${typeCondition}
+          AND transaction_datetime >= date_trunc('month', current_date - interval '${monthCount - 1} months')
           GROUP BY 
             date_trunc('month', transaction_datetime)::date,
             category
         )
         SELECT 
-          months.month_start,
+          to_char(months.month_start, 'YYYY-MM-DD') as month,
           COALESCE(SUM(CASE WHEN mt.category = 'Income' THEN mt.total_amount ELSE 0 END), 0) as income,
           COALESCE(SUM(CASE WHEN mt.category = 'Expense' THEN mt.total_amount ELSE 0 END), 0) as expense
         FROM months
@@ -537,10 +552,11 @@ class TransactionModel extends BaseModel {
       const result = await this.executeQuery(query, params);
 
       return result.rows.map(row => ({
-        month: row.month_start,
+        month: row.month,
         summary: {
           income: parseFloat(row.income),
-          expense: parseFloat(row.expense)
+          expense: parseFloat(row.expense),
+          balance: parseFloat((parseFloat(row.income) - parseFloat(row.expense)).toFixed(2))
         }
       }));
     } catch (error) {
@@ -550,73 +566,85 @@ class TransactionModel extends BaseModel {
   }
 
   /**
-   * Get summary expense of specific month by type
+   * Get transaction summary by type for a specific month
    * @param {string} nationalId - National ID of the user
-   * @param {string} type - Type of transactions. if null, get all type
-   * @param {number} month - Month of transactions. if null, get current month
-   * @returns {Promise<Array<Object>>} - Monthly summary by type
+   * @param {string|null} type - Specific transaction type to filter by. If null, returns summary for all types
+   * @param {number|null} month - Month number (1-12). If null, uses current month
+   * @returns {Promise<Array<{type: string, totalAmount: number}>|number>} 
+   *          - If type is null: Returns array of summaries for all types
+   *          - If type is specified: Returns total amount for that specific type
+   * @throws {Error} If national ID is missing or month is invalid
+   * @example
+   * // Get summary for all types in current month
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123');
+   * // Get summary for all types in March
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', null, 3);
+   * // Get summary for 'Food' type in current month
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', 'Food');
+   * // Get summary for 'Food' type in March
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', 'Food', 3);
    */
-  async getSummaryOnSpecificMonthByType(nationalId, type = null, month = null) {
+  async getSummaryExpenseOnSpecificMonthByType(nationalId, type = null, month = null) {
     try {
       logger.info('Getting summary on specific month by type');
       logger.debug(`Parameters: nationalId=${nationalId}, type=${type}, month=${month}`);
 
-      // Create a date object for the first day of the specified month
-      let targetDate;
-      if (month === null) {
-        // If month is null, use current month
-        targetDate = new Date();
-      } else {
-        // Validate month input
-        if (month < 1 || month > 12) {
-          logger.error('Invalid month');
-          throw new Error('Invalid month');
-        }
-        // Create date for the specified month (month - 1 because JavaScript months are 0-based)
-        targetDate = new Date(new Date().getFullYear(), month - 1, 1);
-      }
-
-      // Format the date to ISO string format (YYYY-MM-DD)
-      const formattedDate = targetDate.toISOString().split('T')[0];
-
-      if (nationalId === null || nationalId === undefined) {
+      if (!nationalId) {
         logger.error('National ID is required');
         throw new Error('National ID is required');
       }
 
-      let summary = [];
-      // if type is null, get all type
-      if (type === null || type === undefined) {
-        logger.info('Getting expense summary by all type');
-        const query = `
+      // Validate month if provided
+      if (month !== null && (month < 1 || month > 12)) {
+        logger.error('Month must be between 1 and 12');
+        throw new Error('Month must be between 1 and 12');
+      }
+
+      // Create a date object for the first day of the specified month
+      let targetDate = month === null
+        ? new Date()
+        : new Date(new Date().getFullYear(), month - 1, 1);
+
+      // Format the date to ISO string format (YYYY-MM-DD)
+      const formattedDate = targetDate.toISOString().split('T')[0];
+
+      let query;
+      let params;
+
+      if (type === null) {
+        // Get summary for all types
+        query = `
           SELECT type, SUM(amount) AS total_amount 
           FROM transactions
           WHERE national_id = $1 
+          AND category = 'Expense'
           AND date_trunc('month', transaction_datetime) = date_trunc('month', $2::date)
           GROUP BY type
+          ORDER BY total_amount DESC
         `;
-        const result = await this.executeQuery(query, [nationalId, formattedDate]);
-        summary = result.rows.map(row => ({
-          type: row.type,
-          totalAmount: parseFloat(row.total_amount)
-        }));
-      } else if (type) {
-        logger.info(`Getting expense summary by type: ${type}`);
-        const query = `
-          SELECT * FROM transactions
+        params = [nationalId, formattedDate];
+      } else {
+        // Get summary for specific type
+        query = `
+          SELECT SUM(amount) AS total_amount 
+          FROM transactions
           WHERE national_id = $1 
           AND type = $2 
+          AND category = 'Expense'
           AND date_trunc('month', transaction_datetime) = date_trunc('month', $3::date)
         `;
-        const result = await this.executeQuery(query, [nationalId, type, formattedDate]);
-        summary = result.rows.reduce((acc, curr) => {
-          acc += parseFloat(curr.amount);
-          return acc;
-        }, 0);
-      } else {
-        logger.error('invalid type');
-        throw new Error('invalid type');
+        params = [nationalId, type, formattedDate];
       }
+
+      const result = await this.executeQuery(query, params);
+
+      // Format the response based on whether type was specified
+      const summary = type === null
+        ? result.rows.map(row => ({
+          type: row.type,
+          totalAmount: parseFloat(row.total_amount || 0)
+        }))
+        : parseFloat(result.rows[0]?.total_amount || 0);
 
       logger.debug(`Summary: ${JSON.stringify(summary)}`);
       return summary;
