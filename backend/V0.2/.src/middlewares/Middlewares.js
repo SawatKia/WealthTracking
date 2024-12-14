@@ -221,15 +221,25 @@ class Middlewares {
         'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`, // Restricts the sources of content that can be loaded
         ...headers
       };
+      // Format headers with truncated values
+      const formattedHeaders = Object.entries(securityHeaders)
+        .map(([key, value]) => {
+          const truncatedValue = value && value.length > 50
+            ? `${value.substring(0, 50)}... [truncated]`
+            : value;
+          return `          ${key.padEnd(26)}: ${truncatedValue}`;
+        })
+        .join('\n');
 
       const responseLogMessage = `
       Outgoing Response:
-      Headers: ${JSON.stringify(securityHeaders, null, 2)}
+      Headers:
+      ${formattedHeaders}
       ------------------
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
       Message: ${message}
-      Data: ${data ? JSON.stringify(data, null, 6).substring(0, 100) + (JSON.stringify(data, null, 6).length > 100 ? '...[truncated]...' : '') : 'No data'}
+      Data: ${data ? JSON.stringify(data, null, 8).substring(0, 150) + (JSON.stringify(data, null, 8).length > 150 ? '...[truncated]...' : '') : ''}
       `;
       logger.debug(responseLogMessage);
 
