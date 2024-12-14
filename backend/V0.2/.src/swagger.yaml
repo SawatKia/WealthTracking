@@ -1745,7 +1745,7 @@ paths:
           required: false
           schema:
             type: string
-            description: Filter by specific transaction type
+          description: Filter by specific transaction type, null to get all type
           example: "Salary"
         - in: query
           name: monthCount
@@ -1790,6 +1790,74 @@ paths:
                               type: number
                               format: float
                               example: 30000.00
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /transactions/summary/current-month-expenses:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get current month expenses by type
+      description: Retrieves current month expenses grouped by type or total amount for a specific type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Specific transaction type to filter by. If not provided, returns summary for all types
+          example: "Food"
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month number (1-12). If not provided, uses current month
+          example: 3
+      responses:
+        "200":
+          description: Current month expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Current month expenses by type retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        oneOf:
+                          - type: array
+                            description: When no specific type is provided
+                            items:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "Food"
+                                totalAmount:
+                                  type: number
+                                  format: float
+                                  example: 1500.00
+                          - type: number
+                            description: When specific type is provided
+                            format: float
+                            example: 1500.00
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
