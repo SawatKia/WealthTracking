@@ -78,6 +78,10 @@ class TransactionModel extends BaseModel {
         "string.base": "Note must be a string.",
       }),
 
+      slip_uri: Joi.string().allow(null, "").optional().messages({
+        "string.base": "Slip URI must be a string.",
+      }),
+
       national_id: Joi.string()
         .length(13)
         .pattern(/^[0-9]*$/, "numeric characters only")
