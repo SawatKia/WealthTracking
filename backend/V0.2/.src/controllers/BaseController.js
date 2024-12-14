@@ -171,7 +171,8 @@ class BaseController {
             logger.error('Resource is empty');
             throw new Error('Resource is empty');
         }
-        logger.debug(`resourceArray: ${JSON.stringify(resourceArray, null, 2).slice(0, 5)}, ...remaining: ${resourceArray.length - 5} items...`);
+        const maxLength = 5;
+        logger.debug(`resourceArray: ${JSON.stringify(resourceArray, null, 2).slice(0, maxLength)}, ${resourceArray.length > maxLength ? '...remaining: ' + (resourceArray.length - maxLength) + ' items...' : ''}`);
 
 
         // Check if any resource doesn't match the user's national_id
