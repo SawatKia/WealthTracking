@@ -2,6 +2,7 @@ const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const UserModel = require('../models/UserModel');
 const { log } = require('winston');
+const types = require('../../statics/types.json');
 
 const logger = Logger('BaseController');
 
@@ -219,6 +220,43 @@ class BaseController {
 
         logger.debug(`Filtered user data: ${JSON.stringify(filteredUser)}`);
         return filteredUser;
+    }
+
+    verifyType(category, type) {
+        logger.info('Verifying type');
+        logger.debug(`category: ${category}, type: ${type}`);
+
+        // Validate category first if provided
+        if (category && !['Income', 'Expense', 'Transfer'].includes(category)) {
+            throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
+        }
+
+        // If no type provided, just validate category
+        if (!type) {
+            return true;
+        }
+
+        // Get allowed types for the category
+        const allowedTypes = types[category] || [];
+        if (allowedTypes.length === 0) {
+            throw MyAppErrors.badRequest(`Invalid category: ${category}`);
+        }
+
+        if (!allowedTypes.includes(type)) {
+            // Find similar types using string similarity
+            const similarTypes = allowedTypes.filter(t =>
+                t.toLowerCase().includes(type.toLowerCase()) ||
+                type.toLowerCase().includes(t.toLowerCase())
+            );
+
+            const errorMessage = `Invalid type "${type}" for ${category}. Must be one of: ${allowedTypes.join(', ')}` +
+                (similarTypes.length > 0 ? `. Did you mean: ${similarTypes.join(', ')}?` : '');
+
+            throw MyAppErrors.badRequest(errorMessage);
+        }
+
+        logger.info('Type verification successful');
+        return true;
     }
 }
 module.exports = BaseController;

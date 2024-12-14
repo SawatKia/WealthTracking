@@ -29,8 +29,12 @@ class BudgetController extends BaseController {
             const requiredFields = ['expense_type', 'monthly_limit'];
             const validatedFields = await super.verifyField(req.body, requiredFields, this.BudgetModel);
             logger.debug(`Validated fields: ${JSON.stringify(validatedFields, null, 2)}`);
+
+            super.verifyType('Expense', validatedFields.expense_type);
+
             const currentUser = await super.getCurrentUser(req);
             logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
+
             const data = {
                 ...validatedFields,
                 national_id: currentUser.national_id,
@@ -39,6 +43,7 @@ class BudgetController extends BaseController {
             logger.debug(`Data to be created: ${JSON.stringify(data, null, 2)}`);
             const budget = await this.BudgetModel.createBudget(data);
             logger.debug(`Budget created: ${JSON.stringify(budget, null, 2)}`);
+
             req.formattedResponse = formatResponse(201, 'Budget created successfully', budget);
             next();
         } catch (error) {
@@ -57,9 +62,8 @@ class BudgetController extends BaseController {
         try {
             logger.info('Getting budget');
             const currentUser = await super.getCurrentUser(req);
-            if (!types.Expense.includes(req.params.expenseType)) {
-                throw MyAppErrors.badRequest(`Invalid expense type: ${req.params.expenseType}, valid expense types are: ${types.Expense.join(', ')}`);
-            }
+
+            super.verifyType('Expense', req.params.expenseType);
 
             let budget = await this.BudgetModel.findOne({
                 national_id: currentUser.national_id,
@@ -143,9 +147,8 @@ class BudgetController extends BaseController {
             const requiredFields = ['expense_type', 'monthly_limit'];
             const validatedFields = await super.verifyField(data, requiredFields, this.BudgetModel);
             logger.debug('Validated fields: ', JSON.stringify(validatedFields, null, 2));
-            if (!types.Expense.includes(validatedFields.expense_type)) {
-                throw new Error(`Invalid expense type: ${validatedFields.expense_type}, valid expense types are: ${types.Expense.join(', ')}`);
-            }
+
+            super.verifyType('Expense', validatedFields.expense_type);
 
             const currentUser = await super.getCurrentUser(req);
 
@@ -206,10 +209,9 @@ class BudgetController extends BaseController {
         try {
             logger.info('Deleting budget');
             const currentUser = await super.getCurrentUser(req);
-            if (!types.Expense.includes(req.params.expenseType)) {
-                logger.error(`Invalid expense type: ${req.params.expenseType}, valid expense types are: ${types.Expense.join(', ')}`);
-                throw MyAppErrors.badRequest(`Invalid expense type: ${req.params.expenseType}, valid expense types are: ${types.Expense.join(', ')}`);
-            }
+
+            super.verifyType('Expense', req.params.expenseType);
+
             const budget = await this.BudgetModel.findOne({
                 national_id: currentUser.national_id,
                 expense_type: req.params.expenseType,
