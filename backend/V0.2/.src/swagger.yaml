@@ -975,37 +975,23 @@ paths:
       summary: Verify slip data
       tags:
         - Slip
-      description: |
-        Verifies slip data using payload, image file, **or** base64 encoded image. 
-        You can test by sending any preferred format which does not need to be valid slip file format.
+      description: Verifies slip data from an image file and creates a transaction record.
       security:
         - cookieAuth: []
         - bearerAuth: []
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - imageFile
               properties:
                 imageFile:
                   type: string
                   format: binary
-                  description: Image file of the slip
-          application/json:
-            schema:
-              type: object
-              properties:
-                base64Image:
-                  type: string
-                  description: Base64 encoded image of the slip
-                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAQABADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AP/2Q=="
-      parameters:
-        - in: query
-          name: payload
-          schema:
-            type: string
-          description: QR code payload data
-          example: "00000000000000000000000000000000000000000000000000000000000"
+                  description: Image file of the slip (jpg, jpeg, png, gif, max 5MB)
       responses:
         "200":
           description: Successful verification
