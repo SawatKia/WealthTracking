@@ -23,7 +23,6 @@ class UserController extends BaseController {
         this.getUser = this.getUser.bind(this);
         this.updateUser = this.updateUser.bind(this);
         this.deleteUser = this.deleteUser.bind(this);
-        this.getLocalProfilePicture = this.getLocalProfilePicture.bind(this);
     }
 
     normalizeUsernameEmail(username = null, email = null) {
