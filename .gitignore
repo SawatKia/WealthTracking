@@ -1,5 +1,6 @@
 extensions.json
 settings.json
+service-account.json
 
 # Database data and all its files
 postgres_data/*
