@@ -1797,7 +1797,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /transactions/summary/current-month-expenses:
+  /transactions/summary/month-expenses:
     get:
       tags:
         - "Transaction"

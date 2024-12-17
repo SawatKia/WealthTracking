@@ -63,7 +63,7 @@ const allowedMethods = {
     '/transactions': ['GET', 'POST'],
     '/transactions/list/types': ['GET'],
     '/transactions/summary/monthly': ['GET'],
-    '/transactions/summary/current-month-expenses': ['GET'],
+    '/transactions/summary/month-expenses': ['GET'],
     '/transactions/account/:account_number/:fi_code': ['GET'],
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
     '/budgets': ['GET', 'POST'],
@@ -163,7 +163,7 @@ router.post('/transactions', transactionController.createTransaction);
 router.get('/transactions', transactionController.getAllTransactions);
 router.get('/transactions/list/types', transactionController.getAllTypes);
 router.get('/transactions/summary/monthly', transactionController.getMonthlySummary);
-router.get('/transactions/summary/current-month-expenses', transactionController.getSummaryExpenseOnSpecificMonthByType);
+router.get('/transactions/summary/month-expenses', transactionController.getSummaryExpenseOnSpecificMonthByType);
 router.get('/transactions/account/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
