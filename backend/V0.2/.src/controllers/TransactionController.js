@@ -472,11 +472,10 @@ class TransactionController extends BaseController {
         try {
             logger.info('Getting monthly transaction summary');
             const user = await super.getCurrentUser(req);
-            let monthCount = 12;
-            let type;
 
             // Get optional type parameter from query
-            ({ type, monthCount } = req.query);
+            let { type, monthCount } = req.query;
+            monthCount = monthCount || 12;
             logger.debug(`received type: ${type}, monthCount: ${monthCount}`);
 
             // If type is provided, validate it exists in types
@@ -529,7 +528,7 @@ class TransactionController extends BaseController {
 
             req.formattedResponse = formatResponse(
                 200,
-                `${type ? type : 'all types'} expenses summary for month ${monthName} retrieved successfully`,
+                `${type ? type : 'all types'} expenses summary for ${month ? "month " + monthName : "current month (" + monthName + ")"} retrieved successfully`,
                 { summary }
             );
             next();
