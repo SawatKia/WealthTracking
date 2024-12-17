@@ -5,6 +5,7 @@ const DebtModel = require("./models/DebtModel");
 const TransactionModel = require("./models/TransactionModel");
 
 const tesseractService = require("./services/Tesseract");
+const documentAiService = require("./services/DocumentAiService");
 const pgClient = require("./services/PgClient");
 const easySlip = require("./services/EasySlip");
 const ollama = require("./services/OllamaService");
@@ -252,6 +253,7 @@ const initializeServices = async () => {
 
   await easySlip.init();
   await ollama.init();
+  await documentAiService.init();
 
   const fi = new FiModel();
   await fi.initializeData();
