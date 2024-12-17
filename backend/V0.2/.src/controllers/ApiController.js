@@ -13,6 +13,7 @@ const EasySlipService = require("../services/EasySlip");
 const QRCodeReader = require('../utilities/QRCodeReader');
 const TesseractService = require('../services/Tesseract');
 const OllamaService = require('../services/OllamaService');
+const DocumentAiService = require('../services/DocumentAiService');
 const appConfigs = require('../configs/AppConfigs');
 const types = require('../../statics/types.json');
 
@@ -111,7 +112,7 @@ class ApiController {
     try {
       // If imagePath is already a buffer (from req.file.buffer), use it directly
       const imageData = Buffer.isBuffer(imageBuffer) ? imageBuffer : fs.readFileSync(imageBuffer);
-      const result = await TesseractService.recognize(imageData);
+      const result = await DocumentAiService.recognize(imageData);
       logger.debug(`result: ${result}`);
       return result;
     } catch (error) {
