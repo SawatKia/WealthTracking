@@ -331,9 +331,9 @@ class AuthController extends BaseController {
 
             //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
-                appConfigs.google.clientId,
-                appConfigs.google.clientSecret,
-                appConfigs.google.redirectUri
+                appConfigs.googleAuth.clientId,
+                appConfigs.googleAuth.clientSecret,
+                appConfigs.googleAuth.redirectUri
             );
 
             const url = oAuth2Client.generateAuthUrl({
@@ -376,9 +376,9 @@ class AuthController extends BaseController {
 
             //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
-                appConfigs.google.clientId,
-                appConfigs.google.clientSecret,
-                appConfigs.google.redirectUri
+                appConfigs.googleAuth.clientId,
+                appConfigs.googleAuth.clientSecret,
+                appConfigs.googleAuth.redirectUri
             );
 
             const { tokens } = await oAuth2Client.getToken(code);

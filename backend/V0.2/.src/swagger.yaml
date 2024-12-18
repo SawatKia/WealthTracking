@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: WealthTrack API
   description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
-  version: "0.2.1"
+  version: "0.2.3"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
@@ -452,7 +452,7 @@ paths:
       tags:
         - "Users"
       summary: "Get current user profile"
-      description: "Retrieve the profile of the currently authenticated user"
+      description: "Retrieve the profile of the currently authenticated user, including profile picture data for local auth users"
       security:
         - BearerAuth: []
       responses:
@@ -470,7 +470,14 @@ paths:
                     type: string
                     example: "User profile retrieved successfully"
                   data:
-                    $ref: "#/components/schemas/UserBase"
+                    allOf:
+                      - $ref: "#/components/schemas/UserBase"
+                      - type: object
+                        properties:
+                          profile_picture_data:
+                            type: string
+                            description: "Base64 encoded image data (only for local auth users)"
+                            example: "data:image/jpeg;base64,..."
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -975,37 +982,23 @@ paths:
       summary: Verify slip data
       tags:
         - Slip
-      description: |
-        Verifies slip data using payload, image file, **or** base64 encoded image. 
-        You can test by sending any preferred format which does not need to be valid slip file format.
+      description: Verifies slip data from an image file and creates a transaction record.
       security:
         - cookieAuth: []
         - bearerAuth: []
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - imageFile
               properties:
                 imageFile:
                   type: string
                   format: binary
-                  description: Image file of the slip
-          application/json:
-            schema:
-              type: object
-              properties:
-                base64Image:
-                  type: string
-                  description: Base64 encoded image of the slip
-                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAQABADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AP/2Q=="
-      parameters:
-        - in: query
-          name: payload
-          schema:
-            type: string
-          description: QR code payload data
-          example: "00000000000000000000000000000000000000000000000000000000000"
+                  description: Image file of the slip (jpg, jpeg, png, gif, max 5MB)
       responses:
         "200":
           description: Successful verification
@@ -1047,28 +1040,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
-  /users/profile-picture:
-    get:
-      tags:
-        - "Users"
-      summary: Get local user profile picture
-      description: Retrieves the profile picture for the current user that authenticated by local login. the user who use google login already have their profile picture in google's server (get with GET /users).
-      security:
-        - cookieAuth: []
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Profile picture retrieved successfully
-          content:
-            image/*:
-              schema:
-                type: string
-                format: binary
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
 
   # Debt Management Endpoints
   /debts:
@@ -1774,7 +1745,7 @@ paths:
           required: false
           schema:
             type: string
-            description: Filter by specific transaction type
+          description: Filter by specific transaction type, null to get all type
           example: "Salary"
         - in: query
           name: monthCount
@@ -1826,6 +1797,74 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /transactions/summary/month-expenses:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get current month expenses by type
+      description: Retrieves current month expenses grouped by type or total amount for a specific type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Specific transaction type to filter by. If not provided, returns summary for all types
+          example: "Food"
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month number (1-12). If not provided, uses current month
+          example: 3
+      responses:
+        "200":
+          description: Current month expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Current month expenses by type retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        oneOf:
+                          - type: array
+                            description: When no specific type is provided
+                            items:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "Food"
+                                totalAmount:
+                                  type: number
+                                  format: float
+                                  example: 1500.00
+                          - type: number
+                            description: When specific type is provided
+                            format: float
+                            example: 1500.00
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /transactions/list/types:
     get:
       tags:
@@ -1867,6 +1906,144 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /budgets:
+    post:
+      tags:
+        - "Budget"
+      summary: Create a new budget
+      description: Creates a new budget for a specific expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - expense_type
+                - monthly_limit
+              properties:
+                expense_type:
+                  type: string
+                  description: Type of expense for this budget
+                  example: "FOOD"
+                monthly_limit:
+                  type: number
+                  description: Monthly spending limit
+                  example: 5000
+      responses:
+        "201":
+          description: Budget created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags:
+        - "Budget"
+      summary: Get all budgets
+      description: Retrieves all budgets for the current user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budgets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /budgets/{expenseType}:
+    parameters:
+      - in: path
+        name: expenseType
+        required: true
+        schema:
+          type: string
+        description: Type of expense
+    get:
+      tags:
+        - "Budget"
+      summary: Get specific budget
+      description: Retrieves a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budget retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Budget"
+      summary: Update specific budget
+      description: Updates a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                monthly_limit:
+                  type: number
+                  description: New monthly spending limit
+                  example: 6000
+      responses:
+        "200":
+          description: Budget updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Budget"
+      summary: Delete specific budget
+      description: Deletes a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budget deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   securitySchemes:
@@ -2984,6 +3161,66 @@ components:
                 account_name: "JOHN DOE"
                 bank_name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
                 bank_name_th: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+
+    BudgetResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budget operation successful"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            national_id:
+              type: string
+              example: "1234567890123"
+            expense_type:
+              type: string
+              example: "FOOD"
+            monthly_limit:
+              type: number
+              example: 5000
+            current_spending:
+              type: number
+              example: 2500
+            month:
+              type: string
+              format: date
+              example: "2024-03-01"
+
+    BudgetsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budgets retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetResponse/properties/data"
+          example:
+            - id: "123e4567-e89b-12d3-a456-426614174000"
+              national_id: "1234567890123"
+              expense_type: "FOOD"
+              monthly_limit: 5000
+              current_spending: 2500
+              month: "2024-03-01"
+            - id: "987f6543-e21b-42d3-a456-556642440000"
+              national_id: "1234567890123"
+              expense_type: "ENTERTAINMENT"
+              monthly_limit: 3000
+              current_spending: 1500
+              month: "2024-03-01"
 
   responses:
     BadRequest:

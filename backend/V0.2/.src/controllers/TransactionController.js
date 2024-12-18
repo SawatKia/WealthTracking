@@ -23,8 +23,9 @@ class TransactionController extends BaseController {
         this.updateTransaction = this.updateTransaction.bind(this);
         this.deleteTransaction = this.deleteTransaction.bind(this);
         this.getTransactionsByAccount = this.getTransactionsByAccount.bind(this);
-        this.getMonthlySummary = this.getMonthlySummary.bind(this);
         this.getAllTypes = this.getAllTypes.bind(this);
+        this.getMonthlySummary = this.getMonthlySummary.bind(this);
+        this.getSummaryExpenseOnSpecificMonthByType = this.getSummaryExpenseOnSpecificMonthByType.bind(this);
 
         this.validateBankAccounts = this.validateBankAccounts.bind(this);
         this.validateBankAccountBalance = this.validateBankAccountBalance.bind(this);
@@ -107,24 +108,8 @@ class TransactionController extends BaseController {
             logger.info('type is overridden to "Debt Payment"');
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
-            // Validate category
-            if (!['Income', 'Expense', 'Transfer'].includes(validatedData.category)) {
-                throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
-            }
-            logger.info('category is valid');
-
-            // Validate type based on category
-            const allowedTypes = types[validatedData.category] || [];
-            logger.debug(`allowedTypes for ${validatedData.category}: ${allowedTypes}`);
-            if (allowedTypes.length === 0) {
-                logger.error(`Invalid category: ${validatedData.category}`);
-                throw MyAppErrors.badRequest(`Invalid category: ${validatedData.category}`);
-            }
-
-            if (!allowedTypes.includes(validatedData.type)) {
-                logger.error(`Invalid type for ${validatedData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-                throw MyAppErrors.badRequest(`Invalid type for ${validatedData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-            }
+            // Validate category  
+            super.verifyType(validatedData.category, validatedData.type);
             logger.info('type is valid');
 
             // Validate bank accounts based on category
@@ -270,6 +255,11 @@ class TransactionController extends BaseController {
                 req.formattedResponse = formatResponse(200, 'No transaction found', null);
                 return next();
             }
+            if (fs.existsSync(transaction.slip_uri)) {
+                const imageBuffer = fs.readFileSync(transaction.slip_uri);
+                const imageBase64 = imageBuffer.toString('base64');
+                transaction.slip_data = `data:image/jpeg;base64,${imageBase64}`;
+            }
 
             const user = await super.getCurrentUser(req);
             if (!super.verifyOwnership(user, transaction)) {
@@ -319,16 +309,7 @@ class TransactionController extends BaseController {
 
             // Validate category and type if they are being updated
             if (updateData.category) {
-                if (!['Income', 'Expense', 'Transfer'].includes(updateData.category)) {
-                    throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
-                }
-
-                if (updateData.type) {
-                    const allowedTypes = types[updateData.category] || [];
-                    if (!allowedTypes.includes(updateData.type)) {
-                        throw MyAppErrors.badRequest(`Invalid type for ${updateData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-                    }
-                }
+                super.verifyType(updateData.category, updateData.type);
                 logger.info('category and type are valid');
             }
             logger.info('category and type are not being updated');
@@ -491,20 +472,25 @@ class TransactionController extends BaseController {
         try {
             logger.info('Getting monthly transaction summary');
             const user = await super.getCurrentUser(req);
-            let monthCount = 12;
-            let type;
 
             // Get optional type parameter from query
-            ({ type, monthCount } = req.query);
-            logger.debug(`type: ${type}, monthCount: ${monthCount}`);
+            let { type, monthCount } = req.query;
+            monthCount = monthCount || 12;
+            logger.debug(`received type: ${type}, monthCount: ${monthCount}`);
 
             // If type is provided, validate it exists in types
             if (type) {
-                const allTypes = [...types.Income, ...types.Expense, ...types.Transfer];
-                if (!allTypes.includes(type)) {
-                    logger.error(`Invalid type: ${type}, allowed types: ${allTypes.join(', ')}`);
-                    throw MyAppErrors.badRequest(`Invalid type. Must be one of: ${allTypes.join(', ')}`);
+                const typeLowerCase = type.toLowerCase();
+                const category = types.Income.some(t => t.toLowerCase() === typeLowerCase) ? 'Income' :
+                    types.Expense.some(t => t.toLowerCase() === typeLowerCase) ? 'Expense' :
+                        types.Transfer.some(t => t.toLowerCase() === typeLowerCase) ? 'Transfer' : null;
+
+                if (!category) {
+                    throw MyAppErrors.badRequest(`Invalid type "${type}". Type not found in any category.`);
                 }
+
+                logger.debug(`impolicited category: ${category}, type: ${type}`);
+                super.verifyType(category, type);
                 logger.info(`type: ${type} is valid`);
             }
 
@@ -513,12 +499,41 @@ class TransactionController extends BaseController {
 
             req.formattedResponse = formatResponse(
                 200,
-                'Monthly summary retrieved successfully',
+                `${monthCount} latest month summary for ${type ? type : 'all types'} retrieved successfully`,
                 { summary }
             );
             next();
         } catch (error) {
             logger.error(`Error getting monthly summary: ${error.message}`);
+            next(error);
+        }
+    }
+
+    async getSummaryExpenseOnSpecificMonthByType(req, res, next) {
+        try {
+            logger.info('Getting expenses by type for current month');
+            const { type, month } = req.query;
+            logger.debug(`type: ${type}, month: ${month}`);
+
+            super.verifyType('Expense', type);
+            logger.info(`type: ${type} is valid`);
+
+            const user = await super.getCurrentUser(req);
+
+            const summary = await this.transactionModel.getSummaryExpenseOnSpecificMonthByType(user.national_id, type, month);
+            logger.debug(`summary: ${JSON.stringify(summary)}`);
+
+            const monthName = new Date(month || new Date()).toLocaleString('en-US', { month: 'long' });
+            logger.debug(`monthName: ${monthName}`);
+
+            req.formattedResponse = formatResponse(
+                200,
+                `${type ? type : 'all types'} expenses summary for ${month ? "month " + monthName : "current month (" + monthName + ")"} retrieved successfully`,
+                { summary }
+            );
+            next();
+        } catch (error) {
+            logger.error(`Error getting current month expenses by type: ${error.message}`);
             next(error);
         }
     }

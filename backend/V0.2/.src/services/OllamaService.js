@@ -3,10 +3,15 @@ const { Logger } = require('../utilities/Utils');
 const appConfigs = require('../configs/AppConfigs');
 const transactionTypes = require('../../statics/types.json');
 const logger = Logger('OllamaService');
+let logUpdate;
 
 class OllamaService {
     constructor() {
         logger.info('Initializing OllamaService');
+        (async () => {
+            const logUpdateModule = await import('log-update');
+            logUpdate = logUpdateModule.default;
+        })();
         this.ollama = new Ollama({
             host: appConfigs.ollama?.host
         });
@@ -48,6 +53,9 @@ Rules:
         this.lastBytesCompleted = 0;
         this.speedHistory = [];
         this.SPEED_HISTORY_SIZE = 20; // Keep last 20 speed measurements
+
+        // Add property for tracking current download
+        this.currentDownloadId = 0;
     }
 
     /**
@@ -154,6 +162,18 @@ Rules:
     }
 
     /**
+     * Create a progress bar string
+     * @param {number} percentage
+     * @param {number} length
+     * @returns {string}
+     */
+    _createProgressBar(percentage, length = 20) {
+        const filledLength = Math.round(length * (percentage / 100));
+        const empty = length - filledLength;
+        return '█'.repeat(filledLength) + '▒'.repeat(empty);
+    }
+
+    /**
      * Pull the model if not available locally
      */
     async _ensureModel() {
@@ -168,30 +188,38 @@ Rules:
                     stream: true
                 });
 
+                // Increment download ID to invalidate previous progress updates
+                this.currentDownloadId++;
+                const thisDownloadId = this.currentDownloadId;
+
                 this.downloadStartTime = Date.now();
                 this.lastProgressUpdate = this.downloadStartTime;
                 this.lastBytesCompleted = 0;
                 this.speedHistory = [];
 
                 for await (const progress of progressResponse) {
+                    // Skip if this isn't the most recent download
+                    if (thisDownloadId !== this.currentDownloadId) continue;
+
                     if (progress.total && progress.completed) {
                         const currentTime = Date.now();
                         const downloadedSize = this._formatSize(progress.completed);
                         const totalSize = this._formatSize(progress.total);
                         const percentage = this._calculateProgress(progress.completed, progress.total);
+                        const progressBar = this._createProgressBar(percentage);
 
                         // Calculate moving average speed and remaining time
                         const avgSpeed = this._updateMovingAverageSpeed(progress.completed, currentTime);
                         const remainingBytes = progress.total - progress.completed;
                         const remainingSeconds = avgSpeed > 0 ? remainingBytes / avgSpeed : 0;
 
-                        setInterval(() => {
-                            logger.info(
-                                `Download progress: ${percentage}% (${downloadedSize} of ${totalSize}) ` +
-                                `Speed: ${this._formatSpeed(avgSpeed)} ` +
-                                `time remaining: ${this._formatTime(remainingSeconds)}`
-                            );
-                        }, 1000);
+                        const progressMessage =
+                            `Downloading ${this.modelName}...\n` +
+                            `${progressBar} ${percentage}% (${downloadedSize}/${totalSize})\n` +
+                            `Speed: ${this._formatSpeed(avgSpeed)}\n` +
+                            `Time remaining: ${this._formatTime(remainingSeconds)}`;
+
+                        logUpdate(progressMessage);
 
                         // Update tracking variables
                         this.lastProgressUpdate = currentTime;
@@ -199,16 +227,21 @@ Rules:
                     }
                 }
 
+                // Clear the progress display when done
+                logUpdate.clear();
+
                 const totalTime = this._formatTime((Date.now() - this.downloadStartTime) / 1000);
                 logger.info(`Model ${this.modelName} pulled successfully in ${totalTime}`);
             } else {
                 logger.info(`Model ${this.modelName} is already available`);
             }
         } catch (error) {
+            logUpdate.clear(); // Clear progress on error
             logger.error('Error ensuring model availability:', error);
             throw new Error(`Failed to ensure model availability: ${error.message}`);
         }
     }
+
 
     /**
      * Initialize the Ollama service and verify connection
@@ -224,7 +257,7 @@ Rules:
 
             // Test the model with a simple prompt
             logger.debug(`Testing model with prompt: "${'This is a test prompt. Please respond with "OK" if you can read this.'}"`);
-            const testResponse = await this.ollama.generate({
+            const testResponse = await this._timedGenerate({
                 model: this.modelName,
                 prompt: 'This is a test prompt. Please respond with "OK" if you can read this.',
                 options: {
@@ -255,7 +288,7 @@ Rules:
             logger.info('Classifying transaction from OCR text');
             logger.debug(`Input text: ${text}`);
 
-            const response = await this.ollama.generate({
+            const response = await this._timedGenerate({
                 model: this.modelName,
                 prompt: text,
                 system: this.systemPrompt,
@@ -305,6 +338,32 @@ Rules:
     async terminate() {
         logger.info('Terminating OllamaService');
         // Add any cleanup code here if needed
+    }
+
+    /**
+     * Wrapper for ollama.generate that includes timing
+     * @param {Object} params - Parameters for generate
+     * @returns {Promise<Object>} - Generation result
+     */
+    async _timedGenerate(params) {
+        const startTime = Date.now();
+        logger.debug(`Starting generation with prompt: ${JSON.stringify(params.prompt)}`);
+
+        try {
+            const response = await this.ollama.generate(params);
+            const endTime = Date.now();
+            const duration = (endTime - startTime) / 1000; // Convert to seconds
+
+            logger.info(`Generation completed in ${duration.toFixed(2)}s`);
+            logger.debug(`Generation response: ${JSON.stringify(response)}`);
+
+            return response;
+        } catch (error) {
+            const endTime = Date.now();
+            const duration = (endTime - startTime) / 1000;
+            logger.error(`Generation failed after ${duration.toFixed(2)}s:`, error);
+            throw error;
+        }
     }
 }
 

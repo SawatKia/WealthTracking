@@ -56,7 +56,7 @@ class BaseModel {
    * @param {any[]} params - Parameters to be passed to the query
    * @param {Object} options - Options object with silent property
    * @param {boolean} options.silent - If true, the query will not be logged
-   * @returns {Promise<pg.QueryResult>} - Result of the query
+   * @returns {Promise<pg.QueryResult>} - Raw result of the query
    */
   async executeQuery(sql, params, options = { silent: false }) {
     try {
@@ -149,7 +149,7 @@ class BaseModel {
       }
 
       logger.info("Finding one...");
-      logger.debug("primaryKeys: %s", JSON.stringify(primaryKeys));
+      logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
 
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);
