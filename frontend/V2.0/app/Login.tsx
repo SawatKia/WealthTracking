@@ -1,14 +1,53 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, Pressable } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, Pressable, Alert } from "react-native";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; 
 import { Link } from 'expo-router';
+
+import { login } from '../services/api';
 
 export default function LoginScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isChecked, setIsChecked] = useState(false); // State for the checkbox
+
+  // const [error, setError] = useState({ email: '', password: '' });
+
+  // const validateInput = (): boolean => {
+  //   let isValid = true;
+  //   const newError = { email: '', password: '' };
+
+  //   if (!email.trim()) {
+  //     newError.email = 'Email is required';
+  //     isValid = false;
+  //   } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+  //     newError.email = 'Invalid email format';
+  //     isValid = false;
+  //   }
+
+  //   if (!password.trim()) {
+  //     newError.password = 'Password is required';
+  //     isValid = false;
+  //   } else if (password.length < 6) {
+  //     newError.password = 'Password must be at least 6 characters';
+  //     isValid = false;
+  //   }
+
+  //   setError(newError);
+  //   return isValid;
+  // };
+
+
+  const handleLogin = async () => {
+    try {
+      const response = await login(username, password);
+      console.log('Login Success', `Welcome, ${response.data.user.name}`)
+      
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
