@@ -84,8 +84,8 @@ NODE_ENV=development
 # NODE_ENV=test
 APP_PORT=3000
 APP_DOMAIN=WealthTrack
-ACCESS_TOKEN_SECRET=your-secure-access-token-secret
-REFRESH_TOKEN_SECRET=your-secure-refresh-token-secret
+ACCESS_TOKEN_SECRET=<your-secure-access-token-secret>
+REFRESH_TOKEN_SECRET=<your-secure-refresh-token-secret>
 SALT_ROUNDS=10
 
 POSTGRES_USER=user
@@ -95,7 +95,8 @@ POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
 POSTGRES_DB=WealthTrack_DB
 # POSTGRES_DB=your_database_name
-FORCE_DEV_DB_RESET=false
+FORCE_DEV_DB_RESET=false # usually use when there is a new configuration in any part of the db either triggering function or table schema
+LOAD_MOCK_DATA=false
 
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=root
@@ -104,11 +105,22 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 
 EASYSLIP_URL=https://developer.easyslip.com
-EASYSLIP_KEY=your-easyslip-api-key
+EASYSLIP_KEY=<your-easyslip-api-key>
 
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+
+DOCUMENT_AI_PROJECT_ID=<project-id>
+DOCUMENT_AI_PROJECT_NUMBER=<project-number>
+DOCUMENT_AI_LOCATION=us
+DOCUMENT_AI_PROCESSOR_ID=<processor-id>
+GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
+
+TESSERACT_MEMORY_PER_JOB=10
+
+OLLAMA_HOST=http://ollama:11434
+OLLAMA_MODEL=llama3.2
 ```
 
 1. Open Docker Desktop.

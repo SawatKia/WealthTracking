@@ -32,12 +32,27 @@ const config = {
     app_domain: process.env.APP_DOMAIN,
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret',
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'your-refresh-token-secret',
-    google: {
+    googleAuth: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
     databaseReset: process.env.FORCE_DEV_DB_RESET || false,
+    tesseract: {
+        memoryPerJob: process.env.TESSERACT_MEMORY_PER_JOB || 10,
+    },
+    ollama: {
+        host: process.env.OLLAMA_HOST || 'http://localhost:11434',
+        model: process.env.OLLAMA_MODEL || 'llama3.2',
+    },
+    loadMockData: process.env.LOAD_MOCK_DATA || false,
+    documentAi: {
+        projectId: process.env.DOCUMENT_AI_PROJECT_ID,
+        projectNumber: process.env.DOCUMENT_AI_PROJECT_NUMBER,
+        location: process.env.DOCUMENT_AI_LOCATION,
+        processorId: process.env.DOCUMENT_AI_PROCESSOR_ID,
+        pathToServiceAccount: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    }
 };
 
 module.exports = config;

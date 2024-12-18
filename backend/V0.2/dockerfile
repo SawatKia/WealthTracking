@@ -6,8 +6,8 @@ ARG APP_DOMAIN
 ARG APP_PORT
 ARG NODE_ENV
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Install curl for healthcheck only
+RUN apk update && apk add --no-cache curl
 
 # Set the working directory
 WORKDIR /usr/src/${APP_DOMAIN}

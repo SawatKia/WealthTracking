@@ -2,7 +2,7 @@ const Joi = require("joi");
 const BaseModel = require('./BaseModel');
 const { Logger } = require('../utilities/Utils');
 const redis = require('../services/Redis');
-const types = require('../utilities/types.json');
+const types = require('../../statics/types.json');
 const Redis = require('../services/Redis');
 const appConfigs = require('../configs/AppConfigs');
 
@@ -78,6 +78,10 @@ class TransactionModel extends BaseModel {
         "string.base": "Note must be a string.",
       }),
 
+      slip_uri: Joi.string().allow(null, "").optional().messages({
+        "string.base": "Slip URI must be a string.",
+      }),
+
       national_id: Joi.string()
         .length(13)
         .pattern(/^[0-9]*$/, "numeric characters only")
@@ -93,13 +97,8 @@ class TransactionModel extends BaseModel {
           "any.required": "National ID is required for this operation.",
         }),
 
-      debt_number: Joi.string().max(50).allow(null, "").optional().messages({
+      debt_id: Joi.string().max(50).allow(null, "").optional().messages({
         "string.max": "Debt number must not exceed 50 characters.",
-      }),
-
-      fi_code: Joi.string().max(20).allow(null, "").optional().messages({
-        "string.max":
-          "Financial institution code must not exceed 20 characters.",
       }),
 
       sender_account_number: Joi.string()
@@ -243,6 +242,7 @@ class TransactionModel extends BaseModel {
         amount,
         note,
         national_id,
+        debt_id,
         CASE 
           WHEN category = 'Income' THEN
             jsonb_build_object(
@@ -314,7 +314,8 @@ class TransactionModel extends BaseModel {
         type,
         amount,
         note,
-        national_id;
+        national_id,
+        debt_id;
     `;
   }
 
@@ -330,32 +331,38 @@ class TransactionModel extends BaseModel {
       amount: parseFloat(transaction.amount),
       note: transaction.note,
       national_id: transaction.national_id,
+      debt_id: transaction.debt_id,
       ...(accountDetails.sender && { sender: accountDetails.sender }),
       ...(accountDetails.receiver && { receiver: accountDetails.receiver })
     };
   }
 
-  async create(data) {
+  async create(data, options = { silent: false }) {
     try {
       logger.info('Creating transaction');
-      const transaction = await super.create(data);
+      const transaction = await super.create(data, options);
 
       // Cache the new transaction only if not in test environment
-      if (this.useCache) {
-        const cacheKey = `${this.cachePrefix}${transaction.transaction_id}`;
-        await Redis.setJsonEx(cacheKey, transaction, this.cacheDuration);
-      }
 
       // Get the complete transaction details after creation
-      // const query = this.getTransactionWithDetailsQuery();
-      // const result = await this.executeQuery(query, [transaction.transaction_id]);
+      const query = this.getTransactionWithDetailsQuery();
+      const result = await this.executeQuery(query, [transaction.transaction_id], { silent: true });
+      logger.silly(`joined created transaction: ${JSON.stringify(result)}`);
 
-      // if (result.rows.length === 0) {
-      //   throw new Error('Failed to retrieve created transaction');
-      // }
+      if (result.rows.length === 0) {
+        throw new Error('Failed to retrieve created transaction');
+      }
 
-      // return this.formatTransactionData(result.rows[0]);
-      return transaction;
+      const formattedTransaction = this.formatTransactionData(result.rows[0]);
+
+      if (this.useCache) {
+        const cacheKey = `${this.cachePrefix}${transaction.transaction_id}`;
+        logger.debug(`caching created transaction => ${cacheKey}: ${JSON.stringify(formattedTransaction, null, 2)}`);
+        await Redis.setJsonEx(cacheKey, formattedTransaction, this.cacheDuration);
+      }
+
+      return formattedTransaction;
+      // return transaction;
     } catch (error) {
       logger.error(`Error creating transaction: ${error.message}`);
       throw error;
@@ -378,7 +385,7 @@ class TransactionModel extends BaseModel {
 
       // If not in cache or test environment, get from database with joins
       const query = this.getTransactionWithDetailsQuery();
-      const result = await this.executeQuery(query, [primaryKeys.transaction_id]);
+      const result = await this.executeQuery(query, [primaryKeys.transaction_id], { silent: true });
 
       if (result.rows.length === 0) {
         return null;
@@ -399,17 +406,39 @@ class TransactionModel extends BaseModel {
     }
   }
 
+  async list(nationalId) {
+    try {
+      logger.info('Listing transactions');
+      const result = await super.list(nationalId);
+      logger.debug(`result: ${JSON.stringify(result)}`);
+
+      // Fix: Use Promise.all with map to handle async operations
+      const transactions = await Promise.all(
+        result.map(async (transaction) => {
+          const query = this.getTransactionWithDetailsQuery();
+          const result = await this.executeQuery(query, [transaction.transaction_id], { silent: true });
+          return this.formatTransactionData(result.rows[0]);
+        })
+      );
+
+      logger.debug(`transactions: ${JSON.stringify(transactions)}`);
+      return transactions;
+    } catch (error) {
+      logger.error(`Error listing transactions: ${error.message}`);
+      throw error;
+    }
+  }
+
   async update(primaryKeys, data) {
     try {
       logger.info('Updating transaction');
 
       // First update the basic transaction data
       const transaction = await super.update(primaryKeys, data);
-
       if (transaction) {
         // Get the updated transaction with all joined details
         const query = this.getTransactionWithDetailsQuery();
-        const result = await this.executeQuery(query, [primaryKeys.transaction_id]);
+        const result = await this.executeQuery(query, [primaryKeys.transaction_id], { silent: true });
 
         if (result.rows.length > 0) {
           const formattedTransaction = this.formatTransactionData(result.rows[0]);
@@ -445,6 +474,182 @@ class TransactionModel extends BaseModel {
       return result;
     } catch (error) {
       logger.error(`Error deleting transaction: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getAllTransactionsForAccount(accountNumber, fiCode) {
+    try {
+      logger.info(`Getting all transactions for account: ${accountNumber}, FI: ${fiCode}`);
+
+      const query = `
+        SELECT * FROM transactions
+        WHERE (sender_account_number = $1 AND sender_fi_code = $2)
+        OR (receiver_account_number = $1 AND receiver_fi_code = $2)
+      `;
+      const result = await this.executeQuery(query, [accountNumber, fiCode], { silent: true });
+
+      return result.rows.map(transaction => this.formatTransactionData(transaction));
+    } catch (error) {
+      logger.error(`Error getting transactions for account: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get monthly transaction summary
+   * @param {string} nationalId - National ID of the user
+   * @param {string} type - Type of transactions. if null, get all type
+   * @param {number} monthCount - Number of months to get summary. default is 12
+   * @returns {Promise<Array<Object>>} - Monthly summary by type
+   * @example
+   * // Get monthly summary for current month
+   * await getMonthlySummary('1234567890123');
+   * // Get monthly summary for current month for income type
+   * await getMonthlySummary('1234567890123', 'Income');
+   * // Get monthly summary for last 6 months
+   * await getMonthlySummary('1234567890123', null, 6);
+   */
+  async getMonthlySummary(nationalId, type = null, monthCount = 12) {
+    try {
+      logger.info('Getting monthly transaction summary');
+      logger.debug(`Parameters: nationalId=${nationalId}, type=${type}, monthCount=${monthCount}`);
+
+      const typeCondition = type ? 'AND type = $2' : '';
+      const params = type ? [nationalId, type] : [nationalId];
+
+      const query = `
+        WITH months AS (
+          SELECT generate_series(
+            date_trunc('month', current_date) - interval '${monthCount - 1} months',
+            date_trunc('month', current_date),
+            interval '1 month'
+          )::date AS month_start
+        ),
+        monthly_totals AS (
+          SELECT 
+            date_trunc('month', transaction_datetime)::date AS month_start,
+            category,
+            COALESCE(SUM(amount), 0) as total_amount
+          FROM transactions
+          WHERE national_id = $1
+          ${typeCondition}
+          AND transaction_datetime >= date_trunc('month', current_date - interval '${monthCount - 1} months')
+          GROUP BY 
+            date_trunc('month', transaction_datetime)::date,
+            category
+        )
+        SELECT 
+          to_char(months.month_start, 'YYYY-MM-DD') as month,
+          COALESCE(SUM(CASE WHEN mt.category = 'Income' THEN mt.total_amount ELSE 0 END), 0) as income,
+          COALESCE(SUM(CASE WHEN mt.category = 'Expense' THEN mt.total_amount ELSE 0 END), 0) as expense
+        FROM months
+        LEFT JOIN monthly_totals mt ON months.month_start = mt.month_start
+        GROUP BY months.month_start
+        ORDER BY months.month_start DESC;
+      `;
+
+      const result = await this.executeQuery(query, params);
+
+      return result.rows.map(row => ({
+        month: row.month,
+        summary: {
+          income: parseFloat(row.income),
+          expense: parseFloat(row.expense),
+          balance: parseFloat((parseFloat(row.income) - parseFloat(row.expense)).toFixed(2))
+        }
+      }));
+    } catch (error) {
+      logger.error(`Error getting monthly summary: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction summary by type for a specific month
+   * @param {string} nationalId - National ID of the user
+   * @param {string|null} type - Specific transaction type to filter by. If null, returns summary for all types
+   * @param {number|null} month - Month number (1-12). If null, uses current month
+   * @returns {Promise<Array<{type: string, totalAmount: number}>|number>} 
+   *          - If type is null: Returns array of summaries for all types
+   *          - If type is specified: Returns total amount for that specific type
+   * @throws {Error} If national ID is missing or month is invalid
+   * @example
+   * // Get summary for all types in current month
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123');
+   * // Get summary for all types in March
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', null, 3);
+   * // Get summary for 'Food' type in current month
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', 'Food');
+   * // Get summary for 'Food' type in March
+   * await getSummaryExpenseOnSpecificMonthByType('1234567890123', 'Food', 3);
+   */
+  async getSummaryExpenseOnSpecificMonthByType(nationalId, type = null, month = null) {
+    try {
+      logger.info('Getting summary on specific month by type');
+      logger.debug(`Parameters: nationalId=${nationalId}, type=${type}, month=${month}`);
+
+      if (!nationalId) {
+        logger.error('National ID is required');
+        throw new Error('National ID is required');
+      }
+
+      // Validate month if provided
+      if (month !== null && (month < 1 || month > 12)) {
+        logger.error('Month must be between 1 and 12');
+        throw new Error('Month must be between 1 and 12');
+      }
+
+      // Create a date object for the first day of the specified month
+      let targetDate = month === null
+        ? new Date()
+        : new Date(new Date().getFullYear(), month - 1, 1);
+
+      // Format the date to ISO string format (YYYY-MM-DD)
+      const formattedDate = targetDate.toISOString().split('T')[0];
+
+      let query;
+      let params;
+
+      if (type === null) {
+        // Get summary for all types
+        query = `
+          SELECT type, SUM(amount) AS total_amount 
+          FROM transactions
+          WHERE national_id = $1 
+          AND category = 'Expense'
+          AND date_trunc('month', transaction_datetime) = date_trunc('month', $2::date)
+          GROUP BY type
+          ORDER BY total_amount DESC
+        `;
+        params = [nationalId, formattedDate];
+      } else {
+        // Get summary for specific type
+        query = `
+          SELECT SUM(amount) AS total_amount 
+          FROM transactions
+          WHERE national_id = $1 
+          AND type = $2 
+          AND category = 'Expense'
+          AND date_trunc('month', transaction_datetime) = date_trunc('month', $3::date)
+        `;
+        params = [nationalId, type, formattedDate];
+      }
+
+      const result = await this.executeQuery(query, params);
+
+      // Format the response based on whether type was specified
+      const summary = type === null
+        ? result.rows.map(row => ({
+          type: row.type,
+          totalAmount: parseFloat(row.total_amount || 0)
+        }))
+        : parseFloat(result.rows[0]?.total_amount || 0);
+
+      logger.debug(`Summary: ${JSON.stringify(summary)}`);
+      return summary;
+    } catch (error) {
+      logger.error(`Error getting summary on specific month by type: ${error.message}`);
       throw error;
     }
   }

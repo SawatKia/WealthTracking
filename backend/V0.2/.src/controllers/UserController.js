@@ -6,11 +6,14 @@ const UserModel = require('../models/UserModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const logger = Logger('UserController');
+const BankAccountModel = require('../models/BankAccountModel');
 
 class UserController extends BaseController {
     constructor() {
         super();
         this.userModel = new UserModel();
+        this.bankAccountModel = new BankAccountModel();
+        this.CASH_ACCOUNT_FI_CODE = '000';
 
         // Bind all methods to ensure correct 'this' context
         this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
@@ -20,7 +23,6 @@ class UserController extends BaseController {
         this.getUser = this.getUser.bind(this);
         this.updateUser = this.updateUser.bind(this);
         this.deleteUser = this.deleteUser.bind(this);
-        this.getLocalProfilePicture = this.getLocalProfilePicture.bind(this);
     }
 
     normalizeUsernameEmail(username = null, email = null) {
@@ -82,6 +84,19 @@ class UserController extends BaseController {
             // Create user
             const createdUser = await this.userModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
+
+            // Create default cash account
+            const cashAccount = {
+                account_number: `${createdUser.national_id}`,
+                fi_code: this.CASH_ACCOUNT_FI_CODE,
+                national_id: createdUser.national_id,
+                display_name: 'เงินสด',
+                account_name: 'Cash Account',
+                balance: '0.00'
+            };
+
+            await this.bankAccountModel.create(cashAccount);
+            logger.info('Default cash account created successfully');
 
             const filteredUser = this.filterUserData(createdUser);
 
@@ -160,10 +175,10 @@ class UserController extends BaseController {
                     // Check if file exists
                     logger.debug(`Checking if file exists: ${user.profile_picture_uri}`);
                     if (fs.existsSync(user.profile_picture_uri)) {
-                        // Create a secure URL for the profile picture
-                        const baseUrl = `${req.protocol}://${req.get('host')}`;
-                        user.profile_picture_url = `${baseUrl}/api/v0.2/users/profile-picture`;
-                        logger.debug(`profile_picture_url: ${user.profile_picture_url}`);
+                        // Read and encode the image file
+                        const imageBuffer = fs.readFileSync(user.profile_picture_uri);
+                        const imageBase64 = imageBuffer.toString('base64');
+                        user.profile_picture_data = `data:image/jpeg;base64,${imageBase64}`;
                         user.profile_picture_name = originalFilename;
                         logger.debug(`profile_picture_name: ${user.profile_picture_name}`);
                     } else {
@@ -189,37 +204,6 @@ class UserController extends BaseController {
                 next(error);
             } else {
                 next(MyAppErrors.internalServerError('Error retrieving user', { details: error.message }));
-            }
-        }
-    }
-
-    async getLocalProfilePicture(req, res, next) {
-        try {
-            logger.info('request received for getLocalProfilePicture');
-            const user = await super.getCurrentUser(req);
-            logger.debug(`user: ${JSON.stringify(user)}`);
-            if (!user.profile_picture_uri || user.profile_picture_uri.startsWith('http')) {
-                logger.error('the profile picture uri is not locally stored');
-                throw MyAppErrors.notFound('the profile picture uri is not locally stored');
-            }
-
-            logger.debug(`finding path: ${user.profile_picture_uri}`);
-            const exists = await fs.existsSync(user.profile_picture_uri);
-            logger.debug(`exists: ${exists}`);
-            if (!exists) {
-                logger.error('Profile picture file not found');
-                throw MyAppErrors.notFound('Profile picture file not found');
-            }
-            logger.info('Profile picture file found');
-
-            logger.debug(`sending file: ${path.resolve(user.profile_picture_uri)}`);
-            // Modified this line to use absolute path without root option
-            res.sendFile(path.resolve(user.profile_picture_uri));
-        } catch (error) {
-            if (error instanceof MyAppErrors) {
-                next(error);
-            } else {
-                next(MyAppErrors.internalServerError('Error retrieving profile picture', { details: error.message }));
             }
         }
     }

@@ -54,12 +54,14 @@ class BaseModel {
    * If the execution fails, the transaction is rolled back and the error is re-thrown.
    * @param {string} sql - SQL query to execute
    * @param {any[]} params - Parameters to be passed to the query
-   * @returns {Promise<pg.QueryResult>} - Result of the query
+   * @param {Object} options - Options object with silent property
+   * @param {boolean} options.silent - If true, the query will not be logged
+   * @returns {Promise<pg.QueryResult>} - Raw result of the query
    */
-  async executeQuery(sql, params) {
+  async executeQuery(sql, params, options = { silent: false }) {
     try {
       return await this.executeWithTransaction(async () => {
-        const result = await this.pgClient.query(sql, params);
+        const result = await this.pgClient.query(sql, params, options);
         return result;
       });
     } catch (error) {
@@ -74,9 +76,11 @@ class BaseModel {
    * If the validation fails, a ValidationError is thrown.
    * If the creation fails, the error is re-thrown.
    * @param {Object} data - Data to be inserted
+   * @param {Object} options - Options object with silent property
+   * @param {boolean} options.silent - If true, the query will not be logged
    * @returns {Promise<pg.QueryResult>} - Result of the query
    */
-  async create(data) {
+  async create(data, options = { silent: false }) {
     try {
       if (!data || typeof data !== 'object') {
         logger.error("Data is empty or not an object");
@@ -94,8 +98,8 @@ class BaseModel {
           ","
         )}) VALUES (${placeholders}) RETURNING *`;
         logger.debug("Create SQL prepared query: %s", sql);
-        const result = await this.pgClient.query(sql, values);
-        logger.debug("Create SQL result: " + JSON.stringify(result));
+        const result = await this.pgClient.query(sql, values, options);
+        logger.silly("Create SQL result: " + JSON.stringify(result));
         logger.debug("Create result: " + JSON.stringify(result.rows[0]));
         return result.rows[0];
       });
@@ -145,7 +149,7 @@ class BaseModel {
       }
 
       logger.info("Finding one...");
-      logger.debug("primaryKeys: %s", JSON.stringify(primaryKeys));
+      logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
 
       const keys = Object.keys(primaryKeys);
       const values = Object.values(primaryKeys);

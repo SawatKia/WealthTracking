@@ -4,7 +4,7 @@ const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
 const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
-const types = require('../utilities/types.json');
+const types = require('../../statics/types.json');
 const { v4: uuidv4 } = require('uuid');
 const { uuidValidateV4 } = require('../utilities/AuthUtils');
 
@@ -22,6 +22,10 @@ class TransactionController extends BaseController {
         this.getOneTransaction = this.getOneTransaction.bind(this);
         this.updateTransaction = this.updateTransaction.bind(this);
         this.deleteTransaction = this.deleteTransaction.bind(this);
+        this.getTransactionsByAccount = this.getTransactionsByAccount.bind(this);
+        this.getAllTypes = this.getAllTypes.bind(this);
+        this.getMonthlySummary = this.getMonthlySummary.bind(this);
+        this.getSummaryExpenseOnSpecificMonthByType = this.getSummaryExpenseOnSpecificMonthByType.bind(this);
 
         this.validateBankAccounts = this.validateBankAccounts.bind(this);
         this.validateBankAccountBalance = this.validateBankAccountBalance.bind(this);
@@ -79,31 +83,34 @@ class TransactionController extends BaseController {
     async createTransaction(req, res, next) {
         try {
             logger.info('Creating transaction');
-            const requiredFields = ['transaction_datetime', 'category', 'type', 'amount'];
+            let requiredFields = ['transaction_datetime', 'category', 'type', 'amount'];
+            if (req.body.category === 'Expense') {
+                requiredFields.push('sender');
+            } else if (req.body.category === 'Income') {
+                requiredFields.push('receiver');
+            } else if (req.body.category === 'Transfer') {
+                requiredFields.push('sender', 'receiver');
+            } else {
+                throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
+            }
             const user = await super.getCurrentUser(req);
 
             // Validate request body and convert types
             const validatedData = await super.verifyField(req.body, requiredFields, this.transactionModel);
+            logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
-            // Validate category
-            if (!['Income', 'Expense', 'Transfer'].includes(validatedData.category)) {
-                throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
+            // Override type to "Debt Payment" if debt_id is specified
+            logger.info('debt_id is provided, overriding type to "Debt Payment"');
+            if (validatedData.debt_id) {
+                logger.debug(`debt_id: ${validatedData.debt_id} is provided`);
+                validatedData.type = 'Debt Payment';
             }
-            logger.info('category is valid')
+            logger.info('type is overridden to "Debt Payment"');
+            logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
-            // Validate type based on category
-            const allowedTypes = types[validatedData.category] || [];
-            logger.debug(`allowedTypes for ${validatedData.category}: ${allowedTypes}`);
-            if (allowedTypes.length === 0) {
-                logger.error(`Invalid category: ${validatedData.category}`);
-                throw MyAppErrors.badRequest(`Invalid category: ${validatedData.category}`);
-            }
-
-            if (!allowedTypes.includes(validatedData.type)) {
-                logger.error(`Invalid type for ${validatedData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-                throw MyAppErrors.badRequest(`Invalid type for ${validatedData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-            }
-            logger.info('type is valid')
+            // Validate category  
+            super.verifyType(validatedData.category, validatedData.type);
+            logger.info('type is valid');
 
             // Validate bank accounts based on category
             const { sender, receiver } = req.body;
@@ -135,15 +142,18 @@ class TransactionController extends BaseController {
                     }
                     break;
             }
+            logger.info('bank accounts are not null correspond to its category');
 
             // Verify bank accounts exist
             if (validationErrors.length === 0) {
                 const bankAccountErrors = await this.validateBankAccounts(sender, receiver);
                 validationErrors.push(...bankAccountErrors);
             }
+            logger.info('bank accounts are valid');
 
             // Validate debt_id if provided
             if (req.body.debt_id) {
+                logger.info('debt_id is provided, validating debt');
                 const debt = await this.debtModel.findOne({ debt_id: req.body.debt_id });
                 if (!debt) {
                     validationErrors.push('Debt not found');
@@ -151,6 +161,7 @@ class TransactionController extends BaseController {
                     validationErrors.push('You do not have permission to access this debt');
                 }
             }
+            logger.info('debt is valid');
 
             // Validate bank account balance based on category
             switch (validatedData.category) {
@@ -181,7 +192,9 @@ class TransactionController extends BaseController {
                 transaction_id: uuidv4(),
                 ...validatedData,
                 national_id: user.national_id,
-                ...(validatedData.debt_id && { debt_id: validatedData.debt_id }),
+                ...(validatedData.debt_id && {
+                    debt_id: validatedData.debt_id,
+                }),
                 ...(validatedData.sender && {
                     sender_account_number: validatedData.sender.account_number,
                     sender_fi_code: validatedData.sender.fi_code
@@ -242,6 +255,11 @@ class TransactionController extends BaseController {
                 req.formattedResponse = formatResponse(200, 'No transaction found', null);
                 return next();
             }
+            if (fs.existsSync(transaction.slip_uri)) {
+                const imageBuffer = fs.readFileSync(transaction.slip_uri);
+                const imageBase64 = imageBuffer.toString('base64');
+                transaction.slip_data = `data:image/jpeg;base64,${imageBase64}`;
+            }
 
             const user = await super.getCurrentUser(req);
             if (!super.verifyOwnership(user, transaction)) {
@@ -291,16 +309,7 @@ class TransactionController extends BaseController {
 
             // Validate category and type if they are being updated
             if (updateData.category) {
-                if (!['Income', 'Expense', 'Transfer'].includes(updateData.category)) {
-                    throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
-                }
-
-                if (updateData.type) {
-                    const allowedTypes = types[updateData.category] || [];
-                    if (!allowedTypes.includes(updateData.type)) {
-                        throw MyAppErrors.badRequest(`Invalid type for ${updateData.category}. Must be one of: ${allowedTypes.join(', ')}`);
-                    }
-                }
+                super.verifyType(updateData.category, updateData.type);
                 logger.info('category and type are valid');
             }
             logger.info('category and type are not being updated');
@@ -404,6 +413,127 @@ class TransactionController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Error deleting transaction: ${error.message}`);
+            next(error);
+        }
+    }
+
+    async getTransactionsByAccount(req, res, next) {
+        try {
+            logger.info('Getting transactions by account');
+
+            // Use verifyField to validate required fields
+            const validatedData = await super.verifyField(
+                req.params,
+                ['account_number', 'fi_code'],
+                this.bankAccountModel
+            );
+            logger.debug(`Validated account data: ${JSON.stringify(validatedData)}`);
+
+            // Get current user
+            const user = await super.getCurrentUser(req);
+
+            // Verify user owns this account
+            const bankAccount = await this.bankAccountModel.get(validatedData.account_number, validatedData.fi_code);
+            if (!bankAccount) {
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+
+            if (!super.verifyOwnership(user, bankAccount)) {
+                throw MyAppErrors.forbidden('You do not have permission to view transactions for this account');
+            }
+
+            // Get transactions
+            const transactions = await this.transactionModel.getAllTransactionsForAccount(
+                validatedData.account_number,
+                validatedData.fi_code
+            );
+
+            const message = transactions.length > 0
+                ? `Retrieved ${transactions.length} transaction${transactions.length > 1 ? 's' : ''} successfully`
+                : 'No transactions found for this account';
+
+            req.formattedResponse = formatResponse(200, message, { transactions });
+            next();
+        } catch (error) {
+            logger.error(`Error getting transactions by account: ${error.message}`);
+            next(error);
+        }
+    }
+
+    async getAllTypes(req, res, next) {
+        logger.info('Getting all types');
+        const allTypes = types;
+        logger.debug(`allTypes: ${JSON.stringify(allTypes)}`);
+        req.formattedResponse = formatResponse(200, 'All types retrieved successfully', allTypes);
+        next();
+    }
+
+    async getMonthlySummary(req, res, next) {
+        try {
+            logger.info('Getting monthly transaction summary');
+            const user = await super.getCurrentUser(req);
+
+            // Get optional type parameter from query
+            let { type, monthCount } = req.query;
+            monthCount = monthCount || 12;
+            logger.debug(`received type: ${type}, monthCount: ${monthCount}`);
+
+            // If type is provided, validate it exists in types
+            if (type) {
+                const typeLowerCase = type.toLowerCase();
+                const category = types.Income.some(t => t.toLowerCase() === typeLowerCase) ? 'Income' :
+                    types.Expense.some(t => t.toLowerCase() === typeLowerCase) ? 'Expense' :
+                        types.Transfer.some(t => t.toLowerCase() === typeLowerCase) ? 'Transfer' : null;
+
+                if (!category) {
+                    throw MyAppErrors.badRequest(`Invalid type "${type}". Type not found in any category.`);
+                }
+
+                logger.debug(`impolicited category: ${category}, type: ${type}`);
+                super.verifyType(category, type);
+                logger.info(`type: ${type} is valid`);
+            }
+
+            const summary = await this.transactionModel.getMonthlySummary(user.national_id, type, monthCount);
+            logger.debug(`monthly summary: ${JSON.stringify(summary, null, 2)}`);
+
+            req.formattedResponse = formatResponse(
+                200,
+                `${monthCount} latest month summary for ${type ? type : 'all types'} retrieved successfully`,
+                { summary }
+            );
+            next();
+        } catch (error) {
+            logger.error(`Error getting monthly summary: ${error.message}`);
+            next(error);
+        }
+    }
+
+    async getSummaryExpenseOnSpecificMonthByType(req, res, next) {
+        try {
+            logger.info('Getting expenses by type for current month');
+            const { type, month } = req.query;
+            logger.debug(`type: ${type}, month: ${month}`);
+
+            super.verifyType('Expense', type);
+            logger.info(`type: ${type} is valid`);
+
+            const user = await super.getCurrentUser(req);
+
+            const summary = await this.transactionModel.getSummaryExpenseOnSpecificMonthByType(user.national_id, type, month);
+            logger.debug(`summary: ${JSON.stringify(summary)}`);
+
+            const monthName = new Date(month || new Date()).toLocaleString('en-US', { month: 'long' });
+            logger.debug(`monthName: ${monthName}`);
+
+            req.formattedResponse = formatResponse(
+                200,
+                `${type ? type : 'all types'} expenses summary for ${month ? "month " + monthName : "current month (" + monthName + ")"} retrieved successfully`,
+                { summary }
+            );
+            next();
+        } catch (error) {
+            logger.error(`Error getting current month expenses by type: ${error.message}`);
             next(error);
         }
     }

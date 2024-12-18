@@ -13,17 +13,47 @@ class PgClient {
   constructor() {
     logger.info("Initializing PgClient instance");
     logger.debug(`Running Environment: ${NODE_ENV}`);
-    this.tables = {
-      USERS: 'users',
-      FINANCIAL_INSTITUTIONS: 'financial_institutions',
-      BANK_ACCOUNTS: 'bank_accounts',
-      DEBTS: 'debts',
-      TRANSACTIONS: 'transactions',
-      TRANSACTION_BANK_ACCOUNT_RELATIONS: 'transaction_bank_account_relations',
-      API_REQUEST_LIMITS: 'api_request_limits',
-      USED_REFRESH_TOKENS: 'used_refresh_tokens',
-      SLIP_HISTORY: 'slip_history'
-    };
+    // this.tables = {
+    //   USERS: 'users',
+    //   FINANCIAL_INSTITUTIONS: 'financial_institutions',
+    //   BANK_ACCOUNTS: 'bank_accounts',
+    //   DEBTS: 'debts',
+    //   TRANSACTIONS: 'transactions',
+    //   TRANSACTION_BANK_ACCOUNT_RELATIONS: 'transaction_bank_account_relations',
+    //   API_REQUEST_LIMITS: 'api_request_limits',
+    //   USED_REFRESH_TOKENS: 'used_refresh_tokens',
+    //   SLIP_HISTORY: 'slip_history'
+    // };
+
+    // Read table names from SQL files in the /sql/tables/ directory
+    const tablesDir = path.join(__dirname, '../../sql/tables');
+    logger.silly(`tablesDir: ${tablesDir} `);
+    const tableFiles = fs.readdirSync(tablesDir);
+    const tableNames = tableFiles.map(file => path.basename(file, '.sql'));
+    logger.debug(`read tableNames from sql file: ${tableNames.join(', ')} `);
+
+    // Define the desired order of tables
+    const orderedTableNames = [
+      'users',
+      'financial_institutions',
+      'bank_accounts',
+      'debts',
+      'transactions',
+      // Add any other tables that need to be in a specific order
+    ];
+
+    // Add any remaining tables that are not explicitly ordered
+    const unorderedTables = tableNames.filter(name => !orderedTableNames.includes(name));
+    logger.silly(`unorderedTables: ${unorderedTables.join(', ')} `);
+    const finalTableOrder = [...orderedTableNames, ...unorderedTables];
+    logger.silly(`finalTableOrder: ${finalTableOrder.join(', ')} `);
+
+    this.tables = {};
+    finalTableOrder.forEach(tableName => {
+      this.tables[tableName.toUpperCase()] = tableName;
+    });
+    logger.debug(`this.tables: ${JSON.stringify(this.tables, null, 2)} `);
+
     Object.freeze(this.tables);
 
     let config;
@@ -106,19 +136,24 @@ class PgClient {
   }
 
   async query(sql, params, options = { silent: false }) {
-    if (!this.client) {
-      logger.error("Database not initialized. Call init() first.");
-      throw new Error("Database not initialized. Call init() first.");
-    }
+    try {
+      if (!this.client) {
+        logger.error("Database not initialized. Call init() first.");
+        throw new Error("Database not initialized. Call init() first.");
+      }
 
-    if (!options.silent) {
-      logger.info('received query request');
-      logger.debug(`sql: ${sql} `);
-      logger.debug(`params: ${JSON.stringify(params)} `);
-      logger.info('querying...');
-    }
+      if (!options.silent) {
+        logger.info('received query request');
+        logger.debug(`sql: ${sql} `);
+        logger.debug(`params: ${JSON.stringify(params)} `);
+        logger.info('querying...');
+      }
 
-    return this.client.query(sql, params);
+      return this.client.query(sql, params);
+    } catch (error) {
+      logger.error(`Error querying database: ${error.message} `);
+      throw error;
+    }
   }
 
   async beginTransaction() {
@@ -145,6 +180,11 @@ class PgClient {
     }
   }
 
+  /**
+   * Truncate tables by name or all tables
+   * @param {string | string[]} table - The name of the table to truncate or an array of table names to truncate.
+   * @returns {Promise<void>}
+   */
   async truncateTables(table = null) {
     const tablesToTruncate = Array.isArray(table)
       ? table
@@ -158,9 +198,9 @@ class PgClient {
         await this.client.query(`TRUNCATE TABLE ${t} CASCADE`);
         logger.debug(`All rows deleted from table: ${t}`);
       } else {
-        logger.info('!'.repeat(40));
-        logger.info(`! ${`Skipping table: ${t}`.padEnd(38)}!`);
-        logger.info('!'.repeat(40));
+        logger.info('!'.repeat(42));
+        logger.info(`! ${`Skipping table: ${t}`.padEnd(39)} !`);
+        logger.info('!'.repeat(42));
       }
     }
   }
