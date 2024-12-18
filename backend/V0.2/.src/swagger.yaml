@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: WealthTrack API
   description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
-  version: "0.2"
+  version: "0.2.1"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
@@ -1462,7 +1462,7 @@ paths:
         - "Cache"
       summary: Get all cache entries (Development Only)
       description: |
-        ⚠️ WARNING: This endpoint is for development purposes only!
+        ⚠�� WARNING: This endpoint is for development purposes only!
         Do not use or rely on this endpoint in production environments.
         This endpoint returns all key-value pairs stored in cache.
       responses:
@@ -1638,6 +1638,235 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
+
+  /transactions/account/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get transactions for a specific bank account
+      description: Retrieves all transactions associated with a specific bank account (both sent and received)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{3}$"
+          description: The financial institution code
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Transactions retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transaction_id:
+                          type: string
+                          format: uuid
+                          example: "123e4567-e89b-12d3-a456-426614174000"
+                        transaction_datetime:
+                          type: string
+                          format: date-time
+                          example: "2024-03-15T14:30:00Z"
+                        category:
+                          type: string
+                          enum: ["Income", "Expense", "Transfer"]
+                          example: "Transfer"
+                        type:
+                          type: string
+                          example: "Bank Transfer"
+                        amount:
+                          type: number
+                          format: float
+                          example: 1000.00
+                        note:
+                          type: string
+                          example: "Monthly rent payment"
+                        national_id:
+                          type: string
+                          example: "1234567890123"
+                        sender:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "123-4-56789-0"
+                            fi_code:
+                              type: string
+                              example: "004"
+                            display_name:
+                              type: string
+                              example: "My Savings Account"
+                            account_name:
+                              type: string
+                              example: "JOHN DOE"
+                            bank_name_en:
+                              type: string
+                              example: "Kasikorn Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกสิกรไทย"
+                        receiver:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "098-7-65432-1"
+                            fi_code:
+                              type: string
+                              example: "002"
+                            display_name:
+                              type: string
+                              example: "Rent Account"
+                            account_name:
+                              type: string
+                              example: "JANE SMITH"
+                            bank_name_en:
+                              type: string
+                              example: "Bangkok Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกรุงเทพ"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /transactions/summary/monthly:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get monthly transaction summary
+      description: |
+        Retrieves a monthly summary of transactions for the authenticated user.
+        Shows income, expense, and net amounts for each month.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            description: Filter by specific transaction type
+          example: "Salary"
+        - in: query
+          name: monthCount
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 12
+          description: Number of months to retrieve (default is 12)
+      responses:
+        "200":
+          description: Monthly summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Monthly summary retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                          format: date
+                          example: "2024-03-01"
+                        summary:
+                          type: object
+                          properties:
+                            income:
+                              type: number
+                              format: float
+                              example: 50000.00
+                            expense:
+                              type: number
+                              format: float
+                              example: 30000.00
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /transactions/list/types:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get all transaction types
+      description: Retrieves all available transaction types for categorization
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Transaction types retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Transaction types retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          enum: ["Income", "Expense", "Transfer"]
+                          example: "Income"
+                        types:
+                          type: array
+                          items:
+                            type: string
+                          example: ["Salary", "Bonus", "Investment"]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
 components:
   securitySchemes:
@@ -2747,7 +2976,7 @@ components:
                 display_name: "My Savings Account"
                 account_name: "JOHN DOE"
                 bank_name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
-                bank_name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+                bank_name_th: "ธ��าคารกสิกรไทย จำกัด (มหาชน)"
               receiver:
                 account_number: "987-6-54321-0"
                 fi_code: "014"

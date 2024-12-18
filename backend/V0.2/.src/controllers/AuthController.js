@@ -31,7 +31,7 @@ class AuthController extends BaseController {
 
         this.accessTokenCookieOptions = {
             ...this.cookieOptions,
-            maxAge: 15 * 60 * 1000
+            maxAge: appConfigs.environment !== 'production' ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000
         };
 
         this.refreshTokenCookieOptions = {

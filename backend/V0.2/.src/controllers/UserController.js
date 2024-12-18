@@ -6,11 +6,14 @@ const UserModel = require('../models/UserModel');
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const logger = Logger('UserController');
+const BankAccountModel = require('../models/BankAccountModel');
 
 class UserController extends BaseController {
     constructor() {
         super();
         this.userModel = new UserModel();
+        this.bankAccountModel = new BankAccountModel();
+        this.CASH_ACCOUNT_FI_CODE = '000';
 
         // Bind all methods to ensure correct 'this' context
         this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
@@ -82,6 +85,19 @@ class UserController extends BaseController {
             // Create user
             const createdUser = await this.userModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
+
+            // Create default cash account
+            const cashAccount = {
+                account_number: `${createdUser.national_id}`,
+                fi_code: this.CASH_ACCOUNT_FI_CODE,
+                national_id: createdUser.national_id,
+                display_name: 'เงินสด',
+                account_name: 'Cash Account',
+                balance: '0.00'
+            };
+
+            await this.bankAccountModel.create(cashAccount);
+            logger.info('Default cash account created successfully');
 
             const filteredUser = this.filterUserData(createdUser);
 
