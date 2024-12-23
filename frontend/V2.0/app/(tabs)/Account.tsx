@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import { GestureHandlerRootView, PanGestureHandler, GestureHandlerGestureEvent } from "react-native-gesture-handler";
+import { useRouter } from "expo-router";
 
 // ข้อมูลบัญชีธนาคาร
 const bankAccounts = [
@@ -19,6 +20,7 @@ const recentTransactions = [
 
 export default function BankAccountScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const router = useRouter();
 
   // คำนวณยอดรวมของทุกบัญชี
   const totalBalance = bankAccounts.reduce((total, account) => total + account.balance, 0);
@@ -27,16 +29,18 @@ export default function BankAccountScreen() {
   const handleSwipe = (event: GestureHandlerGestureEvent) => {
     const { nativeEvent } = event;
 
-    // ใช้ as unknown ก่อน แล้วแปลงเป็น { translationX: number }
     const { translationX } = nativeEvent as unknown as { translationX: number };
 
     if (translationX < -50) {
-      // เลื่อนไปขวา
       setCurrentIndex((prevIndex) => (prevIndex + 1) % bankAccounts.length);
     } else if (translationX > 50) {
-      // เลื่อนไปซ้าย
       setCurrentIndex((prevIndex) => (prevIndex - 1 + bankAccounts.length) % bankAccounts.length);
     }
+  };
+
+  // ฟังก์ชันสำหรับนำทางไปยังหน้า AddAccount
+  const navigateToAddAccount = () => {
+    router.push("/AddAccount"); // นำทางไปยัง AddAccount.tsx
   };
 
   return (
@@ -66,10 +70,7 @@ export default function BankAccountScreen() {
         {bankAccounts.map((_, index) => (
           <View
             key={index}
-            style={[
-              styles.dot,
-              currentIndex === index && styles.activeDot,
-            ]}
+            style={[styles.dot, currentIndex === index && styles.activeDot]}
           />
         ))}
       </View>
@@ -89,7 +90,7 @@ export default function BankAccountScreen() {
       />
 
       {/* ปุ่มเพิ่มบัญชี */}
-      <TouchableOpacity style={styles.floatingButton}>
+      <TouchableOpacity style={styles.floatingButton} onPress={navigateToAddAccount}>
         <Text style={styles.floatingButtonText}>+</Text>
       </TouchableOpacity>
     </GestureHandlerRootView>
@@ -151,24 +152,22 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: "#4957AA",
-    marginLeft: -30,  // ขยับให้ตรงกลางในแนวนอน
-    marginTop: -30,   // ขยับให้ตรงกลางในแนวตั้ง
+    marginLeft: -30,
+    marginTop: -30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
-    paddingLeft: 20,   // กำหนดขนาดขอบซ้าย
-    paddingRight: 20,  // กำหนดขนาดขอบขวา
+    paddingLeft: 20,
+    paddingRight: 20,
   },
   floatingButtonText: {
     color: "#fff",
     fontSize: 60,
-    marginLeft: -10,   // ปรับตำแหน่งแนวนอน (ถ้าจำเป็น)
-    marginTop: -16,    // ปรับตำแหน่งแนวตั้ง (ถ้าจำเป็น)
+    marginLeft: -10,
+    marginTop: -16,
   },
-
-
   dotContainer: {
     flexDirection: "row",
     justifyContent: "center",
