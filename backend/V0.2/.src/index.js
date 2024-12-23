@@ -5,6 +5,7 @@ const DebtModel = require("./models/DebtModel");
 const TransactionModel = require("./models/TransactionModel");
 
 const tesseractService = require("./services/Tesseract");
+const documentAiService = require("./services/DocumentAiService");
 const pgClient = require("./services/PgClient");
 const easySlip = require("./services/EasySlip");
 const ollama = require("./services/OllamaService");
@@ -37,11 +38,11 @@ const loadMockData = async () => {
     logger.info('Creating mock users...');
     const users = [
       {
-        national_id: '1234567890123',
-        email: 'john@example.com',
-        username: 'john_doe',
-        password: 'Password123!',
-        date_of_birth: '1990-01-01'
+        national_id: "1234567890123",
+        email: "johndoe@example.com",
+        username: "johndoe",
+        password: "securePassword123",
+        date_of_birth: "1990-01-01"
       },
       {
         national_id: '2345678901234',
@@ -252,6 +253,7 @@ const initializeServices = async () => {
 
   await easySlip.init();
   await ollama.init();
+  await documentAiService.init();
 
   const fi = new FiModel();
   await fi.initializeData();
@@ -273,7 +275,7 @@ const startExpressServer = () => {
       logger.debug('├──────────────────────────────────────────┤');
       logger.debug(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
       logger.debug(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
-      logger.debug(`│ Server startup time: ${timeTaken} ms`.padEnd(43) + '│');
+      logger.debug(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
       logger.debug('└──────────────────────────────────────────┘');
       logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
       resolve(server);

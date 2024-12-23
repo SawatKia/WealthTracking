@@ -13,17 +13,47 @@ class PgClient {
   constructor() {
     logger.info("Initializing PgClient instance");
     logger.debug(`Running Environment: ${NODE_ENV}`);
-    this.tables = {
-      USERS: 'users',
-      FINANCIAL_INSTITUTIONS: 'financial_institutions',
-      BANK_ACCOUNTS: 'bank_accounts',
-      DEBTS: 'debts',
-      TRANSACTIONS: 'transactions',
-      TRANSACTION_BANK_ACCOUNT_RELATIONS: 'transaction_bank_account_relations',
-      API_REQUEST_LIMITS: 'api_request_limits',
-      USED_REFRESH_TOKENS: 'used_refresh_tokens',
-      SLIP_HISTORY: 'slip_history'
-    };
+    // this.tables = {
+    //   USERS: 'users',
+    //   FINANCIAL_INSTITUTIONS: 'financial_institutions',
+    //   BANK_ACCOUNTS: 'bank_accounts',
+    //   DEBTS: 'debts',
+    //   TRANSACTIONS: 'transactions',
+    //   TRANSACTION_BANK_ACCOUNT_RELATIONS: 'transaction_bank_account_relations',
+    //   API_REQUEST_LIMITS: 'api_request_limits',
+    //   USED_REFRESH_TOKENS: 'used_refresh_tokens',
+    //   SLIP_HISTORY: 'slip_history'
+    // };
+
+    // Read table names from SQL files in the /sql/tables/ directory
+    const tablesDir = path.join(__dirname, '../../sql/tables');
+    logger.silly(`tablesDir: ${tablesDir} `);
+    const tableFiles = fs.readdirSync(tablesDir);
+    const tableNames = tableFiles.map(file => path.basename(file, '.sql'));
+    logger.debug(`read tableNames from sql file: ${tableNames.join(', ')} `);
+
+    // Define the desired order of tables
+    const orderedTableNames = [
+      'users',
+      'financial_institutions',
+      'bank_accounts',
+      'debts',
+      'transactions',
+      // Add any other tables that need to be in a specific order
+    ];
+
+    // Add any remaining tables that are not explicitly ordered
+    const unorderedTables = tableNames.filter(name => !orderedTableNames.includes(name));
+    logger.silly(`unorderedTables: ${unorderedTables.join(', ')} `);
+    const finalTableOrder = [...orderedTableNames, ...unorderedTables];
+    logger.silly(`finalTableOrder: ${finalTableOrder.join(', ')} `);
+
+    this.tables = {};
+    finalTableOrder.forEach(tableName => {
+      this.tables[tableName.toUpperCase()] = tableName;
+    });
+    logger.debug(`this.tables: ${JSON.stringify(this.tables, null, 2)} `);
+
     Object.freeze(this.tables);
 
     let config;

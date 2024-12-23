@@ -7,6 +7,7 @@ CREATE TABLE
         type VARCHAR(20) NOT NULL,
         amount DECIMAL(15, 2) NOT NULL,
         note TEXT,
+        slip_uri TEXT,
         national_id CHAR(13) NOT NULL,
         debt_id VARCHAR(50),
         sender_account_number VARCHAR(20),

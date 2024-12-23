@@ -13,6 +13,7 @@ const EasySlipService = require("../services/EasySlip");
 const QRCodeReader = require('../utilities/QRCodeReader');
 const TesseractService = require('../services/Tesseract');
 const OllamaService = require('../services/OllamaService');
+const DocumentAiService = require('../services/DocumentAiService');
 const appConfigs = require('../configs/AppConfigs');
 const types = require('../../statics/types.json');
 
@@ -60,7 +61,7 @@ class ApiController {
           },
           bank: {
             type: "BANKAC",
-            account: "xxxxx0015x",
+            account: "xxxxx6789x",
           },
         },
       },
@@ -111,7 +112,7 @@ class ApiController {
     try {
       // If imagePath is already a buffer (from req.file.buffer), use it directly
       const imageData = Buffer.isBuffer(imageBuffer) ? imageBuffer : fs.readFileSync(imageBuffer);
-      const result = await TesseractService.recognize(imageData);
+      const result = await DocumentAiService.recognize(imageData);
       logger.debug(`result: ${result}`);
       return result;
     } catch (error) {
@@ -145,7 +146,6 @@ class ApiController {
           `create requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
           }`
         );
-        logger.debug("returning true");
       } else if (requestLimit.request_count >= 7) {
         logger.warn("Daily EasySlip API request limit reached");
         logger.debug("returning false");
@@ -317,88 +317,53 @@ class ApiController {
    * @param {function} next - The next middleware function.
    */
   async verifySlip(req, res, next) {
-    logger.info("Processing unified slip verification request");
+    logger.info("Processing slip verification request");
     try {
-      let result;
-      let payload;
-      let extractionMethod;
+      // Validate file input
+      if (!req.file) {
+        logger.error("No image file provided.");
+        throw MyAppErrors.badRequest("No image file provided.");
+      }
 
-      // Validate and sanitize inputs
-      const sanitizedQuery = this._sanitizeObject(req.query);
+      if (!this._isValidFile(req.file)) {
+        logger.error("Invalid file format or size.");
+        throw MyAppErrors.badRequest("Invalid file format or size.");
+      }
 
-      // Check EasySlip availability once
+      const payload = QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
+      logger.info(`payload: ${payload}`);
+
+      // Check EasySlip availability
       const isQuotaAvailable = await this._checkQuotaAvailability();
       logger.info(`EasySlip quota available: ${isQuotaAvailable}`);
 
-      // Determine extraction method and validate input
-      logger.info('validating input...');
-      if (sanitizedQuery.payload) {
-        if (!this._isValidPayload(sanitizedQuery.payload)) {
-          throw MyAppErrors.badRequest("Invalid payload format.");
-        }
-        logger.info('payload validation passed');
-        payload = sanitizedQuery.payload;
-        extractionMethod = 'payload';
-      } else if (req.file) {
-        if (!this._isValidFile(req.file)) {
-          throw MyAppErrors.badRequest("Invalid file.");
-        }
-        logger.info('file validation passed');
-        payload = QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
-        extractionMethod = 'file';
-      } else if (req.body?.base64Image) {
-        if (!this._isValidBase64Image(req.body.base64Image)) {
-          throw MyAppErrors.badRequest("Invalid base64 image.");
-        }
-        logger.info('base64 image validation passed');
-        payload = QRCodeReader.extractPayloadFromBuffer(req.body.base64Image);
-        extractionMethod = 'base64';
-      } else {
-        throw MyAppErrors.badRequest("No valid input provided.");
-      }
+      // check for duplicate slip
+      const isDuplicateSlip = await this.slipHistoryModel.checkDuplicateSlip(payload);
+      logger.info(`isDuplicateSlip: ${isDuplicateSlip}`);
 
-      // Check for duplicate slip
-      logger.info('checking for duplicate slip...');
-      const isDuplicate = await this.slipHistoryModel.checkDuplicateSlip(payload);
-      logger.debug(`isDuplicate: ${isDuplicate}`);
-      if (isDuplicate) {
-        logger.error("Duplicate slip detected");
+      if (isDuplicateSlip) {
+        logger.info('Duplicate slip detected');
         throw MyAppErrors.badRequest("Duplicate slip detected");
       }
 
-      //NOTE -  Type classification is only available for file and base64 input
       // Extract text using OCR for type classification
-      let ocrText;
-      if (extractionMethod === 'file') {
-        ocrText = await this._extractTextFromImage(req.file.buffer);
-      } else if (extractionMethod === 'base64') {
-        const imageBuffer = Buffer.from(req.body.base64Image.split(',')[1], 'base64');
-        ocrText = await this._extractTextFromImage(imageBuffer);
-      } else {
-        //NOTE - the valid input for OCR is only file and base64, the payload is only for EasySlip API
-        throw MyAppErrors.badRequest("No valid input provided for OCR.");
+      const ocrText = await this._extractTextFromImage(req.file.buffer);
+      if (!ocrText) {
+        logger.error("Could not extract text from image.");
+        throw MyAppErrors.badRequest("Could not extract text from image.");
       }
 
+      let result;
       // Extract data based on availability
       if (isQuotaAvailable) {
         logger.info('using EasySlip API...');
         // Use EasySlip API
-        let easySlipResponse;
-        switch (extractionMethod) {
-          case 'payload':
-            easySlipResponse = await this.easySlipService.verifySlipByPayload(payload);
-            break;
-          case 'file':
-            easySlipResponse = await this.easySlipService.verifySlipByImage(req.file);
-            break;
-          case 'base64':
-            easySlipResponse = await this.easySlipService.verifySlipByBase64(req.body.base64Image);
-            break;
-        }
+        const easySlipResponse = await this.easySlipService.verifySlipByImage(req.file);
 
         // Check EasySlip response status
         if (!easySlipResponse) {
-          throw new MyAppErrors.serviceUnavailable("EasySlip verification failed");
+          logger.error("EasySlip verification failed");
+          throw MyAppErrors.serviceUnavailable("EasySlip verification failed");
         }
 
         result = {
@@ -412,33 +377,28 @@ class ApiController {
           this._getCurrentDate()
         );
 
-        await this.slipHistoryModel.recordSlipUsage(payload, result.data.transRef, req.user?.sub);
+        await this.slipHistoryModel.recordSlipUsage(easySlipResponse.payload, easySlipResponse.transRef, req.user?.sub);
 
-        if (ocrText) {
-          // Get transaction type from LLM
-          const transactionType = await OllamaService.classifyTransaction(ocrText);
-          logger.debug(`Classified transaction type: ${transactionType}`);
+        // Get transaction type from LLM
+        const transactionType = await OllamaService.classifyTransaction(ocrText);
+        logger.debug(`Classified transaction type: ${transactionType}`);
 
-          // Prepare transaction data
-          const transactionData = await this._prepareTransactionData(result.data, transactionType, req);
-          logger.debug(`transaction to be create: ${JSON.stringify(transactionData)}`);
-          const transaction = await this.transactionModel.create(transactionData);
-          logger.debug(`transaction created: ${JSON.stringify(transaction)}`);
+        // Prepare transaction data
+        const transactionData = await this._prepareTransactionData(result.data, transactionType, req);
+        logger.debug(`transaction to be create: ${JSON.stringify(transactionData)}`);
+        const transaction = await this.transactionModel.create(transactionData);
+        logger.debug(`transaction created: ${JSON.stringify(transaction)}`);
 
-          // Add transaction to response
-          result = {
-            message: result.message + " and stored as a transaction",
-            data: {
-              transaction
-            }
+        // Add transaction to response
+        result = {
+          message: result.message + " and stored as a transaction",
+          data: {
+            transaction
           }
-        } else {
-          const advice = "please try again with file or base64 input";
-          logger.error(`cannot extract the transaction type from this type of input. ${appConfigs.environment !== "production" ? advice : ""}`);
-          throw MyAppErrors.badRequest(`cannot extract the transaction type from this type of input. ${appConfigs.environment !== "production" ? advice : ""} `);
         }
       } else {
-        logger.info('EasySlip quota is not available, using mock data for development, or try OCR+LLM in production');
+        // logger.info('EasySlip quota is not available, using mock data for development, or try use Recognized text and LLM in production');
+        logger.info('EasySlip quota is not available, using mock data for development, or throw error in production');
         // Use mock data in development, or try OCR+LLM in production
         if (appConfigs.environment === 'development') {
           logger.info('using mock data...');
@@ -455,40 +415,40 @@ class ApiController {
               transaction
             }
           };
-
         } else {
-          // Production: Try OCR + LLM  
-          if (ocrText) {
-            logger.info('classifying transaction type...');
-            const transactionType = await OllamaService.classifyTransaction(ocrText);
+          // production mode
+          // logger.info('classifying transaction type...');
+          // const transactionType = await OllamaService.classifyTransaction(ocrText);
 
-            //FIXME - need to use llm to format the ocr data into transaction model
-            // Create transaction with OCR data
-            const transactionData = await this._prepareTransactionData(
-              { ...this.mockDataResponse, type: transactionType }, //FIXME - need to use llm to formatted data instead of mock data
-              transactionType,
-              req
-            );
+          // const transactionData = await this._prepareTransactionData(
+          //   { ...this.mockDataResponse, type: transactionType },
+          //   transactionType,
+          //   req
+          // );
 
-            logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
-            const transaction = await this.transactionModel.create(transactionData);
-            logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
+          // logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
+          // const transaction = await this.transactionModel.create(transactionData);
+          // logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
 
-            result = {
-              message: "Data extracted using OCR, LLM and stored as a transaction",
-              data: {
-                transaction
-              }
-            };
-          }
+          // result = {
+          //   message: "Data extracted using OCR, LLM and stored as a transaction",
+          //   data: {
+          //     transaction
+          //   }
+          // };
+          throw MyAppErrors.serviceUnavailable("EasySlip is not available");
         }
       }
 
       req.formattedResponse = formatResponse(200, result.message, result.data);
       next();
     } catch (error) {
-      logger.error("Error processing unified slip verification:", error);
-      next(error);
+      logger.error("Error processing slip verification:", error);
+      if (error instanceof MyAppErrors) {
+        next(error);
+      } else {
+        next(MyAppErrors.internalServerError("Internal server error"));
+      }
     }
   }
 
@@ -506,7 +466,6 @@ class ApiController {
     // Convert both to strings and remove any spaces
     maskedAccount = maskedAccount.toString().replace(/\s/g, '');
     storedAccount = storedAccount.toString().replace(/\s/g, '');
-    logger.debug(`replaced maskedAccount: ${maskedAccount}, storedAccount: ${storedAccount}`);
 
     // If lengths don't match, return false
     if (maskedAccount.length !== storedAccount.length) return false;
@@ -585,11 +544,12 @@ class ApiController {
         transaction_id: uuidv4(),
         transaction_datetime: new Date(slipData.date),
         category: category,
-        type: type || 'Other',
+        type: type || slipData.type || 'Other',
         amount: parseFloat(slipData.amount.amount),
         note: [slipData.ref1, slipData.ref2, slipData.ref3]
           .filter(ref => ref)
           .join(' ') || '',
+        slip_uri: req.file.path,
         national_id: req.user?.sub,
         debt_id: null,
       };

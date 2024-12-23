@@ -30,7 +30,9 @@ class TesseractService {
         this.scheduler = null;
         this.workerLimit = Math.min(os.cpus().length, 4);
         this.jobCounter = 0;
-        this.MAX_JOBS_BEFORE_RESET = Math.min(500, Math.floor(os.freemem() / appConfigs.tesseract.memoryPerJob));
+        const freeMemoryInMB = os.freemem() / (1024 * 1024);
+        logger.debug(`Free memory: ${Math.round(freeMemoryInMB).toFixed(2)} MB`)
+        this.MAX_JOBS_BEFORE_RESET = Math.min(500, Math.round(freeMemoryInMB / appConfigs.tesseract.memoryPerJob));
 
         const tessProperties = 'WorkerLimit: ' + this.workerLimit + ', MaxJobsBeforeReset: ' + this.MAX_JOBS_BEFORE_RESET;
         logger.debug(`Tesseract properties: ${tessProperties}`);
