@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 // ข้อมูลบัญชีธนาคาร
 const bankAccounts = [
   { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0, lastUpdated: "Today, 14:30 PM" },
-  { name: "Siam Commercial", owner: "John Doe", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
+  { name: "Krungthai", owner: "John Doe", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
 ];
 
 // ข้อมูลธุรกรรมล่าสุด

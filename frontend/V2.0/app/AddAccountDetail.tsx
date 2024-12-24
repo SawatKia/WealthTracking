@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
 import { useRouter } from "expo-router";
-import RNPickerSelect from 'react-native-picker-select';  // Importing the Picker
 
 const bankList = [
     "Bank of Thailand", "Bangkok Bank", "Kasikorn Bank", "Krungthai Bank",
@@ -17,7 +17,8 @@ const bankList = [
 ];
 
 const AddAccountDetail = () => {
-    const [bankName, setBankName] = useState("");
+    const [bankName, setBankName] = useState(null);
+    const [open, setOpen] = useState(false);
     const [accountName, setAccountName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [remainingBalance, setRemainingBalance] = useState("");
@@ -33,92 +34,77 @@ const AddAccountDetail = () => {
     };
 
     return (
-        <View style={styles.container}>
-            {/* Container for both header and inputs */}
-            <View style={styles.inputWrapper}>
-                {/* Header inside the same box */}
-                <Text style={styles.title}>Bank Account Details</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+            <View style={styles.container}>
+                <View style={styles.inputWrapper}>
+                    <Text style={styles.title}>Bank Account Details</Text>
 
-                {/* Bank Name Picker */}
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Bank Name</Text>
-                    <RNPickerSelect
-                        onValueChange={(value) => setBankName(value)}
-                        items={bankList.map(bank => ({ label: bank, value: bank }))}
-                        style={pickerStyles}
-                        placeholder={{ label: 'Select Bank...', value: null }} // Placeholder
-                    />
-                </View>
+                    {/* Bank Name Picker */}
+                    <View style={[styles.inputContainer, { zIndex: 5000 }]}>
+                        <Text style={styles.label}>Bank Name</Text>
+                        <DropDownPicker
+                            open={open}
+                            value={bankName}
+                            items={bankList.map(bank => ({ label: bank, value: bank }))}
+                            setOpen={setOpen}
+                            setValue={setBankName}
+                            placeholder="Select Bank..."
+                            searchable={true}
+                            style={styles.dropdown}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                            zIndex={5000}
+                            zIndexInverse={4000}
+                        />
+                    </View>
 
-                {/* Account Name Input */}
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Account Name</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={accountName}
-                        onChangeText={setAccountName}
-                        placeholder="Enter Account Name"
-                    />
-                </View>
+                    {/* Account Name Input */}
+                    <View style={[styles.inputContainer, { zIndex: 4000 }]}>
+                        <Text style={styles.label}>Account Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={accountName}
+                            onChangeText={setAccountName}
+                            placeholder="Enter Account Name"
+                        />
+                    </View>
 
-                {/* Account Number Input */}
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Account Number</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={accountNumber}
-                        onChangeText={setAccountNumber}
-                        placeholder="Enter Account Number"
-                        keyboardType="numeric"
-                    />
-                </View>
+                    {/* Account Number Input */}
+                    <View style={[styles.inputContainer, { zIndex: 3000 }]}>
+                        <Text style={styles.label}>Account Number</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={accountNumber}
+                            onChangeText={setAccountNumber}
+                            placeholder="Enter Account Number"
+                            keyboardType="numeric"
+                        />
+                    </View>
 
-                {/* Remaining Balance Input */}
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Remaining Balance</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={remainingBalance}
-                        onChangeText={setRemainingBalance}
-                        placeholder="Enter Remaining Balance"
-                        keyboardType="numeric"
-                    />
-                </View>
+                    {/* Remaining Balance Input */}
+                    <View style={[styles.inputContainer, { zIndex: 2000 }]}>
+                        <Text style={styles.label}>Remaining Balance</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={remainingBalance}
+                            onChangeText={setRemainingBalance}
+                            placeholder="Enter Remaining Balance"
+                            keyboardType="numeric"
+                        />
+                    </View>
 
-                {/* Buttons */}
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                        <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                        <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
+                    {/* Buttons */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                            <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
+        </ScrollView>
     );
-};
-
-// Add custom styles for the Picker
-const pickerStyles = {
-    inputIOS: {
-        height: 45,
-        borderColor: "#ccc",
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingLeft: 15,
-        fontSize: 14,
-        color: "#555",
-    },
-    inputAndroid: {
-        height: 45,
-        borderColor: "#ccc",
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingLeft: 15,
-        fontSize: 14,
-        color: "#555",
-    },
 };
 
 const styles = StyleSheet.create({
@@ -150,7 +136,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 14,
-        color: "#555",
+        color: "#333",
         marginBottom: 8,
     },
     input: {
@@ -160,7 +146,20 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingLeft: 15,
         fontSize: 14,
-        color: "#555",
+        color: "#333",
+    },
+    dropdown: {
+        height: 45,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingLeft: 15,
+        fontSize: 14,
+        color: "#333",
+    },
+    dropdownContainer: {
+        borderColor: "#ccc",
+        borderRadius: 12,
     },
     buttonContainer: {
         flexDirection: "row",
