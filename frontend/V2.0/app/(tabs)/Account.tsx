@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 // ข้อมูลบัญชีธนาคาร
 const bankAccounts = [
   { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0, lastUpdated: "Today, 14:30 PM" },
-  { name: "Siam Commercial", owner: "John Doe", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
+  { name: "Krungthai", owner: "John Doe", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
 ];
 
 // ข้อมูลธุรกรรมล่าสุด
@@ -47,7 +47,9 @@ export default function BankAccountScreen() {
     <GestureHandlerRootView style={styles.container}>
       {/* ยอดเงินรวมทั้งหมด */}
       <View style={styles.totalBalanceContainer}>
-        <Text style={styles.totalBalanceText}>Total Balance: {totalBalance.toFixed(2)} Baht</Text>
+        <Text style={styles.totalBalanceText}>
+          Total Balance : {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
+        </Text>
       </View>
 
       {/* การ์ดแสดงบัญชีธนาคาร */}
@@ -56,10 +58,10 @@ export default function BankAccountScreen() {
           <View style={styles.accountCard}>
             <Text style={styles.bankName}>{bankAccounts[currentIndex].name}</Text>
             <Text style={styles.accountOwner}>{bankAccounts[currentIndex].owner}</Text>
-            <Text style={styles.accountNumber}>Account Number: {bankAccounts[currentIndex].accountNumber}</Text>
+            <Text style={styles.accountNumber}>{bankAccounts[currentIndex].accountNumber}</Text>
             <Text style={styles.balanceText}>Bank Balance</Text>
             <Text style={styles.balanceAmount}>
-              {bankAccounts[currentIndex].balance.toFixed(2)} Baht
+              {bankAccounts[currentIndex].balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
           </View>
         </View>
@@ -76,15 +78,17 @@ export default function BankAccountScreen() {
       </View>
 
       {/* ประวัติธุรกรรมล่าสุด */}
-      <Text style={styles.sectionTitle}>Recent Transactions</Text>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}> Recent Transactions</Text>
       <FlatList
         data={recentTransactions.slice(0, 5)} // แสดงแค่ 5 รายการแรก
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.transactionCard}>
-            <Text style={[styles.transactionType, { color: item.color }]}>{item.type}</Text>
-            <Text style={styles.transactionDetails}>Account Number: {item.accountNumber}</Text>
-            <Text style={[styles.transactionAmount, { color: item.color }]}>{item.amount.toFixed(2)} Baht</Text>
+            <Text style={[styles.transactionType, { color: "#333333" }]}>{item.type}</Text>
+            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number {item.accountNumber}</Text>
+            <Text style={[styles.transactionAmount, { color: item.color }]}>
+              {item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
+            </Text>
           </View>
         )}
       />
@@ -98,7 +102,7 @@ export default function BankAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, padding: 16, backgroundColor: "#F0F6FF" },
   accountContainer: {
     backgroundColor: "#4957AA",
     marginBottom: 10,
@@ -119,10 +123,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  bankName: { fontSize: 20, fontWeight: "bold", color: "#fff" },
-  accountOwner: { fontSize: 16, color: "#fff", marginVertical: 4 },
-  accountNumber: { fontSize: 14, color: "#fff", marginVertical: 4 },
-  balanceText: { fontSize: 16, color: "#fff", marginVertical: 8 },
+  bankName: { fontSize: 24, fontWeight: "bold", color: "#fff" },
+  accountOwner: { fontSize: 14, color: "#E2E2E2", marginVertical: 4 },
+  accountNumber: { fontSize: 14, color: "#E2E2E2", marginVertical: 4 },
+  balanceText: { fontSize: 14, color: "#E2E2E2", marginVertical: 4 },
   balanceAmount: { fontSize: 24, fontWeight: "bold", color: "#fff" },
   sectionTitle: {
     fontSize: 20,
@@ -141,9 +145,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  transactionType: { fontSize: 16, fontWeight: "bold" },
+  transactionType: { fontSize: 14 },
   transactionDetails: { fontSize: 14, color: "#555", marginVertical: 4 },
-  transactionAmount: { fontSize: 16, fontWeight: "bold" },
+  transactionAmount: { fontSize: 14 },
   floatingButton: {
     position: "absolute",
     bottom: 10,

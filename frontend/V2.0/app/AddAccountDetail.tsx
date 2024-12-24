@@ -1,97 +1,109 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Picker } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
 import { useRouter } from "expo-router";
 
+const bankList = [
+    "Bank of Thailand", "Bangkok Bank", "Kasikorn Bank", "Krungthai Bank",
+    "JPMorgan Chase", "Oversea-Chinese Banking Corporation", "TMB Thanachart Bank",
+    "Siam Commercial Bank", "Citibank", "Sumitomo Mitsui Banking Corporation",
+    "Standard Chartered Bank (Thai)", "CIMB Thai Bank", "RHB Bank", "United Overseas Bank (Thai)",
+    "Bank of Ayudhya", "Mega International Commercial Bank", "Bank of America", "Indian Overseas Bank",
+    "Government Savings Bank", "Hongkong and Shanghai Banking Corporation", "Deutsche Bank Bangkok Branch",
+    "Government Housing Bank", "Bank for Agriculture and Agricultural Cooperatives", "Export-Import Bank of Thailand",
+    "Mizuho Bank Bangkok Branch", "BNP Paribas", "Bank of China (Thai)", "Islamic Bank of Thailand", "Tisco Bank",
+    "Kiatnakin Phatra Bank", "ICBC (Thai)", "Thai Credit Bank", "Land and Houses Bank", "Sumitomo Mitsui Trust Bank (Thai)",
+    "SME Development Bank"
+];
+
 const AddAccountDetail = () => {
-    const [bankName, setBankName] = useState("");
+    const [bankName, setBankName] = useState(null);
+    const [open, setOpen] = useState(false);
     const [accountName, setAccountName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [remainingBalance, setRemainingBalance] = useState("");
     const router = useRouter();
 
     const handleSave = () => {
-        // Logic to save the account details can go here
-        console.log("Saved Account Details:", {
-            bankName,
-            accountName,
-            accountNumber,
-            remainingBalance,
-        });
-        // Logic to update account information could go here (e.g., sending data to a backend or state management)
-        // Navigate back to the Bank Account page after saving
-        router.push("/BankAccount");
+        console.log("Saved Account Details:", { bankName, accountName, accountNumber, remainingBalance });
+        router.push("/AddAccount");
     };
 
     const handleCancel = () => {
-        // Logic for canceling, like clearing input or just navigating back
-        router.push("/BankAccount");
+        router.push("/AddAccount");
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Bank Account Details</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+            <View style={styles.container}>
+                <View style={styles.inputWrapper}>
+                    <Text style={styles.title}>Bank Account Details</Text>
 
-            {/* เลือกธนาคาร */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Bank Name</Text>
-                <Picker
-                    selectedValue={bankName}
-                    onValueChange={(itemValue) => setBankName(itemValue)}
-                    style={styles.picker}
-                >
-                    <Picker.Item label="Kasikorn" value="Kasikorn" />
-                    <Picker.Item label="Siam Commercial" value="Siam Commercial" />
-                    <Picker.Item label="Bangkok Bank" value="Bangkok Bank" />
-                    <Picker.Item label="Krungthai" value="Krungthai" />
-                    <Picker.Item label="Bank of Ayudhya" value="Bank of Ayudhya" />
-                </Picker>
-            </View>
+                    {/* Bank Name Picker */}
+                    <View style={[styles.inputContainer, { zIndex: 5000 }]}>
+                        <Text style={styles.label}>Bank Name</Text>
+                        <DropDownPicker
+                            open={open}
+                            value={bankName}
+                            items={bankList.map(bank => ({ label: bank, value: bank }))}
+                            setOpen={setOpen}
+                            setValue={setBankName}
+                            placeholder="Select Bank..."
+                            searchable={true}
+                            style={styles.dropdown}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                            zIndex={5000}
+                            zIndexInverse={4000}
+                        />
+                    </View>
 
-            {/* กรอกชื่อบัญชี */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Account Name</Text>
-                <TextInput
-                    style={styles.input}
-                    value={accountName}
-                    onChangeText={setAccountName}
-                    placeholder="Enter Account Name"
-                />
-            </View>
+                    {/* Account Name Input */}
+                    <View style={[styles.inputContainer, { zIndex: 4000 }]}>
+                        <Text style={styles.label}>Account Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={accountName}
+                            onChangeText={setAccountName}
+                            placeholder="Enter Account Name"
+                        />
+                    </View>
 
-            {/* กรอกหมายเลขบัญชี */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Account Number</Text>
-                <TextInput
-                    style={styles.input}
-                    value={accountNumber}
-                    onChangeText={setAccountNumber}
-                    placeholder="Enter Account Number"
-                    keyboardType="numeric"
-                />
-            </View>
+                    {/* Account Number Input */}
+                    <View style={[styles.inputContainer, { zIndex: 3000 }]}>
+                        <Text style={styles.label}>Account Number</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={accountNumber}
+                            onChangeText={setAccountNumber}
+                            placeholder="Enter Account Number"
+                            keyboardType="numeric"
+                        />
+                    </View>
 
-            {/* กรอกยอดเงินคงเหลือ */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Remaining Balance</Text>
-                <TextInput
-                    style={styles.input}
-                    value={remainingBalance}
-                    onChangeText={setRemainingBalance}
-                    placeholder="Enter Remaining Balance"
-                    keyboardType="numeric"
-                />
-            </View>
+                    {/* Remaining Balance Input */}
+                    <View style={[styles.inputContainer, { zIndex: 2000 }]}>
+                        <Text style={styles.label}>Remaining Balance</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={remainingBalance}
+                            onChangeText={setRemainingBalance}
+                            placeholder="Enter Remaining Balance"
+                            keyboardType="numeric"
+                        />
+                    </View>
 
-            {/* ปุ่ม Save และ Cancel */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                    <Text style={styles.buttonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.buttonText}>Save</Text>
-                </TouchableOpacity>
+                    {/* Buttons */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                            <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
@@ -99,58 +111,80 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#F0F6FF",
+        justifyContent: "flex-start",
+    },
+    inputWrapper: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        marginTop: 20,
     },
     title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 20,
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
         textAlign: "center",
+        marginBottom: 20,
     },
     inputContainer: {
         marginBottom: 20,
     },
     label: {
-        fontSize: 16,
-        fontWeight: "500",
+        fontSize: 14,
+        color: "#333",
         marginBottom: 8,
     },
     input: {
-        height: 40,
+        height: 45,
         borderColor: "#ccc",
         borderWidth: 1,
-        borderRadius: 4,
-        paddingLeft: 10,
-        fontSize: 16,
-        backgroundColor: "#fff",
+        borderRadius: 12,
+        paddingLeft: 15,
+        fontSize: 14,
+        color: "#333",
     },
-    picker: {
-        height: 40,
+    dropdown: {
+        height: 45,
         borderColor: "#ccc",
         borderWidth: 1,
-        borderRadius: 4,
-        backgroundColor: "#fff",
+        borderRadius: 12,
+        paddingLeft: 15,
+        fontSize: 14,
+        color: "#333",
+    },
+    dropdownContainer: {
+        borderColor: "#ccc",
+        borderRadius: 12,
     },
     buttonContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
     },
     cancelButton: {
-        backgroundColor: "#f44336",
-        paddingVertical: 10,
-        paddingHorizontal: 30,
-        borderRadius: 5,
+        backgroundColor: "#E2E2E2",
+        paddingVertical: 12,
+        paddingHorizontal: 35,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ddd",
     },
     saveButton: {
-        backgroundColor: "#4957AA",
-        paddingVertical: 10,
-        paddingHorizontal: 30,
-        borderRadius: 5,
+        backgroundColor: "#9AC9F3",
+        paddingVertical: 12,
+        paddingHorizontal: 50,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#9AC9F3",
     },
     buttonText: {
-        color: "#fff",
+        color: "#333333",
         fontSize: 16,
-        fontWeight: "500",
+        fontWeight: "600",
     },
 });
 
