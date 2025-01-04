@@ -8,9 +8,11 @@ class DocumentAiService {
     constructor() {
         logger.info('Initializing DocumentAiService');
         logger.debug(`appConfigs.documentAi: ${JSON.stringify(appConfigs.documentAi, null, 2)}`);
+        logger.debug(`appConfigs.gcp: ${JSON.stringify(appConfigs.gcp, null, 2)}`)
 
         // Initialize configuration from appConfigs
-        this.projectNumber = appConfigs.documentAi.projectNumber;
+        this.projectName = appConfigs.gcp.projectName;
+        this.projectNumber = appConfigs.gcp.projectNumber;
         this.location = appConfigs.documentAi.location;
         this.processorId = appConfigs.documentAi.processorId;
         this.connected = false;
@@ -19,12 +21,13 @@ class DocumentAiService {
         }
         logger.debug("service account found")
         // Initialize the client
-        this.client = new DocumentProcessorServiceClient({
+        this.documentAiClient = new DocumentProcessorServiceClient({
             apiEndpoint: `${this.location}-documentai.googleapis.com`
         });
 
         this.processorName = `projects/${this.projectNumber}/locations/${this.location}/processors/${this.processorId}`;
         logger.debug(`Processor name: ${this.processorName}`);
+        this.recognize = this.recognize.bind(this);
     }
 
     /**
@@ -37,7 +40,7 @@ class DocumentAiService {
             const request = {
                 parent: `projects/${this.projectNumber}/locations/${this.location}`,
             };
-            const iterable = this.client.listProcessorsAsync(request);
+            const iterable = this.documentAiClient.listProcessorsAsync(request);
             for await (const response of iterable) {
                 if (!response) {
                     throw new Error('Failed to verify connection: no processors found');
@@ -96,7 +99,7 @@ class DocumentAiService {
             };
 
             // Process the document
-            const [result] = await this.client.processDocument(request);
+            const [result] = await this.documentAiClient.processDocument(request);
             logger.debug(`documentAi RAW result: ${JSON.stringify(result).substring(1, 1000)}${result.length > 1000 ? " ...[truncated]..." : ""}`);
             const { document } = result;
 
@@ -105,12 +108,13 @@ class DocumentAiService {
                 logger.error('No text was extracted from the image');
                 throw new Error('No text was extracted from the image');
             }
+            logger.debug(`document.text: ${document.text.substring(0, 1000)}${document.text.length > 1000 ? " ...[truncated]..." : ""}`);
 
             // Extract text from all paragraphs
             const extractedText = document.pages
                 .flatMap(page => page.paragraphs)
                 .map(paragraph => this._extractText(document, paragraph.layout.textAnchor))
-                .join('\n')
+                .join('')
                 .trim();
 
             logger.info('Document AI processing completed');
