@@ -1280,6 +1280,50 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /debts/{debt_id}/payments:
+    get:
+      tags:
+        - "Debt"
+      summary: Get all payments for a specific debt
+      description: Retrieves all payment transactions associated with a specific debt
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt payments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Debt payments retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # Transaction Endpoints
   /transactions:
     post:
@@ -1433,7 +1477,7 @@ paths:
         - "Cache"
       summary: Get all cache entries (Development Only)
       description: |
-        ⚠�� WARNING: This endpoint is for development purposes only!
+        ⚠️ WARNING: This endpoint is for development purposes only!
         Do not use or rely on this endpoint in production environments.
         This endpoint returns all key-value pairs stored in cache.
       responses:
