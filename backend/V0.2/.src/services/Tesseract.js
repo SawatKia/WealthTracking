@@ -1,5 +1,6 @@
 const fs = require('fs');
 const os = require('os');
+const path = require('path');
 
 const { createScheduler, createWorker } = require('tesseract.js');
 const { Logger } = require('../utilities/Utils');
@@ -42,13 +43,19 @@ class TesseractService {
     async initializeScheduler() {
         logger.info('Initializing scheduler');
         this.scheduler = createScheduler();
+        // this.langs = ['eng', 'tha'];
+        // this.langs = ['eng', 'tha_slip'];
+        this.langs = ['eng', 'tha_slip', 'tha'];
 
         // Create worker pool
         for (let i = 0; i < this.workerLimit; i++) {
-            const worker = await createWorker(['eng', 'tha'], 1, {
-                // langPath: '../../statics/tranieddata',
+            const worker = await createWorker(this.langs, 1, {
+                langPath: path.join(__dirname, '../../statics/traineddata'),
                 logger: m => logger.silly(`Worker[${i + 1}]: ${JSON.stringify(m)}`),
-                errorHandler: err => logger.error(`Worker[${i + 1}] error: ${err}`),
+                errorHandler: err => {
+                    logger.error(`Worker[${i + 1}] error: ${err}`);
+                    throw new Error(`Worker[${i + 1}] error: ${err.message}`);
+                },
             });
 
             logger.debug(`Worker[${i + 1}] initialized`);
@@ -148,7 +155,7 @@ class TesseractService {
             }
 
             logger.info('OCR recognition completed');
-            logger.debug(`Recognized text: ${text}`);
+            logger.debug(`Tesseract[${this.langs}] Recognized text: ${text}`);
 
             return text;
         } catch (error) {
