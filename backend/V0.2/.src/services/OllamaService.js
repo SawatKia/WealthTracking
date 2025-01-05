@@ -16,13 +16,18 @@ class OllamaService {
             host: appConfigs.ollama?.host
         });
         this.modelName = appConfigs.ollama?.model;
+        if (!this.modelName) {
+            throw new Error("the modelName is not provided")
+        }
 
         // Create a formatted string of all transaction types for the system prompt
         this.typesList = Object.entries(transactionTypes)
             .map(([category, types]) => `${category}: ${types.join(', ')}`)
             .join('\n');
-
-        this.systemPrompt = `You are a financial transaction classifier. Your task is to analyze text from Thai payment slips and determine the most appropriate transaction type.
+        //NOTE - in additional for improvement, we can add a feature to return the top 3 most likely types with their confidence level.
+        /*NOTE - in additional for improving for next applocation, add suggest_type key. its default is null.
+        but if there is no match type, it'll be create a new type in suggest_type and add to db for updating new typs in new versions (updatability)  */
+        this.systemPrompt = `You are a financial transaction classifier. Your task is to analyze text from Thai payment slips and determine the most appropriate transaction type. from the following available transaction type only.
 
 Available transaction types are:
 ${this.typesList}
@@ -30,7 +35,7 @@ ${this.typesList}
 Respond only with a JSON object in this format:
 {
     "category": "one of: Expense, Income, or Transfer",
-    "type": "specific type from the category",
+    "type": "specify type from available transaction types only base on category",
     "confidence": "number between 0 and 1",
     "reasoning": "brief explanation of why this type was chosen"
 }
@@ -38,9 +43,12 @@ Respond only with a JSON object in this format:
 Rules:
 1. If the text mentions products or services, focus on those to determine the type
 2. If multiple types could apply, choose the most specific one
-3. If unsure, use the most general type within the appropriate category
-4. For transfers between accounts, always use Transfer category
-5. For unclear cases, set confidence below 0.7`;
+3. do not use or create the type that is not in the available transaction types list
+4. If there is no relevant type in the available transaction list, use "other" as a type value. But add the most general type with the appropriate category as a new key name "suggest_type".
+5. For unclear cases, set confidence below 0.6
+6. do not use the suggest_type key if the confidence is above 0.6
+7. For transfers between accounts, always use Transfer category
+`;
         if (this.ollama) {
             logger.info('OllamaService initialized');
         } else {
@@ -71,7 +79,7 @@ Rules:
             logger.debug(`Model ${this.modelName} is available: ${isAvailable}`);
             return isAvailable;
         } catch (error) {
-            logger.error('Error checking model availability:', error);
+            logger.error(`Error checking model availability: ${error.message}`);
             return false;
         }
     }
@@ -237,7 +245,7 @@ Rules:
             }
         } catch (error) {
             logUpdate.clear(); // Clear progress on error
-            logger.error('Error ensuring model availability:', error);
+            logger.error(`Error ensuring model availability: ${error.message}`);
             throw new Error(`Failed to ensure model availability: ${error.message}`);
         }
     }
@@ -272,8 +280,9 @@ Rules:
             logger.debug(`Model test response: ${JSON.stringify(testResponse)}`);
 
             logger.info('Model test successful');
+            logger.info('Ollama service initialized');
         } catch (error) {
-            logger.error('Failed to initialize Ollama service:', error.message);
+            logger.error(`Failed to initialize Ollama service:${error.message}`);
             throw new Error('Ollama service initialization failed');
         }
     }
@@ -302,42 +311,43 @@ Rules:
             logger.debug(`Ollama response: ${response.response}`);
 
             if (!response.response) {
+                logger.error("No response from Ollama")
                 throw new Error('No response from Ollama');
             }
+            const result = JSON.parse(response.response);
+            logger.debug(`Parsed response: ${JSON.stringify(result)}`);
 
-            try {
-                const result = JSON.parse(response.response);
-                logger.debug(`Classification result: ${JSON.stringify(result)}`);
+            if (result.category === 'Transfer') {
+                logger.debug('Detected transfer category');
+                result.type = 'Transfer';
+            }
+            logger.debug(`Final classification result: ${JSON.stringify(result)}`);
 
-                // Validate the response format
-                if (!result.category || !result.type || !result.confidence) {
-                    throw new Error('Invalid response format from LLM');
-                }
-
-                // Validate that the category and type exist in our types
-                if (!transactionTypes[result.category]?.includes(result.type)) {
-                    throw new Error('Invalid category or type returned by LLM');
-                }
-
-                if (result.confidence > 0.6) {
-                    return result.type;
-                }
-            } catch (parseError) {
-                logger.error('Failed to parse LLM response:', parseError);
+            // Validate the response format
+            if (!result.category || !result.type || result.confidence === undefined) {
+                logger.error("Invalid response format from LLM")
                 throw new Error('Invalid response format from LLM');
             }
-        } catch (error) {
-            logger.error('Error classifying transaction:', error);
-            throw error;
-        }
-    }
 
-    /**
-     * Terminate the Ollama service
-     */
-    async terminate() {
-        logger.info('Terminating OllamaService');
-        // Add any cleanup code here if needed
+            // Validate that the category and type exist in our types
+            if (!transactionTypes[result.category]?.includes(result.type) || (result.confidence < 0.6)) {
+                logger.warn("Invalid category or type returned by LLM");
+                result.type = 'Other';
+                logger.warn(`Using default type: ${result.type}`);
+            }
+
+            if (result.confidence > 0.6) {
+                return result.type;
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                logger.error(`Failed to parse LLM response: ${error.message}`,);
+                throw Error
+            }
+            logger.error(`Error classifying transaction: ${error.message}`);
+            throw new Error(error.message);
+
+        }
     }
 
     /**
@@ -361,7 +371,7 @@ Rules:
         } catch (error) {
             const endTime = Date.now();
             const duration = (endTime - startTime) / 1000;
-            logger.error(`Generation failed after ${duration.toFixed(2)}s:`, error);
+            logger.error(`Generation failed after ${duration.toFixed(2)}s: ${error.message}`);
             throw error;
         }
     }
