@@ -11,14 +11,26 @@ const logger = Logger("DebtController");
 
 class DebtController extends BaseController {
     constructor() {
-        super();
-        this.DebtModel = new DebtModel();
+        try {
+            logger.info('Initializing DebtController...');
+            super();
+            logger.debug('BaseController initialized successfully');
 
-        this.createDebt = this.createDebt.bind(this);
-        this.getDebt = this.getDebt.bind(this);
-        this.getAllDebts = this.getAllDebts.bind(this);
-        this.updateDebt = this.updateDebt.bind(this);
-        this.deleteDebt = this.deleteDebt.bind(this);
+            this.DebtModel = new DebtModel();
+            logger.debug('DebtModel initialized successfully');
+
+            this.createDebt = this.createDebt.bind(this);
+            this.getDebt = this.getDebt.bind(this);
+            this.getAllDebts = this.getAllDebts.bind(this);
+            this.updateDebt = this.updateDebt.bind(this);
+            this.deleteDebt = this.deleteDebt.bind(this);
+            this.getAllDebtPayments = this.getAllDebtPayments.bind(this)
+
+            logger.info('DebtController initialized successfully');
+        } catch (error) {
+            logger.error(`Error initializing DebtController: ${error.stack}`);
+            throw error;
+        }
     }
 
     async createDebt(req, res, next) {
@@ -139,6 +151,52 @@ class DebtController extends BaseController {
             next();
         } catch (error) {
             logger.error(`error getting all debts: ${error}`);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
+        }
+    }
+
+    async getAllDebtPayments(req, res, next) {
+        try {
+            logger.info('request to get all debt payments');
+            const debt_id = req.params.debt_id;
+            logger.debug(`debt_id: ${debt_id}`);
+            const validatedDebtId = await super.verifyField({ debt_id }, ['debt_id'], this.DebtModel);
+            logger.debug(`validatedDebtId: ${validatedDebtId}`);
+            if (!uuidValidateV4(validatedDebtId.debt_id)) {
+                logger.error('invalid debt_id');
+                throw MyAppErrors.badRequest('invalid debt_id');
+            }
+            logger.info('debt_id validated successfully');
+
+            const currentUser = await super.getCurrentUser(req);
+            if (!currentUser) {
+                logger.error('user not found');
+                throw MyAppErrors.unauthorized('user not found');
+            }
+
+            const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
+            logger.debug(`debt: ${JSON.stringify(debt, null, 2)}`);
+            if (!debt) {
+                logger.error('the requested debt not found');
+                throw MyAppErrors.notFound('the requested debt not found');
+            }
+
+            if (!super.verifyOwnership(currentUser, debt)) {
+                logger.error('user does not own the debt');
+                throw MyAppErrors.forbidden('user does not own the debt');
+            }
+
+            const debtPayments = await this.DebtModel.paymentsList(validatedDebtId.debt_id);
+            logger.debug(`debtPayments: ${JSON.stringify(debtPayments, null, 2)}`);
+
+            req.formattedResponse = formatResponse(200, "Debt payments retrieved successfully", { debtPayments });
+            next();
+        } catch (error) {
+            logger.error(`error getting all debt payments: ${error}`);
             if (error instanceof MyAppErrors) {
                 next(error);
             } else {

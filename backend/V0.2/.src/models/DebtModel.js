@@ -152,6 +152,30 @@ class DebtModel extends BaseModel {
         }
     }
 
+    async paymentsList(debt_id) {
+        try {
+            logger.info('getting payments list');
+            logger.debug(`debt_id: ${debt_id}`);
+            if (typeof debt_id != "string" || debt_id === null) {
+                logger.error('debt_id is not a string');
+                throw new Error('debt_id is not a string');
+            }
+            const query = `
+                SELECT *
+                FROM Transactions
+                WHERE 
+                    type = 'Debt Payment' AND
+                    debt_id = $1
+                ORDER BY transaction_datetime DESC;`
+            const result = await super.executeQuery(query, [debt_id])
+            logger.debug(`result: ${JSON.stringify(result)}`)
+            return result.rows;
+        } catch (error) {
+            logger.error(`error getting payments list: ${error}`);
+            throw error;
+        }
+    }
+
 }
 
 module.exports = DebtModel;

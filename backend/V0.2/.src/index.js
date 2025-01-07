@@ -243,22 +243,26 @@ const loadMockData = async () => {
  * Initialize all required services
  */
 const initializeServices = async () => {
-  logger.info("Initializing services...");
+  try {
+    logger.info("Initializing services...");
 
-  if (!pgClient.isConnected()) {
-    logger.info("Connecting to database...");
-    await pgClient.init();
-    logger.info("Database connected");
+    if (!pgClient.isConnected()) {
+      logger.info("Connecting to database...");
+      await pgClient.init();
+      logger.info("Database connected");
+    }
+
+    await easySlip.init();
+    await ollama.init();
+    await documentAiService.init();
+
+    const fi = new FiModel();
+    await fi.initializeData();
+
+    await tesseractService.initializeScheduler();
+  } catch (error) {
+    throw error;
   }
-
-  await easySlip.init();
-  await ollama.init();
-  await documentAiService.init();
-
-  const fi = new FiModel();
-  await fi.initializeData();
-
-  await tesseractService.initializeScheduler();
 };
 
 /**

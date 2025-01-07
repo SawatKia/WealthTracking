@@ -20,7 +20,7 @@
         "Business",
         "Game",
         "Debt Payment",
-        "Other Expense"
+        "Other"
     ],
     "Income": [
         "Dividend",
@@ -29,7 +29,7 @@
         "Revenue",
         "Business",
         "Salary",
-        "Other Income"
+        "Other"
     ],
     "Transfer": [
         "Transfer"

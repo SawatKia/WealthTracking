@@ -46,9 +46,12 @@ const config = {
         model: process.env.OLLAMA_MODEL || 'llama3.2',
     },
     loadMockData: process.env.LOAD_MOCK_DATA || false,
+    gcp: {
+        projectName: process.env.PROJECT_NAME,
+        projectId: process.env.PROJECT_ID,
+        projectNumber: process.env.PROJECT_NUMBER,
+    },
     documentAi: {
-        projectId: process.env.DOCUMENT_AI_PROJECT_ID,
-        projectNumber: process.env.DOCUMENT_AI_PROJECT_NUMBER,
         location: process.env.DOCUMENT_AI_LOCATION,
         processorId: process.env.DOCUMENT_AI_PROCESSOR_ID,
         pathToServiceAccount: process.env.GOOGLE_APPLICATION_CREDENTIALS,

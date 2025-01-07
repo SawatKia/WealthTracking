@@ -63,6 +63,7 @@ class BudgetController extends BaseController {
             logger.info('Getting budget');
             const currentUser = await super.getCurrentUser(req);
 
+            //FIXME - this should use query params instead of path params
             super.verifyType('Expense', req.params.expenseType);
 
             let budget = await this.BudgetModel.findOne({

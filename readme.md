@@ -88,10 +88,10 @@ ACCESS_TOKEN_SECRET=<your-secure-access-token-secret>
 REFRESH_TOKEN_SECRET=<your-secure-refresh-token-secret>
 SALT_ROUNDS=10
 
-POSTGRES_USER=user
+POSTGRES_USER=<user>
 POSTGRES_HOST=postgres # docker service name
 POSTGRES_TEST_NAME=test_database_name
-POSTGRES_PASSWORD=password
+POSTGRES_PASSWORD=<password>
 POSTGRES_PORT=5432
 POSTGRES_DB=WealthTrack_DB
 # POSTGRES_DB=your_database_name
@@ -111,8 +111,10 @@ GOOGLE_CLIENT_ID=<your-google-client-id>
 GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 
-DOCUMENT_AI_PROJECT_ID=<project-id>
-DOCUMENT_AI_PROJECT_NUMBER=<project-number>
+PROJECT_NAME=<project-name>
+PROJECT_ID=<project-id>
+PROJECT_NUMBER=<project-number>
+
 DOCUMENT_AI_LOCATION=us
 DOCUMENT_AI_PROCESSOR_ID=<processor-id>
 GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
