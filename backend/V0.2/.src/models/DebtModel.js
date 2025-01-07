@@ -167,7 +167,9 @@ class DebtModel extends BaseModel {
                     type = 'Debt Payment' AND
                     debt_id = $1
                 ORDER BY transaction_datetime DESC;`
-            return await super.executeQuery(query, [debt_id]);
+            const result = await super.executeQuery(query, [debt_id])
+            logger.debug(`result: ${JSON.stringify(result)}`)
+            return result.rows;
         } catch (error) {
             logger.error(`error getting payments list: ${error}`);
             throw error;

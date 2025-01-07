@@ -11,14 +11,26 @@ const logger = Logger("DebtController");
 
 class DebtController extends BaseController {
     constructor() {
-        super();
-        this.DebtModel = new DebtModel();
+        try {
+            logger.info('Initializing DebtController...');
+            super();
+            logger.debug('BaseController initialized successfully');
 
-        this.createDebt = this.createDebt.bind(this);
-        this.getDebt = this.getDebt.bind(this);
-        this.getAllDebts = this.getAllDebts.bind(this);
-        this.updateDebt = this.updateDebt.bind(this);
-        this.deleteDebt = this.deleteDebt.bind(this);
+            this.DebtModel = new DebtModel();
+            logger.debug('DebtModel initialized successfully');
+
+            this.createDebt = this.createDebt.bind(this);
+            this.getDebt = this.getDebt.bind(this);
+            this.getAllDebts = this.getAllDebts.bind(this);
+            this.updateDebt = this.updateDebt.bind(this);
+            this.deleteDebt = this.deleteDebt.bind(this);
+            this.getAllDebtPayments = this.getAllDebtPayments.bind(this)
+
+            logger.info('DebtController initialized successfully');
+        } catch (error) {
+            logger.error(`Error initializing DebtController: ${error.stack}`);
+            throw error;
+        }
     }
 
     async createDebt(req, res, next) {
