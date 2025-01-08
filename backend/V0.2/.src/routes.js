@@ -46,7 +46,8 @@ const allowedMethods = {
     '/banks': ['POST', 'GET'],
     '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
     '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/debts/:debtName': ['GET', 'PATCH', 'DELETE'],
+    '/debts/:debt_id': ['GET', 'PATCH', 'DELETE'],
+    '/debts/:debt_id/payments': ['GET'],
     '/slip/quota': ['GET'],
     '/slip': ['POST'],
     // '/fi': ['GET'],
@@ -143,6 +144,8 @@ router.get('/debts', debtController.getAllDebts);
 router.get('/debts/:debt_id', debtController.getDebt);
 router.patch('/debts/:debt_id', debtController.updateDebt);
 router.delete('/debts/:debt_id', debtController.deleteDebt);
+router.get('/debts/:debt_id/payments', debtController.getAllDebtPayments);
+
 // Cache routes
 if (NODE_ENV !== 'production') {
     router.get('/fis', fiController.getAllFinancialInstitutions);
@@ -177,8 +180,8 @@ router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 
 
 router.use(mdw.unknownRouteHandler);
-router.use(mdw.responseHandler);
 router.use(mdw.errorHandler);
+router.use(mdw.responseHandler);
 
 
 module.exports = router;

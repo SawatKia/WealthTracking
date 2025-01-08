@@ -83,7 +83,7 @@ class PgClient {
     this.targetConfig = config; // Store the target database config for later use
 
     this.pool.on("error", (err) => {
-      logger.error("Database pool error: " + err.message);
+      logger.error(`Da tabase pool error: ${err.message}`);
     });
   }
 

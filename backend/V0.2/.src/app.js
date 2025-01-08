@@ -88,11 +88,12 @@ app.get("/api/test-timeout", (req, res) => {
   }, 5000);
 });
 
+// Error handling middleware
+app.use(mdw.errorHandler);
+
 // Global response handler
 app.use(mdw.responseHandler);
 
-// Error handling middleware
-app.use(mdw.errorHandler);
 
 
 module.exports = { app, startTime };

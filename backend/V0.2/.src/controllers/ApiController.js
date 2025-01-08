@@ -112,8 +112,11 @@ class ApiController {
     try {
       // If imagePath is already a buffer (from req.file.buffer), use it directly
       const imageData = Buffer.isBuffer(imageBuffer) ? imageBuffer : fs.readFileSync(imageBuffer);
+      logger.debug(`typeof\n\tDocumentAiService: ${typeof DocumentAiService}\n\tDocumentAiService.recognize: ${typeof DocumentAiService.recognize}`);
+      // const result = await TesseractService.recognize(imageData);
+      // logger.debug(`TesseractService result: ${result}`);
       const result = await DocumentAiService.recognize(imageData);
-      logger.debug(`result: ${result}`);
+      logger.debug(`DocumentAiService result: ${result}`);
       return result;
     } catch (error) {
       logger.error(`Error extracting text from image: ${error.message}`);
@@ -310,9 +313,7 @@ class ApiController {
    * Processes a unified request to verify a bank slip by QR code data (payload),
    * image file upload, or base64 encoded image.
    * @param {Object} req - The HTTP request object.
-   * @param {string} req.query.payload - The QR code data (payload) from bank slip.
    * @param {Object} req.file - The image file from bank slip.
-   * @param {string} req.body.base64Image - The base64 encoded image from bank slip.
    * @param {Object} res - The HTTP response object.
    * @param {function} next - The next middleware function.
    */
@@ -352,6 +353,7 @@ class ApiController {
         logger.error("Could not extract text from image.");
         throw MyAppErrors.badRequest("Could not extract text from image.");
       }
+      logger.debug(`classification type: ${await OllamaService.classifyTransaction(ocrText)}`);
 
       let result;
       // Extract data based on availability
@@ -410,7 +412,7 @@ class ApiController {
           logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
 
           result = {
-            message: "Using mock data to store as a transaction",
+            message: 'The EasySlip not avaliable, in development mode using mock data to store as a transaction. for production mode, it return \"EasySlip is not available\"',
             data: {
               transaction
             }
@@ -443,7 +445,7 @@ class ApiController {
       req.formattedResponse = formatResponse(200, result.message, result.data);
       next();
     } catch (error) {
-      logger.error("Error processing slip verification:", error);
+      logger.error(`Error processing slip verification: ${error.message}`);
       if (error instanceof MyAppErrors) {
         next(error);
       } else {

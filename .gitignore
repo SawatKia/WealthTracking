@@ -158,3 +158,5 @@ dist
 # data
 data/
 
+frontend/V2.0/package-lock.json
+frontend/V2.0/package.json
