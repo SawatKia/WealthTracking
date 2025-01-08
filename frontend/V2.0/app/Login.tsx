@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, Pressable, Alert } from "react-native";
 import { Dimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; 
+import { Ionicons} from "@expo/vector-icons"; 
+
 import { Link } from 'expo-router';
 
 import { login } from '../services/api';
@@ -42,7 +43,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       const response = await login(username, password);
-      console.log('Login Success', `Welcome, ${response.data.user.name}`)
+      console.log('Login Success', `Welcome, ${response}`)
       
     } catch (error) {
       console.error(error);

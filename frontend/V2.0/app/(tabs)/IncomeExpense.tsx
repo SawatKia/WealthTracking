@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native
 import AccountCard from "../../components/AccountCard"
 import DropdownButton from "../../components/DropdownButton";
 import TransactionCard from "../../components/TransactionCard";
+import { Ionicons} from "@expo/vector-icons"; 
+import { useRouter } from 'expo-router';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 const accounts = [
@@ -21,6 +23,7 @@ const transactions = [
 
 // export default function DebtScreen() {
   export default function IncomeExpenses () {
+  const router = useRouter();
   const [selectedType, setSelectedType] = useState<"Income" | "Expense">("Expense");
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -33,6 +36,8 @@ const transactions = [
       setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
     }
   };
+
+  const [showAddPopup, setAddshowAddPopup] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -51,9 +56,43 @@ const transactions = [
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <TransactionCard transaction={item} />}
       />
-      <TouchableOpacity style={styles.floatingButton}>
-        <Text style={styles.floatingButtonText}>+</Text>
+ 
+
+      {/* Floating Button */}
+      {showAddPopup && (
+        <View style={styles.popup}>
+          <TouchableOpacity
+            style={styles.link}
+            onPress={() => {
+              router.push('/CreateTransaction')
+              setAddshowAddPopup(false);
+              
+            }}
+          >
+            <Text style={styles.linkText}>Create Transaction</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.link, {backgroundColor: '#7F8CD9' }]} 
+            onPress={() => {
+              setAddshowAddPopup(false);
+              console.log('Navigate to Page 2');
+  
+              // Add your navigation logic here
+            }}
+          >
+            <Text style={[styles.linkText, {color: '#ffffff' }]}>Create Transaction{"\n"}By Slip</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Floating Button */}
+      <TouchableOpacity
+        style={styles.floatingPlusButton}
+        onPress={() => setAddshowAddPopup(!showAddPopup)}
+      >
+        <Ionicons name="add" size={45} color="#ffffff" />
       </TouchableOpacity>
+     
     </View>
   );
 };
@@ -83,5 +122,63 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   floatingButtonText: { color: "#fff", fontSize: 24, fontWeight: "bold" },
+
+
+  plusButtonContainer: {
+    // flex: 1,
+    backgroundColor: '#fff',
+    // justifyContent: "center",
+    // alignItems: "center",
+    // textAlign:"center"
+    // justifyContent: 'flex-end',
+  },
+  floatingPlusButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#7F8CD9',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 40,
+    fontWeight: 'bold',
+    
+  },
+  popup: {
+    position: 'absolute',
+    bottom: 85, // Position it above the button
+    right: 20,
+    backgroundColor: '#EEEFF7',
+    // padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  link: {
+    // marginVertical: 5,
+    paddingVertical: 10, // Padding for height
+    paddingHorizontal: 15,
+    // padding: 10,
+    borderBottomLeftRadius:8,
+    borderBottomRightRadius:8,
+  },
+  linkText: {
+    fontSize: 16,
+    // fontWeight:'semibold'
+    // color: '#007AFF',
+  },
 });
 
