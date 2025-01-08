@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 // ข้อมูลบัญชีธนาคาร
 const bankAccounts = [
   { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0, lastUpdated: "Today, 14:30 PM" },
-  { name: "Krungthai", owner: "John Doe", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
+  { name: "Krungthai", owner: "Miss Jane Cooper", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
 ];
 
 // ข้อมูลธุรกรรมล่าสุด
@@ -85,7 +85,7 @@ export default function BankAccountScreen() {
         renderItem={({ item }) => (
           <View style={styles.transactionCard}>
             <Text style={[styles.transactionType, { color: "#333333" }]}>{item.type}</Text>
-            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number {item.accountNumber}</Text>
+            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number : {item.accountNumber}</Text>
             <Text style={[styles.transactionAmount, { color: item.color }]}>
               {item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
