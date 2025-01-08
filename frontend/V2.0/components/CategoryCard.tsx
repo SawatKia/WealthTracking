@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import IconMap from "../constants/iconMap"
+import IconMap from "../constants/IconMap"
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function  CategoryCard ({ title }: { title: string }) {
