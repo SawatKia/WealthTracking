@@ -26,11 +26,11 @@ const AddAccountDetail = () => {
 
     const handleSave = () => {
         console.log("Saved Account Details:", { bankName, accountName, accountNumber, remainingBalance });
-        router.push("/AddAccount");
+        router.push("/(tabs)/Account");
     };
 
     const handleCancel = () => {
-        router.push("/AddAccount");
+        router.push("/(tabs)/Account");
     };
 
     return (
