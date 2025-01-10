@@ -14,6 +14,23 @@ const Utils = require("./utilities/Utils");
 const appConfigs = require("./configs/AppConfigs");
 const { v4: uuidv4 } = require('uuid');
 
+// Shuffle array using Fisher-Yates algorithm
+function shuffle(array) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
 const app = require("./app");
 const types = require("./../statics/types.json")
 
@@ -56,7 +73,7 @@ const loadMockData = async () => {
     for (const user of users) {
       await userModel.createUser(user, { silent: true });
     }
-    logger.info('✓ Successfully created mock users');
+    logger.info('Successfully created mock users');
 
     // Mock Bank Accounts
     logger.info('Creating mock bank accounts...');
@@ -98,7 +115,7 @@ const loadMockData = async () => {
     for (const account of bankAccounts) {
       await bankAccountModel.create(account, { silent: true });
     }
-    logger.info('✓ Successfully created mock bank accounts');
+    logger.info('Successfully created mock bank accounts');
 
     // Mock Debts
     logger.info('Creating mock debts...');
@@ -130,24 +147,46 @@ const loadMockData = async () => {
     for (const debt of debts) {
       await debtModel.create(debt, { silent: true });
     }
-    logger.info('✓ Successfully created mock debts');
+    logger.info('Successfully created mock debts');
 
     // Mock Transactions
     logger.info('Creating mock transactions...');
     let transactions = [];
+    let incomeCount = 0;
+    let expenseCount = 0;
+    let transferCount = 0;
 
-    const createRandomTransactions = async (user, accounts, count = 100) => {
+    const createRandomTransactions = async (user, accounts, count = 100, ratios = {
+      Income: 0.6,
+      Expense: 0.3,
+      Transfer: 0.1
+    }) => {
+
+      // Validate ratios
+      const totalRatio = Object.values(ratios).reduce((sum, ratio) => sum + ratio, 0);
+      if (Math.abs(totalRatio - 1) > 0.0001) {
+        throw new Error('Transaction category ratios must sum to 1');
+      }
+
       for (let i = 0; i < count; i++) {
-        const isDebtTransaction = Math.random() < 0.3; // 30% chance of being a debt transaction
+        const isDebtTransaction = Math.random() < 0.2; // 20% chance of being a debt transaction
 
         let category, type;
         if (isDebtTransaction) {
           category = 'Expense';
           type = 'Debt Payment';
         } else {
-          logger.debug(`loaded types: ${JSON.stringify(types)}`);
-          const categories = Object.keys(types);
-          category = categories[Math.floor(Math.random() * categories.length)];
+          // Select category based on user-defined ratios
+          const rand = Math.random();
+          let cumulative = 0;
+          for (const [cat, ratio] of Object.entries(ratios)) {
+            cumulative += ratio;
+            if (rand < cumulative) {
+              category = cat;
+              break;
+            }
+          }
+
           const typeArray = types[category];
           type = typeArray[Math.floor(Math.random() * typeArray.length)];
         }
@@ -177,25 +216,31 @@ const loadMockData = async () => {
           ...(isDebtTransaction && { debt_id: debts[Math.floor(Math.random() * debts.length)].debt_id })
         };
 
-        if (category === 'Transfer' || category === 'Expense') {
+        if (category == 'Transfer' || category == 'Expense') {
+          logger.debug('add sender account')
           transaction.sender_account_number = accounts[0].account_number;
           transaction.sender_fi_code = accounts[0].fi_code;
         }
 
-        if (category === 'Transfer' || category === 'Income') {
+        if (category == 'Transfer' || category == 'Income') {
+          logger.debug('add receiver account')
           transaction.receiver_account_number = accounts[accounts.length - 1].account_number;
           transaction.receiver_fi_code = accounts[accounts.length - 1].fi_code;
         }
 
-        // Update account balance for expenses and transfers
-        if (category === 'Expense' || category === 'Transfer') {
+        // Update account balance and counters
+        if (category == 'Expense' || category == 'Transfer') {
           accounts[0].balance -= amount;
         }
-        if (category === 'Income') {
+        if (category == 'Income') {
           accounts[accounts.length - 1].balance += amount;
+          incomeCount++;
+        } else if (category == 'Expense') {
+          expenseCount++;
         }
-        if (category === 'Transfer') {
+        if (category == 'Transfer') {
           accounts[accounts.length - 1].balance += amount;
+          transferCount++;
         }
 
         transactions.push(transaction);
@@ -214,13 +259,16 @@ const loadMockData = async () => {
       await createRandomTransactions(user, userAccounts[user.national_id]);
     }
 
-    logger.info('✓ Successfully created mock transactions');
+    logger.info('Successfully created mock transactions');
     const logDataCreation = async () => {
       try {
         const logs = [
           { type: 'users', count: users.length },
           { type: 'bank_accounts', count: bankAccounts.length },
           { type: 'transactions', count: transactions.length },
+          { type: 'income transactions', count: incomeCount },
+          { type: 'expense transactions', count: expenseCount },
+          { type: 'transfer transactions', count: transferCount },
           { type: 'debts', count: debts.length }
         ];
 
@@ -228,13 +276,13 @@ const loadMockData = async () => {
           logger.info(`✓ ${log.count} ${log.type} created`);
         }
       } catch (error) {
-        logger.error('Failed to log data creation:', error.message);
+        logger.error(`Failed to log data creation: ${error.message}`);
       }
     };
 
     await logDataCreation();
   } catch (error) {
-    logger.error('Failed to load mock data:', error.message);
+    logger.error(`Failed to load mock data: ${error.message}`);
     throw error;
   }
 };
@@ -270,7 +318,7 @@ const initializeServices = async () => {
  */
 const startExpressServer = () => {
   return new Promise((resolve, reject) => {
-    const server = app.app.listen(PORT, () => {
+    const server = app.app.listen(PORT, '0.0.0.0', () => {
       const endTime = Date.now();
       const timeTaken = endTime - app.startTime;
 
@@ -309,9 +357,9 @@ const startServer = async () => {
 
   try {
     await initializeServices();
-
     if (NODE_ENV === 'development' && String(appConfigs.loadMockData).toLowerCase() === 'true') {
       try {
+        logger.info('Loading mock data...');
         await pgClient.truncateTables();
         await loadMockData();
 
@@ -323,7 +371,7 @@ const startServer = async () => {
 
     await startExpressServer();
   } catch (error) {
-    logger.error("Failed to start the server:", error.message);
+    logger.error(`Failed to start the server: ${error.message}`);
     process.exit(1);
   }
 };
