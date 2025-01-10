@@ -48,7 +48,7 @@ class DocumentAiService {
                 logger.debug(`connect to Document Ai processor's name: ${response.displayName}`);
             }
             this.connected = true;
-            logger.info('Connection verified successfully');
+            logger.info('DocumentAiService initialized and connection verified');
         } catch (error) {
             logger.error(`Failed to verify connection: ${error.message}`);
             throw new Error(`Failed to verify connection: ${error.message}`);

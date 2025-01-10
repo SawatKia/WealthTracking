@@ -31,7 +31,7 @@ class BaseModel {
       logger.debug("Validation passed for data:", validated);
       return validated;
     } catch (error) {
-      logger.error("Validation error: ", error.message);
+      logger.error(`Validation error: ${error.message}`);
       throw new ValidationError(error.message);
     }
   }
