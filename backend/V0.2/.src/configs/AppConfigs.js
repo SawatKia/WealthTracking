@@ -37,7 +37,7 @@ const config = {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
-    databaseReset: process.env.FORCE_DEV_DB_RESET || false,
+    databaseReset: process.env.FORCE_DB_RESET || false,
     tesseract: {
         memoryPerJob: process.env.TESSERACT_MEMORY_PER_JOB || 10,
     },
@@ -45,7 +45,7 @@ const config = {
         host: process.env.OLLAMA_HOST || 'http://localhost:11434',
         model: process.env.OLLAMA_MODEL || 'llama3.2',
     },
-    loadMockData: process.env.LOAD_MOCK_DATA || false,
+    loadMockData: process.env.RELOAD_MOCK_DATA || false,
     gcp: {
         projectName: process.env.PROJECT_NAME,
         projectId: process.env.PROJECT_ID,
