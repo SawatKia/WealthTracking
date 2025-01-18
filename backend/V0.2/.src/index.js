@@ -4,11 +4,11 @@ const BankAccountModel = require("./models/BankAccountModel");
 const DebtModel = require("./models/DebtModel");
 const TransactionModel = require("./models/TransactionModel");
 
-const tesseractService = require("./services/Tesseract");
 const documentAiService = require("./services/DocumentAiService");
+const OcrMappingService = require("./services/OcrMappingService");
 const pgClient = require("./services/PgClient");
 const easySlip = require("./services/EasySlip");
-const ollama = require("./services/OllamaService");
+const LLMService = require("./services/LLMService");
 
 const Utils = require("./utilities/Utils");
 const appConfigs = require("./configs/AppConfigs");
@@ -301,14 +301,15 @@ const initializeServices = async () => {
     }
 
     await easySlip.init();
-    await ollama.init();
     await documentAiService.init();
+    await LLMService.init();
+    await OcrMappingService.init();
 
     const fi = new FiModel();
     await fi.initializeData();
 
-    await tesseractService.initializeScheduler();
   } catch (error) {
+    logger.error(`Error initializing services: ${error.message}`);
     throw error;
   }
 };
