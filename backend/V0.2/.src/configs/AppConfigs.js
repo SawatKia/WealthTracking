@@ -41,10 +41,6 @@ const config = {
     tesseract: {
         memoryPerJob: process.env.TESSERACT_MEMORY_PER_JOB || 10,
     },
-    ollama: {
-        host: process.env.OLLAMA_HOST || 'http://localhost:11434',
-        model: process.env.OLLAMA_MODEL || 'llama3.2',
-    },
     loadMockData: process.env.RELOAD_MOCK_DATA || false,
     gcp: {
         projectName: process.env.PROJECT_NAME,
@@ -55,7 +51,15 @@ const config = {
         location: process.env.DOCUMENT_AI_LOCATION,
         processorId: process.env.DOCUMENT_AI_PROCESSOR_ID,
         pathToServiceAccount: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-    }
+    },
+    gemini: {
+        key: process.env.GEMINI_KEY,
+        models: {
+            primary: process.env.GEMINI_MODEL_PRIMARY,
+            secondary: process.env.GEMINI_MODEL_SECOND,
+            tertiary: process.env.GEMINI_MODEL_THIRD,
+        },
+    },
 };
 
 module.exports = config;

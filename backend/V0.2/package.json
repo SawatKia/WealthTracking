@@ -16,7 +16,8 @@
   "dependencies": {
     "@google-cloud/billing": "^4.5.0",
     "@google-cloud/documentai": "^8.12.0",
-    "axios": "^1.7.7",
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -33,7 +34,6 @@
     "jsqr": "^1.4.0",
     "log-update": "^6.1.0",
     "multer": "^1.4.5-lts.1",
-    "ollama": "^0.5.10",
     "pg": "^8.12.0",
     "pg-pool": "^3.6.2",
     "redis": "^4.7.0",

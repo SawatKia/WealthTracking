@@ -89,13 +89,13 @@ REFRESH_TOKEN_SECRET=<your-secure-refresh-token-secret>
 SALT_ROUNDS=10
 TESSERACT_MEMORY_PER_JOB=10
 
-POSTGRES_USER=<user>
+POSTGRES_USER=<username> # your desired username for connecting to the db
+POSTGRES_PASSWORD=<password> # your desired password for connecting to the db
 POSTGRES_HOST=postgres # docker service name
-POSTGRES_TEST_NAME=test_database_name
-POSTGRES_PASSWORD=<password>
 POSTGRES_PORT=5432
 POSTGRES_DB=WealthTrack_DB
 # POSTGRES_DB=your_database_name
+POSTGRES_TEST_NAME=test_database_name
 FORCE_DB_RESET=false # usually use when there is a new configuration in any part of the db either triggering function or table schema
 RELOAD_MOCK_DATA=false
 
@@ -106,23 +106,24 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 
 EASYSLIP_URL=https://developer.easyslip.com
-EASYSLIP_KEY=<your-easyslip-api-key>
+EASYSLIP_KEY=<your-easyslip-api-key> # https://developer.easyslip.com/
 
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+GOOGLE_CLIENT_ID=<your-google-client-id> # examine in GCP
+GOOGLE_CLIENT_SECRET=<your-google-client-secret> # examine in GCP
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 
-PROJECT_NAME=<project-name>
-PROJECT_ID=<project-id>
-PROJECT_NUMBER=<project-number>
+PROJECT_NAME=<project-name> # examine in GCP
+PROJECT_ID=<project-id> # examine in GCP
+PROJECT_NUMBER=<project-number> # examine in GCP
 
 DOCUMENT_AI_LOCATION=us
-DOCUMENT_AI_PROCESSOR_ID=<processor-id>
+DOCUMENT_AI_PROCESSOR_ID=<processor-id> # examine in GCP
 GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
 
-
-OLLAMA_HOST=http://ollama:11434
-OLLAMA_MODEL=llama3.2
+GEMINI_KEY=<your-own-key> # https://aistudio.google.com/app/apikey
+GEMINI_MODEL_PRIMARY=gemini-1.5-pro
+GEMINI_MODEL_SECOND=gemini-2.0-flash-exp # for long token usage
+GEMINI_MODEL_THIRD=gemini-1.5-flash-8b
 ```
 
 1. Open Docker Desktop.
