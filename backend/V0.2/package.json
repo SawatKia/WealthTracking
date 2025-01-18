@@ -41,7 +41,6 @@
     "sanitize-html": "^2.13.0",
     "supertest": "^7.0.0",
     "swagger-ui-express": "^5.0.1",
-    "tesseract.js": "^5.1.1",
     "uuid": "^11.0.2",
     "validator": "^13.12.0",
     "winston": "^3.14.2",

@@ -38,9 +38,6 @@ const config = {
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
     databaseReset: process.env.FORCE_DB_RESET || false,
-    tesseract: {
-        memoryPerJob: process.env.TESSERACT_MEMORY_PER_JOB || 10,
-    },
     loadMockData: process.env.RELOAD_MOCK_DATA || false,
     gcp: {
         projectName: process.env.PROJECT_NAME,

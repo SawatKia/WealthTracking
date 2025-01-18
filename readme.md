@@ -87,7 +87,6 @@ APP_DOMAIN=WealthTrack
 ACCESS_TOKEN_SECRET=<your-secure-access-token-secret>
 REFRESH_TOKEN_SECRET=<your-secure-refresh-token-secret>
 SALT_ROUNDS=10
-TESSERACT_MEMORY_PER_JOB=10
 
 POSTGRES_USER=<username> # your desired username for connecting to the db
 POSTGRES_PASSWORD=<password> # your desired password for connecting to the db
