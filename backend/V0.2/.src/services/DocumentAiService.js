@@ -48,7 +48,7 @@ class DocumentAiService {
                 logger.debug(`connect to Document Ai processor's name: ${response.displayName}`);
             }
             this.connected = true;
-            logger.info('Connection verified successfully');
+            logger.info('DocumentAiService initialized and connection verified');
         } catch (error) {
             logger.error(`Failed to verify connection: ${error.message}`);
             throw new Error(`Failed to verify connection: ${error.message}`);
@@ -111,7 +111,7 @@ class DocumentAiService {
             logger.debug(`document.text: ${document.text.substring(0, 1000)}${document.text.length > 1000 ? " ...[truncated]..." : ""}`);
 
             // Extract text from all paragraphs
-            const extractedText = document.pages
+            let extractedText = document.pages
                 .flatMap(page => page.paragraphs)
                 .map(paragraph => this._extractText(document, paragraph.layout.textAnchor))
                 .join('')
@@ -119,7 +119,6 @@ class DocumentAiService {
 
             logger.info('Document AI processing completed');
             logger.debug(`Recognized text: ${extractedText}`);
-
             return extractedText;
         } catch (error) {
             logger.error(`Error during Document AI processing: ${error.message}`);

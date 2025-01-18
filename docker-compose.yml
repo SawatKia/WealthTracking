@@ -35,10 +35,10 @@ services:
              fi"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: 5m # Poll every 5 minutes after the container is healthy
+      timeout: 10s # Allow up to 10 seconds for each health check command
+      retries: 3 # Retry up to 3 times before considering the container unhealthy
+      start_period: 40s # Allow up to 40 seconds for initialization before the first check
     logging:
       driver: "json-file"
       options:
@@ -119,27 +119,10 @@ services:
     networks:
       - app_network
 
-  ollama:
-    image: ollama/ollama:0.5.0
-    container_name: ollama_container
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
 volumes:
   postgres_data:
   redis_data:
   redisinsight_data:
-  ollama_data:
   pgadmin_data:
 
 networks:
