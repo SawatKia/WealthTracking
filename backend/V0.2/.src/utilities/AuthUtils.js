@@ -94,7 +94,10 @@ class AuthUtils {
                 jti: jti,
                 iss: AuthUtils.domain,
             }, appConfigs.refreshTokenSecret, { algorithm: AuthUtils.algorithm });
-            logger.debug('Refresh token created');
+            const refreshExpDate = new Date((now + (7 * 24 * 60 * 60)) * 1000);
+            refreshExpDate.setHours(refreshExpDate.getHours() + 7); // Adjust for BKK timezone
+            const formatedRefreshExpDate = `${refreshExpDate.getDate()}/${(refreshExpDate.getMonth() + 1).toString().padStart(2, '0')}/${refreshExpDate.getFullYear()} ${refreshExpDate.getHours().toString().padStart(2, '0')}:${refreshExpDate.getMinutes().toString().padStart(2, '0')}:${refreshExpDate.getSeconds().toString().padStart(2, '0')}`;
+            logger.debug(`Refresh token created with exp: ${formatedRefreshExpDate}`);
 
             return { accessToken, refreshToken };
         } catch (error) {

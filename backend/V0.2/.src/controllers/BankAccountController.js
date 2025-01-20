@@ -1,6 +1,7 @@
 const BaseController = require("./BaseController");
 const { Logger, formatResponse } = require("../utilities/Utils");
 const BankAccountModel = require("../models/BankAccountModel");
+const TransactionModel = require("../models/TransactionModel");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const { ValidationError } = require("../utilities/ValidationErrors");
 const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
@@ -13,6 +14,7 @@ class BankAccountController extends BaseController {
     constructor() {
         super();
         this.BankAccountModel = new BankAccountModel();
+        this.TransactionModel = new TransactionModel();
         this.FiModel = new FinancialInstitutionModel();
         this.BankAccountUtils = new BankAccountUtils();
         this.UserModel = new UserModel();
@@ -177,8 +179,39 @@ class BankAccountController extends BaseController {
                 throw MyAppErrors.forbidden('You are not allowed to access this resource');
             }
 
-            // 5. Send response
-            req.formattedResponse = formatResponse(200, 'Bank account retrieved successfully', { bankAccount });
+            // 5. Get transactions for the account
+            const transactions = await this.TransactionModel.getAllTransactionsForAccount(
+                convertedAccountNumber,
+                fi_code
+            );
+            logger.debug(`transactions: ${JSON.stringify(transactions.slice(0, 20), null, 2)}...${transactions.length - 20} remain...`);
+
+            // 6. Format statements
+            const statements = transactions.map(transaction => {
+                const isSender = transaction.sender?.account_number === convertedAccountNumber &&
+                    transaction.sender.fi_code === fi_code;
+                const isReceiver = transaction.receiver?.account_number === convertedAccountNumber &&
+                    transaction.receiver.fi_code === fi_code;
+
+                return {
+                    transaction_id: transaction.transaction_id,
+                    datetime: transaction.transaction_datetime,
+                    deposit_amount: transaction.category == 'Income' ||
+                        (transaction.category == 'Transfer' && isReceiver) ? transaction.amount : null,
+                    withdrawal_amount: transaction.category == 'Expense' ||
+                        (transaction.category == 'Transfer' && isSender) ? transaction.amount : null,
+                    description: transaction.note || ''
+                };
+            });
+            logger.debug(`statements: ${JSON.stringify(statements.slice(0, 20), null, 2)}, ...${statements.length - 20} remain...`);
+
+            // 7. Send response
+            req.formattedResponse = formatResponse(200, 'Bank account retrieved successfully', {
+                data: {
+                    bank_account_details: bankAccount,
+                    statements
+                }
+            });
             next();
         } catch (error) {
             logger.error(`Failed to retrieve bank account: ${error.message}`);

@@ -14,39 +14,32 @@ const timezoned = () => {
 }
 
 // Utility function to extract calling method from stack trace
-const getCaller = () => {
-    const stack = new Error().stack;
-    if (!stack) return '';
-    const stackLines = stack.split('\n');
-    if (stackLines.length < 4) return ''; // Make sure there's enough stack info
-    const callerLine = stackLines[3].trim(); // 3rd line usually contains the caller info
+function getCaller() {
+    const originalFunc = Error.prepareStackTrace;
 
-    // Extract filename, line number, and column number from the caller line
-    const match = callerLine.match(/(?:at\s+)?(?:.*\s+\()?([^(]+):(\d+):(\d+)(?:\)?$)/);
-    if (match) {
-        const [, filePath, lineNumber, columnNumber] = match;
-        // Get just the filename from the full path
-        const fileName = path.basename(filePath);
-        return `${fileName}:${lineNumber}`;
-    }
+    let callerFile;
+    try {
+        const err = new Error();
+        let currentFile;
 
-    // If we can't extract in the preferred format, try to clean up the full path
-    const fullPathMatch = callerLine.match(/at\s+(.+?)\s+\((.+):(\d+):(\d+)\)/);
-    if (fullPathMatch) {
-        const [, , fullPath, lineNum, colNum] = fullPathMatch;
-        const cleanPath = path.basename(fullPath);
-        return `${cleanPath}:${lineNum}`;
-    }
+        Error.prepareStackTrace = function (err, stack) { return stack; };
+        currentFile = err.stack.shift().getFileName();
 
-    // If all else fails, try to extract filename and line number
-    const lastSlashIndex = callerLine.lastIndexOf('/');
-    if (lastSlashIndex >= 0) {
-        const fileAndLineCol = callerLine.substring(lastSlashIndex + 1);
-        const lineColMatch = fileAndLineCol.match(/(.+?):(\d+):(\d+)/);
-        return lineColMatch ? `${lineColMatch[1]}:${lineColMatch[2]}` : fileAndLineCol;
-    }
+        while (err.stack.length) {
+            callerFile = err.stack.shift();
+            if (currentFile !== callerFile.getFileName()) break;
+        }
+    } catch (e) { }
 
-    return 'unknown:0:0'; // fallback if we can't parse the caller info
+    Error.prepareStackTrace = originalFunc;
+
+    if (!callerFile) return 'unknown:0:0';
+
+    const callerLine = callerFile.getLineNumber();
+    const callerFunction = callerFile.getFunctionName() || 'anonymous';
+    const callerFileName = callerFile.getFileName().split('/').pop();
+
+    return `${callerFileName}/${callerFunction}():${callerLine}`;
 }
 
 class Logger {

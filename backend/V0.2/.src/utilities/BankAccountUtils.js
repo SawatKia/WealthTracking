@@ -115,7 +115,7 @@ class BankAccountUtils {
      */
     async normalizeAccountNumber(accountNumber) {
         try {
-            logger.info(`Normalizing account number: ${accountNumber}`);
+            logger.info(`Normalizing the account number`);
             if (/^[\d-]+$/.test(accountNumber)) {
                 const normalizedNumber = accountNumber.replace(/-/g, '');
                 logger.debug(`Normalized account number: ${normalizedNumber}`);

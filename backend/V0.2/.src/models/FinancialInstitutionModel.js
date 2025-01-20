@@ -143,6 +143,18 @@ class FinancialInstitutionModel extends BaseModel {
     const result = await pgClient.query(`SELECT * FROM ${this.tableName}`);
     return result.rows;
   }
+
+  async getFiCodeByName(bankName) {
+    logger.info(`Getting FI code for bank: ${bankName}`);
+    const query = `SELECT fi_code FROM ${this.tableName} WHERE name_th LIKE $1`;
+    const result = await pgClient.query(query, [`%${bankName}%`]);
+    logger.debug(`result: ${JSON.stringify(result.rows[0])}`)
+
+    if (result.rows.length > 0) {
+      return result.rows[0].fi_code;
+    }
+    return null;
+  }
 }
 
 module.exports = FinancialInstitutionModel;
