@@ -483,11 +483,119 @@ class TransactionModel extends BaseModel {
       logger.info(`Getting all transactions for account: ${accountNumber}, FI: ${fiCode}`);
 
       const query = `
-        SELECT * FROM transactions
-        WHERE (sender_account_number = $1 AND sender_fi_code = $2)
-        OR (receiver_account_number = $1 AND receiver_fi_code = $2)
+        WITH transaction_accounts AS (
+          SELECT 
+            t.*,
+            CASE 
+              WHEN t.category = 'Income' THEN 'receiver'
+              WHEN t.category = 'Expense' THEN 'sender'
+              WHEN t.category = 'Transfer' THEN 
+                CASE 
+                  WHEN ba.account_number = t.sender_account_number AND ba.fi_code = t.sender_fi_code THEN 'sender'
+                  WHEN ba.account_number = t.receiver_account_number AND ba.fi_code = t.receiver_fi_code THEN 'receiver'
+                END
+            END as role,
+            ba.account_number,
+            ba.fi_code,
+            ba.display_name,
+            ba.account_name,
+            fi.name_en as bank_name_en,
+            fi.name_th as bank_name_th
+          FROM transactions t
+          LEFT JOIN bank_accounts ba 
+            ON (t.sender_account_number = ba.account_number AND t.sender_fi_code = ba.fi_code)
+            OR (t.receiver_account_number = ba.account_number AND t.receiver_fi_code = ba.fi_code)
+          LEFT JOIN financial_institutions fi 
+            ON ba.fi_code = fi.fi_code
+          WHERE (t.sender_account_number = $1 AND t.sender_fi_code = $2)
+            OR (t.receiver_account_number = $1 AND t.receiver_fi_code = $2)
+        )
+        SELECT 
+          transaction_id,
+          transaction_datetime,
+          category,
+          type,
+          amount,
+          note,
+          national_id,
+          debt_id,
+          CASE 
+            WHEN category = 'Income' THEN
+              jsonb_build_object(
+                'receiver', (
+                  SELECT jsonb_build_object(
+                    'account_number', receiver_account_number,
+                    'fi_code', receiver_fi_code,
+                    'display_name', display_name,
+                    'account_name', account_name,
+                    'bank_name_en', bank_name_en,
+                    'bank_name_th', bank_name_th
+                  )
+                  FROM transaction_accounts 
+                  WHERE role = 'receiver'
+                  LIMIT 1
+                )
+              )
+            WHEN category = 'Expense' THEN
+              jsonb_build_object(
+                'sender', (
+                  SELECT jsonb_build_object(
+                    'account_number', sender_account_number,
+                    'fi_code', sender_fi_code,
+                    'display_name', display_name,
+                    'account_name', account_name,
+                    'bank_name_en', bank_name_en,
+                    'bank_name_th', bank_name_th
+                  )
+                  FROM transaction_accounts 
+                  WHERE role = 'sender'
+                  LIMIT 1
+                )
+              )
+            WHEN category = 'Transfer' THEN
+              jsonb_build_object(
+                'sender', (
+                  SELECT jsonb_build_object(
+                    'account_number', sender_account_number,
+                    'fi_code', sender_fi_code,
+                    'display_name', display_name,
+                    'account_name', account_name,
+                    'bank_name_en', bank_name_en,
+                    'bank_name_th', bank_name_th
+                  )
+                  FROM transaction_accounts 
+                  WHERE role = 'sender'
+                  LIMIT 1
+                ),
+                'receiver', (
+                  SELECT jsonb_build_object(
+                    'account_number', receiver_account_number,
+                    'fi_code', receiver_fi_code,
+                    'display_name', display_name,
+                    'account_name', account_name,
+                    'bank_name_en', bank_name_en,
+                    'bank_name_th', bank_name_th
+                  )
+                  FROM transaction_accounts 
+                  WHERE role = 'receiver'
+                  LIMIT 1
+                )
+              )
+          END as account_details
+        FROM transaction_accounts
+        GROUP BY 
+          transaction_id,
+          transaction_datetime,
+          category,
+          type,
+          amount,
+          note,
+          national_id,
+          debt_id
+        ORDER BY transaction_datetime DESC;
       `;
       const result = await this.executeQuery(query, [accountNumber, fiCode], { silent: true });
+      logger.debug(`query result before formatting a transaction: ${JSON.stringify(result.rows)}`)
 
       return result.rows.map(transaction => this.formatTransactionData(transaction));
     } catch (error) {

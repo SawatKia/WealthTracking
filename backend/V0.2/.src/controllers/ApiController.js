@@ -11,10 +11,9 @@ const BankAccountModel = require('../models/BankAccountModel');
 
 const EasySlipService = require("../services/EasySlip");
 const QRCodeReader = require('../utilities/QRCodeReader');
-const TesseractService = require('../services/Tesseract');
-const OllamaService = require('../services/OllamaService');
+const LLMService = require('../services/LLMService');
 const DocumentAiService = require('../services/DocumentAiService');
-const appConfigs = require('../configs/AppConfigs');
+const OcrMappingService = require('../services/OcrMappingService');
 const types = require('../../statics/types.json');
 
 const { Logger, formatResponse } = require("../utilities/Utils");
@@ -91,6 +90,7 @@ class ApiController {
     this._getCurrentDate = this._getCurrentDate.bind(this);
     this._checkQuotaAvailability = this._checkQuotaAvailability.bind(this);
     this.getQuotaInformation = this.getQuotaInformation.bind(this);
+    this._handleSlipVerification = this._handleSlipVerification.bind(this);
     this.verifySlip = this.verifySlip.bind(this);
     this._extractTextFromImage = this._extractTextFromImage.bind(this);
     this._prepareTransactionData = this._prepareTransactionData.bind(this);
@@ -102,7 +102,7 @@ class ApiController {
   }
 
   /**
-   * Extracts text from an image buffer using Tesseract.js.
+   * Extracts text from an image buffer using DocumentAi
    * @param {Buffer} imageBuffer - The image buffer to extract text from.
    * @returns {Promise<string>} The extracted text.
    */
@@ -112,11 +112,9 @@ class ApiController {
     try {
       // If imagePath is already a buffer (from req.file.buffer), use it directly
       const imageData = Buffer.isBuffer(imageBuffer) ? imageBuffer : fs.readFileSync(imageBuffer);
-      logger.debug(`typeof\n\tDocumentAiService: ${typeof DocumentAiService}\n\tDocumentAiService.recognize: ${typeof DocumentAiService.recognize}`);
-      // const result = await TesseractService.recognize(imageData);
-      // logger.debug(`TesseractService result: ${result}`);
-      const result = await DocumentAiService.recognize(imageData);
-      logger.debug(`DocumentAiService result: ${result}`);
+      let result = await DocumentAiService.recognize(imageData);
+      result = result.replace("โอนเงิน", "ทำรายการ")
+      logger.debug(`replaced โอนเงิน -> ทำรายการ: ${result}`)
       return result;
     } catch (error) {
       logger.error(`Error extracting text from image: ${error.message}`);
@@ -310,6 +308,39 @@ class ApiController {
   }
 
   /**
+   * Handles slip verification by using EasySlip API first, and then OCR text mapping if EasySlip API fails.
+   * @param {Object} req - The HTTP request object.
+   * @param {string} ocrText - The OCR text extracted from slip image.
+   * @returns {Promise<Object>} The verification result.
+   */
+  async _handleSlipVerification(req, ocrText) {
+    try {
+      // Use EasySlip API
+      const easySlipResponse = await this.easySlipService.verifySlipByImage(req.file);
+      logger.debug(`easySlipResponse: ${JSON.stringify(easySlipResponse, null, 2)}`);
+
+      // Check EasySlip response status
+      if (!easySlipResponse) {
+        throw new Error("EasySlip verification failed");
+      }
+
+      return {
+        message: "Slip verification successful by EasySlip Api",
+        data: easySlipResponse
+      };
+    } catch (error) {
+      logger.error(`Error verifying slip with EasySlip API: ${error.message}`);
+      logger.error("EasySlip verification failed, using OCR text mapping to EasySlip response");
+      const easySlipResponse = await OcrMappingService.mapToEasySlip(ocrText, await QRCodeReader.extractPayloadFromBuffer(req.file.buffer), req.file.buffer);
+
+      return {
+        message: "Slip verification successful by OCR text mapping",
+        data: easySlipResponse
+      };
+    }
+  }
+
+  /**
    * Processes a unified request to verify a bank slip by QR code data (payload),
    * image file upload, or base64 encoded image.
    * @param {Object} req - The HTTP request object.
@@ -331,7 +362,7 @@ class ApiController {
         throw MyAppErrors.badRequest("Invalid file format or size.");
       }
 
-      const payload = QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
+      const payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
       logger.info(`payload: ${payload}`);
 
       // Check EasySlip availability
@@ -353,37 +384,25 @@ class ApiController {
         logger.error("Could not extract text from image.");
         throw MyAppErrors.badRequest("Could not extract text from image.");
       }
-      logger.debug(`classification type: ${await OllamaService.classifyTransaction(ocrText)}`);
+      // Get transaction type from LLM
+      const transactionType = await LLMService.classifyTransaction(ocrText);
+      logger.debug(`Classified transaction type: ${transactionType}`);
 
       let result;
       // Extract data based on availability
       if (isQuotaAvailable) {
-        logger.info('using EasySlip API...');
-        // Use EasySlip API
-        const easySlipResponse = await this.easySlipService.verifySlipByImage(req.file);
+        logger.info('EasySlip available, verifying slip using EasySlip API...');
+        result = await this._handleSlipVerification(req, ocrText);
 
-        // Check EasySlip response status
-        if (!easySlipResponse) {
-          logger.error("EasySlip verification failed");
-          throw MyAppErrors.serviceUnavailable("EasySlip verification failed");
+        // Increment EasySlip API usage counter if EasySlip API was used
+        if (result.message.includes("EasySlip Api")) {
+          await this.apiRequestLimitModel.incrementRequestCount(
+            "EasySlip",
+            this._getCurrentDate()
+          );
+
+          await this.slipHistoryModel.recordSlipUsage(result.data.payload, result.data.transRef, req.user?.sub);
         }
-
-        result = {
-          message: "Slip verification successful by EasySlip Api",
-          data: easySlipResponse
-        };
-
-        // Increment EasySlip API usage counter
-        await this.apiRequestLimitModel.incrementRequestCount(
-          "EasySlip",
-          this._getCurrentDate()
-        );
-
-        await this.slipHistoryModel.recordSlipUsage(easySlipResponse.payload, easySlipResponse.transRef, req.user?.sub);
-
-        // Get transaction type from LLM
-        const transactionType = await OllamaService.classifyTransaction(ocrText);
-        logger.debug(`Classified transaction type: ${transactionType}`);
 
         // Prepare transaction data
         const transactionData = await this._prepareTransactionData(result.data, transactionType, req);
@@ -399,47 +418,24 @@ class ApiController {
           }
         }
       } else {
-        // logger.info('EasySlip quota is not available, using mock data for development, or try use Recognized text and LLM in production');
-        logger.info('EasySlip quota is not available, using mock data for development, or throw error in production');
-        // Use mock data in development, or try OCR+LLM in production
-        if (appConfigs.environment === 'development') {
-          logger.info('using mock data...');
-          // Store mock transaction
-          const transactionData = await this._prepareTransactionData(this.mockDataResponse, 'Food', req);
+        logger.info('EasySlip is not available, applying OCR mapping to transaction instead...');
+        logger.info('Mapping OCR text to transaction...');
+        logger.debug(`OCR text: ${ocrText}`);
+        // Store mock transaction
+        const easySlipResponse = await OcrMappingService.mapToEasySlip(ocrText, payload, req.file.buffer);
+        logger.debug(`easySlipResponse: ${JSON.stringify(easySlipResponse, null, 2)}`);
 
-          logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
-          const transaction = await this.transactionModel.create(transactionData);
-          logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
+        const transactionData = await this._prepareTransactionData(easySlipResponse.data, transactionType, req);
+        logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
+        const transaction = await this.transactionModel.create(transactionData);
+        logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
 
-          result = {
-            message: 'The EasySlip not avaliable, in development mode using mock data to store as a transaction. for production mode, it return \"EasySlip is not available\"',
-            data: {
-              transaction
-            }
-          };
-        } else {
-          // production mode
-          // logger.info('classifying transaction type...');
-          // const transactionType = await OllamaService.classifyTransaction(ocrText);
-
-          // const transactionData = await this._prepareTransactionData(
-          //   { ...this.mockDataResponse, type: transactionType },
-          //   transactionType,
-          //   req
-          // );
-
-          // logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
-          // const transaction = await this.transactionModel.create(transactionData);
-          // logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
-
-          // result = {
-          //   message: "Data extracted using OCR, LLM and stored as a transaction",
-          //   data: {
-          //     transaction
-          //   }
-          // };
-          throw MyAppErrors.serviceUnavailable("EasySlip is not available");
-        }
+        result = {
+          message: 'EasySlip is not available, using OCR text mapping to transaction instead',
+          data: {
+            transaction
+          }
+        };
       }
 
       req.formattedResponse = formatResponse(200, result.message, result.data);
@@ -461,20 +457,20 @@ class ApiController {
    * @returns {boolean} True if account numbers match pattern
    */
   _verifyAccountNumber(maskedAccount, storedAccount) {
-    logger.debug(`Verifying account numbers - masked: ${maskedAccount}, stored: ${storedAccount}`);
 
     if (!maskedAccount || !storedAccount) return false;
-
     // Convert both to strings and remove any spaces
     maskedAccount = maskedAccount.toString().replace(/\s/g, '');
     storedAccount = storedAccount.toString().replace(/\s/g, '');
 
+    logger.debug(`Verifying account numbers - masked: ${maskedAccount}`);
+    logger.debug(`verifying account numbers - stored: ${storedAccount}`)
     // If lengths don't match, return false
     if (maskedAccount.length !== storedAccount.length) return false;
 
     // Compare each character, allowing 'x' in masked account to match any digit
     for (let i = 0; i < maskedAccount.length; i++) {
-      if (maskedAccount[i] !== 'x' && maskedAccount[i] !== storedAccount[i]) {
+      if (maskedAccount[i] !== 'x' && maskedAccount[i] !== 'X' && maskedAccount[i] !== storedAccount[i]) {
         logger.silly(`Character [${i}]: ${maskedAccount[i]}!=${storedAccount[i]}`);
         return false;
       }
@@ -491,11 +487,12 @@ class ApiController {
    * @param {Object} req - Request object containing user information
    * @returns {Object} Formatted transaction data matching TransactionModel schema
    */
-  async _prepareTransactionData(slipData, type, req) {
-    logger.debug(`Preparing transaction data from slip: ${JSON.stringify(slipData)}`);
+  async _prepareTransactionData(slipData, type = null, req) {
+    logger.info('Preparing transaction data from the easySlipResponse');
 
     try {
       // Determine category based on type
+      logger.info("Determine category based on providedtype");
       let category;
       if (types.Income.includes(type)) {
         category = 'Income';
@@ -506,31 +503,39 @@ class ApiController {
       }
 
       // Get masked account numbers from slip
+      logger.info("Get masked account numbers from slip");
       const maskedSenderAccount = slipData.sender?.account?.bank?.account ||
         slipData.sender?.account?.proxy?.account || '';
       const maskedReceiverAccount = slipData.receiver?.account?.bank?.account ||
         slipData.receiver?.account?.proxy?.account || '';
 
       // Get all user's bank accounts
+      logger.info("Get all user's bank accounts");
       const userAccounts = await this.bankAccountModel.getAll(req.user?.sub);
 
       // Find matching accounts
+      logger.info("Find matching accounts");
       let senderAccount = null;
       let receiverAccount = null;
 
       for (const account of userAccounts) {
         const normalizedAccountNumber = await this.bankAccountUtils.normalizeAccountNumber(account.account_number);
-        if (this._verifyAccountNumber(maskedSenderAccount, normalizedAccountNumber)) {
-          logger.debug(`Sender account found: ${account.account_number}`);
+
+
+        if (this._verifyAccountNumber(maskedSenderAccount.replace(/-/g, ''), normalizedAccountNumber)) {
+          logger.debug(`Sender account found in slip: ${account.account_number}`);
           senderAccount = account;
         }
-        if (this._verifyAccountNumber(maskedReceiverAccount, normalizedAccountNumber)) {
-          logger.debug(`Receiver account found: ${account.account_number}`);
+        if (this._verifyAccountNumber(maskedReceiverAccount.replace(/-/g, ''), normalizedAccountNumber)) {
+          logger.debug(`Receiver account found in slip: ${account.account_number}`);
           receiverAccount = account;
         }
       }
+      logger.debug(`Sender account: ${senderAccount ? senderAccount.account_number : 'not found'}`);
+      logger.debug(`Receiver account: ${receiverAccount ? receiverAccount.account_number : 'not found'}`);
 
       // Verify the transaction matches user's accounts based on category
+      logger.info("Applying found user bank account's based on category");
       if (category === 'Income' && !receiverAccount) {
         logger.error('Receiver account not found in user\'s accounts');
         throw new Error('Receiver account not found in user\'s accounts');
@@ -570,7 +575,7 @@ class ApiController {
         transactionData.receiver_fi_code = receiverAccount.fi_code;
       }
 
-      logger.debug(`Prepared transaction data: ${JSON.stringify(transactionData)}`);
+      logger.debug(`Prepared transaction data: ${JSON.stringify(transactionData, null, 2)}`);
       return transactionData;
     } catch (error) {
       logger.error(`Error preparing transaction data: ${error.message}`);

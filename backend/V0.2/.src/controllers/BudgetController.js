@@ -47,7 +47,7 @@ class BudgetController extends BaseController {
             req.formattedResponse = formatResponse(201, 'Budget created successfully', budget);
             next();
         } catch (error) {
-            logger.error('Error creating budget: %s', error.message);
+            logger.error(`Error creating budget: ${error.message}`);
             if (error.message.includes('duplicate key value violates unique constraint')) {
                 next(MyAppErrors.badRequest('Budget already exists'));
             } else if (error instanceof MyAppErrors) {

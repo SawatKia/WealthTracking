@@ -117,12 +117,17 @@ class BankAccountModel extends BaseModel {
 
     async getAll(nationalId) {
         try {
+            logger.info("getAll bankAccounts from a provided nationalId");
             const results = await super.list(nationalId);
+            logger.info("========Promise run all task parellely========")
             const formattedResults = await Promise.all(results.map(async account => {
+                logger.debug(`formatting accountNumber: ${account.account_number}, fiCode: ${account.fi_code}`);
                 account.account_number = await this.bankAccountUtils.formatAccountNumber(account.account_number, account.fi_code);
                 account.balance = Number(account.balance).toFixed(2).toString();
                 return account;
             }));
+            logger.info("==========Promise finished=============")
+            logger.debug(`existing bank accounts: ${JSON.stringify(formattedResults.map(account => account.account_number))}`);
             return formattedResults;
         } catch (error) {
             logger.error(`Error in getAll method: ${error.message}`);
