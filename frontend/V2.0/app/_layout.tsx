@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import CreateTransaction from './CreateTransaction';
 
 
 export {
@@ -55,6 +56,12 @@ function RootLayoutNav() {
         {/* <Stack.Screen name="login" /> */}
 
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="CreateTransaction" component={CreateTransaction} /> */}
+        {/* <Stack.Screen name="CategoryExpenses" /> */}
+
+
+
+
         {/* <Stack.Screen name="Login" />
         <Stack.Screen name="SignUp" /> */}
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

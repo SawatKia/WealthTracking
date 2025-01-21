@@ -17,16 +17,17 @@ import { RootStackParamList } from '../constants/NavigateType'; // Import the ty
 
 type CategoryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Category'>;
 
-export default function CategoryExpenses({ route }: { route: CategoryScreenNavigationProp }) {
+export default function SelectCategoryModal({selected, onSelect }: { selected:string,onSelect: (category: string, type: string) => void }) {
     const [selectedOption, setSelectedOption] = useState<'Expense' | 'Income' | 'Transfer'>('Expense');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    const navigation = useNavigation<CategoryScreenNavigationProp>();
-    const handleSave = (item: string) => {
-      // Set the selected category and navigate to the next screen
-      console.log(item)
-      setSelectedCategory(item);
-      // navigation.popTo('CreateTransaction', { category: item });
-    };
+    console.log(selected)
+
+    const handleSelect = (category: string, type: string) => {
+        setSelectedCategory(category); // Update the selected category
+        // console.log(selectedCategory,category)
+        // console.log(selectedCategory == category)
+        onSelect(category, type); // Call the parent callback
+      };
 
   return (
     <ScrollView style={{backgroundColor: '#F0F6FF'}}>
@@ -87,14 +88,9 @@ export default function CategoryExpenses({ route }: { route: CategoryScreenNavig
 
       <View style={styles.categoryContainer}>
       {CategoryList[selectedOption].map((item) => (
-          <Link
-          key={item}
-          href={{ pathname: '/CreateTransaction', params: { category : item } }} // Pass the selected category as a parameter
-        >
       
-        <CategoryCard key={item} title={item} isSelected = {selectedCategory == item} onPress={() => handleSave(item)}/>
+        <CategoryCard key={item} title={item} isSelected = {selected === item} onPress={() => handleSelect(item, selectedOption)}/>
 
-          </Link>
       ))}
     </View>
 
@@ -113,8 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
-    marginTop:10,
-
+    marginTop:50,
     marginHorizontal:20
   },
   toggleButton: {

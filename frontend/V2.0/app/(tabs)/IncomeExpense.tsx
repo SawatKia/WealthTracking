@@ -13,11 +13,11 @@ const accounts = [
 ];
 
 const transactions = [
-  { id: 1, category: "Taxi", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999500 },
-  { id: 2, category: "Insurance", description: "Insurance", amount: 10000, type: "Expense", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 989500 },
-  { id: 3, category: "Taxi", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999000 },
-  { id: 4, category: "Taxi", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 998500 },
-  { id: 5, category: "Salary", description: "Salary", amount: 1000, type: "Income", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
+  { id: 1, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999500 },
+  { id: 2, category: "insurance", description: "Insurance", amount: 10000, type: "Expense", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 989500 },
+  { id: 3, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999000 },
+  { id: 4, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 998500 },
+  { id: 5, category: "Transport", description: "Salary", amount: 1000, type: "Income", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
 ];
 
 
