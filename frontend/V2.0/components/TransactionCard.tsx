@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import IconMap from "../constants/IconMap"
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 type TransactionCardProps = {
   transaction: {
     type: string;
@@ -22,13 +24,14 @@ const colorMap: Record<string, string> = {
 // export default function EditScreenInfo({ path }: { path: string }) {
 export default function TransactionCard({ transaction } : TransactionCardProps) {
   const color = colorMap[transaction.type];
+  const iconName = IconMap[transaction.category.toLowerCase()] || 'alert-circle-outline';
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <View style={styles.card}>
        <View style={styles.mainContent}>
 
         {/* Image on the left */}
-        <Ionicons name="help-outline" style={styles.icon} color="#4a4a8e" />
+        <MaterialCommunityIcons name={iconName} style={styles.icon} color="#4a4a8e" />
 
         {/* Description and Date in the center */}
         <View style={styles.infoContainer}>
