@@ -11,8 +11,8 @@ const logger = Logger("PgClient");
 
 class PgClient {
   constructor() {
-    logger.info("Initializing PgClient instance");
-    logger.debug(`Running Environment: ${NODE_ENV}`);
+    logger.info("Running PgClient instance");
+    logger.debug(`Curent Environment: ${NODE_ENV}`);
     // this.tables = {
     //   USERS: 'users',
     //   FINANCIAL_INSTITUTIONS: 'financial_institutions',

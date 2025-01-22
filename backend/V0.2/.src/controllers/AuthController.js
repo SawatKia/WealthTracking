@@ -329,7 +329,6 @@ class AuthController extends BaseController {
             const stateToken = this._createStateToken(action, platform);
             logger.debug(`State token created for action: ${action} for ${platform} platform, State token Id: ${stateToken}`);
 
-            //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
                 appConfigs.googleAuth.clientId,
                 appConfigs.googleAuth.clientSecret,
@@ -374,7 +373,6 @@ class AuthController extends BaseController {
                 throw MyAppErrors.unauthorized('Invalid or expired authentication request');
             }
 
-            //TODO - move to google service
             const oAuth2Client = new OAuth2Client(
                 appConfigs.googleAuth.clientId,
                 appConfigs.googleAuth.clientSecret,
@@ -419,7 +417,7 @@ class AuthController extends BaseController {
                     req.formattedResponse = formatResponse(201, 'User registered successfully with Google', filteredUser);
                 } else if (platform === this.platformTypes.MOBILE) {
                     logger.debug('Mobile platform detected, sending user data in response body');
-                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google, please try to login. to get access_token and refresh_token', {
+                    req.formattedResponse = formatResponse(201, 'User registered successfully with Google. please try to login, to get access_token and refresh_token', {
                         user: filteredUser,
                     });
                 }

@@ -13,7 +13,6 @@ class LLMService {
 
         // Initialize classification model with system instruction
         this.classificationModel = this.genAI.getGenerativeModel({
-            name: "classification",
             model: appConfigs.gemini.models.primary,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: SystemPrompts.classificationPrompt
@@ -21,14 +20,12 @@ class LLMService {
 
         // Initialize OCR mapping model with system instruction
         this.ocrMappingModel = this.genAI.getGenerativeModel({
-            name: "ocrMapping",
             model: appConfigs.gemini.models.secondary,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: SystemPrompts.ocrMappingPrompt
         });
 
         this.commonModel = this.genAI.getGenerativeModel({
-            name: "common",
             model: appConfigs.gemini.models.tertiary,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: "you are conectivity testing model. answer in JSON format {status_code, message}"
@@ -47,7 +44,8 @@ class LLMService {
             const jsonResponse = JSON.parse(jsonResponseText);
             const duration = Date.now() - startTime;
 
-            logger.debug(`llm[${model.model}] response in ${duration}ms: ${JSON.stringify(jsonResponse)}`);
+            logger.debug(`llm result: ${JSON.stringify(response)}`);
+            logger.debug(`llm[${result.modelVersion}] response in ${duration}ms: ${JSON.stringify(jsonResponse)}`);
             logger.debug(`Token usage: ${JSON.stringify(result.usageMetadata)}`);
 
             return {

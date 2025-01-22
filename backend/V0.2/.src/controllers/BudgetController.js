@@ -178,6 +178,7 @@ class BudgetController extends BaseController {
         try {
             logger.info('Updating budget');
             logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+            // TODO - use query oaram instead of path param
             const data = {
                 ...req.body,
                 expense_type: req.params.expenseType
@@ -249,6 +250,7 @@ class BudgetController extends BaseController {
             logger.info('Deleting budget');
             const currentUser = await super.getCurrentUser(req);
 
+            // TODO - use query oaram instead of path param
             super.verifyType('Expense', req.params.expenseType);
 
             const budget = await this.BudgetModel.findOne({
