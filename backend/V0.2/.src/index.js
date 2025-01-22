@@ -314,6 +314,31 @@ const initializeServices = async () => {
   }
 };
 
+const verifyEnvVars = (variables) => {
+  try {
+    logger.info("env vars empty verification...");
+    if (typeof variables !== 'object') {
+      logger.error("env vars is not an object");
+      throw new Error("env vars is not an object");
+    }
+
+    if (Object.keys(variables).length === 0) {
+      logger.error("env vars is empty");
+      throw new Error("env vars is empty");
+    }
+
+    for (const [key, value] of Object.entries(variables)) {
+      if (!value) {
+        logger.warn(`${key} is empty. Please set it in .env file`);
+      }
+    }
+    logger.info("env vars verification successful");
+  } catch (error) {
+    logger.error(`Error verifying env vars: ${error.message}`);
+    throw error;
+  }
+}
+
 /**
  * Start the Express server
  */
@@ -357,6 +382,7 @@ const startServer = async () => {
   logger.info("=".repeat(20) + " Starting server " + "=".repeat(20));
 
   try {
+    verifyEnvVars(appConfigs);
     await initializeServices();
     if (NODE_ENV === 'development' && String(appConfigs.loadMockData).toLowerCase() === 'true') {
       try {
