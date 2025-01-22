@@ -4,84 +4,23 @@ const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
 const { Logger } = require("../utilities/Utils");
 const logger = Logger("bankAcc.test");
-const UserModel = require('../models/UserModel');
-const { ValidationError } = require('../utilities/ValidationErrors');
-
-// Mock user for authentication
-const mockUser = {
-    national_id: '1234567890123',
-    email: 'V2yF3@example.com',
-    username: 'test_user',
-    role: 'user',
-    password: 'testPassword123',
-    date_of_birth: '1990-01-01',
-    member_since: new Date().toISOString()
-};
-
-const testBankAccount = {
-    account_number: "12345678901234567890",
-    fi_code: "004",
-    display_name: "Test Bank Account",
-    account_name: "Test Bank Account Name",
-    balance: "1000.00"
-};
+const { getTestAccessToken } = require('./token-helper');
+let accessToken = getTestAccessToken();
 
 describe('Bank Account Management', () => {
-    let accessToken;
-
-    beforeAll(async () => {
-        await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-        await pgClient.truncateTables();
-        logger.debug(`All rows deleted from tables`);
-
-        const fi = new FiModel();
-        await fi.initializeData();
-        logger.info('Financial institution data initialized');
-
-        // Add mock user
-        const userModel = new UserModel();
-        logger.info('UserModel initialized, creating mock user');
-
-        try {
-            await userModel.createUser(mockUser);
-            logger.info('Mock user created');
-
-            // Login with mobile platform
-            const loginResponse = await request(app)
-                .post('/api/v0.2/login?platform=mobile')
-                .send({ email: mockUser.email, password: mockUser.password });
-
-            accessToken = loginResponse.body.data.tokens.access_token;
-            logger.debug(`Access token obtained: ${accessToken}`);
-        } catch (error) {
-            if (error instanceof ValidationError) {
-                logger.warn(`Validation error while creating mock user: ${error.message}`);
-            } else {
-                logger.error(`Error creating mock user: ${error.message}`);
-                throw error;
-            }
-        }
-    });
-
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
 
     describe('Bank Account Creation', () => {
         const createBankAccountCases = [
             // Success cases
             {
                 testName: "success",
-                body: testBankAccount,
+                body: global.BankAccount,
                 expected: {
                     status: 201,
                     message: "Bank account created successfully",
                     data: {
-                        ...testBankAccount,
-                        national_id: mockUser.national_id
+                        ...global.BankAccount,
+                        national_id: global.User.national_id
                     }
                 }
             },
@@ -95,7 +34,7 @@ describe('Bank Account Management', () => {
                 ['balance', undefined],
             ].map(([field, value]) => ({
                 testName: `missing ${field}`,
-                body: { ...testBankAccount, [field]: value },
+                body: { ...global.BankAccount, [field]: value },
                 expected: {
                     status: 400,
                     message: `Missing required field: ${field}`
@@ -110,7 +49,7 @@ describe('Bank Account Management', () => {
                 'balance'
             ].map(field => ({
                 testName: `empty ${field}`,
-                body: { ...testBankAccount, [field]: '' },
+                body: { ...global.BankAccount, [field]: '' },
                 expected: {
                     status: 400,
                     message: `Missing required field: ${field}`
@@ -120,20 +59,20 @@ describe('Bank Account Management', () => {
             // Account number validation
             {
                 testName: "valid Kasikorn account",
-                body: { ...testBankAccount, account_number: "1234567890" },
+                body: { ...global.BankAccount, account_number: "1234567890" },
                 expected: {
                     status: 201,
                     message: "Bank account created successfully",
                     data: {
-                        ...testBankAccount,
+                        ...global.BankAccount,
                         account_number: "123-4-56789-0",
-                        national_id: mockUser.national_id
+                        national_id: global.User.national_id
                     }
                 }
             },
             {
                 testName: "valid Kasikorn account with separators",
-                body: { ...testBankAccount, account_number: "123-4-56789-0" },
+                body: { ...global.BankAccount, account_number: "123-4-56789-0" },
                 expected: {
                     status: 400,
                     message: "Bank account already exists for this user."
@@ -141,7 +80,7 @@ describe('Bank Account Management', () => {
             },
             {
                 testName: "account_number exceeds max length",
-                body: { ...testBankAccount, account_number: "123456789012345678901" },
+                body: { ...global.BankAccount, account_number: "123456789012345678901" },
                 expected: {
                     status: 400,
                     message: "Account number must not exceed 20 characters."
@@ -149,7 +88,7 @@ describe('Bank Account Management', () => {
             },
             {
                 testName: "account_number contains non-numeric characters",
-                body: { ...testBankAccount, account_number: "12345ABV7890" },
+                body: { ...global.BankAccount, account_number: "12345ABV7890" },
                 expected: {
                     status: 400,
                     message: "Normalization error: Invalid account number, It should contain only digits or digits with dashes"
@@ -159,7 +98,7 @@ describe('Bank Account Management', () => {
             // FI code validation
             {
                 testName: "unsupported bank code",
-                body: { ...testBankAccount, fi_code: "999" },
+                body: { ...global.BankAccount, fi_code: "999" },
                 expected: {
                     status: 404,
                     message: "Financial institution with fi_code '999' not found. To get a list of available fi_codes, please use the /fi/ endpoint."
@@ -169,7 +108,7 @@ describe('Bank Account Management', () => {
             // Name validation
             {
                 testName: "display_name exceeds max length",
-                body: { ...testBankAccount, display_name: "A".repeat(101) },
+                body: { ...global.BankAccount, display_name: "A".repeat(101) },
                 expected: {
                     status: 400,
                     message: "Display name must not exceed 100 characters."
@@ -177,7 +116,7 @@ describe('Bank Account Management', () => {
             },
             {
                 testName: "account_name exceeds max length",
-                body: { ...testBankAccount, account_name: "A".repeat(101) },
+                body: { ...global.BankAccount, account_name: "A".repeat(101) },
                 expected: {
                     status: 400,
                     message: "Account name must not exceed 100 characters."
@@ -187,7 +126,7 @@ describe('Bank Account Management', () => {
             // Balance validation
             {
                 testName: "balance with more than 2 decimal places",
-                body: { ...testBankAccount, balance: "1000.999" },
+                body: { ...global.BankAccount, balance: "1000.999" },
                 expected: {
                     status: 400,
                     message: "Invalid balance"
@@ -195,7 +134,7 @@ describe('Bank Account Management', () => {
             },
             {
                 testName: "balance as non-numeric string",
-                body: { ...testBankAccount, balance: "not a number" },
+                body: { ...global.BankAccount, balance: "not a number" },
                 expected: {
                     status: 400,
                     message: "Invalid number format for field: balance"
@@ -203,7 +142,7 @@ describe('Bank Account Management', () => {
             },
             {
                 testName: "balance < 0",
-                body: { ...testBankAccount, balance: "-100.00" },
+                body: { ...global.BankAccount, balance: "-100.00" },
                 expected: {
                     status: 400,
                     message: "Invalid balance."
@@ -240,17 +179,17 @@ describe('Bank Account Management', () => {
             await request(app)
                 .post('/api/v0.2/banks')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testBankAccount);
+                .send(global.BankAccount);
 
             const response = await request(app)
-                .get(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
+                .get(`/api/v0.2/banks/${global.BankAccount.account_number}/${global.BankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`);
 
             expect(response.status).toBe(200);
             expect(response.body.message).toBe('Bank account retrieved successfully');
             expect(response.body.data.bankAccount).toEqual({
-                ...testBankAccount,
-                national_id: mockUser.national_id
+                ...global.BankAccount,
+                national_id: global.User.national_id
             });
         });
 
@@ -299,7 +238,7 @@ describe('Bank Account Management', () => {
             await request(app)
                 .post('/api/v0.2/banks')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testBankAccount);
+                .send(global.BankAccount);
         });
 
         test('update bank account', async () => {
@@ -310,7 +249,7 @@ describe('Bank Account Management', () => {
             };
 
             const response = await request(app)
-                .patch(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
+                .patch(`/api/v0.2/banks/${global.BankAccount.account_number}/${global.BankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(updateData);
 
@@ -334,7 +273,7 @@ describe('Bank Account Management', () => {
         test('update with empty data', async () => {
             logger.info('Running test to update with empty data');
             const response = await request(app)
-                .patch(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
+                .patch(`/api/v0.2/banks/${global.BankAccount.account_number}/${global.BankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send({});
 
@@ -350,13 +289,13 @@ describe('Bank Account Management', () => {
             await request(app)
                 .post('/api/v0.2/banks')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testBankAccount);
+                .send(global.BankAccount);
         });
 
         test('delete bank account', async () => {
             logger.info('Running test to delete bank account');
             const response = await request(app)
-                .delete(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
+                .delete(`/api/v0.2/banks/${global.BankAccount.account_number}/${global.BankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`);
 
             expect(response.status).toBe(200);
@@ -364,7 +303,7 @@ describe('Bank Account Management', () => {
 
             // Verify the account is actually deleted
             const getResponse = await request(app)
-                .get(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
+                .get(`/api/v0.2/banks/${global.BankAccount.account_number}/${global.BankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`);
 
             expect(getResponse.status).toBe(404);

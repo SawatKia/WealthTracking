@@ -7,18 +7,9 @@ const logger = Logger("transaction.test");
 const UserModel = require('../models/UserModel');
 const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
-const { ValidationError } = require('../utilities/ValidationErrors');
+const { getTestAccessToken } = require('./token-helper');
 
-// Mock user for authentication
-const mockUser = {
-    national_id: '1234567890123',
-    email: 'transaction@test.com',
-    username: 'transaction_test',
-    role: 'user',
-    password: 'testPassword123',
-    date_of_birth: '1990-01-01',
-    member_since: new Date().toISOString()
-};
+let accessToken = getTestAccessToken();
 
 // Mock bank accounts
 const senderAccount = {
@@ -46,60 +37,11 @@ const mockDebt = {
     current_installment: 0,
     total_installments: 12,
     fi_code: "004",
-    national_id: mockUser.national_id,
+    national_id: global.User.national_id,
     debt_id: "550e8400-e29b-41d4-a716-446655440000"
 };
 
 describe('Transaction Management', () => {
-    let accessToken;
-
-    beforeAll(async () => {
-        await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-        await pgClient.truncateTables();
-        logger.debug(`All rows deleted from tables`);
-
-        const fi = new FiModel();
-        await fi.initializeData();
-        logger.info('Financial institution data initialized');
-
-        // Add mock user
-        const userModel = new UserModel();
-        logger.info('UserModel initialized, creating mock user');
-
-        try {
-            await userModel.createUser(mockUser);
-            logger.info('Mock user created');
-
-            // Create bank accounts
-            const bankModel = new BankAccountModel();
-            await bankModel.create({ ...senderAccount, national_id: mockUser.national_id });
-            await bankModel.create({ ...receiverAccount, national_id: mockUser.national_id });
-            logger.info('Mock bank accounts created');
-
-            // Create debt
-            const debtModel = new DebtModel();
-            await debtModel.create({ ...mockDebt, national_id: mockUser.national_id });
-            logger.info('Mock debt created');
-
-            // Login
-            const loginResponse = await request(app)
-                .post('/api/v0.2/login?platform=mobile')
-                .send({ email: mockUser.email, password: mockUser.password });
-
-            accessToken = loginResponse.body.data.tokens.access_token;
-            logger.debug(`Access token obtained: ${accessToken}`);
-        } catch (error) {
-            logger.error(`Error in setup: ${error.message}`);
-            throw error;
-        }
-    });
-
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
 
     describe('Transaction Creation', () => {
         const successCases = [
@@ -322,4 +264,4 @@ describe('Transaction Management', () => {
                 });
             });
     });
-}); 
+});

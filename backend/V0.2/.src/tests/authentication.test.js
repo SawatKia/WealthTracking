@@ -1,44 +1,20 @@
 const request = require('supertest');
 const { app } = require('../app');
 const { Logger } = require('../utilities/Utils');
-const pgClient = require("../services/PgClient");
+const { getTestAccessToken } = require('./token-helper');
 
 const logger = Logger('AuthenticationTest');
 
-const testUser = {
-    national_id: "1234567890321",
-    email: "testuser@example.com",
-    username: "testuser",
-    password: "Password123!",
-    confirm_password: "Password123!"
-};
-
 describe('Authentication Flow', () => {
-    let accessToken;
     let refreshToken;
-
-
-    beforeAll(async () => {
-        // Register a test user first
-        await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-        await pgClient.truncateTables();
-        logger.debug(`All rows deleted from tables`);
-
-        await request(app)
-            .post('/api/v0.2/users')
-            .send(testUser);
-        logger.info("User registered");
-    });
 
     describe('Login Tests', () => {
         const loginCases = [
             {
                 testName: "successful login",
                 body: {
-                    email: testUser.email,
-                    password: testUser.password
+                    email: global.User.email,
+                    password: global.User.password
                 },
                 expected: {
                     status: 200,
@@ -48,7 +24,7 @@ describe('Authentication Flow', () => {
             {
                 testName: "wrong password",
                 body: {
-                    email: testUser.email,
+                    email: global.User.email,
                     password: "WrongPassword123!"
                 },
                 expected: {
@@ -60,7 +36,7 @@ describe('Authentication Flow', () => {
                 testName: "non-existent email",
                 body: {
                     email: "nonexistent@example.com",
-                    password: testUser.password
+                    password: global.User.password
                 },
                 expected: {
                     status: 401,
@@ -70,7 +46,7 @@ describe('Authentication Flow', () => {
             {
                 testName: "missing email",
                 body: {
-                    password: testUser.password
+                    password: global.User.password
                 },
                 expected: {
                     status: 400,
@@ -80,7 +56,7 @@ describe('Authentication Flow', () => {
             {
                 testName: "missing password",
                 body: {
-                    email: testUser.email
+                    email: global.User.email
                 },
                 expected: {
                     status: 400,
@@ -163,13 +139,5 @@ describe('Authentication Flow', () => {
             expect(response.status).toBe(200);
             expect(response.body.message).toContain('on mobile, just remove both refresh and access tokens from your storage');
         });
-    });
-
-    // Export the tokens for use in other test files
-    afterAll(() => {
-        global.testTokens = {
-            accessToken,
-            refreshToken
-        };
     });
 });

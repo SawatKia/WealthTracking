@@ -1,6 +1,8 @@
 const request = require('supertest');
 const { app } = require('../app');
 
+let accessToken = global.access_token;
+
 describe('Timeout Tests', () => {
     it('should timeout after 5 seconds', async () => {
         const response = await request(app)
@@ -13,4 +15,4 @@ describe('Timeout Tests', () => {
             message: "Request timeout"
         });
     });
-}); 
+});

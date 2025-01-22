@@ -1,55 +1,24 @@
 const request = require('supertest');
-const { app } = require('../app'); // Adjust the path to your Express app
-const PgClient = require('../services/PgClient');
-const FiModel = require('../models/FinancialInstitutionModel');
+const { app } = require('../app');
 const { Logger } = require('../utilities/Utils');
+const { getTestAccessToken } = require('./token-helper');
 
-const logger = Logger('PgClient.test');
+let accessToken = getTestAccessToken();
 
 describe('Cascading Constraints Tests', () => {
-    let accessToken;
-    let refreshToken;
 
-    beforeAll(async () => {
-        await PgClient.init();
+    // beforeAll(async () => {
+    //     await PgClient.init();
 
-        const fi = new FiModel();
-        await fi.initializeData();
-        logger.info('Financial institution data initialized');
+    //     const fi = new FiModel();
+    //     await fi.initializeData();
+    //     logger.info('Financial institution data initialized');
+    // });
 
-        // Register and login a test user first
-        const registerResponse = await request(app)
-            .post('/api/v0.2/users')
-            .send({
-                national_id: '1234567890123',
-                email: 'test@example.com',
-                username: 'testuser',
-                password: 'Password123!',
-                confirm_password: 'Password123!',
-                role: 'user',
-                member_since: new Date(),
-                date_of_birth: '1990-01-01',
-            });
-        logger.info('User registered');
-        expect(registerResponse.status).toBe(201);
-
-        // Login to get tokens
-        const loginResponse = await request(app)
-            .post('/api/v0.2/login?platform=mobile')
-            .send({
-                email: 'test@example.com',
-                password: 'Password123!'
-            });
-        logger.info('User logged in');
-        expect(loginResponse.status).toBe(200);
-        accessToken = loginResponse.body.data.tokens.access_token;
-        refreshToken = loginResponse.body.data.tokens.refresh_token;
-    });
-
-    afterAll(async () => {
-        await PgClient.release();
-        logger.debug(`Database disconnected: ${!PgClient.isConnected()}`);
-    });
+    // afterAll(async () => {
+    //     await PgClient.release();
+    //     logger.debug(`Database disconnected: ${!PgClient.isConnected()}`);
+    // });
 
     test('delete user and should cascade delete related bank accounts and debts', async () => {
         logger.info('running test: delete user and should cascade delete related bank accounts and debts');
@@ -140,4 +109,4 @@ describe('Cascading Constraints Tests', () => {
     });
 
     //TODO - add test to trigger modifying the balance of bank account when transaction is created or modified or deleted
-}); 
+});

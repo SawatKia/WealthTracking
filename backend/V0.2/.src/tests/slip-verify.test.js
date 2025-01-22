@@ -1,23 +1,24 @@
 const request = require("supertest");
-const { app } = require("../app");
 const fs = require('fs');
 const path = require('path');
-const pgClient = require("../services/PgClient");
+
+const { app } = require("../app");
 const { Logger } = require("../utilities/Utils");
-const UserModel = require('../models/UserModel');
+const { getTestAccessToken } = require('./token-helper');
 const logger = Logger("slip-verify.test");
 
+let accessToken = getTestAccessToken();
 // Read test image files
 const testSlipImage = fs.readFileSync(path.join(__dirname, 'test-data', '1691661663156.png'));
 const testSlipBase64 = fs.readFileSync(path.join(__dirname, 'test-data', 'Image_1cf24f02-544e-4804-bd24-0d9f3d6d2ac7.jpeg'), 'base64');
 
 // Mock user for authentication
-const mockUser = {
-    national_id: '1234567890123',
-    username: 'test_user',
-    email: 'V2yF3@example.com',
-    password: 'testPassword123',
-}
+// const mockUser = {
+//     national_id: '1234567890123',
+//     username: 'test_user',
+//     email: 'V2yF3@example.com',
+//     password: 'testPassword123',
+// }
 
 const verifySlipTestCases = [
     {
@@ -82,34 +83,33 @@ const verifySlipTestCases = [
 ];
 
 describe("Slip Verification API Endpoint", () => {
-    let accessToken;
 
-    beforeAll(async () => {
-        await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+    // beforeAll(async () => {
+    //     await pgClient.init();
+    //     logger.debug(`Database connected: ${pgClient.isConnected()}`);
 
-        await pgClient.truncateTables();
-        logger.debug(`All rows deleted from all tables in test database`);
+    //     await pgClient.truncateTables();
+    //     logger.debug(`All rows deleted from all tables in test database`);
 
-        const userModel = new UserModel();
-        await userModel.createUser(mockUser);
-        logger.info("User registered");
+    //     const userModel = new UserModel();
+    //     await userModel.createUser(mockUser);
+    //     logger.info("User registered");
 
-        // Login with mobile platform
-        const loginResponse = await request(app)
-            .post('/api/v0.2/login?platform=mobile')
-            .send({ email: mockUser.email, password: mockUser.password });
+    //     // Login with mobile platform
+    //     const loginResponse = await request(app)
+    //         .post('/api/v0.2/login?platform=mobile')
+    //         .send({ email: mockUser.email, password: mockUser.password });
 
-        logger.debug(`Login response: ${JSON.stringify(loginResponse.body, null, 2)}`);
-        // accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
-        accessToken = loginResponse.body.data.tokens.access_token;
-        logger.debug(`Access token obtained: ${accessToken}`);
-    });
+    //     logger.debug(`Login response: ${JSON.stringify(loginResponse.body, null, 2)}`);
+    //     // accessToken = response.headers['set-cookie'].find(cookie => cookie.includes('access_token'));
+    //     accessToken = loginResponse.body.data.tokens.access_token;
+    //     logger.debug(`Access token obtained: ${accessToken}`);
+    // });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
+    // afterAll(async () => {
+    //     await pgClient.release();
+    //     logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+    // });
 
     describe("POST and GET /api/v0.2/slip/verify", () => {
         verifySlipTestCases.forEach((testCase, index) => {

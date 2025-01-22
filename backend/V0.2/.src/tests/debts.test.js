@@ -8,69 +8,15 @@ const FiModel = require("../models/FinancialInstitutionModel");
 
 const logger = Logger('DebtTest');
 
-// Mock user for authentication
-const testUser = {
-    national_id: "1234567890321",
-    email: "testuser@example.com",
-    username: "testuser",
-    password: "Password123!",
-    confirm_password: "Password123!"
-};
-
-// Mock debt data
-const testDebt = {
-    debt_id: uuidv4(),
-    fi_code: "004",
-    debt_name: "Test Debt",
-    start_date: "2024-01-01",
-    current_installment: 1,
-    total_installments: 12,
-    loan_principle: 100000.00,
-    loan_balance: 100000.00
-};
+const { getTestAccessToken } = require('./token-helper');
+let accessToken = getTestAccessToken();
 
 describe('Debt Management Flow', () => {
-    let accessToken;
-
-    beforeAll(async () => {
-        // Initialize database
-        await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
-
-        await pgClient.truncateTables();
-        logger.debug(`All rows deleted from tables`);
-
-        const fi = new FiModel();
-        await fi.initializeData();
-        logger.info('Financial institution data initialized');
-
-        // Register and login test user
-        await request(app)
-            .post('/api/v0.2/users')
-            .send(testUser);
-        logger.info("User registered");
-
-        const loginResponse = await request(app)
-            .post('/api/v0.2/login?platform=mobile')
-            .send({
-                email: testUser.email,
-                password: testUser.password
-            });
-
-        accessToken = loginResponse.body.data.tokens.access_token;
-        logger.info("User logged in, access token obtained");
-    });
-
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
-
     describe('Create Debt Tests', () => {
         const createDebtCases = [
             {
                 testName: "successful debt creation",
-                body: testDebt,
+                body: global.Debt,
                 expected: {
                     status: 201,
                     message: "debt created successfully"
@@ -79,7 +25,7 @@ describe('Debt Management Flow', () => {
             {
                 testName: "missing fi_code",
                 body: {
-                    ...testDebt,
+                    ...global.Debt,
                     fi_code: undefined
                 },
                 expected: {
@@ -90,7 +36,7 @@ describe('Debt Management Flow', () => {
             {
                 testName: "invalid loan_balance",
                 body: {
-                    ...testDebt,
+                    ...global.Debt,
                     loan_balance: -1000
                 },
                 expected: {
@@ -128,7 +74,7 @@ describe('Debt Management Flow', () => {
             const createResponse = await request(app)
                 .post('/api/v0.2/debts')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testDebt);
+                .send(global.Debt);
 
             createdDebtId = createResponse.body.data.debt_id;
             logger.debug('Test debt created for get tests');
@@ -189,7 +135,7 @@ describe('Debt Management Flow', () => {
             const createResponse = await request(app)
                 .post('/api/v0.2/debts')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testDebt);
+                .send(global.Debt);
 
             createdDebtId = createResponse.body.data.debt_id;
             logger.debug('Test debt created for update tests');
@@ -250,7 +196,7 @@ describe('Debt Management Flow', () => {
             const createResponse = await request(app)
                 .post('/api/v0.2/debts')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send(testDebt);
+                .send(global.Debt);
 
             createdDebtId = createResponse.body.data.debt_id;
             logger.debug('Test debt created for delete tests');
