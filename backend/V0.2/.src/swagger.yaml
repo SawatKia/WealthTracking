@@ -2008,22 +2008,22 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /budgets/{expenseType}:
-    parameters:
-      - in: path
-        name: expenseType
-        required: true
-        schema:
-          type: string
-        description: Type of expense
+  /budgets/type:
     get:
       tags:
         - "Budget"
-      summary: Get specific budget
+      summary: Get specific budget on current month
       description: Retrieves a specific budget by expense type
       security:
         - cookieAuth: []
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: true
+          schema:
+            type: string
+          description: Type of expense to filter by
       responses:
         "200":
           description: Budget retrieved successfully
@@ -2031,6 +2031,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BudgetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /budgets/history:
+    get:
+      tags:
+        - "Budget"
+      summary: Get budget history
+      description: Retrieves budget history for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: false
+          schema:
+            type: string
+          description: Filter by specific expense type
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by specific month (1-12)
+      responses:
+        "200":
+          description: Budget history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":

@@ -69,6 +69,7 @@ const allowedMethods = {
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
     '/budgets': ['GET', 'POST'],
     '/budgets/:expenseType': ['GET', 'PATCH', 'DELETE'],
+    '/budgets/history': ['GET'],
 }
 
 if (NODE_ENV != 'production') {
@@ -96,7 +97,7 @@ router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
-
+// all routes prefix with /api/v0.2
 // Public routes (no auth required)
 router.post('/login', authController.login);
 router.post('/users', userController.registerUser);  // Registration should be public
@@ -134,7 +135,6 @@ router.get('/banks', bankAccountController.getAllBankAccounts);
 router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccount);
 router.patch('/banks/:account_number/:fi_code', mdw.conditionalProfilePictureUpload, bankAccountController.updateBankAccount);
 router.delete('/banks/:account_number/:fi_code', bankAccountController.deleteBankAccount);
-
 
 router.get('/slip/quota', apiController.getQuotaInformation);
 router.post('/slip/verify', mdw.conditionalSlipUpload, apiController.verifySlip);
@@ -174,7 +174,8 @@ router.delete('/transactions/:transaction_id', transactionController.deleteTrans
 
 router.post('/budgets', budgetController.createBudget);
 router.get('/budgets', budgetController.getAllBudgets);
-router.get('/budgets/:expenseType', budgetController.getBudget);
+router.get('/budgets/type', budgetController.getBudget);
+router.get('/budget/history', budgetController.getBudgetHistory);
 router.patch('/budgets/:expenseType', budgetController.updateBudget);
 router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 

@@ -14,7 +14,7 @@ const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
-logger.info(`Imports completed after ${Date.now() - startTime}ms`);
+logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
 // Apply CORS before other middleware
 app.use(mdw.corsMiddleware);
@@ -41,7 +41,6 @@ app.use((err, req, res, next) => {
   }
 });
 
-//TODO -  Set connection timeout to 10 seconds
 app.disable("x-powered-by");
 
 /**
