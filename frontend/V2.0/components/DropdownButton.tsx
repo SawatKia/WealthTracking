@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-
+// useState<"Income" | "Expense" | "Transfer" | "All">("Expense")
 type DropdownButtonProps = {
-  selectedType: "Income" | "Expense";
-  onSelect: (type: "Income" | "Expense") => void;
+  selectedType: "Income" | "Expense"| "Transfer" | "All";
+  onSelect: (type: "Income" | "Expense" | "Transfer" | "All") => void;
 };
 const colorMap: Record<string, string> = {
   Expense: '#FF3D00',
   Income: '#08B80F',
+  Transfer: '#f8d641',
+  All: '#7F8CD9',
 };
 export default function  DropdownButton ({ selectedType, onSelect } : DropdownButtonProps ) {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,8 +21,8 @@ export default function  DropdownButton ({ selectedType, onSelect } : DropdownBu
       </TouchableOpacity>
       {isOpen && (
         <View style={styles.dropdown}>
-          {["Income", "Expense"].map((type) => (
-            <TouchableOpacity key={type} onPress={() => { onSelect(type as "Income" | "Expense"); setIsOpen(false); }}>
+          {["Income", "Expense","Transfer" ,"All"].map((type) => (
+            <TouchableOpacity key={type} onPress={() => { onSelect(type as "Income" | "Expense"| "Transfer" | "All"); setIsOpen(false); }}>
               <Text style={styles.option}>{type}</Text>
             </TouchableOpacity>
           ))}

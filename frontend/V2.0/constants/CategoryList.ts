@@ -6,7 +6,6 @@ const CategoryList : { [key: string]: string[] }  = {
         "Travel",
         "Groceries",
         "House",
-        "Borrowed",
         "Cure",
         "Pet",
         "Education",
@@ -24,10 +23,10 @@ const CategoryList : { [key: string]: string[] }  = {
         "Other"
     ],
     "Income": [
+        "Borrowed",
         "Dividend",
         "Refund",
         "Gift",
-        "Revenue",
         "Business",
         "Salary",
         "Other"

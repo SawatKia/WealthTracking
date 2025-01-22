@@ -4,7 +4,7 @@ import { StyleSheet, Button } from 'react-native';
 import SummaryCard from '../../components/SummaryCard';
 import IncomeSummary from '../../components/SummaryIncome';
 import ExpenseSummary from '../../components/SummaryExpense';
-// import IncomeExpenseReport from '@/components/IncomeExpenseReport';
+import IncomeExpenseReport from '@/components/IncomeExpenseReport';
 import ReportByCategory from '../../components/reportByCategory'
 
 import EditScreenInfo from '@/components/EditScreenInfo';
@@ -37,6 +37,7 @@ export default function HomeScreen() {
         </View> */}
 
       </View>
+      <IncomeExpenseReport />
       <ReportByCategory />
       {/* <LineChart
         data={{

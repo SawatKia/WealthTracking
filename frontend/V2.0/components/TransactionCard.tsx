@@ -19,6 +19,7 @@ type TransactionCardProps = {
 const colorMap: Record<string, string> = {
   Expense: '#FF3D00',
   Income: '#08B80F',
+  Transfer: '#f8d641',
 };
 
 // export default function EditScreenInfo({ path }: { path: string }) {
@@ -43,7 +44,7 @@ export default function TransactionCard({ transaction } : TransactionCardProps) 
         <View style={styles.rightContainer}>
         
           <Text style={[styles.amount, { color }]}>
-              {transaction.type === "Income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
+              {transaction.type === "Income" ? "+" : transaction.type === "Expense"? "-" : ""}฿{transaction.amount.toLocaleString()}
           </Text>
           <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
             <Ionicons name = {isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'} size = {24} color="#4a4a8e" />

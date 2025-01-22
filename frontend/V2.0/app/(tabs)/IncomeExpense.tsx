@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import AccountCard from "../../components/AccountCard"
 import DropdownButton from "../../components/DropdownButton";
@@ -18,16 +18,18 @@ const transactions = [
   { id: 3, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999000 },
   { id: 4, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 998500 },
   { id: 5, category: "Transport", description: "Salary", amount: 1000, type: "Income", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
+  { id: 6, category: "Transfer", description: "Transfer", amount: 1000, type: "Transfer", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
+  { id: 7, category: "Transfer", description: "Transfer", amount: 1000, type: "Transfer", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
 ];
 
 
 // export default function DebtScreen() {
   export default function IncomeExpenses () {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<"Income" | "Expense">("Expense");
+  const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("Expense");
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  const filteredTransactions = transactions.filter((transaction) => transaction.type === selectedType);
+  
+  const [filteredTransactions, setFilteredTransactions] = useState(transactions);
 
   const handleSwipe = (direction: 'Left' | 'Right') => {
     if (direction === 'Left') {
@@ -36,7 +38,13 @@ const transactions = [
       setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
     }
   };
-
+  useEffect(() => {
+    const filterLst = selectedType === "All" ? transactions : transactions.filter((transaction) => 
+      transaction.type === selectedType
+    );
+    console.log(filterLst)
+    setFilteredTransactions(filterLst)
+  }, [transactions, selectedType])
   const [showAddPopup, setAddshowAddPopup] = useState(false);
 
   return (
@@ -62,17 +70,19 @@ const transactions = [
       {showAddPopup && (
         <View style={styles.popup}>
           <TouchableOpacity
-            style={styles.link}
+            style={[styles.link, {backgroundColor: '#99a7f7', borderTopLeftRadius:8,
+              borderTopRightRadius:8 }]}
             onPress={() => {
               router.push('/CreateTransaction')
               setAddshowAddPopup(false);
               
             }}
           >
-            <Text style={styles.linkText}>Create Transaction</Text>
+            <Text style={[styles.linkText, {color: '#ffffff' }]}  >Create Transaction</Text>
           </TouchableOpacity>
+          
           <TouchableOpacity
-            style={[styles.link, {backgroundColor: '#7F8CD9' }]} 
+            style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
             onPress={() => {
               setAddshowAddPopup(false);
               console.log('Navigate to Page 2');
@@ -81,7 +91,21 @@ const transactions = [
             }}
           >
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Create Transaction{"\n"}By Slip</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+            style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
+              borderBottomRightRadius:8 }]} 
+            onPress={() => {
+              setAddshowAddPopup(false);
+              console.log('Navigate to Page 2');
+  
+              // Add your navigation logic here
+            }}
+          >
+            <Text style={[styles.linkText, {color: '#ffffff' }]}>Dept Payment</Text>
           </TouchableOpacity>
+
         </View>
       )}
 
@@ -172,8 +196,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10, // Padding for height
     paddingHorizontal: 15,
     // padding: 10,
-    borderBottomLeftRadius:8,
-    borderBottomRightRadius:8,
   },
   linkText: {
     fontSize: 16,
