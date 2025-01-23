@@ -329,10 +329,10 @@ const verifyEnvVars = (variables) => {
 
     for (const [key, value] of Object.entries(variables)) {
       if (!value) {
-        logger.warn(`${key} is empty. Please set it in .env file`);
+        logger.warn(`${key} is empty. Please set it in .env file, examine missing key in https://github.com/SawatKia/WealthTracking.git`);
       }
     }
-    logger.info("env vars verification successful");
+    logger.info("env vars verification completed");
   } catch (error) {
     logger.error(`Error verifying env vars: ${error.message}`);
     throw error;
