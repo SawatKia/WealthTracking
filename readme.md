@@ -120,9 +120,9 @@ DOCUMENT_AI_PROCESSOR_ID=<processor-id> # examine in GCP
 GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
 
 GEMINI_KEY=<your-own-key> # https://aistudio.google.com/app/apikey
-GEMINI_MODEL_PRIMARY=gemini-1.5-pro
-GEMINI_MODEL_SECOND=gemini-2.0-flash-exp # for long token usage
-GEMINI_MODEL_THIRD=gemini-1.5-flash-8b
+GEMINI_CLASSIFICATION_MODEL=gemini-1.5-pro
+GEMINI_MAPPING_MODEL=gemini-2.0-flash-exp # for long token usage
+GEMINI_COMMON_MODEL=gemini-1.5-flash-8b
 ```
 
 1. Open Docker Desktop.

@@ -13,20 +13,20 @@ class LLMService {
 
         // Initialize classification model with system instruction
         this.classificationModel = this.genAI.getGenerativeModel({
-            model: appConfigs.gemini.models.primary,
+            model: appConfigs.gemini.models.classification,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: SystemPrompts.classificationPrompt
         });
 
         // Initialize OCR mapping model with system instruction
         this.ocrMappingModel = this.genAI.getGenerativeModel({
-            model: appConfigs.gemini.models.secondary,
+            model: appConfigs.gemini.models.ocrMapping,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: SystemPrompts.ocrMappingPrompt
         });
 
         this.commonModel = this.genAI.getGenerativeModel({
-            model: appConfigs.gemini.models.tertiary,
+            model: appConfigs.gemini.models.common,
             generation_config: { "response_mime_type": "application/json" },
             systemInstruction: "you are conectivity testing model. answer in JSON format {status_code, message}"
         });
