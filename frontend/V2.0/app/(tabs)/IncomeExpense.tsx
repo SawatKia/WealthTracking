@@ -97,7 +97,7 @@ const transactions = [
             style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
               borderBottomRightRadius:8 }]} 
               onPress={() => {
-                // router.push('/DebtPayment')
+                router.push('/DebtPayment')
                 setAddshowAddPopup(false);
             }}
           >

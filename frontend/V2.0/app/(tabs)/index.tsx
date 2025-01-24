@@ -14,7 +14,7 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <Text style={styles.header}>Account</Text>
         
-        <SummaryCard typeAccount="ยอดรวมทั้งหมด" balance={1000} totalAccounts={5} typeList="บัญชี" />
+        <SummaryCard typeAccount="Total" balance={1000} totalAccounts={5} typeList="accounts" />
         
         <View style={styles.rowIncomeExpense}>
           <SummaryBox1 text_box1="Income" text_percent='' amount={10000000.0} />
@@ -25,7 +25,7 @@ export default function HomeScreen() {
         <ReportByCategory />
 
         <Text style={styles.header}>Debt</Text>
-        <SummaryCard typeAccount="ยอดหนี้ทั้งหมด" balance={500} totalAccounts={3} typeList="รายการ" />
+        <SummaryCard typeAccount="Total Debt" balance={500} totalAccounts={3} typeList="items" />
         <View style={styles.rowIncomeExpense}>
           <SummaryBox1 text_box1="Paid" amount={30} text_percent='%' />
           <SummaryBox2 text_box2="This Installment" amount={1000000.0} />

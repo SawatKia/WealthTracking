@@ -109,7 +109,7 @@ export default function CreateTransaction({
 
   const onChangeDate = (params: any) => {
     setDate(params.date);
-    // console.log(route.params)
+    // console.log(route.params)cat
     console.log(date);
     // setDatePickerVisibility(false)
   };
@@ -211,8 +211,9 @@ export default function CreateTransaction({
 
             </TouchableOpacity> */}
 
-            <TouchableOpacity  onPress={() =>{setCategoryPickerVisibility(true)}} style={styles.inputButton}>
-              <Text>{selectedCategory.category ? `${selectedCategory.type} : ${selectedCategory.category}` : 'Select Catagory'}</Text>
+            <TouchableOpacity  onPress={() =>{setCategoryPickerVisibility(false)}} style={styles.inputButton}>
+            <Text>{`${selectedCategory.type || 'Expense'} : ${selectedCategory.category || 'Debt Payment'}`}</Text>
+
             </TouchableOpacity>
 
             {/* <TouchableOpacity onPress={()=>{}}>
@@ -233,12 +234,12 @@ export default function CreateTransaction({
       <View style={styles.container}>
         <View style={styles.rowTile}>
           <Ionicons
-            name="albums"
+            name="briefcase"
             style={styles.iconTitle}
             size={20}
             color="#fff"
           />
-          <Text style={styles.title}>Account</Text>
+          <Text style={styles.title}>Debt ID</Text>
         </View>
 
         <View style={styles.rowInput}>
@@ -255,7 +256,7 @@ export default function CreateTransaction({
               setOpen={setAccountPickerVisibility}
               setValue={setSelectedAccountValue}
               setItems={setSelectedAccountItem}
-              placeholder="[Select Acount]"
+              placeholder="[Select Debt ID]"
               style={styles.inputButton}
               disableBorderRadius={true}
               textStyle={{ textAlign: "center" }}
@@ -436,3 +437,36 @@ const styles = StyleSheet.create({
   },
 });
 
+// export default function App() {
+//     const [date, setDate] = useState<Dayjs>(dayjs()); // Initialize state as Dayjs object
+//     const onChange = (params:any) => {
+//         setDate(params.date);
+//       };
+//     // const onChange = (
+//     //     (params:any) => {
+//     //       if (mode === 'single') {
+//     //         setDate(params.date);
+//     //       }
+//     //     },
+//     //     [mode]
+//     //   );
+
+//     return (
+//       <View style={styles.container}>
+//         <Text>Selected Date: {date.format('YYYY-MM-DD')}</Text>
+//         <DateTimePicker
+//           mode="single"
+//           date={date.format('YYYY-MM-DD')}  // Pass formatted string date to the picker
+//           onChange={(onChange)}// Update state on change
+//             // onChange={(params) => setDate(params.date)}
+//         />
+//       </View>
+//     );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#F5FCFF',
+//   },
+// });

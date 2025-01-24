@@ -53,7 +53,21 @@ const data = [
   }
 ];
 
+// Function to calculate the percentage of each category
+const calculatePercentage = (amount: number, total: number) => {
+  return ((amount / total) * 100).toFixed(1); // Rounds to 1 decimal point
+};
+
+// Total amount for percentage calculation
+const totalAmount = data.reduce((sum, category) => sum + category.amount, 0);
+
+
 const reportByCategory = () => {
+  const updatedData = data.map((category) => ({
+    ...category,
+    name: `${category.name}\n${calculatePercentage(category.amount, totalAmount)}%`, // Add percentage to name
+  }));
+
   return (
     // <PieChart
     //   data={data}
@@ -81,6 +95,7 @@ const reportByCategory = () => {
         backgroundColor="transparent"
         paddingLeft="15"
         absolute = {false} // if True : Displays absolute numbers instead of percentages
+        // withLabel={true} // Display category names and percentages
       />
 
   );
