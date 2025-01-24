@@ -28,6 +28,8 @@ const IconMap: { [key: string]: keyof typeof MaterialCommunityIcons.glyphMap} = 
     refund: "cash-refund",
     salary: "calendar-month",
     gift: "gift",
+
+    transfer: "swap-horizontal",
   };
   
   export default IconMap;
