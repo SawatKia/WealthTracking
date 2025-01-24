@@ -19,7 +19,7 @@ type TransactionCardProps = {
 const colorMap: Record<string, string> = {
   Expense: '#FF3D00',
   Income: '#08B80F',
-  Transfer: '#f8d641',
+  Transfer: '#ff9f00',
 };
 
 // export default function EditScreenInfo({ path }: { path: string }) {

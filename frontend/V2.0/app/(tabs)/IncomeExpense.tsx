@@ -96,11 +96,9 @@ const transactions = [
             <TouchableOpacity
             style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
               borderBottomRightRadius:8 }]} 
-            onPress={() => {
-              setAddshowAddPopup(false);
-              console.log('Navigate to Page 2');
-  
-              // Add your navigation logic here
+              onPress={() => {
+                // router.push('/DebtPayment')
+                setAddshowAddPopup(false);
             }}
           >
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Dept Payment</Text>
