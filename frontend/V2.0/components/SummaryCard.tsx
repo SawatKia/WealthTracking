@@ -37,10 +37,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   typeAccount: {
-    fontSize: 18,
+    fontSize: 20,
     color: "#FFFFFF",
     marginBottom: 8,
-    fontWeight: "medium",
+    fontWeight: "semibold",
   },
   balance: {
     fontSize: 40,

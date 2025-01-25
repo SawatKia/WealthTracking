@@ -110,7 +110,7 @@ export default function CreateTransaction({
 
   const onChangeDate = (params: any) => {
     setDate(params.date);
-    // console.log(route.params)
+    // console.log(route.params)cat
     console.log(date);
     // setDatePickerVisibility(false)
   };
@@ -212,8 +212,9 @@ export default function CreateTransaction({
 
             </TouchableOpacity> */}
 
-            <TouchableOpacity  onPress={() =>{setCategoryPickerVisibility(true)}} style={styles.inputButton}>
-              <Text>{selectedCategory.category ? `${selectedCategory.type} : ${selectedCategory.category}` : 'Select Catagory'}</Text>
+            <TouchableOpacity  onPress={() =>{setCategoryPickerVisibility(false)}} style={styles.inputButton}>
+            <Text>{`${selectedCategory.type || 'Expense'} : ${selectedCategory.category || 'Debt Payment'}`}</Text>
+
             </TouchableOpacity>
 
             {/* <TouchableOpacity onPress={()=>{}}>
@@ -234,12 +235,12 @@ export default function CreateTransaction({
       <View style={styles.container}>
         <View style={styles.rowTile}>
           <Ionicons
-            name="albums"
+            name="briefcase"
             style={styles.iconTitle}
             size={20}
             color="#fff"
           />
-          <Text style={styles.title}>Account</Text>
+          <Text style={styles.title}>Debt ID</Text>
         </View>
 
         <View style={styles.rowInput}>
@@ -256,7 +257,7 @@ export default function CreateTransaction({
               setOpen={setAccountPickerVisibility}
               setValue={setSelectedAccountValue}
               setItems={setSelectedAccountItem}
-              placeholder="[Select Acount]"
+              placeholder="[Select Debt ID]"
               style={styles.inputButton}
               disableBorderRadius={true}
               textStyle={{ textAlign: "center" }}
@@ -323,7 +324,7 @@ export default function CreateTransaction({
       </View>
 
       <View style={styles.sumbitContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
+         <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
 
         <TouchableOpacity style={styles.saveButton}><Text>Save</Text></TouchableOpacity>
       </View>

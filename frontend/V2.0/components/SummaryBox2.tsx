@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-type IncomeSummaryProps = {
+
+type ExpenseSummaryProps = {
+    text_box2: string;
     amount: number;
   };
   
-  const IncomeSummary = ({ amount }: IncomeSummaryProps) => (
+  const ExpenseSummary = ({ text_box2, amount }: ExpenseSummaryProps) => (
     <View style={styles.container}>
-      <Text style={styles.text}>รายรับ</Text>
+      <Text style={styles.text}>{text_box2}</Text>
       <Text style={styles.amount}>
-        {amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+        -{amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
       </Text>
     </View>
   );
@@ -18,7 +20,7 @@ const styles = StyleSheet.create({
   container: {
     width: 170, 
     height: 70,
-    backgroundColor: '#B2FBA5',
+    backgroundColor: '#FF9997',
     padding: 15,
     borderRadius: 10,
     margin: 5,
@@ -27,13 +29,15 @@ const styles = StyleSheet.create({
   text: {
     color: '#333333',
     fontSize: 16,
-    fontWeight: 'semibold',
+    fontWeight: 'bold',
+    textAlign: 'left',
   },
   amount: {
     color: '#333333',
     fontSize: 18,
     fontWeight: 'semibold',
+    textAlign: 'right',
   },
 });
 
-export default IncomeSummary;
+export default ExpenseSummary;

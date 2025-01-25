@@ -3,13 +3,15 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaVie
 import { Dimensions } from "react-native";
 import { Ionicons} from "@expo/vector-icons"; 
 
-import { Link } from 'expo-router';
+import { Link, router, useRouter } from 'expo-router';
 
-import { login } from '../services/api';
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginScreen() {
+  const { login } = useAuth();
+  const router = useRouter()
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isChecked, setIsChecked] = useState(false); // State for the checkbox
 
@@ -42,8 +44,9 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await login(username, password);
+      const response = await login(email, password);
       console.log('Login Success', `Welcome, ${response}`)
+      // router.push('/(tabs)')
       
     } catch (error) {
       console.error(error);
@@ -71,9 +74,9 @@ export default function LoginScreen() {
         {/* Username Input */}
         <TextInput 
           style={styles.input} 
-          placeholder="Username" 
+          placeholder="Email" 
           placeholderTextColor="#f5f5f5"
-          onChangeText={setUsername}
+          onChangeText={setEmail}
           
         />
         
@@ -111,7 +114,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton} onPress={() => console.log(username,password)}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Log In</Text>
         </TouchableOpacity>
         
