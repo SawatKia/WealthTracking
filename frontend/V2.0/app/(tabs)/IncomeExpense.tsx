@@ -60,10 +60,16 @@ const transactions = [
       </GestureHandlerRootView>
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
       <FlatList
-        data={filteredTransactions}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <TransactionCard transaction={item} />}
-      />
+  data={filteredTransactions}
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => (
+    <TransactionCard 
+      transaction={item}
+      onDelete={(id) => console.log(`Delete transaction with id: ${id}`)}
+      onEdit={(id) => console.log(`Edit transaction with id: ${id}`)}
+    />
+  )}
+/>
  
 
       {/* Floating Button */}

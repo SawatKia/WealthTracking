@@ -62,6 +62,7 @@ export default function CreateTransaction({
 }: {
   route: CreateTransactionRouteProp;
 }) {
+  const router = useRouter()
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
@@ -322,7 +323,7 @@ export default function CreateTransaction({
       </View>
 
       <View style={styles.sumbitContainer}>
-        <TouchableOpacity style={styles.cancelButton}><Text>Cancel</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
 
         <TouchableOpacity style={styles.saveButton}><Text>Save</Text></TouchableOpacity>
       </View>

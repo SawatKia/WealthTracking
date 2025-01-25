@@ -1,62 +1,84 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  SafeAreaView,
+  Pressable,
+} from "react-native";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Use Ionicons for the eye icon
-import { Link } from 'expo-router';
-import { signUp } from '../services/api';
+import { Link, useRouter } from "expo-router";
+import { signUp } from "../services/Authen";
 
 export default function SignUpScreen() {
+  const router = useRouter();
+
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
-  const [isconfirmPasswordVisible, setIsconfirmPasswordVisible] = useState(false); // Default is hidden
+  const [isconfirmPasswordVisible, setIsconfirmPasswordVisible] =
+    useState(false); // Default is hidden
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nationalId, setnationalId] = useState("");
   const [confirmPassword, setconfirmPassword] = useState("");
-  
-  const [err, setErr] = useState({ email: '',username:'', nationalId:'', password: '',confirmPassword: ''}); //(nationalId, username, email, password, confirmPassword)
 
-
+  const [err, setErr] = useState({
+    email: "",
+    username: "",
+    nationalId: "",
+    password: "",
+    confirmPassword: "",
+  }); //(nationalId, username, email, password, confirmPassword)
 
   const validateInput = (): boolean => {
     let isValid = true;
-    const newError = { email: '',username:'',nationalId:'', password: '', confirmPassword: ''};
+    const newError = {
+      email: "",
+      username: "",
+      nationalId: "",
+      password: "",
+      confirmPassword: "",
+    };
 
     if (!email.trim()) {
-      newError.email = 'Email is required';
+      newError.email = "Email is required";
       isValid = false;
     } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-      newError.email = 'Invalid email format';
+      newError.email = "Invalid email format";
       isValid = false;
     }
 
     if (!username.trim()) {
-      newError.username = 'username Id is required';
+      newError.username = "username Id is required";
       isValid = false;
     }
 
     if (!nationalId.trim()) {
-      newError.nationalId = 'National Id is required';
+      newError.nationalId = "National Id is required";
       isValid = false;
-    }else if (!/^\d{13}$/.test(nationalId)) {
-      newError.nationalId = 'National ID contain exactly 13 digits';
+    } else if (!/^\d{13}$/.test(nationalId)) {
+      newError.nationalId = "National ID contain exactly 13 digits";
       isValid = false;
     }
 
     if (!password.trim()) {
-      newError.password = 'Password is required';
+      newError.password = "Password is required";
       isValid = false;
     } else if (password.length < 6) {
-      newError.password = 'Password must be at least 6 characters';
+      newError.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
     if (!confirmPassword.trim()) {
-      newError.confirmPassword = 'Confirm Password is required';
+      newError.confirmPassword = "Confirm Password is required";
       isValid = false;
     } else if (confirmPassword !== password) {
-      newError.confirmPassword = 'Passwords do not match';
+      newError.confirmPassword = "Passwords do not match";
       isValid = false;
     }
 
@@ -67,14 +89,19 @@ export default function SignUpScreen() {
   const handleSignUp = async () => {
     if (!validateInput()) return;
     try {
-      const response = await signUp(nationalId, username, email, password, confirmPassword)
-      console.log('Sign Up Success', 'You can now log in', response)
-      // navigation.navigate('Login');
+      const response = await signUp(
+        nationalId,
+        username,
+        email,
+        password,
+        confirmPassword
+      );
+      console.log("Sign Up Success", "You can now log in", response);
+      router.push("/Login");
     } catch (error) {
       console.error(error);
     }
   };
-
 
   return (
     <SafeAreaView style={styles.background}>
@@ -85,56 +112,60 @@ export default function SignUpScreen() {
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Create Account</Text>
         </View>
-        
+
         {/* Username Input */}
-        <TextInput 
-          style={styles.input} 
-          placeholder="Username" 
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
           placeholderTextColor="#f5f5f5"
           onChangeText={(text) => {
             setUsername(text);
-            setErr((prev) => ({ ...prev, username: '' })); // Clear err on input change
+            setErr((prev) => ({ ...prev, username: "" })); // Clear err on input change
           }}
-          
         />
 
-        <TextInput 
-          style={styles.input} 
-          placeholder="National ID" 
+        <TextInput
+          style={styles.input}
+          placeholder="National ID"
           placeholderTextColor="#f5f5f5"
           onChangeText={(text) => {
             setnationalId(text);
-            setErr((prev) => ({ ...prev, nationalId: '' })); // Clear err on input change
+            setErr((prev) => ({ ...prev, nationalId: "" })); // Clear err on input change
           }}
         />
 
-        <TextInput 
+        <TextInput
           style={styles.input}
-          placeholder="Email" 
+          placeholder="Email"
           placeholderTextColor="#f5f5f5"
           onChangeText={(text) => {
             setEmail(text);
-            setErr((prev) => ({ ...prev, email: '' })); // Clear err on input change
+            setErr((prev) => ({ ...prev, email: "" })); // Clear err on input change
           }}
-          />
-        
+        />
+
         {/* Password Input */}
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.inputField}
             value={password}
-            
             placeholder="Password"
             placeholderTextColor="#f5f5f5"
             secureTextEntry={!isPasswordVisible} // Toggle visibility
-
             onChangeText={(text) => {
               setPassword(text);
-              setErr((prev) => ({ ...prev, password: '' })); // Clear err on input change
+              setErr((prev) => ({ ...prev, password: "" })); // Clear err on input change
             }}
           />
-          <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}style={styles.eyeIcon}>
-            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color="#ffffff" />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={isPasswordVisible ? "eye-off" : "eye"}
+              size={24}
+              color="#ffffff"
+            />
           </TouchableOpacity>
         </View>
 
@@ -145,45 +176,56 @@ export default function SignUpScreen() {
             placeholder="Comfirm Password"
             placeholderTextColor="#f5f5f5"
             secureTextEntry={!isconfirmPasswordVisible} // Toggle visibility
-
             onChangeText={(text) => {
               setconfirmPassword(text);
-              setErr((prev) => ({ ...prev, confirmPassword: '' })); // Clear err on input change
+              setErr((prev) => ({ ...prev, confirmPassword: "" })); // Clear err on input change
             }}
           />
-          <TouchableOpacity onPress={() => setIsconfirmPasswordVisible(!isconfirmPasswordVisible)} style={styles.eyeIcon}>
-            <Ionicons name={isconfirmPasswordVisible ? "eye-off" : "eye"} size={24} color="#ffffff" />
+          <TouchableOpacity
+            onPress={() =>
+              setIsconfirmPasswordVisible(!isconfirmPasswordVisible)
+            }
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={isconfirmPasswordVisible ? "eye-off" : "eye"}
+              size={24}
+              color="#ffffff"
+            />
           </TouchableOpacity>
         </View>
-        
-        {err.username || err.nationalId || err.email || err.password || err.confirmPassword ?
-        <View style={styles.errorInput}>
-            <Ionicons name='alert-circle' size={24} color="red" />
-            <View style={styles.errorTextContainer}>
-              <Text style={styles.errorText}>{err.username}</Text> 
-              <Text style={styles.errorText}>{err.nationalId}</Text> 
-              <Text style={styles.errorText}>{err.email}</Text> 
-              <Text style={styles.errorText}>{err.password}</Text> 
-              <Text style={styles.errorText}>{err.confirmPassword}</Text> 
-            </View>
-        </View>: null
-        }
 
+        {err.username ||
+        err.nationalId ||
+        err.email ||
+        err.password ||
+        err.confirmPassword ? (
+          <View style={styles.errorInput}>
+            <Ionicons name="alert-circle" size={24} color="red" />
+            <View style={styles.errorTextContainer}>
+              <Text style={styles.errorText}>{err.username}</Text>
+              <Text style={styles.errorText}>{err.nationalId}</Text>
+              <Text style={styles.errorText}>{err.email}</Text>
+              <Text style={styles.errorText}>{err.password}</Text>
+              <Text style={styles.errorText}>{err.confirmPassword}</Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton}  onPress={handleSignUp}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleSignUp}>
           <Text style={styles.loginText}>Sign Up</Text>
         </TouchableOpacity>
-        
+
         {/* Divider */}
         <Text style={styles.orText}>or</Text>
-        
+
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton} >
+        <TouchableOpacity style={styles.googleButton}>
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>
-        
+
         {/* Sign Up Link */}
         <Text style={styles.signupText}>
           Already have an account?
@@ -191,26 +233,26 @@ export default function SignUpScreen() {
             <Pressable>
               <Text style={styles.signupLink}>Login</Text>
             </Pressable>
-           </Link>
+          </Link>
         </Text>
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const { width, height } = Dimensions.get("window");
 const circleSize = Math.min(width, height);
 const styles = StyleSheet.create({
   background: {
     backgroundColor: "#9AC9F3",
-    width: "100%", 
-    height: "100%", 
+    width: "100%",
+    height: "100%",
     flex: 1,
   },
   circle1: {
     position: "absolute",
-    top: -(circleSize) * 0.4,
-    left: -(circleSize) * 0.20,
+    top: -circleSize * 0.4,
+    left: -circleSize * 0.2,
     width: circleSize,
     height: circleSize,
     borderRadius: circleSize / 2,
@@ -219,11 +261,11 @@ const styles = StyleSheet.create({
   },
   circle2: {
     position: "absolute",
-    top: (circleSize * 0.5),
-    left: (circleSize * 0.5),
+    top: circleSize * 0.5,
+    left: circleSize * 0.5,
     width: circleSize * 0.5,
     height: circleSize * 0.5,
-    borderRadius: circleSize * 0.5 / 2,
+    borderRadius: (circleSize * 0.5) / 2,
     backgroundColor: "#fff",
     opacity: 0.5,
   },
@@ -353,24 +395,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textDecorationLine: "underline",
   },
-  errorInput: {  
+  errorInput: {
     width: "90%",
     backgroundColor: "rgb(253, 212, 212)",
-    borderColor:'red',
-    borderWidth:1,
+    borderColor: "red",
+    borderWidth: 1,
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
     fontSize: 16,
-    
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  errorTextContainer:{
-    justifyContent: 'center',
-  },
-  errorText: { color: 'red',
-    marginLeft:14
-  }
 
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorTextContainer: {
+    justifyContent: "center",
+  },
+  errorText: { color: "red", marginLeft: 14 },
 });

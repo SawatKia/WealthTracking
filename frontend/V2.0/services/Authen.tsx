@@ -6,13 +6,14 @@ import * as SecureStore from 'expo-secure-store';
 // import Cookies from 'js-cookie';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:3000/api/v0.2', // Replace with your backend URL
+  baseURL: 'http://192.168.2.51:3000/api/v0.2', // Replace with your backend URL
   headers: {
     'Content-Type': 'application/json',
   },
 });
 api.interceptors.request.use(
   async (config) => {
+    console.log('what the heck')
     const token = await getToken(); // Retrieve the token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`; // Add token to Authorization header
@@ -54,9 +55,11 @@ export const login = async (email: string, password: string) => {
     "password": password,
   }
   try {
-    const response = await api.post('/login', requestData);
-    if (response.data.access_token) {
-      await storeToken(response.data.access_token); // Store the token securely
+    const response = await api.post('/login?platform=mobile', requestData);
+    // console.log('login',response.data.data.tokens.access_token)
+    const token = response.data.data.tokens.access_token
+    if (token) {
+      await storeToken(token); // Store the token securely
       return true;
     }
   }

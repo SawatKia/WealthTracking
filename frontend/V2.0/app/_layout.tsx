@@ -1,13 +1,14 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import CreateTransaction from './CreateTransaction';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 
 export {
@@ -44,27 +45,45 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return <AuthProvider>
+  <RootLayoutNav />
+</AuthProvider>
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { isAuthenticated } = useAuth(); // Access the auth state
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to login if the user is not authenticated
+    if (!isAuthenticated) {
+      router.replace('/Login');
+    }
+  }, [isAuthenticated, router]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack
+      screenOptions={{
+        headerShown: false, // Global setting to hide the header
+      }}
+    >
+        
         {/* <Stack.Screen name="login" /> */}
 
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        {/* <Stack.Screen name="CreateTransaction" component={CreateTransaction} /> */}
-        {/* <Stack.Screen name="CategoryExpenses" /> */}
-
-
-
-
-        {/* <Stack.Screen name="Login" />
-        <Stack.Screen name="SignUp" /> */}
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
+            <Stack.Screen name="CreateTransaction" options={{ headerShown: true}} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </>
+        ): (
+          <>
+            <Stack.Screen name="Login" options={{ headerShown: false }} />
+            <Stack.Screen name="Signup" options={{ headerShown: false }} />
+          </>
+      )}
       </Stack>
     </ThemeProvider>
   );
