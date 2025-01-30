@@ -14,8 +14,9 @@ const QRCodeReader = require('../utilities/QRCodeReader');
 const LLMService = require('../services/LLMService');
 const DocumentAiService = require('../services/DocumentAiService');
 const OcrMappingService = require('../services/OcrMappingService');
-const types = require('../../statics/types.json');
 
+const types = require('../../statics/types.json');
+const appConfigs = require('../configs/AppConfigs');
 const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const { BankAccountUtils } = require("../utilities/BankAccountUtils")
@@ -31,69 +32,111 @@ class ApiController {
     this.transactionModel = new TransactionModel();
     this.bankAccountModel = new BankAccountModel();
     this.bankAccountUtils = new BankAccountUtils();
-    this.mockDataResponse = {
-      payload: "00000000000000000000000000000000000000000000000000000000000",
-      transRef: "68370160657749I376388B35",
-      date: "2023-01-01T00:00:00+07:00",
-      countryCode: "TH",
-      amount: {
-        amount: 120,
-        local: {
-          amount: 0,
-          currency: "",
-        },
-      },
-      fee: 0,
-      ref1: "",
-      ref2: "",
-      ref3: "",
-      sender: {
-        bank: {
-          id: "001",
-          name: "กสิกรไทย",
-          short: "KBANK",
-        },
-        account: {
-          name: {
-            th: "นาย อีซี่ สลิป",
-            en: "MR. EASY SLIP",
-          },
-          bank: {
-            type: "BANKAC",
-            account: "xxxxx6789x",
-          },
-        },
-      },
-      receiver: {
-        bank: {
-          id: "030",
-          name: "ธนาคารออมสิน",
-          short: "GSB",
-        },
-        account: {
-          name: {
-            th: "นาย อีซี่ สลิป",
-          },
-          bank: {
-            type: "BANKAC",
-            account: "12xxxx3456",
-          },
-          proxy: {
-            type: "EWALLETID",
-            account: "123xxxxxxxx4567",
-          },
-        },
-      },
-    };
 
     // Bind methods to ensure correct 'this' context
     this._getCurrentDate = this._getCurrentDate.bind(this);
     this._checkQuotaAvailability = this._checkQuotaAvailability.bind(this);
-    this.getQuotaInformation = this.getQuotaInformation.bind(this);
+    this.getSlipQuotaInformation = this.getSlipQuotaInformation.bind(this);
     this._handleSlipVerification = this._handleSlipVerification.bind(this);
     this.verifySlip = this.verifySlip.bind(this);
     this._extractTextFromImage = this._extractTextFromImage.bind(this);
     this._prepareTransactionData = this._prepareTransactionData.bind(this);
+    this._checkGeminiRateLimit = this._checkGeminiRateLimit.bind(this);
+  }
+
+  async _checkGeminiRateLimit(modelName, estimatedTokens) {
+    logger.info('Checking Gemini rate limit');
+    const now = new Date();
+
+    // For current minute
+    const currentMinute = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+    const minuteTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const minuteOffset = -currentMinute.getTimezoneOffset() / 60; // Negative because getTimezoneOffset returns opposite sign
+    console.log(`Current minute: ${currentMinute.toISOString()}, timeZone: ${minuteTimeZone} (UTC${minuteOffset >= 0 ? '+' : ''}${minuteOffset})`);
+
+    // For current date
+    const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const dateOffset = -currentDate.getTimezoneOffset() / 60; // Negative because getTimezoneOffset returns opposite sign
+    console.log(`Current date: ${currentDate.toISOString()}, timeZone: ${dateTimeZone} (UTC${dateOffset >= 0 ? '+' : ''}${dateOffset})`);
+
+    // Get rate limits for the model
+    const rateLimits = {
+      'gemini-1.5-pro': { rpm: 2, rpd: 50, tpm: 32000 },
+      'gemini-2.0-flash-exp': { rpm: 10, rpd: 1500, tpm: 4000000 },
+      'gemini-1.5-flash-8b': { rpm: 15, rpd: 1500, tpm: 1000000 }
+    };
+
+    const limits = rateLimits[modelName];
+    if (!limits) {
+      throw new Error(`Unknown Gemini model: ${modelName}`);
+    }
+
+    // Check minute request limit
+    logger.info("============verify RPM=============");
+    const minuteUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentMinute);
+    logger.debug(`Current minute usage for ${modelName}: ${minuteUsage?.request_count || 0}/${limits.rpm} requests, ${minuteUsage?.token_count || 0}/${limits.tpm} tokens`);
+
+    if (minuteUsage && minuteUsage.request_count >= limits.rpm) {
+      const retryAfter = 60 - now.getSeconds();
+      logger.warn(`Minute rate limit exceeded for ${modelName}: ${minuteUsage.request_count}/${limits.rpm} requests`);
+      return {
+        allowed: false,
+        retryAfter,
+        message: `Rate limit exceeded for ${modelName}: ${limits.rpm} requests per minute`,
+        headers: {
+          'Retry-After': retryAfter
+        }
+      };
+    }
+
+    // Check daily request limit
+    logger.info("============verify RPD=============");
+    const dailyUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentDate);
+    if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
+      const tomorrow = new Date(currentDate);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const retryAfter = Math.ceil((tomorrow - now) / 1000);
+      return {
+        allowed: false,
+        retryAfter,
+        message: `Daily limit exceeded for ${modelName}: ${limits.rpd} requests per day`,
+        headers: {
+          'Retry-After': retryAfter
+        }
+      };
+    }
+
+    // Check token per minute limit
+    logger.info("============verify TPM=============");
+    const currentTokenCount = await this.apiRequestLimitModel.getTokenCount(modelName, currentMinute);
+    if (currentTokenCount + estimatedTokens > limits.tpm) {
+      const retryAfter = 60 - now.getSeconds();
+      return {
+        allowed: false,
+        retryAfter,
+        message: `Token limit exceeded for ${modelName}: ${limits.tpm} tokens per minute, examine the header 'Retry-After' to get precise delay time in seconds`,
+        headers: {
+          'Retry-After': retryAfter
+        }
+      };
+    }
+
+    logger.info("increasing the quota(request and token) usage base on each environment");
+    if (appConfigs.environment === 'development') {
+      logger.info("Development environment detected");
+      logger.info("increment request count for current minute");// only in crement request count, to prevent rpm limit
+      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens);
+      logger.info("increment request count for current date");// date need to, need to increment request count and store tokens usage, to prevent rpd limit
+      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens);
+    } else {
+      await Promise.all([
+        this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens),
+        this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens)
+      ]);
+    }
+
+    return { allowed: true };
   }
 
   _getCurrentDate() {
@@ -110,12 +153,23 @@ class ApiController {
     logger.info("Extracting text from image...");
     logger.debug(`imageBuffer: ${JSON.stringify(imageBuffer).substring(0, 100)}${JSON.stringify(imageBuffer).length > 100 ? "...[truncated]..." : ""}`);
     try {
-      // If imagePath is already a buffer (from req.file.buffer), use it directly
-      const imageData = Buffer.isBuffer(imageBuffer) ? imageBuffer : fs.readFileSync(imageBuffer);
-      let result = await DocumentAiService.recognize(imageData);
-      result = result.replace("โอนเงิน", "ทำรายการ")
-      logger.debug(`replaced โอนเงิน -> ทำรายการ: ${result}`)
-      return result;
+      if (!imageBuffer || !Buffer.isBuffer(imageBuffer)) {
+        throw new Error('Invalid image buffer provided');
+      }
+      const result = await DocumentAiService.recognize(imageBuffer);
+
+      // Validate result
+      if (!result) {
+        throw new Error('No result returned from DocumentAI service');
+      }
+
+      // Process result
+      const processedResult = result.replace("โอนเงิน", "ทำรายการ");
+
+      // Log the processed result
+      logger.debug(`Processed โอนเงิน -> ทำรายการ OCR result: ${processedResult}`);
+      logger.info('returning processed result');
+      return processedResult;
     } catch (error) {
       logger.error(`Error extracting text from image: ${error.message}`);
       throw error;
@@ -144,7 +198,7 @@ class ApiController {
           currentDate
         );
         logger.debug(
-          `create requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
+          `created requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
           }`
         );
       } else if (requestLimit.request_count >= 7) {
@@ -270,7 +324,7 @@ class ApiController {
   }
 
 
-  async getQuotaInformation(req, res, next) {
+  async getSlipQuotaInformation(req, res, next) {
     logger.info("Processing request for quota information");
     try {
       const quotaInfo = await this.easySlipService.fetchQuotaInformation();
@@ -298,7 +352,6 @@ class ApiController {
     } catch (error) {
       logger.error(
         `Error processing quota information request: ${error.message}`
-
       );
       if (error.message == "Invalid EasySlip API key provided") {
         next(MyAppErrors.badRequest(error.message));
@@ -359,7 +412,7 @@ class ApiController {
 
       if (!this._isValidFile(req.file)) {
         logger.error("Invalid file format or size.");
-        throw MyAppErrors.badRequest("Invalid file format or size.");
+        throw MyAppErrors.badRequest("IThe uploaded file is invalid or exceeds the size limit.");
       }
 
       const payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
@@ -379,11 +432,38 @@ class ApiController {
       }
 
       // Extract text using OCR for type classification
-      const ocrText = await this._extractTextFromImage(req.file.buffer);
-      if (!ocrText) {
-        logger.error("Could not extract text from image.");
-        throw MyAppErrors.badRequest("Could not extract text from image.");
+      let ocrText = await this._extractTextFromImage(req.file.buffer);
+      logger.debug(`OCR text result: ${ocrText}`); // Add detailed logging
+
+      if (!ocrText || typeof ocrText !== 'string' || ocrText.trim().length === 0) {
+        logger.error("Invalid OCR result received");
+        throw MyAppErrors.badRequest("Could not properly extract text from image");
       }
+
+      // ocrText = ocrText.trim();
+      logger.warn(`[examining result] Sanitized OCR text: ${ocrText.trim()}`);
+
+      // Check Gemini rate limit before making LLM call
+      const modelName = appConfigs.gemini.models.classification; // Default model for classification
+      //FIXME - English 4 characters = 1 token, Thai 1-2 characters = 1 token
+      //FIXME - get the precise token by sending asking to LLM(use countTokens method in GoogleGenerativeAI in LLMService.js)
+      //NOTE - or after sending prompt to llm. since from these log messages:
+      //2025-01-23 20:14:12 [LLMService.js/_generateContentWithMetrics():48] debug: llm[gemini-1.5-pro-002] response in 3078ms: {"category":"Expense","type":"Food","confidence":0.9,"reasoning":"The memo 'บะหมี่ไก่ทอด' (fried chicken noodles) clearly indicates a food purchase."}
+      //2025-01-23 20:14:12 [LLMService.js/_generateContentWithMetrics():49] debug: Token usage: {"promptTokenCount":779,"candidatesTokenCount":64,"totalTokenCount":843}
+      const estimatedTokens = Math.ceil(ocrText.length / 4); // Rough estimate of tokens
+      logger.info("checking the request limit quota")
+      const rateLimitCheck = await this._checkGeminiRateLimit(modelName, estimatedTokens);
+
+      if (!rateLimitCheck.allowed) {
+        return res.status(429)
+          .set(rateLimitCheck.headers)
+          .json({
+            status_code: 429,
+            message: rateLimitCheck.message,
+            retry_after: rateLimitCheck.retryAfter
+          });
+      }
+
       // Get transaction type from LLM
       const transactionType = await LLMService.classifyTransaction(ocrText);
       logger.debug(`Classified transaction type: ${transactionType}`);
@@ -431,14 +511,14 @@ class ApiController {
         logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
 
         result = {
-          message: 'EasySlip is not available, using OCR text mapping to transaction instead',
+          message: 'EasySlip is not available, using OCR text mapping to transaction instead' + " and stored as a transaction",
           data: {
             transaction
           }
         };
       }
 
-      req.formattedResponse = formatResponse(200, result.message, result.data);
+      req.formattedResponse = formatResponse(201, result.message, result.data);
       next();
     } catch (error) {
       logger.error(`Error processing slip verification: ${error.message}`);
