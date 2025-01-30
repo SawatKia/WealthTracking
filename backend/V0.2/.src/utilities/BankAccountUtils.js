@@ -208,6 +208,18 @@ class BankAccountUtils {
             const expectedLength = bank.example.replace(/-/g, '').length;
             if (cleanedNumber.length !== expectedLength) {
                 logger.warn(`Account number ${cleanedNumber} does not have the expected length (${expectedLength} digits) for bank ${fiCode}`);
+
+                // Fallback to check number of digits
+                if (cleanedNumber.length === 10) {
+                    logger.info(`Fallback to Kbank format for 10 digits account number`);
+                    return this.formatAccountNumber(cleanedNumber, '004'); // Kbank format
+                }
+
+                if (cleanedNumber.length === 13) {
+                    logger.info(`Fallback to GSB format for 13 digits account number`);
+                    return this.formatAccountNumber(cleanedNumber, '030'); // GSB format
+                }
+
                 return accountNumber; // Return original if length doesn't match
             }
 
