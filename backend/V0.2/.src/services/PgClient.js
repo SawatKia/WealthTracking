@@ -13,78 +13,25 @@ class PgClient {
   constructor() {
     logger.info("Running PgClient instance");
     logger.debug(`Curent Environment: ${NODE_ENV}`);
-    // this.tables = {
-    //   USERS: 'users',
-    //   FINANCIAL_INSTITUTIONS: 'financial_institutions',
-    //   BANK_ACCOUNTS: 'bank_accounts',
-    //   DEBTS: 'debts',
-    //   TRANSACTIONS: 'transactions',
-    //   TRANSACTION_BANK_ACCOUNT_RELATIONS: 'transaction_bank_account_relations',
-    //   API_REQUEST_LIMITS: 'api_request_limits',
-    //   USED_REFRESH_TOKENS: 'used_refresh_tokens',
-    //   SLIP_HISTORY: 'slip_history'
-    // };
 
-    // Read table names from SQL files in the /sql/tables/ directory
-    const tablesDir = path.join(__dirname, '../../sql/tables');
-    logger.silly(`tablesDir: ${tablesDir} `);
-    const tableFiles = fs.readdirSync(tablesDir);
-    const tableNames = tableFiles.map(file => path.basename(file, '.sql'));
-    logger.debug(`read tableNames from sql file: ${tableNames.join(', ')} `);
+    // Initialize table definitions
+    this.loadTableDefinitions();
 
-    // Define the desired order of tables
-    const orderedTableNames = [
-      'users',
-      'financial_institutions',
-      'bank_accounts',
-      'debts',
-      'transactions',
-      // Add any other tables that need to be in a specific order
-    ];
+    // Setup database configuration
+    const config = this.initializeDatabaseConfig();
+    this.validateDatabaseConfig(config);
 
-    // Add any remaining tables that are not explicitly ordered
-    const unorderedTables = tableNames.filter(name => !orderedTableNames.includes(name));
-    logger.silly(`unorderedTables: ${unorderedTables.join(', ')} `);
-    const finalTableOrder = [...orderedTableNames, ...unorderedTables];
-    logger.silly(`finalTableOrder: ${finalTableOrder.join(', ')} `);
+    // Initialize connection pools
+    this.createConnectionPools(config);
 
-    this.tables = {};
-    finalTableOrder.forEach(tableName => {
-      this.tables[tableName.toUpperCase()] = tableName;
-    });
-    logger.debug(`this.tables: ${JSON.stringify(this.tables, null, 2)} `);
-
-    Object.freeze(this.tables);
-
-    let config;
-    if (NODE_ENV === "development") {
-      config = development;
-    } else if (NODE_ENV === "test") {
-      config = test;
-    } else {
-      config = production;
-    }
-
-
-    const requiredProps = ["user", "host", "password", "port"];
-    for (const prop of requiredProps) {
-      if (!config[prop]) {
-        logger.error(`Missing required Database configuration: ${prop}`);
-        throw new Error(`Missing required Database configuration: ${prop}`);
-      }
-    }
-
-    // Initially connect to 'postgres' database
-    this.tempConfig = { ...config, database: 'postgres' };
-    logger.debug(`Initial Database Config: ${JSON.stringify(this.tempConfig)}`);
-    this.pool = new Pool(this.tempConfig);
+    // Set initial state
+    this.pool = null;
+    this.tempPool = null;
+    this.tempClient = null;
     this.client = null;
     this.transactionStarted = false;
-    this.targetConfig = config; // Store the target database config for later use
+    this.targetConfig = config;
 
-    this.pool.on("error", (err) => {
-      logger.error(`Da tabase pool error: ${err.message}`);
-    });
   }
 
   /**
@@ -94,12 +41,86 @@ class PgClient {
    * exist.
    * @returns {Promise<void>}
    */
+  // Initialize database table definitions from SQL files
+  loadTableDefinitions() {
+    const tablesDir = path.join(__dirname, '../../sql/tables');
+    logger.silly(`tablesDir: ${tablesDir}`);
+    const tableFiles = fs.readdirSync(tablesDir);
+    const tableNames = tableFiles.map(file => path.basename(file, '.sql'));
+    logger.debug(`Discovered table names: ${tableNames.join(', ')}`);
+
+    const orderedTableNames = [
+      'users',
+      'financial_institutions',
+      'bank_accounts',
+      'debts',
+      'transactions'
+    ];
+
+    const unorderedTables = tableNames.filter(name => !orderedTableNames.includes(name));
+    logger.silly(`Unordered tables: ${unorderedTables.join(', ')}`);
+
+    const finalTableOrder = [...orderedTableNames, ...unorderedTables];
+    logger.silly(`Final table order: ${finalTableOrder.join(', ')}`);
+
+    this.tables = {};
+    finalTableOrder.forEach(tableName => {
+      this.tables[tableName.toUpperCase()] = tableName;
+    });
+
+    logger.debug(`Final table structure: ${JSON.stringify(this.tables, null, 2)}`);
+    Object.freeze(this.tables);
+  }
+
+  // Select appropriate database config based on environment
+  initializeDatabaseConfig() {
+    logger.debug(`appConfigs: ${JSON.stringify(appConfigs, null, 2)}`);
+    logger.info("Initializing database configuration...");
+    let config;
+    switch (NODE_ENV) {
+      case "development":
+        config = development;
+        break;
+      case "test":
+        config = test;
+        break;
+      default:
+        config = production;
+    }
+    logger.debug(`initialized database config: ${JSON.stringify(config)}`);
+    return config;
+  }
+
+  // Validate essential database configuration properties
+  validateDatabaseConfig(config) {
+    logger.info("Validating database configuration...");
+    const requiredProps = ["user", "host", "password", "port"];
+    for (const prop of requiredProps) {
+      if (!config[prop]) {
+        logger.error(`Missing database configuration: ${prop}`);
+        throw new Error(`Missing required database configuration: ${prop}`);
+      }
+    }
+    logger.info("Database configuration validated successfully");
+  }
+
+  // Initialize database connection pools
+  createConnectionPools(config) {
+    this.tempConfig = { ...config, database: 'postgres' };
+    logger.debug(`Temporary database config: ${JSON.stringify(this.tempConfig)}`);
+  }
+
   async init() {
     try {
       logger.info("Initialize PgClient");
+      // Create fresh temp pool each init
+      this.tempPool = new Pool(this.tempConfig);
+      this.tempPool.on("error", (err) => {
+        logger.error(`Database pool error: ${err.message}`);
+      });
       logger.info(`Connecting to ${this.tempConfig.database} database...`);
-      this.client = await this.pool.connect();
-      if (!this.client) {
+      this.tempClient = await this.tempPool.connect();
+      if (!this.tempClient) {
         throw new Error(`Database connection failed: ${this.tempConfig.database}`);
       }
       logger.info(`Connected to ${this.tempConfig.database} database successfully`);
@@ -110,12 +131,13 @@ class PgClient {
         await this.createDatabase(NODE_ENV);
       }
 
-      // Switch to the target database
-      await this.disconnect();
-      await this.pool.end();
+      if (this.tempClient) {
+        await this.disconnect(this.tempClient);
+        await this.tempPool.end();
+      }
+      this.tempPool = null; // Clear reference
 
-      logger.debug(`targetConfig: ${JSON.stringify(this.targetConfig)}`);
-      this.pool = new Pool(this.targetConfig);
+      // Switch to the target database
       await this.connect();
       logger.info(`Connected to ${this.targetConfig.database} database successfully`);
 
@@ -126,8 +148,9 @@ class PgClient {
     }
   }
 
-
   isConnected() {
+    logger.info('Checking if target Database is connected...');
+    logger.debug(`client: ${JSON.stringify(this.client)} `);
     return !!this.client;
   }
 
@@ -149,7 +172,7 @@ class PgClient {
         logger.info('querying...');
       }
 
-      return this.client.query(sql, params);
+      return await this.client.query(sql, params);
     } catch (error) {
       logger.error(`Error querying database: ${error.message} `);
       throw error;
@@ -194,24 +217,42 @@ class PgClient {
     logger.info(`Truncating ${table ? 'the following tables' : 'all tables'}: ${tablesToTruncate.join(', ')}`);
 
     for (const t of tablesToTruncate) {
-      if (t !== this.tables.FINANCIAL_INSTITUTIONS) {
+      if (t !== this.tables.FINANCIAL_INSTITUTIONS &&
+        t !== this.tables.API_REQUEST_LIMITS &&
+        t !== this.tables.SLIP_HISTORY
+        // && t !== this.tables.USERS
+      ) {
         await this.client.query(`TRUNCATE TABLE ${t} CASCADE`);
         logger.debug(`All rows deleted from table: ${t}`);
       } else {
-        logger.info('!'.repeat(42));
-        logger.info(`! ${`Skipping table: ${t}`.padEnd(39)} !`);
-        logger.info('!'.repeat(42));
+        logger.info(`!! ${`Skipping table: ${t}`.padEnd(39)} !`);
       }
     }
   }
 
-  async release() {
-    if (appConfigs.environment === 'test') {
+  async release(truncateTables = false) {
+    if (appConfigs.environment === 'test' && truncateTables) {
       await this.truncateTables();
     }
+
     if (this.client) {
-      this.client.release();
-      logger.debug("Database client released");
+      try {
+        this.client.release();
+        logger.debug("Main database client released");
+      } catch (err) {
+        logger.error(`Error releasing main client: ${err.message}`);
+      }
+      this.client = null;
+    }
+
+    if (this.tempClient) {
+      try {
+        this.tempClient.release();
+        logger.debug("Temporary database client released");
+      } catch (err) {
+        logger.error(`Error releasing temp client: ${err.message}`);
+      }
+      this.tempClient = null;
     }
   }
 
@@ -243,7 +284,7 @@ class PgClient {
       // Check if the database exists
       logger.info(`checking if ${environment} database name: '${dbName}' exists ? `);
       const checkDbQuery = `SELECT 1 FROM pg_database WHERE datname = $1`;
-      const result = await this.client.query(checkDbQuery, [dbName]);
+      const result = await this.tempClient.query(checkDbQuery, [dbName]);
 
       if (result.rowCount > 0) {
         logger.info(`${environment} database name: '${dbName}' already exists`);
@@ -253,7 +294,7 @@ class PgClient {
         // Only delete the database if it's not production and FORCE_DB_RESET is true 
         if (environment != 'production' && forceDbReset) {
           // Drop the database
-          await this.client.query(`DROP DATABASE "${dbName}"`);
+          await this.tempClient.query(`DROP DATABASE "${dbName}"`);
           logger.warn(`${environment} database name: '${dbName}' deleted successfully`);
         } else {
           logger.warn('skipping database deletion and recreation');
@@ -261,7 +302,7 @@ class PgClient {
         }
       }
       // Create the new database
-      await this.client.query(`CREATE DATABASE "${dbName}"`);
+      await this.tempClient.query(`CREATE DATABASE "${dbName}"`);
       logger.info(`${environment} database name: '${dbName}' created successfully`);
       return;
     } catch (error) {
@@ -339,14 +380,22 @@ class PgClient {
   }
 
   async connect() {
+    if (!this.pool) {
+      logger.info('Creating target pool...');
+      logger.debug(`targetConfig: ${JSON.stringify(this.targetConfig)}`);
+      this.pool = new Pool(this.targetConfig);
+      logger.debug('targetPool created');
+    }
     if (!this.client) {
+      logger.info('Connecting to target database...');
       this.client = await this.pool.connect();
+      logger.debug('Connected to target database successfully');
     }
   }
 
-  async disconnect() {
-    if (this.client) {
-      await this.client.release();
+  async disconnect(client = null) {
+    if (client) {
+      await client.release();
       this.client = null;
     }
   }
@@ -365,7 +414,6 @@ class PgClient {
       }
       logger.info('All rows deleted from all tables in test environment');
     }
-    await this.pool.end();
   }
 }
 
