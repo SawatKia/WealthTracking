@@ -62,7 +62,7 @@ class TransactionModel extends BaseModel {
         }),
 
       amount: Joi.number()
-        .precision(2)
+        .precision(2).positive()
         .when(Joi.ref("$operation"), {
           is: "create",
           then: Joi.required(),
@@ -70,6 +70,7 @@ class TransactionModel extends BaseModel {
         })
         .messages({
           "number.base": "Amount must be a number.",
+          "number.positive": "Amount must be a positive number.",
           "number.precision": "Amount must have at most 2 decimal places.",
           "any.required": "Amount is required when creating a transaction.",
         }),
