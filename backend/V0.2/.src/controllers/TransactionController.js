@@ -90,8 +90,8 @@ class TransactionController extends BaseController {
                 requiredFields.push('receiver');
             } else if (req.body.category === 'Transfer') {
                 requiredFields.push('sender', 'receiver');
-            } else {
-                throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
+            } else if (req.body.category) {
+                throw MyAppErrors.badRequest('Invalid category');
             }
             const user = await super.getCurrentUser(req);
 
@@ -213,7 +213,17 @@ class TransactionController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Error creating transaction: ${error.message}`);
-            next(error);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else if (error.message.includes('Invalid number format for field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.name === 'ValidationError') {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('Missing required field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else {
+                next(error);
+            }
         }
     }
 
