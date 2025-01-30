@@ -60,12 +60,16 @@ class BaseModel {
    */
   async executeQuery(sql, params, options = { silent: false }) {
     try {
+      logger.info("Executing query...");
       return await this.executeWithTransaction(async () => {
         const result = await this.pgClient.query(sql, params, options);
+        logger.debug(`Executed SQL query: ${sql}`);
+        logger.debug(`Query params: ${params}`);
+        logger.debug(`Query result: ${JSON.stringify(result)}`);
         return result;
       });
     } catch (error) {
-      logger.error("Error executing query: %s", error);
+      logger.error(`Error executing query: ${error}`);
       throw error;
     }
   }
@@ -97,10 +101,11 @@ class BaseModel {
         const sql = `INSERT INTO ${this.tableName} (${keys.join(
           ","
         )}) VALUES (${placeholders}) RETURNING *`;
-        logger.debug("Create SQL prepared query: %s", sql);
+        logger.debug(`Create SQL prepared query: ${sql}`);
+        logger.info('performing create operation...');
         const result = await this.pgClient.query(sql, values, options);
-        logger.silly("Create SQL result: " + JSON.stringify(result));
-        logger.debug("Create result: " + JSON.stringify(result.rows[0]));
+        logger.silly("Created SQL result: " + JSON.stringify(result));
+        logger.debug("Created result: " + JSON.stringify(result.rows[0]));
         return result.rows[0];
       });
     } catch (error) {
@@ -128,9 +133,10 @@ class BaseModel {
       }
       const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
       const result = await this.pgClient.query(sql, [nationalId]);
+      logger.debug(`Listing result: ${JSON.stringify(result.rows)}`);
       return result.rows;
     } catch (error) {
-      logger.error("Error listing records: %s", error);
+      logger.error(`Error listing records: ${error}`);
       throw error;
     }
   }
@@ -162,7 +168,7 @@ class BaseModel {
       logger.debug("findOne result: " + JSON.stringify(result.rows[0]));
       return result.rows[0];
     } catch (error) {
-      logger.error("Error finding one record: %s", error);
+      logger.error(`Error finding one record: ${error}`);
       throw error;
     }
   }
@@ -231,7 +237,7 @@ class BaseModel {
         return result.rows[0];
       });
     } catch (error) {
-      logger.error("Error updating record: %s", error);
+      logger.error(`Error updating record: ${error}`);
       throw error;
     }
   }
