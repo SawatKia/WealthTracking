@@ -13,7 +13,7 @@ module.exports = {
     },
     test: {
         user: appConfigs.postgres.user,
-        host: appConfigs.postgres.host,
+        host: appConfigs.postgres.host || 'localhost',
         database: appConfigs.postgres.databaseName.test,
         password: appConfigs.postgres.password,
         port: appConfigs.postgres.port,
