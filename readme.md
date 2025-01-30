@@ -95,7 +95,7 @@ POSTGRES_PORT=5432
 POSTGRES_DB=WealthTrack_DB
 # POSTGRES_DB=your_database_name
 POSTGRES_TEST_NAME=test_database_name
-FORCE_DB_RESET=false # usually use when there is a new configuration in any part of the db either triggering function or table schema
+FORCE_DB_RESET=false # tldr: recreate all tables.; usually use when there is a new configuration in any part of the db either triggering function or table schema
 RELOAD_MOCK_DATA=false
 
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
