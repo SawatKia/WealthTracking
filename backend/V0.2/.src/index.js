@@ -382,8 +382,12 @@ const startServer = async () => {
   logger.info("=".repeat(20) + " Starting server " + "=".repeat(20));
 
   try {
+    // Validate environment
     verifyEnvVars(appConfigs);
+
+    // Initialize services
     await initializeServices();
+
     if (NODE_ENV === 'development' && String(appConfigs.loadMockData).toLowerCase() === 'true') {
       try {
         logger.info('Loading mock data...');
