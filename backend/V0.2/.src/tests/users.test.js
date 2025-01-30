@@ -3,17 +3,48 @@ const { app } = require("../app");
 const pgClient = require("../services/PgClient");
 const { Logger } = require("../utilities/Utils");
 const logger = Logger("users.test");
-const testSetup = require('./test-setup');
 
-const { getTestAccessToken } = require('./token-helper');
-let accessToken = getTestAccessToken();
-logger.debug(`Test setup complete`);
-logger.debug(`access_token: ${accessToken}`);
-logger.debug(`Test user: ${JSON.stringify(global.User)}`);
-logger.debug(`Test bank account: ${JSON.stringify(global.BankAccount)}`);
-logger.debug(`Test debt: ${JSON.stringify(global.Debt)}`);
+// Mock user for authentication
+const mockUser = {
+  national_id: "0000000000099",
+  username: "testuser",
+  email: "test@example.com",
+  password: "Password123!",
+  confirm_password: "Password123!",
+  date_of_birth: "1990-01-01"
+};
 
 describe("Users Endpoints", () => {
+  let accessToken;
+
+  beforeAll(async () => {
+    await pgClient.init();
+    logger.debug(`Database connected: ${pgClient.isConnected()}`);
+
+    await pgClient.truncateTables();
+    logger.debug(`All rows deleted from tables`);
+
+    // Register initial test user
+    await request(app)
+      .post("/api/v0.2/users")
+      .send(mockUser);
+
+    // Login to get access token
+    const loginResponse = await request(app)
+      .post("/api/v0.2/login?platform=mobile")
+      .send({
+        email: mockUser.email,
+        password: mockUser.password
+      });
+
+    accessToken = loginResponse.body.data.tokens.access_token;
+    logger.debug(`Access token obtained: ${accessToken}`);
+  }, 30000);
+
+  afterAll(async () => {
+    await pgClient.release();
+    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+  });
 
   describe("Create User Tests", () => {
     const createUserCases = [

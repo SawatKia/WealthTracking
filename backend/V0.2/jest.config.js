@@ -1,7 +1,6 @@
 module.exports = {
+    testEnvironment: 'node',
     verbose: true,
-    setupFiles: ["./.src/tests/env-setup.js"],
-    setupFilesAfterEnv: ['./.src/tests/test-setup.js'],
     reporters: [
         'default',
         [
@@ -14,5 +13,7 @@ module.exports = {
         ],
     ],
     maxWorkers: 4,
+    // Set timeout to 5 minutes (300000 milliseconds)
     testTimeout: 300000,
-};
+    testSequencer: './.src/tests/custom-sequencer.js',
+}; 
