@@ -6,6 +6,8 @@
   "scripts": {
     "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage --detectOpenHandles",
     "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
+    "build": "rmdir /s /q dist && babel .src --out-dir dist --copy-files --source-maps",
+    "serve": "node dist/index.js",
     "dev": "node .src/index.js",
     "debug": "node --inspect=0.0.0.0:9229 .src/index.js",
     "start": "cross-env NODE_ENV=production node .src/index.js"
@@ -50,6 +52,9 @@
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "jest-html-reporters": "^3.1.7",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "@babel/core": "^7.24.5",
+    "@babel/cli": "^7.24.5",
+    "@babel/preset-env": "^7.24.5"
   }
 }
