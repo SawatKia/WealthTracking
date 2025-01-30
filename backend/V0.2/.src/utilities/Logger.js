@@ -57,11 +57,9 @@ class Logger {
 
         const commonRotateOptions = {
             dirname: testLogDir,
-            datePattern: NODE_ENV === 'test' ? 'YYYY-MM-DD-HH-mm' : 'YYYY-MM-DD', // Adds hours and minutes to the filename
-            zippedArchive: true,             // Compress old log files
-            // maxSize: '100m',                  // Maximum size of a single log file 100 MB
+            datePattern: NODE_ENV === 'test' ? 'YYYY-MM-DD-HH' : 'YYYY-MM-DD', // Adds hours and minutes to the filename
+            zippedArchive: NODE_ENV === 'production' ? true : false,             // Compress old log files
             maxFiles: NODE_ENV === 'test' ? '7d' : '14d',                  // Retain logs for 14 days
-            frequency: '10m'                 // Rotate logs every 10 minutes
         };
 
         const transports = [];
