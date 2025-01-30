@@ -2008,7 +2008,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /budgets/type:
+  /budget/types:
     get:
       tags:
         - "Budget"
@@ -2036,7 +2036,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /budgets/history:
+  /budget/history:
     get:
       tags:
         - "Budget"
@@ -2072,6 +2072,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /budgets/{expense_type}:
     patch:
       tags:
         - "Budget"
