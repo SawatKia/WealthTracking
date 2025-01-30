@@ -9,6 +9,7 @@ const SystemPrompts = require('./SystemPrompts');
 class LLMService {
     constructor() {
         logger.info('start LLMService');
+        logger.debug(`appConfigs: ${JSON.stringify(appConfigs.gemini)}`);
         this.genAI = new GoogleGenerativeAI(appConfigs.gemini.key);
 
         // Initialize classification model with system instruction
