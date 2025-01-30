@@ -4,7 +4,7 @@ const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const Utils = require("./utilities/Utils");
-const routes = require("./routes");
+const routes = require('./routes');
 const mdw = require("./middlewares/Middlewares");
 const appConfigs = require("./configs/AppConfigs");
 
@@ -13,6 +13,7 @@ const { Logger, formatResponse } = Utils;
 const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
+
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
@@ -59,7 +60,14 @@ app.use("/", express.static(path.join(__dirname, "../frontend_build")));
 app.get("/health", mdw.healthCheck);
 
 // API Routes
-app.use("/api/v0.2", routes);
+// Modify the routes setup:
+try {
+  app.use("/api/v0.2", routes);
+} catch (error) {
+  logger.error(`Failed to setup API routes: ${error.message}`);
+  logger.error(`Stack trace: ${error.stack}`);
+  process.exit(1);
+}
 app.get("/api", (req, res, next) => {
   req.formattedResponse = formatResponse(
     200,
