@@ -91,11 +91,6 @@ describe("Slip Verification API Endpoint", () => {
         logger.debug(`Access token obtained: ${accessToken}`);
     });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
-
     describe("POST and GET /api/v0.2/slip/verify", () => {
         verifySlipTestCases.forEach((testCase, index) => {
             it(`${index + 1}. ${testCase.testName}`, async () => {
@@ -141,5 +136,10 @@ describe("Slip Verification API Endpoint", () => {
         afterAll(async () => {
             jest.clearAllMocks();
         });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 });

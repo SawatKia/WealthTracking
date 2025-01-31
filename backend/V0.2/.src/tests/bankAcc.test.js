@@ -65,10 +65,7 @@ describe('Bank Account Management', () => {
         }
     });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
+
 
     describe('Bank Account Creation', () => {
         const createBankAccountCases = [
@@ -381,5 +378,10 @@ describe('Bank Account Management', () => {
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Bank account not found');
         });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 });

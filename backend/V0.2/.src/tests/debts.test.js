@@ -61,11 +61,6 @@ describe('Debt Management Flow', () => {
         logger.info("User logged in, access token obtained");
     });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
-
     describe('Create Debt Tests', () => {
         const createDebtCases = [
             {
@@ -287,5 +282,10 @@ describe('Debt Management Flow', () => {
                 expect(response.body.message).toContain(testCase.expected.message);
             });
         });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 });

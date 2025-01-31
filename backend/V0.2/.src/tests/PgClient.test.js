@@ -46,11 +46,6 @@ describe('Cascading Constraints Tests', () => {
         refreshToken = loginResponse.body.data.tokens.refresh_token;
     });
 
-    afterAll(async () => {
-        await PgClient.release();
-        logger.debug(`Database disconnected: ${!PgClient.isConnected()}`);
-    });
-
     test('delete user and should cascade delete related bank accounts and debts', async () => {
         logger.info('running test: delete user and should cascade delete related bank accounts and debts');
         // Create a bank account for the user
@@ -140,4 +135,8 @@ describe('Cascading Constraints Tests', () => {
     });
 
     //TODO - add test to trigger modifying the balance of bank account when transaction is created or modified or deleted
+    afterAll(async () => {
+        await PgClient.release();
+        logger.debug(`Database disconnected: ${!PgClient.isConnected()}`);
+    });
 }); 

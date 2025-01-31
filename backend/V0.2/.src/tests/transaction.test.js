@@ -96,11 +96,6 @@ describe('Transaction Management', () => {
         }
     });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
-
     describe('Transaction Creation', () => {
         const successCases = [
             {
@@ -322,5 +317,10 @@ describe('Transaction Management', () => {
                     }
                 });
             });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 }); 
