@@ -2,6 +2,8 @@ const BaseController = require('./BaseController');
 const TransactionModel = require('../models/TransactionModel');
 const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
+
+const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const types = require('../../statics/types.json');
@@ -15,6 +17,7 @@ class TransactionController extends BaseController {
         super();
         this.transactionModel = new TransactionModel();
         this.bankAccountModel = new BankAccountModel();
+        this.BankAccountUtils = new BankAccountUtils();
         this.debtModel = new DebtModel();
 
         this.createTransaction = this.createTransaction.bind(this);
@@ -33,36 +36,54 @@ class TransactionController extends BaseController {
 
     async validateBankAccounts(sender, receiver) {
         logger.info('Validating bank accounts');
-        const errors = [];
+        logger.debug(`before normalize sender: ${JSON.stringify(sender)}, receiver: ${JSON.stringify(receiver)}`);
 
-        if (sender) {
-            const senderAccount = await this.bankAccountModel.get(sender.account_number, sender.fi_code);
-            if (!senderAccount) {
-                logger.error(`Sender bank account not found: ${sender.account_number} ${sender.fi_code}`);
-                errors.push('Sender bank account not found');
+        try {
+            // Normalize account numbers
+            if (sender) {
+                const normalizedSenderAccount = await this.BankAccountUtils.normalizeAccountNumber(sender.account_number);
+                sender.account_number = normalizedSenderAccount;
             }
-        }
-        logger.info('Sender bank account is valid');
 
-        if (receiver) {
-            const receiverAccount = await this.bankAccountModel.get(receiver.account_number, receiver.fi_code);
-            if (!receiverAccount) {
-                logger.error(`Receiver bank account not found: ${receiver.account_number} ${receiver.fi_code}`);
-                errors.push('Receiver bank account not found');
+            if (receiver) {
+                const normalizedReceiverAccount = await this.BankAccountUtils.normalizeAccountNumber(receiver.account_number);
+                receiver.account_number = normalizedReceiverAccount;
             }
+
+            logger.debug(`after normalized Sender: ${JSON.stringify(sender)}, Receiver: ${JSON.stringify(receiver)}`);
+
+            // Validate sender account exists
+            if (sender) {
+                const senderAccount = await this.bankAccountModel.get(sender.account_number, sender.fi_code);
+                if (!senderAccount) {
+                    throw new Error('Sender bank account not found');
+                }
+            }
+
+            // Validate receiver account exists
+            if (receiver) {
+                const receiverAccount = await this.bankAccountModel.get(receiver.account_number, receiver.fi_code);
+                if (!receiverAccount) {
+                    throw new Error('Receiver bank account not found');
+                }
+            }
+
+            return { sender, receiver };
+        } catch (error) {
+            logger.error(`Error validating bank accounts: ${error.message}`);
+            throw error;
         }
-        logger.info('Receiver bank account is valid');
-        return errors;
     }
 
     async validateBankAccountBalance(accountNumber, fiCode, amount, transactionType) {
         try {
             logger.info('Validating bank account balance');
-            logger.debug(`Account: ${accountNumber}, FI: ${fiCode}, Amount: ${amount}, Type: ${transactionType}`);
+            const convertedAccountNumber = await this.BankAccountUtils.normalizeAccountNumber(accountNumber, fiCode);
+            logger.debug(`Account: ${convertedAccountNumber}, FI: ${fiCode}, Amount: ${amount}, Type: ${transactionType}`);
 
-            const account = await this.bankAccountModel.get(accountNumber, fiCode);
+            const account = await this.bankAccountModel.get(convertedAccountNumber, fiCode);
             if (!account) {
-                logger.error(`Bank account not found: ${accountNumber} ${fiCode}`);
+                logger.error(`Bank account not found: ${convertedAccountNumber}, FI: ${fiCode}`);
                 throw MyAppErrors.notFound('Bank account not found');
             }
 
@@ -100,12 +121,15 @@ class TransactionController extends BaseController {
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
             // Override type to "Debt Payment" if debt_id is specified
-            logger.info('debt_id is provided, overriding type to "Debt Payment"');
-            if (validatedData.debt_id) {
+            if (uuidValidateV4(validatedData.debt_id)) {
+                logger.info('debt_id is provided, overriding type to "Debt Payment"');
                 logger.debug(`debt_id: ${validatedData.debt_id} is provided`);
                 validatedData.type = 'Debt Payment';
+                logger.info('type is overridden to "Debt Payment"');
+            } else if (validatedData.debt_id) {
+                logger.warn("invalid debt_id")
+                throw MyAppErrors.badRequest('Invalid debt_id');
             }
-            logger.info('type is overridden to "Debt Payment"');
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
             // Validate category  
@@ -146,8 +170,15 @@ class TransactionController extends BaseController {
 
             // Verify bank accounts exist
             if (validationErrors.length === 0) {
-                const bankAccountErrors = await this.validateBankAccounts(sender, receiver);
-                validationErrors.push(...bankAccountErrors);
+                // Validate bank accounts only if they exist
+                if (validatedData.sender || validatedData.receiver) {
+                    const { sender, receiver } = await this.validateBankAccounts(
+                        validatedData.sender,
+                        validatedData.receiver
+                    );
+                    validatedData.sender = sender;
+                    validatedData.receiver = receiver;
+                }
             }
             logger.info('bank accounts are valid');
 
@@ -167,16 +198,16 @@ class TransactionController extends BaseController {
             switch (validatedData.category) {
                 case 'Expense':
                     await this.validateBankAccountBalance(
-                        sender.account_number,
-                        sender.fi_code,
+                        validatedData.sender.account_number,
+                        validatedData.sender.fi_code,
                         validatedData.amount,
                         'Expense'
                     );
                     break;
                 case 'Transfer':
                     await this.validateBankAccountBalance(
-                        sender.account_number,
-                        sender.fi_code,
+                        validatedData.sender.account_number,
+                        validatedData.sender.fi_code,
                         validatedData.amount,
                         'Transfer'
                     );
@@ -184,6 +215,7 @@ class TransactionController extends BaseController {
             }
 
             if (validationErrors.length > 0) {
+                logger.error(`Validation errors: ${validationErrors.join('; ')}`);
                 throw MyAppErrors.badRequest(validationErrors.join('; '));
             }
 
