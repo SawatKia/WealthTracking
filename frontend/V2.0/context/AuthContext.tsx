@@ -6,8 +6,8 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { storeToken, getToken, deleteToken } from "@/services/Authen"; // Token storage utilities
-import { login as apiLogin } from "@/services/Authen"; // API login function
+import { storeToken, getToken, deleteToken } from "@/services/AuthenService"; // Token storage utilities
+import { login as apiLogin } from "@/services/AuthenService"; // API login function
 import { useRouter } from "expo-router";
 
 interface AuthContextType {

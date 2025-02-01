@@ -1,65 +1,30 @@
 import React from 'react';
-import { View, Dimensions } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
-import { color } from 'react-native-elements/dist/helpers';
+import { View, Text } from 'react-native';
+import { VictoryChart, VictoryBar } from 'victory-native'; // Import VictoryBar and VictoryChart from victory-native
+import { VictoryTheme } from 'victory-native'; // You can still use Victory's themes
 
-export default function App() {
-    const data = {
-        labels: ["January", "February", "March", "April", "May", "June"],
-        datasets: [
-          {
-            data: [20, 45, 28, 80, 99, 43]
-          }
-        ]
-      };
+// Sample data for the Income/Expense chart
+const sampleData = [
+  { x: 'January', y: 1200 },
+  { x: 'February', y: 800 },
+  { x: 'March', y: 950 },
+  { x: 'April', y: 1100 },
+  { x: 'May', y: 1300 },
+  { x: 'June', y: 1000 },
+];
 
-    const chartConfig = {
-      backgroundColor: '#cf0000',
-      backgroundGradientFrom: '#ffffff',
-      backgroundGradientTo: '#ffffff',
-      // color: (opacity = 0) => `rgba(0, 0, 0, ${opacity})`,
-      labelColor: () => "#000000",
-      color:() => '#4957AA',
-      
-      //  barPercentage: 0.5, // Adjust bar width
-    
-    propsForBackgroundLines: {
-      stroke: "#140a0a", // Light gray for grid lines
-      color:'fff'
-    },
-      style: {
-        borderRadius: 16,
-        // color:'#fff'
-      }
-    }
-  const screenWidth = Dimensions.get('window').width;
-
-  const graphStyle = {
-    marginVertical: 8,
-    ...chartConfig.style
-  }
-
+const IncomeExpensesReport = () => {
   return (
-    <View>
-      <BarChart
-                width={screenWidth * 0.9}
-                height={200}
-                data={data}
-                chartConfig={chartConfig}
-                style={graphStyle}
-                yAxisLabel="$"
-                yAxisSuffix=""
-                // withInnerLines={false}
-                // showBarTops={false}
-                // yAxisInterval={1}
-                // flatColor = {true}
-                verticalLabelRotation={0} // Keep labels horizontal
-                withInnerLines={true} // Keep grid lines
-                showBarTops={false} // No rounded tops
-                fromZero={true} // Start y-axis from zero
-
-              />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, marginBottom: 20 }}>Income/Expenses Report</Text>
+      <VictoryChart
+        domainPadding={{ x: 20 }}  // Adds padding on the x-axis for better visibility of bars
+        theme={VictoryTheme.clean}   // Use Victory's clean theme
+      >
+        <VictoryBar data={sampleData} />  {/* Pass the sample data to VictoryBar */}
+      </VictoryChart>
     </View>
   );
-}
+};
 
+export default IncomeExpensesReport;

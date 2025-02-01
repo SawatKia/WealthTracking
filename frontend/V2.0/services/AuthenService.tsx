@@ -4,50 +4,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 // import * as dotenv from 'dotenv';
 // import Cookies from 'js-cookie';
-
-const api = axios.create({
-  baseURL: 'http://192.168.2.51:3000/api/v0.2', // Replace with your backend URL
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-api.interceptors.request.use(
-  async (config) => {
-    console.log('what the heck')
-    const token = await getToken(); // Retrieve the token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Add token to Authorization header
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-//refesh when error 401
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-
-      try {
-        const refreshResponse = await api.post('/refresh-token');
-        const newToken = refreshResponse.data.token;
-
-        if (newToken) {
-          await storeToken(newToken); // Store the new token
-          error.config.headers.Authorization = `Bearer ${newToken}`;
-          return api(error.config); 
-        }
-      } catch (error) {
-        console.error('Token refresh failed:', error);
-        await deleteToken();
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+import api from "./axiosInstance";
 
 export const login = async (email: string, password: string) => {
   const requestData = {
@@ -84,6 +41,35 @@ export const signUp = async (nationalId:string, username: string, email:string, 
 };
 
 
+export const saveCredentials = async (email: string, password: string) => {
+  try {
+    await SecureStore.setItemAsync('rememberedEmail', email);
+    await SecureStore.setItemAsync('rememberedPassword', password);
+  } catch (error) {
+    console.error('Error saving credentials:', error);
+  }
+};
+
+export const getCredentials = async () => {
+  try {
+    const email = await SecureStore.getItemAsync('rememberedEmail');
+    const password = await SecureStore.getItemAsync('rememberedPassword');
+    return { email, password };
+  } catch (error) {
+    console.error('Error retrieving credentials:', error);
+    return { email: null, password: null };
+  }
+};
+
+export const clearCredentials = async () => {
+  try {
+    await SecureStore.deleteItemAsync('rememberedEmail');
+    await SecureStore.deleteItemAsync('rememberedPassword');
+  } catch (error) {
+    console.error('Error clearing credentials:', error);
+  }
+};
+
 
 const TOKEN_KEY = 'authToken';
 
@@ -101,4 +87,4 @@ export const deleteToken = async () => {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 };
 
-export default api;
+

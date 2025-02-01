@@ -1,0 +1,136 @@
+import { useState, useEffect } from 'react';
+import api from "./axiosInstance";
+interface SenderReceiver {
+  fi_code: string;
+  account_name: string;
+  bank_name_en: string;
+  bank_name_th: string;
+  display_name: string;
+  account_number: string;
+}
+
+interface Transaction {
+  transaction_id: string;
+  transaction_datetime: string;
+  category: string;
+  type: string;
+  amount: number;
+  note: string;
+  national_id: string;
+  debt_id: string | null;
+  sender?: SenderReceiver;
+  receiver?: SenderReceiver;
+}
+
+export const useTransactions = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getAllTransactions = async () => {
+      try {
+        const response = await api.get('/transactions');
+        // const { data } = response;
+        const data  = {  "status_code": 200,
+          "message": "Retrieved 2 transactions successfully",
+          "data": {
+            "transactions": [
+              {
+                "transaction_id": "4892c134-9015-4e4e-a75b-77b662050215",
+                "transaction_datetime": "2024-03-15T10:30:00.000Z",
+                "category": "Expense",
+                "type": "Food",
+                "amount": 100,
+                "note": "food hooman",
+                "national_id": "1234567890123",
+                "debt_id": null,
+                "sender": {
+                  "fi_code": "004",
+                  "account_name": "JOHN DOE",
+                  "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
+                  "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
+                  "display_name": "My Savings Account",
+                  "account_number": "1234567890"
+                }
+              },
+              {
+                "transaction_id": "2a8cec26-5be3-44b8-a010-eb0469289353",
+                "transaction_datetime": "2024-05-15T10:30:00.000Z",
+                "category": "Income",
+                "type": "Refund",
+                "amount": 100,
+                "note": "Monthly refund",
+                "national_id": "1234567890123",
+                "debt_id": null,
+                "receiver": {
+                  "fi_code": "004",
+                  "account_name": "JOHN DOE",
+                  "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
+                  "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
+                  "display_name": "My Savings Account",
+                  "account_number": "1234567890"
+                }
+              }
+            ]
+          }
+        }
+        console.log('data gell trans', data)
+
+        if (data.status_code === 200) {
+          setTransactions(data.data.transactions);
+        } else {
+          setError(data.message);
+        }
+      } catch (err) {
+        setError('Failed to load transactions data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getAllTransactions();
+  }, []);
+
+  // Function to delete a transaction
+  const deleteTransaction = async (transactionId: string) => {
+    try {
+      const response = await api.delete(`https://api.example.com/transactions/${transactionId}`);
+      if (response.status === 200) {
+        setTransactions((prev) => prev.filter((t) => t.transaction_id !== transactionId));
+      }
+    } catch (err) {
+      setError('Failed to delete transaction.');
+    }
+  };
+
+  // Function to edit a transaction
+  const editTransaction = async (transactionId: string, updatedTransaction: Transaction) => {
+    try {
+      const response = await api.put(`https://api.example.com/transactions/${transactionId}`, updatedTransaction);
+      if (response.status === 200) {
+        setTransactions((prev) =>
+          prev.map((t) =>
+            t.transaction_id === transactionId ? { ...t, ...updatedTransaction } : t
+          )
+        );
+      }
+    } catch (err) {
+      setError('Failed to update transaction.');
+    }
+  };
+
+  // Function to create a new transaction
+  const createTransaction = async (newTransaction: Transaction) => {
+    try {
+      const response = await api.post('https://api.example.com/transactions', newTransaction);
+      if (response.status === 200) {
+        setTransactions((prev) => [...prev, response.data.transaction]);
+      }
+    } catch (err) {
+      setError('Failed to create transaction.');
+    }
+  };
+
+  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction };
+};
