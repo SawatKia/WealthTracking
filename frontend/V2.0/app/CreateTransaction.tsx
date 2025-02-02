@@ -9,7 +9,9 @@ import {
   SafeAreaView,
   Pressable,
   Modal,
+  FlatList
 } from "react-native";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useState, useEffect } from "react";
@@ -23,6 +25,9 @@ import dayjs, { Dayjs } from "dayjs";
 import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../constants/NavigateType"; // Import the type definition
 import SelectCategoryModal from "./SelectCategoryModal";
+
+import { newSenderReceiver,useTransactions } from '../services/TransactionService';
+import { ScrollView } from "react-native-gesture-handler";
 
 type CreateTransactionRouteProp = RouteProp<
   RootStackParamList,
@@ -62,30 +67,91 @@ export default function CreateTransaction({
 }: {
   route: CreateTransactionRouteProp;
 }) {
+  const { createTransaction, } = useTransactions();
   const router = useRouter()
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
+  const [sizeOption, setsizeOption] = useState(0);
+
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
+  const [isAccountTransPickerVisible, setAccountTransPickerVisibility] = useState(false);
   const [isCategoryPickerVisible, setCategoryPickerVisibility] = useState(false);
   // const { category } = route.params ?? {};
   // const [date, setDate]= useState<Dayjs | null>(null);
 
   const [date, setDate] = useState<Dayjs>(dayjs()); // Initialize state as Dayjs object
   const [amount, setAmount] = useState("");
-
+  
   const [selectedCategory, setSelectedCategory] = useState({
     category: null as string | null,
     type: null as string | null,
   });
   const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Selected value
   const [selectedAccountItem, setSelectedAccountItem] = useState<
-    { label: string; value: string }[]
+  { label: string; value: string }[]
   >([]);
 
+  const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); // Selected value
+  const [selectedAccountTransItem, setSelectedAccountTransItem] = useState<
+  { label: string; value: string }[]
+  >([]);
+  const [note, setNote] = useState("");
+  
   const handleSelectCategory = (category: string,type: string) => {
     setSelectedCategory({ category, type });
     setCategoryPickerVisibility(false); // Close the modal
   };
+  // {
+  //   "transaction_datetime": "2024-03-15T10:30:00Z",
+  //   "category": "Expense",
+  //   "type": "Food",
+  //   "amount": 100,
+  //   "note": "Monthly salary",
+  //   "sender": {
+  //     "account_number": "1234567890",
+  //     "fi_code": "004"
+  //   }
+  
+  // }
+  const handleCreateTransaction = async () => {
+    // let senderReceiver: { sender?: any; receiver?: any } = {}; 
+    let sender : newSenderReceiver | null = null;
+    let receiver : newSenderReceiver| null = null;
+    if (selectedCategory.type == 'Income') {
+      receiver = {
+          account_number: "1234567890",
+          fi_code: "004"
+        }
+  }
+    else if(selectedCategory.type == 'Expense'){
+      sender = {
+          account_number: "123-4-56789-0",
+          fi_code: "004"
+        }
+    }
+  else{
+      sender =  {
+        account_number: "1234567890",
+        fi_code: "004"
+      }
+      receiver = {
+        account_number: "1234567890",
+        fi_code: "004"
+      }
+  }
+    const requestBody = {
+      "transaction_datetime": dayjs(date).toString(),
+      "category": selectedCategory.type ?? "" , //for arrai ko mai ru
+      "type": selectedCategory.category ?? "",
+      "amount": parseFloat(parseFloat(amount).toFixed(2)),
+      "debt_id" : null,
+      "note": note,
+      sender,
+      receiver
+    }
+    createTransaction(requestBody)
+    // console.log('send data :', respond)
+  }
 
   // Extract the setCategory function passed as a prop
   // const setCategory = params.setCategory as (category: string) => void;
@@ -94,10 +160,16 @@ export default function CreateTransaction({
     const fetchData = async () => {
       try {
         // Transform API data into items format for the dropdown
+        setsizeOption(options.bank_accounts.length)
         const accountItems = options.bank_accounts.map((item) => ({
           label: item.display_name, // Display name as label
           value: item.display_name, // Use name as value too
         }));
+
+        if (selectedCategory.type == 'Transfer'){
+
+          setSelectedAccountTransItem(accountItems);
+        }
 
         setSelectedAccountItem(accountItems);
       } catch (error) {
@@ -135,7 +207,7 @@ export default function CreateTransaction({
   //   }
   // };
   return (
-    <SafeAreaView>
+    <KeyboardAwareScrollView>
       {/* date & time */}
       <View style={styles.container}>
         <View style={styles.rowTile}>
@@ -239,7 +311,7 @@ export default function CreateTransaction({
             size={20}
             color="#fff"
           />
-          <Text style={styles.title}>Account</Text>
+          <Text style={styles.title}>{selectedCategory.type == 'Transfer' ? 'Sender Account':'Account'}</Text>
         </View>
 
         <View style={styles.rowInput}>
@@ -261,17 +333,51 @@ export default function CreateTransaction({
               disableBorderRadius={true}
               textStyle={{ textAlign: "center" }}
               dropDownContainerStyle={styles.dropdownContainer}
-            //   containerProps={{style: {
-            //     // height: isAccountPickerVisible ? 150 : null,
-            //   },
-            // }}
-            // zIndex={1000}
             />
           </View>
 
           {/* <Text>Select an Option:</Text> */}
         </View>
       </View>
+      {selectedCategory.type == 'Transfer' && 
+      <View style={styles.container}>
+      <View style={styles.rowTile}>
+        <Ionicons
+          name="albums"
+          style={styles.iconTitle}
+          size={20}
+          color="#fff"
+        />
+        <Text style={styles.title}>Reciver Account</Text>
+      </View>
+
+      <View style={styles.rowInput}>
+        <View
+          style={[
+            styles.inputsContainer,
+            { height: isAccountTransPickerVisible ? 150 : null },
+          ]}
+        >
+          <DropDownPicker
+            open={isAccountTransPickerVisible}
+            value={selectedAccountTransValue}
+            items={selectedAccountItem}
+            setOpen={setAccountTransPickerVisibility}
+            setValue={setSelectedAccountTransValue}
+            setItems={setSelectedAccountItem}
+            placeholder="[Select Acount]"
+            style={styles.inputButton}
+            disableBorderRadius={true}
+            textStyle={{ textAlign: "center" }}
+            dropDownContainerStyle={styles.dropdownContainer}
+          />
+        </View>
+
+        {/* <Text>Select an Option:</Text> */}
+      </View>
+    </View>
+
+      }
 
       <View style={styles.container}>
         <View style={styles.rowTile}>
@@ -317,6 +423,8 @@ export default function CreateTransaction({
             <TextInput
               style={[styles.inputButton, { backgroundColor: "#9AC9F357" }]}
               returnKeyType="done"
+              onChangeText={setNote}
+              value={note}
             />
           </View>
         </View>
@@ -325,9 +433,9 @@ export default function CreateTransaction({
       <View style={styles.sumbitContainer}>
         <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
 
-        <TouchableOpacity style={styles.saveButton}><Text>Save</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.saveButton} onPress={handleCreateTransaction}><Text>Save</Text></TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </KeyboardAwareScrollView>
   );
 }
 

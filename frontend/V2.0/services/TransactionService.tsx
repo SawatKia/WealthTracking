@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter} from "expo-router";
 import api from "./axiosInstance";
 interface SenderReceiver {
   fi_code: string;
@@ -15,22 +16,38 @@ interface Transaction {
   category: string;
   type: string;
   amount: number;
-  note: string;
+  note: string | null;
   national_id: string;
   debt_id: string | null;
   sender?: SenderReceiver;
   receiver?: SenderReceiver;
 }
+export interface newSenderReceiver {
+  fi_code: string;
+  account_number: string;
+}
 
+interface newTransaction {
+  transaction_datetime: string;
+  category: string;
+  type: string;
+  amount: number;
+  note: string | null;
+  debt_id: string | null;
+  sender?: newSenderReceiver | null;
+  receiver?: newSenderReceiver | null;
+}
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   useEffect(() => {
     const getAllTransactions = async () => {
       try {
         const response = await api.get('/transactions');
+        console.log(response.status)
         // const { data } = response;
         const data  = {  "status_code": 200,
           "message": "Retrieved 2 transactions successfully",
@@ -121,14 +138,24 @@ export const useTransactions = () => {
   };
 
   // Function to create a new transaction
-  const createTransaction = async (newTransaction: Transaction) => {
+  const createTransaction = async (newTransaction: newTransaction) => {
     try {
-      const response = await api.post('https://api.example.com/transactions', newTransaction);
-      if (response.status === 200) {
-        setTransactions((prev) => [...prev, response.data.transaction]);
+      console.log('create')
+      console.log(newTransaction)
+      const response = await api.post('/transactions', newTransaction);
+      console.log('respond create',response.status)
+      if (response.status === 201) {
+        // setTransactions((prev) => [...prev, response.data.transaction]);
+        router.push('/(tabs)/IncomeExpense')
+        console.log('create transaction successfully')
+
+      }
+      else{
+        console.log(response.status)
       }
     } catch (err) {
-      setError('Failed to create transaction.');
+      setError(`Failed to create transaction. ${err}`);
+      console.log(error)
     }
   };
 
