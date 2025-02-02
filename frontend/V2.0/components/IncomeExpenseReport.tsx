@@ -18,6 +18,9 @@ const sampleData = [
   { x: 'Dec', y: 1300 },
 ];
 
+// Calculate average y value
+const averageY = sampleData.reduce((sum, item) => sum + item.y, 0) / sampleData.length;
+
 
 const IncomeExpensesReport = () => {
   return (
@@ -28,15 +31,15 @@ const IncomeExpensesReport = () => {
         theme={customTheme}
       >
         <VictoryBar data={sampleData} />  {/* Pass the sample data to VictoryBar */}
-      <VictoryLine
-    style={{
-      data: {
-        stroke: "blue",
-        strokeWidth: 3,
-      },
-    }}
-    y={(d) => d.x}
-  />
+        <VictoryLine
+          data={[
+            { x: "Jan", y: averageY }, 
+            { x: "Dec", y: averageY }
+          ]}
+          style={{
+            data: { stroke: "red", strokeWidth: 2,strokeOpacity: 0.6, strokeDasharray: "5,5", }
+          }}
+        />
       </VictoryChart>
     </View>
   );
