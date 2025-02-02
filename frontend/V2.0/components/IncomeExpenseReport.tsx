@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { color } from 'react-native-elements/dist/helpers';
 import { VictoryChart, VictoryBar } from 'victory-native'; 
 import { VictoryTheme, VictoryLine } from 'victory-native'; 
 
@@ -28,7 +29,7 @@ const IncomeExpensesReport = () => {
       <Text style={{ fontSize: 20,fontWeight: 'bold', marginTop: 35 }}>Income/Expenses Report</Text>
       <VictoryChart
         domainPadding={{ x: 10 }}  
-        theme={customTheme}
+        theme={ VictoryTheme.clean}
       >
         <VictoryBar data={sampleData} />  {/* Pass the sample data to VictoryBar */}
         <VictoryLine
@@ -46,6 +47,7 @@ const IncomeExpensesReport = () => {
 };
 
 const customTheme = {
+  // palette:VictoryTheme.material.palette?.blue,
   axis: {
     style: {
       grid: { stroke: "none" },

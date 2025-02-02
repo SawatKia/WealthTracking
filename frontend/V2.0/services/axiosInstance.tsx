@@ -3,7 +3,7 @@ import axios from "axios";
 import { storeToken, getToken, deleteToken } from "./AuthenService"; // Utility functions for token management
 
 const api = axios.create({
-  baseURL: "http://192.168.2.44:3000/api/v0.2", // Replace with your backend URL
+  baseURL: "http://192.168.16.125:3000/api/v0.2", // Replace with your backend URL
   headers: {
     "Content-Type": "application/json",
   },
