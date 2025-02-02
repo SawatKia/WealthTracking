@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 const accounts = [
   { name: "Account A", balance: 1000000, lastUpdated: "Today, 18:00 PM" },
   { name: "Account B", balance: 500000, lastUpdated: "Yesterday, 15:00 PM" },
+  { name: "Account C", balance: 2000, lastUpdated: "Yesterday, 15:00 PM" },
 ];
 
 // export default function DebtScreen() {
@@ -21,13 +22,13 @@ const accounts = [
   const [currentIndex, setCurrentIndex] = useState(0);
 
 
-  const handleSwipe = (direction: 'Left' | 'Right') => {
-    if (direction === 'Left') {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % accounts.length);
-    } else if (direction === 'Right') {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
-    }
-  };
+  // const handleSwipe = (direction: 'Left' | 'Right') => {
+  //   if (direction === 'Left') {
+  //     setCurrentIndex((prevIndex) => (prevIndex + 1) % accounts.length);
+  //   } else if (direction === 'Right') {
+  //     setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
+  //   }
+  // };
 
   // useEffect(() => {
   //   const fetchUsers = async () => {
@@ -47,14 +48,11 @@ const accounts = [
   return (
     <View style={styles.container}>
 
-      <GestureHandlerRootView style={styles.accountContainer}>
         <AccountCard
-          account={accounts[currentIndex]}
-          currentIndex={currentIndex}
-          totalAccounts={accounts.length}
-          onSwipe={handleSwipe}
+          account={accounts}
         />
-      </GestureHandlerRootView>
+      {/* <GestureHandlerRootView style={styles.accountContainer}>
+      </GestureHandlerRootView> */}
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
       <TransactionCard selected = {selectedType}/>
  
@@ -112,8 +110,13 @@ const accounts = [
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f0f4f8" },
-
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',  // Ensures children take full width
+    padding: 16,
+    backgroundColor: "#f0f4f8"
+  },
   accountContainer: {
     backgroundColor: '#F5F5F5',
     marginBottom: 10
