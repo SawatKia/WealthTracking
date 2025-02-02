@@ -125,7 +125,7 @@ export default function CreateTransaction({
   }
     else if(selectedCategory.type == 'Expense'){
       sender = {
-          account_number: "123-4-56789-0",
+          account_number: "0000000001",
           fi_code: "004"
         }
     }
