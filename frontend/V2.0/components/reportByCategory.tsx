@@ -1,28 +1,39 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { VictoryPie, VictoryLabel, VictoryTheme } from 'victory-native';
-import { useTransactions } from '../services/TransactionService';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { VictoryPie, VictoryTheme } from 'victory-native';
+import { useTransactions } from '../services/TransactionService'; 
 
-const ReportByCategory = () => {
+  const ReportByCategory = () => {
+    const { monthlyExpenses, loading, error } = useTransactions(); 
+    const [chartData, setChartData] = useState<any[]>([]);
+
+    useEffect(() => {
+      if (monthlyExpenses) {
+        const data = monthlyExpenses.map((expense: any) => ({
+          x: expense.type,  
+          y: expense.totalAmount, 
+        }));
+        setChartData(data); 
+      }
+    }, [monthlyExpenses]);
+    
+    // Log after state update to ensure it's up-to-date
+    useEffect(() => {
+      console.log('Updated chart data:', chartData); 
+    }, [chartData]);
+    
+
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 20, marginBottom: 20,marginTop: 30, alignSelf: 'flex-end' }}>Link to budget page</Text>
+      <Text style={{ fontSize: 20, marginBottom: 20, marginTop: 30, alignSelf: 'flex-end' }}>
+        Link to budget page
+      </Text>
       <VictoryPie
-        data={[
-          { x: "Hobby", y: 35 },
-          { x: "Game", y: 40 },
-          { x: "Food", y: 55 },
-          { x: "Travel", y: 20 },
-          { x: "Education", y: 15 },
-          { x: "Transport", y: 35 },
-          { x: "Accesseries", y: 30 },
-          { x: "Cosmetics", y: 40 },
-          { x: "Pet", y: 50 },
-        ]}
-        theme={VictoryTheme.clean} 
-        // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]}  
-        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]}  
-        labelRadius={145}  
+        data={chartData}        
+        theme={VictoryTheme.clean}
+        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]} 
+        // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]} 
+        labelRadius={145} 
         style={{
           labels: {
             fontSize: 10,
@@ -30,13 +41,15 @@ const ReportByCategory = () => {
           },
           data: {
             fillOpacity: 0.9,
-            backgroundColor: 'transparent'
+            backgroundColor: 'transparent', 
+          },
+          parent: {
+            backgroundColor: '#fff',  
+            opacity: 0.5,
+            borderRadius: 20,
           },
         }}
       />
-         
-        
-
     </View>
   );
 };

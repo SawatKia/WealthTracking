@@ -179,5 +179,5 @@ export const useTransactions = () => {
       getMonthlyExpense();
     }, []);
 
-  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense };
+  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, monthlyExpenses };
 };
