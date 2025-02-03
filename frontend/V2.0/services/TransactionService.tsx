@@ -41,6 +41,7 @@ export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
   const router = useRouter()
 
   useEffect(() => {
@@ -159,5 +160,24 @@ export const useTransactions = () => {
     }
   };
 
-  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction };
+    // Fetch monthly expense summary
+    const getMonthlyExpense = async () => {
+      try {
+        const response = await api.get('/transactions/summary/month-expenses');
+        if (response.status === 200) {
+          setMonthlyExpenses(response.data.data.summary);  // Set the monthly expenses data in state
+        } else {
+          throw new Error('Failed to fetch monthly expenses');
+        }
+      } catch (err) {
+        setError('Failed to fetch monthly expenses.');
+      }
+    };
+  
+    // Fetch monthly expense when component mounts
+    useEffect(() => {
+      getMonthlyExpense();
+    }, []);
+
+  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense };
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { VictoryPie, VictoryLabel, VictoryTheme } from 'victory-native';
+import { useTransactions } from '../services/TransactionService';
 
 const ReportByCategory = () => {
   return (
@@ -21,13 +22,17 @@ const ReportByCategory = () => {
         theme={VictoryTheme.clean} 
         // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]}  
         colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]}  
-        // labelRadius={100}  
-        // style={{
-        //   labels: {
-        //     fontSize: 14,
-        //     fill: "#000",
-        //   },
-        // }}
+        labelRadius={145}  
+        style={{
+          labels: {
+            fontSize: 10,
+            fill: "#000",
+          },
+          data: {
+            fillOpacity: 0.9,
+            backgroundColor: 'transparent'
+          },
+        }}
       />
          
         
