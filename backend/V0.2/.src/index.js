@@ -294,11 +294,14 @@ const initializeServices = async () => {
   try {
     logger.info("Initializing services...");
 
-    if (!pgClient.isConnected()) {
-      logger.info("Connecting to database...");
-      await pgClient.init();
-      logger.info("Database connected");
+    // Initialize the PgClient
+    await pgClient.init();
+
+    if (!await pgClient.isConnected()) {
+      logger.error("Failed to connect to the database.");
+      throw new Error("Database connection failed.");
     }
+    logger.info("Database connection successful");
 
     await easySlip.init();
     await documentAiService.init();
@@ -328,8 +331,8 @@ const verifyEnvVars = (variables) => {
     }
 
     for (const [key, value] of Object.entries(variables)) {
-      if (!value) {
-        logger.warn(`${key} is empty. Please set it in .env file, examine missing key in https://github.com/SawatKia/WealthTracking.git`);
+      if (value === undefined || value === null) {
+        logger.warn(`${key} is empty. Please set it in .env file, examine missing key in 🔗  \x1b[38;5;51mhttps://github.com/SawatKia/WealthTracking.git\x1b[0m`);
       }
     }
     logger.info("env vars verification completed");
@@ -340,6 +343,29 @@ const verifyEnvVars = (variables) => {
 }
 
 /**
+ * Function to display the WealthTrack app symbol in ASCII art
+ */
+const showAppSymbol = () => {
+  console.log(`
+    ██╗    ██╗███████╗ █████╗ ██╗    ████████╗██╗  ██╗████████╗██████╗  █████╗  ██████╗██╗  ██╗
+    ██║    ██║██╔════╝██╔══██╗██║    ╚══██╔══╝██║  ██║╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
+    ██║ █╗ ██║█████╗  ███████║██║       ██║   ███████║   ██║   ██████╔╝███████║██║     █████╔╝ 
+    ██║███╗██║██╔══╝  ██╔══██║██║       ██║   ██╔══██║   ██║   ██╔══██╗██╔══██║██║     ██╔═██╗ 
+    ╚███╔███╔╝███████╗██║  ██║███████╗  ██║   ██║  ██║   ██║   ██║  ██║██║  ██║╚██████╗██║  ██╗
+     ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚══════╝  ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
+    -----------------------------------------------------------------------------------
+    💰 Coins         💵 Banknotes         📊 Transactions          ➕ Income   ➖ Expense
+    -----------------------------------------------------------------------------------
+    💰 💰 💰       💵💵💵💵         📊 +5000 THB       ➖ 1500 THB      📊 +1200 THB  
+    💰 💰          💵💵💵          📊 -1200 THB       ➕ 8000 THB      📊 -3000 THB  
+    💰             💵💵            📊 +7000 THB       ➖ 2200 THB      📊 +500 THB  
+    -----------------------------------------------------------------------------------
+    📢 WealthTrack server started... Track your finances wisely! 🚀
+
+  `);
+}
+
+/**
  * Start the Express server
  */
 const startExpressServer = () => {
@@ -347,6 +373,8 @@ const startExpressServer = () => {
     const server = app.app.listen(PORT, '0.0.0.0', () => {
       const endTime = Date.now();
       const timeTaken = endTime - app.startTime;
+      showAppSymbol();
+
 
       logger.debug('┌──────────────────────────────────────────┐');
       logger.debug('│       Server started successfully        │');
@@ -355,7 +383,7 @@ const startExpressServer = () => {
       logger.debug(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
       logger.debug(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
       logger.debug('└──────────────────────────────────────────┘');
-      logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
+      logger.info(`try sending a request to 🔗  \x1b[38;5;51mhttp://localhost:${PORT}/health\x1b[0m to verify server is running`);
       resolve(server);
     });
 
