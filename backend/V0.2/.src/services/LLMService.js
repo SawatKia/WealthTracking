@@ -114,7 +114,7 @@ class LLMService {
                 jsonResponse.type = 'Other';
             }
             logger.debug(`verified response: ${JSON.stringify(jsonResponse)}`);
-            return jsonResponse.type;
+            return jsonResponse;
         } catch (error) {
             logger.error(`Error classifying transaction: ${error.message}`);
             throw error;
@@ -145,7 +145,7 @@ class LLMService {
                 [ocrText, imagePart]
             );
 
-            logger.debug(`response: ${JSON.stringify(jsonResponse)}`);
+            logger.debug(`mapped EasySlip response: ${JSON.stringify(jsonResponse)}`);
             return jsonResponse.data;
         } catch (error) {
             logger.error(`Error mapping OCR text and image: ${error.message}`);
