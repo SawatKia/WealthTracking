@@ -17,6 +17,7 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
+app.use(mdw.validateRequest);
 // Apply CORS before other middleware
 app.use(mdw.corsMiddleware);
 
@@ -51,10 +52,6 @@ if (!isDev) {
   app.use(mdw.rateLimiter(15 * 60 * 1000, 100));
 }
 
-// Serve static files from the frontend build directory
-//NOTE - the frontend_build directory is mounted as a volume in the docker-compose.yml file
-logger.info(`Serving static files from: ${path.join(__dirname, "../frontend_build")}`);
-app.use("/", express.static(path.join(__dirname, "../frontend_build")));
 
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);

@@ -204,78 +204,46 @@ class Middlewares {
     };
   }
 
-  /**
-   * Middleware to handle API responses in a consistent format
-   */
-  responseHandler(req, res, next) {
-    logger.info("Handling response");
-    if (req.formattedResponse) {
-      const { status_code, message, data, headers } = req.formattedResponse;
+  validateRequest(req, res, next) {
+    logger.info("Validating a new request's payload");
 
-      // Add security headers
-      const securityHeaders = {
-        // 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', // Forces HTTPS connections
-        'X-Content-Type-Options': 'nosniff', // Prevents MIME type sniffing, Ensures files are treated exactly as declared
-        'X-Frame-Options': 'DENY', // Prevents clickjacking attacks
-        'X-XSS-Protection': '1; mode=block', // Prevents XSS attacks
-        'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`, // Restricts the sources of content that can be loaded
-        ...headers
-      };
-      // Format headers with truncated values
-      const formattedHeaders = Object.entries(securityHeaders)
-        .map(([key, value]) => {
-          const truncatedValue = value && value.length > 50
-            ? `${value.substring(0, 50)}... [truncated]`
-            : value;
-          return `          ${key.padEnd(26)}: ${truncatedValue}`;
-        })
-        .join('\n');
-
-      const responseLogMessage = `
-      Outgoing Response:
-      Headers:
-      ${formattedHeaders}
-      ------------------
-      ${req.method} ${req.path} => ${req.ip}
-      Status: ${status_code}
-      Message: ${message}
-      Data: ${data ? JSON.stringify(data, null, 8).substring(0, 150) + (JSON.stringify(data, null, 8).length > 150 ? '...[truncated]...' : '') : ''}
-      `;
-      logger.debug(responseLogMessage);
-
-      res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
-    } else {
-      next();
+    // Skip validation for GET and HEAD requests
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      return next();
     }
-  }
 
-  /**
-   * Middleware to handle errors in a consistent format
-   */
-  errorHandler(err, req, res, next) {
-    logger.info("Handling error");
-    if (!res.headersSent) {
-      let response;
-      if (err instanceof MyAppErrors) {
-        logger.error(`MyAppError: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(err.statusCode, err.message, err.data);
-      } else if (err instanceof Error) {
-        logger.error(`Error: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(500, err.message);
-      } else {
-        logger.error(`Unhandled error: ${err}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(500, "Internal Server Error");
+    let rawBody = '';
+    let bodySize = 0;
+    const maxSize = 10 * 1024 * 1024; // 10MB limit
+
+    req.on('data', chunk => {
+      logger.info(`Received ${chunk.length} bytes of data`);
+      bodySize += chunk.length;
+      if (bodySize > maxSize) {
+        logger.error('Request payload too large');
+        return next(MyAppErrors.badRequest('Request payload too large'));
       }
-      logger.debug(`sending Error response: ${JSON.stringify(response)}`);
-      res
-        .status(response.status_code)
-        .set(err.headers || {})
-        .json(response);
-      return;
-    }
+      rawBody += chunk;
+    });
+
+    req.on('end', () => {
+      if (rawBody.length === 0) {
+        return next();
+      }
+
+      try {
+        JSON.parse(rawBody);
+        next();
+      } catch (e) {
+        logger.error(`JSON Parse Error: ${e.message}`);
+        return next(MyAppErrors.badRequest(`Invalid JSON: ${e.message}, please examine and correct your request payload`));
+      }
+    });
+
+    req.on('error', (err) => {
+      logger.error(`Request Error: ${err.message}`);
+      return next(MyAppErrors.badRequest('Error processing request'));
+    });
   }
 
   /**
@@ -298,19 +266,58 @@ class Middlewares {
     });
   }
 
-  conditionalSlipUpload(req, res, next) {
-    if (req.is('multipart/form-data')) {
-      return uploadSlip.single('imageFile')(req, res, next);
-    }
-    next();
-  };
+  /**
+ * Request logger middleware to log incoming requests in a consistent format
+ */
+  requestLogger(req, res, next) {
+    logger.info(`entering the routing for ${req.method} ${req.url}`);
+    const { ip, method, path: requestPath, body, headers, query } = req;
 
-  conditionalProfilePictureUpload(req, res, next) {
-    if (req.is('multipart/form-data')) {
-      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
+    // Prepare the body for logging 
+    let logBody;
+    if (body && body.base64Image) {
+      logBody = {
+        ...body,
+        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+      };
+    } else {
+      logBody = body;
     }
+
+    // Format headers with truncated values
+    const formattedHeaders = Object.entries(headers)
+      .map(([key, value]) => {
+        const truncatedValue = value && value.length > 50
+          ? `${value.substring(0, 50)}... [truncated]`
+          : value;
+        return `      ${key.padEnd(16)}: ${truncatedValue}`;
+      })
+      .join('\n');
+
+    // Prepare a human-friendly log message
+    const requestLogMessage = `
+      Incoming Request:
+      ----------------
+      ${ip} => ${method} ${requestPath}
+      Headers:
+  ${formattedHeaders}
+      Cookies: 
+        ${Object.keys(req.cookies)
+        .map(key => {
+          const cookieValue = req.cookies[key];
+          const displayValue = typeof cookieValue === 'string'
+            ? cookieValue.substring(0, 50)
+            : String(cookieValue);
+          return `${key}: ${displayValue}...`;
+        })
+        .join('\n      ')}
+      Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
+      Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
+      `;
+
+    logger.info(requestLogMessage);
     next();
-  };
+  }
 
   authMiddleware(req, res, next) {
     logger.info("Authenticating user");
@@ -344,57 +351,134 @@ class Middlewares {
     }
   }
 
-  /**
-   * Request logger middleware to log incoming requests in a consistent format
-   */
-  requestLogger(req, res, next) {
-    logger.info(`entering the routing for ${req.method} ${req.url}`);
-    const { ip, method, path: requestPath, body, headers, query } = req;
-
-    // Prepare the body for logging 
-    let logBody;
-    if (body && body.base64Image) {
-      logBody = {
-        ...body,
-        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
-      };
-    } else {
-      logBody = body;
+  conditionalSlipUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadSlip.single('imageFile')(req, res, next);
     }
+    next();
+  };
 
-    // Format headers with truncated values
-    const formattedHeaders = Object.entries(headers)
+  conditionalProfilePictureUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
+    }
+    next();
+  };
+
+  /**
+ * Health check middleware to check the health of the server
+ * 
+ * it provides:
+ * 
+ * - the current time in Bangkok
+ * - the uptime of the server
+ * - the environment
+ */
+  healthCheck(req, res, next) {
+    const bkkTime = new Date().toLocaleString('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    req.formattedResponse = formatResponse(
+      200,
+      "you are connected to the /health, running in Environment: " + NODE_ENV,
+      {
+        status: "healthy",
+        timestamp: bkkTime,
+        uptime: this.formatUptime(process.uptime()) || process.uptime(),
+        environment: appConfigs.environment
+      }
+    );
+    next();
+  };
+
+  /**
+ * Helper method to log response details
+ */
+  logResponse = (req, status_code, message, data, headers = {}, isError = false) => {
+    const securityHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`,
+      ...headers
+    };
+
+    const formattedHeaders = Object.entries(securityHeaders)
       .map(([key, value]) => {
         const truncatedValue = value && value.length > 50
           ? `${value.substring(0, 50)}... [truncated]`
           : value;
-        return `      ${key.padEnd(16)}: ${truncatedValue}`;
+        return `${key.padEnd(30)}: ${truncatedValue}`;
       })
-      .join('\n');
+      .join('\n          ');
 
-    // Prepare a human-friendly log message
-    const requestLogMessage = `
-    Incoming Request:
-    ----------------
-    ${ip} => ${method} ${requestPath}
-    Headers:
-${formattedHeaders}
-    Cookies: 
-      ${Object.keys(req.cookies)
-        .map(key => {
-          const cookieValue = req.cookies[key];
-          const displayValue = typeof cookieValue === 'string'
-            ? cookieValue.substring(0, 50)
-            : String(cookieValue);
-          return `${key}: ${displayValue}...`;
-        })
-        .join('\n      ')}
-    Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
-    Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
-    `;
+    const responseLogMessage = `
+      ${isError ? 'Error Response:' : 'Outgoing Response:'}
+      Headers:
+          ${formattedHeaders}
+      ------------------
+      ${req.method} ${req.path} => ${req.ip}
+      Status: ${status_code}
+      Message: ${message}
+      Data: ${data ? JSON.stringify(data, null, 8).substring(0, 550) + (JSON.stringify(data, null, 8).length > 550 ? '...[truncated]...' : '') : ''}
+      `;
 
-    logger.info(requestLogMessage);
-    next();
+    logger[isError ? 'error' : 'debug'](responseLogMessage);
+    return securityHeaders;
+  }
+
+  responseHandler = (req, res, next) => {
+    logger.info("Handling response");
+    if (req.formattedResponse) {
+      const { status_code, message, data, headers } = req.formattedResponse;
+      const securityHeaders = this.logResponse(req, status_code, message, data, headers);
+      res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
+    } else {
+      next();
+    }
+  }
+
+  errorHandler = (err, req, res, next) => {
+    logger.info("Handling error");
+    if (!res.headersSent) {
+      let response;
+      if (err instanceof MyAppErrors) {
+        logger.error(`MyAppError: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(err.statusCode, err.message, err.data);
+      } else if (err instanceof Error) {
+        logger.error(`Error: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(500, err.message);
+      } else {
+        logger.error(`Unhandled error: ${err}`);
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(500, "Internal Server Error");
+      }
+
+      const securityHeaders = this.logResponse(
+        req,
+        response.status_code,
+        response.message,
+        response.data,
+        err.headers || {},
+        true
+      );
+
+      res
+        .status(response.status_code)
+        .set({ ...securityHeaders, ...(err.headers || {}) })
+        .json(response);
+      return;
+    }
   }
 
   unknownRouteHandler(req, res, next) {
@@ -423,39 +507,7 @@ ${formattedHeaders}
     return parts.join(' ') || seconds;
   }
 
-  /**
-   * Health check middleware to check the health of the server
-   * 
-   * it provides:
-   * 
-   * - the current time in Bangkok
-   * - the uptime of the server
-   * - the environment
-   */
-  healthCheck(req, res, next) {
-    const bkkTime = new Date().toLocaleString('en-GB', {
-      timeZone: 'Asia/Bangkok',
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-    req.formattedResponse = formatResponse(
-      200,
-      "you are connected to the /health, running in Environment: " + NODE_ENV,
-      {
-        status: "healthy",
-        timestamp: bkkTime,
-        uptime: this.formatUptime(process.uptime()) || process.uptime(),
-        environment: appConfigs.environment
-      }
-    );
-    next();
-  };
+
 }
 
 module.exports = new Middlewares();
