@@ -36,38 +36,58 @@ class BaseModel {
     }
   }
 
-  async executeWithTransaction(operation) {
+  async executeWithTransaction(operation, withTransaction = true) {
     try {
+      if (!withTransaction) {
+        return await operation();
+      }
+
       await this.pgClient.beginTransaction();
       const result = await operation();
       await this.pgClient.commit();
       return result;
     } catch (error) {
-      await this.pgClient.rollback();
+      logger.error(`Error executing with transaction: ${error}`);
+      if (withTransaction) {
+        await this.pgClient.rollback();
+      }
       throw error;
     }
   }
 
+
   /**
-   * Executes a SQL query with the given parameters in a transaction.
-   * If the execution succeeds, the transaction is commited and the result is returned.
-   * If the execution fails, the transaction is rolled back and the error is re-thrown.
-   * @param {string} sql - SQL query to execute
-   * @param {any[]} params - Parameters to be passed to the query
-   * @param {Object} options - Options object with silent property
-   * @param {boolean} options.silent - If true, the query will not be logged
-   * @returns {Promise<pg.QueryResult>} - Raw result of the query
+   * Executes a SQL query using the specified client and transaction options.
+   * 
+   * @param {string} sql - The SQL query to execute.
+   * @param {Array} params - An array of parameters to be used in the SQL query.
+   * @param {Object} [options={ silent: false, withTransaction: true }] - Options for the query execution.
+   * @param {boolean} [options.silent=false] - If true, suppresses logging of the query.
+   * @param {boolean} [options.withTransaction=true] - If true, executes the query within a transaction.
+   * @param {string} [clientName='target'] - The client to use for the query execution; must be 'target' or 'temp'.
+   * 
+   * @returns {Promise<pg.QueryResult>} - The result of the executed SQL query.
+   * 
+   * @throws {ValidationError} - If the client name is invalid.
+   * @throws {Error} - If there is an error during query execution.
    */
-  async executeQuery(sql, params, options = { silent: false }) {
+
+  async executeQuery(sql, params, options = { silent: false, withTransaction: true }, clientName = 'target') {
     try {
       logger.info("Executing query...");
+      if (clientName !== 'target' && clientName !== 'temp') {
+        logger.error("Invalid client name");
+        throw new ValidationError("Invalid client name");
+      }
+      logger.debug(`using client: ${clientName}`);
       return await this.executeWithTransaction(async () => {
-        const result = await this.pgClient.query(sql, params, options);
+        let pgClientToUse = await this.pgClient.createClient(clientName);
+        const result = await this.pgClient.query(sql, params, options, pgClientToUse);
         logger.debug(`Executed SQL query: ${sql}`);
-        logger.debug(`Query params: ${params}`);
+        logger.debug(`Query params: ${params}, typeof: ${typeof params}`);
         logger.debug(`Query result: ${JSON.stringify(result)}`);
         return result;
-      });
+      }, options.withTransaction);
     } catch (error) {
       logger.error(`Error executing query: ${error}`);
       throw error;
