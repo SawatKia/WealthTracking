@@ -74,8 +74,8 @@ class ApiController {
 
     // Check minute request limit
     logger.info("============verify RPM=============");
-    const minuteUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentMinute);
-    logger.debug(`Current minute usage for ${modelName}: ${minuteUsage?.request_count || 0}/${limits.rpm} requests, ${minuteUsage?.token_count || 0}/${limits.tpm} tokens`);
+    const minuteUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentMinute, 'minute');
+    logger.warn(`Current minute usage for ${modelName}: ${minuteUsage?.request_count || 0}/${limits.rpm} requests, ${minuteUsage?.token_count || 0}/${limits.tpm} tokens`);
 
     if (minuteUsage && minuteUsage.request_count >= limits.rpm) {
       const retryAfter = 60 - now.getSeconds();
@@ -92,7 +92,8 @@ class ApiController {
 
     // Check daily request limit
     logger.info("============verify RPD=============");
-    const dailyUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentDate);
+    const dailyUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentDate, 'daily');
+    logger.warn(`Current daily usage for ${modelName}: ${dailyUsage?.request_count || 0}/${limits.rpd} requests, ${dailyUsage?.token_count || 0}/${limits.tpm} tokens`);
     if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
       const tomorrow = new Date(currentDate);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -109,7 +110,9 @@ class ApiController {
 
     // Check token per minute limit
     logger.info("============verify TPM=============");
-    const currentTokenCount = await this.apiRequestLimitModel.getTokenCount(modelName, currentMinute);
+    const currentTokenCount = await this.apiRequestLimitModel.getTokenCount(modelName, currentMinute, 'minute');
+    logger.warn(`Current token minute usage for ${modelName}: ${currentTokenCount}/${limits.tpm} tokens`);
+
     if (currentTokenCount + estimatedTokens > limits.tpm) {
       const retryAfter = 60 - now.getSeconds();
       return {
@@ -126,13 +129,13 @@ class ApiController {
     if (appConfigs.environment === 'development') {
       logger.info("Development environment detected");
       logger.info("increment request count for current minute");// only in crement request count, to prevent rpm limit
-      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens);
+      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens, 'minute');
       logger.info("increment request count for current date");// date need to, need to increment request count and store tokens usage, to prevent rpd limit
-      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens);
+      await this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens, 'daily');
     } else {
       await Promise.all([
-        this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens),
-        this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens)
+        this.apiRequestLimitModel.incrementRequestCount(modelName, currentMinute, estimatedTokens, 'minute'),
+        this.apiRequestLimitModel.incrementRequestCount(modelName, currentDate, estimatedTokens, 'daily')
       ]);
     }
 
@@ -182,7 +185,8 @@ class ApiController {
       const currentDate = this._getCurrentDate();
       let requestLimit = await this.apiRequestLimitModel.getRequestLimit(
         "EasySlip",
-        currentDate
+        currentDate,
+        'daily'
       );
       logger.debug(
         `requestLimit found: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
@@ -195,7 +199,8 @@ class ApiController {
         );
         requestLimit = await this.apiRequestLimitModel.createRequestLimit(
           "EasySlip",
-          currentDate
+          currentDate,
+          'daily'
         );
         logger.debug(
           `created requestLimit: ${requestLimit ? JSON.stringify(requestLimit) : "empty"
@@ -465,7 +470,7 @@ class ApiController {
       }
 
       // Get transaction type from LLM
-      const transactionType = await LLMService.classifyTransaction(ocrText);
+      const { category: transactionCategory, type: transactionType } = await LLMService.classifyTransaction(ocrText);
       logger.debug(`Classified transaction type: ${transactionType}`);
 
       let result;
@@ -478,14 +483,15 @@ class ApiController {
         if (result.message.includes("EasySlip Api")) {
           await this.apiRequestLimitModel.incrementRequestCount(
             "EasySlip",
-            this._getCurrentDate()
+            this._getCurrentDate(),
+            'daily'
           );
 
           await this.slipHistoryModel.recordSlipUsage(result.data.payload, result.data.transRef, req.user?.sub);
         }
 
         // Prepare transaction data
-        const transactionData = await this._prepareTransactionData(result.data, transactionType, req);
+        const transactionData = await this._prepareTransactionData(result.data, transactionCategory, transactionType, req);
         logger.debug(`transaction to be create: ${JSON.stringify(transactionData)}`);
         const transaction = await this.transactionModel.create(transactionData);
         logger.debug(`transaction created: ${JSON.stringify(transaction)}`);
@@ -505,7 +511,7 @@ class ApiController {
         const easySlipResponse = await OcrMappingService.mapToEasySlip(ocrText, payload, req.file.buffer);
         logger.debug(`easySlipResponse: ${JSON.stringify(easySlipResponse, null, 2)}`);
 
-        const transactionData = await this._prepareTransactionData(easySlipResponse.data, transactionType, req);
+        const transactionData = await this._prepareTransactionData(easySlipResponse.data, transactionCategory, transactionType, req);
         logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
         const transaction = await this.transactionModel.create(transactionData);
         logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
@@ -563,24 +569,16 @@ class ApiController {
   /**
    * Prepare transaction data from slip data and type
    * @param {Object} slipData - Data from EasySlip API response
+   * @param {string} category - Transaction category from LLM
    * @param {string} type - Transaction type from LLM
    * @param {Object} req - Request object containing user information
    * @returns {Object} Formatted transaction data matching TransactionModel schema
    */
-  async _prepareTransactionData(slipData, type = null, req) {
+  async _prepareTransactionData(slipData, category, type = null, req) {
     logger.info('Preparing transaction data from the easySlipResponse');
 
     try {
-      // Determine category based on type
-      logger.info("Determine category based on providedtype");
-      let category;
-      if (types.Income.includes(type)) {
-        category = 'Income';
-      } else if (types.Transfer.includes(type)) {
-        category = 'Transfer';
-      } else {
-        category = 'Expense';
-      }
+      logger.debug(`category: ${category}, type: ${type}`);
 
       // Get masked account numbers from slip
       logger.info("Get masked account numbers from slip");
