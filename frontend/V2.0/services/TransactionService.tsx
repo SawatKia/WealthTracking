@@ -37,11 +37,18 @@ interface newTransaction {
   sender?: newSenderReceiver | null;
   receiver?: newSenderReceiver | null;
 }
+
+interface MonthlySummary{
+  x: string,
+  y: number,
+}
+
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
   const router = useRouter()
 
   useEffect(() => {
@@ -160,7 +167,7 @@ export const useTransactions = () => {
     }
   };
 
-    // Fetch monthly expense summary
+    // Fetch monthly expense summary by category
     const getMonthlyExpense = async () => {
       try {
         const response = await api.get('/transactions/summary/month-expenses');
@@ -179,5 +186,34 @@ export const useTransactions = () => {
       getMonthlyExpense();
     }, []);
 
-  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, monthlyExpenses };
+    // Fetch monthly expense 12 month
+    const getMonthlySummary = async () => {
+      try {
+        const response = await api.get('/transactions/summary/monthly');
+        const data = response.data;
+    
+        if (data?.status_code === 200) {
+          const summary = data.data.summary.map((item: any) => {
+            const monthShort = new Date(item.month).toLocaleString('default', { month: 'short' });
+            console.log(monthShort);
+    
+            return {
+              x: monthShort,
+              y: item.summary.income, // Change to `expense` or `balance` as needed
+            };
+          });
+    
+          console.log(summary);
+          setMonthlyData(summary); // Set the summary data for monthly expenses
+        } else {
+          setError('Failed to fetch monthly summary');
+        }
+      } catch (error) {
+        setError('An error occurred while fetching monthly summary');
+        console.error(error);
+      }
+    };
+    
+
+  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, monthlyExpenses, monthlyData, getMonthlySummary };
 };

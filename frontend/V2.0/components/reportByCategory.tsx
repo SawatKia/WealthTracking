@@ -18,9 +18,9 @@ const ReportByCategory = () => {
   }, [monthlyExpenses]);
 
   // Log after state update to ensure it's up-to-date
-  useEffect(() => {
-    console.log("Updated chart data:", chartData);
-  }, [chartData]);
+  // useEffect(() => {
+  //   console.log("Updated chart data:", chartData);
+  // }, [chartData]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -34,7 +34,7 @@ const ReportByCategory = () => {
       >
         Link to budget page
       </Text> */}
-      <Text style={{ fontSize: 20,fontWeight: 'bold', marginTop: 35 }}>Expenses By Category</Text>
+      <Text style={{ fontSize: 20,fontWeight: 'bold', marginTop: 35 }}>Expenses Report</Text>
       
       <VictoryPie
         data={chartData}
