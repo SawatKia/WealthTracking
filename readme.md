@@ -117,7 +117,7 @@ PROJECT_NUMBER=<project-number> # examine in GCP, https://console.cloud.google.c
 
 DOCUMENT_AI_LOCATION=us
 DOCUMENT_AI_PROCESSOR_ID=<processor-id> # examine in GCP, https://console.cloud.google.com/ai/document-ai/locations/us/processors
-GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
+GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/.src/configs/service-account.json # download json key file from nodeJsDocumentAi service-account, https://console.cloud.google.com/apis/credentialshttps://console.cloud.google.com/apis/credentials
 
 GEMINI_KEY=<your-own-key> # https://aistudio.google.com/app/apikey
 GEMINI_CLASSIFICATION_MODEL=gemini-1.5-pro
