@@ -107,16 +107,16 @@ REDIS_PORT=6379
 EASYSLIP_URL=https://developer.easyslip.com
 EASYSLIP_KEY=<your-easyslip-api-key> # https://developer.easyslip.com/
 
-GOOGLE_CLIENT_ID=<your-google-client-id> # examine in GCP
-GOOGLE_CLIENT_SECRET=<your-google-client-secret> # examine in GCP
+GOOGLE_CLIENT_ID=<your-google-client-id> # examine in GCP, https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_SECRET=<your-google-client-secret> # examine in GCP, https://console.cloud.google.com/apis/credentials
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 
-PROJECT_NAME=<project-name> # examine in GCP
-PROJECT_ID=<project-id> # examine in GCP
-PROJECT_NUMBER=<project-number> # examine in GCP
+PROJECT_NAME=<project-name> # examine in GCP, https://console.cloud.google.com/iam-admin/settings
+PROJECT_ID=<project-id> # examine in GCP, https://console.cloud.google.com/iam-admin/settings
+PROJECT_NUMBER=<project-number> # examine in GCP, https://console.cloud.google.com/iam-admin/settings
 
 DOCUMENT_AI_LOCATION=us
-DOCUMENT_AI_PROCESSOR_ID=<processor-id> # examine in GCP
+DOCUMENT_AI_PROCESSOR_ID=<processor-id> # examine in GCP, https://console.cloud.google.com/ai/document-ai/locations/us/processors
 GOOGLE_APPLICATION_CREDENTIALS=/usr/src/WealthTrack/service-account.json
 
 GEMINI_KEY=<your-own-key> # https://aistudio.google.com/app/apikey
