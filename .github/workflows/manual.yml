@@ -14,7 +14,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true && github.actor == 'SawatKia'
+    if: github.event.pull_request.merged == true && github.actor == ${{ secrets.TRIGGERS_USERNAME }}
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
 
         - name: SSH and Build_Deploy
               run: |
-                  ssh -o StrictHostKeyChecking=no Sawat@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
+                  ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }}
                     cd ~/WealthTracking
                     ./deploy.sh
                   EOF
