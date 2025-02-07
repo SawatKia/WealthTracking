@@ -28,8 +28,9 @@ jobs:
 
         - name: SSH and Build_Deploy
               run: |
-                  ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }}
-                    cd ~/WealthTracking
-                    ./deploy.sh
-                  EOF
+                ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
+                cd ~/WealthTracking
+                ./deploy.sh
+                EOF
+
          
