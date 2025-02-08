@@ -36,7 +36,7 @@ jobs:
             echo "Pulling git repo..."
             git pull origin main --recurse-submodules
             echo "Executing deploy script..."
-            ./deploy.sh || exit 1
+            sudo ./deploy.sh || exit 1
             echo "Deployment completed successfully."
           EOF
 
