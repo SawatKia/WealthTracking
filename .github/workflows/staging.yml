@@ -27,13 +27,15 @@ jobs:
         id: check_user
         run: |
           echo "the trigger user is ${{ github.actor }} compared to ${{ secrets.TRIGGERS_USERNAME }}"
+          echo "current env.continue is ${{ env.continue }}"
           if [ "${{ github.actor }}" = "${{ secrets.TRIGGERS_USERNAME }}" ]; then
             echo "Triggered by authorized user: ${{ github.actor }}"
-            echo "continue=true" >> env.continue
+            env.continue = true
           else
             echo "Unauthorized user: ${{ github.actor }}"
-            echo "continue=false" >> env.continue
-          fi
+            env.continue = false
+            fi
+          echo "updated env.continue=$env.continue"
 
       - name: SSH and Build_Deploy
         if: env.continue == 'true'
