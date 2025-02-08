@@ -6,11 +6,10 @@
   "scripts": {
     "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage --detectOpenHandles",
     "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
-    "build": "rmdir /s /q dist && babel .src --out-dir dist --copy-files --source-maps",
-    "serve": "node dist/index.js",
+    "build": "rm -rf dist && babel .src --out-dir dist --copy-files --source-maps",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "dev": "node .src/index.js",
-    "debug": "node --inspect=0.0.0.0:9229 .src/index.js",
-    "start": "cross-env NODE_ENV=production node .src/index.js"
+    "debug": "node --inspect=0.0.0.0:9229 .src/index.js"
   },
   "keywords": [],
   "author": "",

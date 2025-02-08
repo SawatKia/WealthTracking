@@ -3,8 +3,8 @@ FROM node:20-alpine
 
 # Define the arguments
 ARG APP_DOMAIN
-ARG APP_PORT
 ARG NODE_ENV
+ARG APP_PORT
 
 # Install curl for healthcheck only
 RUN apk update && apk add --no-cache curl
