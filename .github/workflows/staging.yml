@@ -9,10 +9,8 @@ on:
 
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && github.actor == 'SawatKia'
     runs-on: ubuntu-latest
-    env:
-      continue: false
 
     steps:
       - name: Checkout Repository
@@ -23,22 +21,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
 
-      - name: Check Trigger User
-        id: check_user
-        run: |
-          echo "the trigger user is ${{ github.actor }} compared to ${{ secrets.TRIGGERS_USERNAME }}"
-          echo "current env.continue is ${{ env.continue }}"
-          if [ "${{ github.actor }}" = "${{ secrets.TRIGGERS_USERNAME }}" ]; then
-            echo "Triggered by authorized user: ${{ github.actor }}"
-            env.continue = true
-          else
-            echo "Unauthorized user: ${{ github.actor }}"
-            env.continue = false
-            fi
-          echo "updated env.continue=$env.continue"
-
       - name: SSH and Build_Deploy
-        if: env.continue == 'true'
+        if: ${{ env.continue == 'true' }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
           cd ~/WealthTracking
@@ -46,7 +30,7 @@ jobs:
           EOF
 
       - name: Notify Discord
-        if: env.continue == 'true'
+        if: ${{ env.continue == 'true' }}
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GUTHIB_TOKENS }}
