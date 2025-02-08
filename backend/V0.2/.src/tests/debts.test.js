@@ -1,11 +1,12 @@
 const request = require('supertest');
-const { Logger } = require('../utilities/Utils');
 const { v4: uuidv4 } = require('uuid');
 
-const { app } = require('../app');
 const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
 
+const { app } = require('../app');
+const { Logger } = require('../utilities/Utils');
 const logger = Logger('DebtTest');
 
 // Mock user for authentication
@@ -33,9 +34,10 @@ describe('Debt Management Flow', () => {
     let accessToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         // Initialize database
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
@@ -59,11 +61,6 @@ describe('Debt Management Flow', () => {
 
         accessToken = loginResponse.body.data.tokens.access_token;
         logger.info("User logged in, access token obtained");
-    });
-
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 
     describe('Create Debt Tests', () => {
@@ -120,6 +117,7 @@ describe('Debt Management Flow', () => {
     });
 
     describe('Get Debt Tests', () => {
+        let createdDebtId;
         beforeEach(async () => {
             // Clear existing debts and create a fresh test debt
             await pgClient.truncateTables(pgClient.tables.DEBTS);
@@ -140,7 +138,7 @@ describe('Debt Management Flow', () => {
                 getEndpoint: () => '/api/v0.2/debts',
                 expected: {
                     status: 200,
-                    message: "debts retrieved successfully"
+                    message: "Retrieved 1 debt successfully"
                 }
             },
             {
@@ -148,12 +146,12 @@ describe('Debt Management Flow', () => {
                 getEndpoint: () => `/api/v0.2/debts/${createdDebtId}`,
                 expected: {
                     status: 200,
-                    message: "debt retrieved successfully"
+                    message: "Debt retrieved successfully"
                 }
             },
             {
                 testName: "get non-existent debt",
-                getEndpoint: () => `/api/v0.2/debts/${uuidv4()}`,
+                getEndpoint: () => `/api/v0.2/debts/b930c90d-4561-4bbc-872e-20d0542b1c67`,
                 expected: {
                     status: 404,
                     message: "debt not found"
@@ -286,5 +284,10 @@ describe('Debt Management Flow', () => {
                 expect(response.body.message).toContain(testCase.expected.message);
             });
         });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 });

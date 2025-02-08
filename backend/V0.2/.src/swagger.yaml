@@ -16,6 +16,7 @@ paths:
       description: Returns a welcome message to confirm API connectivity.
       servers:
         - url: "http://localhost:3000"
+        - url: "http://localhost:3000/api/v0.2/"
       responses:
         "200":
           description: Successful response with a welcome message in JSON format.
@@ -454,6 +455,7 @@ paths:
       summary: "Get current user profile"
       description: "Retrieve the profile of the currently authenticated user, including profile picture data for local auth users"
       security:
+        - cookieAuth: []
         - BearerAuth: []
       responses:
         "200":
@@ -488,6 +490,7 @@ paths:
       summary: "Update user profile"
       description: "Update the current user's profile information"
       security:
+        - cookieAuth: []
         - BearerAuth: []
       requestBody:
         required: true
@@ -548,6 +551,7 @@ paths:
       summary: "Delete user account"
       description: "Delete the current user's account (requires password confirmation)"
       security:
+        - cookieAuth: []
         - BearerAuth: []
       requestBody:
         required: true
@@ -2008,22 +2012,22 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /budgets/{expenseType}:
-    parameters:
-      - in: path
-        name: expenseType
-        required: true
-        schema:
-          type: string
-        description: Type of expense
+  /budget/types:
     get:
       tags:
         - "Budget"
-      summary: Get specific budget
+      summary: Get specific budget on current month
       description: Retrieves a specific budget by expense type
       security:
         - cookieAuth: []
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: true
+          schema:
+            type: string
+          description: Type of expense to filter by
       responses:
         "200":
           description: Budget retrieved successfully
@@ -2036,6 +2040,43 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /budget/history:
+    get:
+      tags:
+        - "Budget"
+      summary: Get budget history
+      description: Retrieves budget history for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: false
+          schema:
+            type: string
+          description: Filter by specific expense type
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by specific month (1-12)
+      responses:
+        "200":
+          description: Budget history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /budgets/{expense_type}:
     patch:
       tags:
         - "Budget"

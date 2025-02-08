@@ -60,6 +60,47 @@ class BudgetModel extends BaseModel {
             throw error;
         }
     }
+
+    async getBudgetHistory(query) {
+        try {
+            logger.info('Getting budget history');
+            const { national_id, expense_type, month } = query;
+
+            // Base query
+            let sql = `
+                SELECT 
+                    expense_type,
+                    monthly_limit,
+                    current_spending,
+                    month
+                FROM budgets
+                WHERE national_id = $1
+            `;
+
+            const params = [national_id];
+
+            // Add optional filters
+            if (expense_type) {
+                sql += ' AND expense_type = $2';
+                params.push(expense_type);
+            }
+
+            if (month) {
+                sql += ' AND EXTRACT(MONTH FROM month) = $' + (params.length + 1);
+                params.push(month);
+            }
+
+            sql += ' ORDER BY month DESC';
+
+            logger.debug(`Executing query: ${sql} with params: ${JSON.stringify(params)}`);
+            const result = await this.pgClient.query(sql, params);
+
+            return result.rows;
+        } catch (error) {
+            logger.error(`Error in getBudgetHistory: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = BudgetModel;

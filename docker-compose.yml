@@ -12,9 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      # - "127.0.0.1:${APP_PORT}:${APP_PORT}" # Bind to localhost to avoid exposing the port to the host machine
-      - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
-      - "9229:9229"
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
@@ -34,11 +32,11 @@ services:
                npm run dev;
              fi"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:${APP_PORT}/health"]
       interval: 5m # Poll every 5 minutes after the container is healthy
       timeout: 10s # Allow up to 10 seconds for each health check command
       retries: 3 # Retry up to 3 times before considering the container unhealthy
-      start_period: 40s # Allow up to 40 seconds for initialization before the first check
+      start_period: 120s # Allow up to 120 seconds for initialization before the first check
     logging:
       driver: "json-file"
       options:

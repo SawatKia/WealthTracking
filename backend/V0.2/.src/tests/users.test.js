@@ -1,6 +1,9 @@
 const request = require("supertest");
-const { app } = require("../app");
+
 const pgClient = require("../services/PgClient");
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
+
+const { app } = require("../app");
 const { Logger } = require("../utilities/Utils");
 const logger = Logger("users.test");
 
@@ -18,11 +21,17 @@ describe("Users Endpoints", () => {
   let accessToken;
 
   beforeAll(async () => {
+    await pgClient.cleanup();
     await pgClient.init();
-    logger.debug(`Database connected: ${pgClient.isConnected()}`);
+    logger.debug("initialized finished")
+    logger.info(`Database connected: ${await pgClient.isConnected()}`);
 
     await pgClient.truncateTables();
-    logger.debug(`All rows deleted from tables`);
+    logger.info(`All rows deleted from tables`);
+
+    const fiModel = new FinancialInstitutionModel();
+    await fiModel.initializeData();
+    logger.info("FI data initialized successfully");
 
     // Register initial test user
     await request(app)
@@ -40,11 +49,6 @@ describe("Users Endpoints", () => {
     accessToken = loginResponse.body.data.tokens.access_token;
     logger.debug(`Access token obtained: ${accessToken}`);
   }, 30000);
-
-  afterAll(async () => {
-    await pgClient.release();
-    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-  });
 
   describe("Create User Tests", () => {
     const createUserCases = [
@@ -568,5 +572,10 @@ describe("Users Endpoints", () => {
         expect(response.body.message).toBe(testCase.expected.message);
       });
     });
+  });
+
+  afterAll(async () => {
+    await pgClient.release();
+    logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
   });
 });

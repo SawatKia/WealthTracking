@@ -10,7 +10,7 @@ services:
         - APP_DOMAIN=${APP_DOMAIN}
     container_name: ${APP_DOMAIN}_prod
     env_file: 
-      - ./.env.production
+      - ./.env
     ports:
       - "127.0.0.1:${APP_PORT}:${APP_PORT}"
     volumes:

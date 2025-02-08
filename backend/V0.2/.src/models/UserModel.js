@@ -8,8 +8,6 @@ const appConfigs = require('../configs/AppConfigs');
 const logger = Logger('UserModel');
 
 class UserModel extends BaseModel {
-    //TODO - add google_id to the schema
-    //TODO - user need to have a profile picture, find a way to store it
     constructor() {
         const userSchema = Joi.object({
             national_id: Joi.string()

@@ -1,13 +1,16 @@
 const request = require("supertest");
-const { app } = require("../app");
+
 const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
-const { Logger } = require("../utilities/Utils");
-const logger = Logger("transaction.test");
 const UserModel = require('../models/UserModel');
 const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
+
 const { ValidationError } = require('../utilities/ValidationErrors');
+const { app } = require("../app");
+const { Logger } = require("../utilities/Utils");
+const logger = Logger("transaction.test");
 
 // Mock user for authentication
 const mockUser = {
@@ -54,8 +57,9 @@ describe('Transaction Management', () => {
     let accessToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
@@ -94,11 +98,6 @@ describe('Transaction Management', () => {
             logger.error(`Error in setup: ${error.message}`);
             throw error;
         }
-    });
-
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
     });
 
     describe('Transaction Creation', () => {
@@ -275,11 +274,11 @@ describe('Transaction Management', () => {
                 },
                 expected: {
                     status: 400,
-                    message: "Amount must be positive"
+                    message: "Amount must be a positive number."
                 }
             },
             {
-                testName: "invalid category",
+                testName: "Invalid category",
                 body: {
                     ...successCases[0].body,
                     category: "Invalid"
@@ -297,7 +296,7 @@ describe('Transaction Management', () => {
                 },
                 expected: {
                     status: 400,
-                    message: "Invalid type for category"
+                    message: "type \"Invalid\" is not allowed for \"Income\". Must be one of: "
                 }
             }
         ];
@@ -314,12 +313,18 @@ describe('Transaction Management', () => {
                         .send(testCase.body);
 
                     expect(response.status).toBe(testCase.expected.status);
-                    expect(response.body.message).toContain(testCase.expected.message);
+                    expect(response.body.message).toContain(testCase.expected.message)
+
 
                     if (testCase.expected.balanceCheck) {
                         await testCase.expected.balanceCheck();
                     }
                 });
             });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 }); 

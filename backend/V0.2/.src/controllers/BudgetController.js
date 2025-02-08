@@ -29,7 +29,6 @@ class BudgetController extends BaseController {
             const requiredFields = ['expense_type', 'monthly_limit'];
             const validatedFields = await super.verifyField(req.body, requiredFields, this.BudgetModel);
             logger.debug(`Validated fields: ${JSON.stringify(validatedFields, null, 2)}`);
-
             super.verifyType('Expense', validatedFields.expense_type);
 
             const currentUser = await super.getCurrentUser(req);
@@ -63,12 +62,16 @@ class BudgetController extends BaseController {
             logger.info('Getting budget');
             const currentUser = await super.getCurrentUser(req);
 
-            //FIXME - this should use query params instead of path params
-            super.verifyType('Expense', req.params.expenseType);
+            // Use query params instead of path params
+            const { expenseType } = req.query;
+            if (!expenseType) {
+                throw MyAppErrors.badRequest('expenseType query parameter is required');
+            }
+            super.verifyType('Expense', expenseType);
 
             let budget = await this.BudgetModel.findOne({
                 national_id: currentUser.national_id,
-                expense_type: req.params.expenseType,
+                expense_type: expenseType,
                 month: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
             });
             if (!budget) {
@@ -77,24 +80,23 @@ class BudgetController extends BaseController {
             }
             logger.debug(`Budget retrieved: ${JSON.stringify(budget)}`);
 
-
-            const summary = await this.TransactionModel.getSummaryOnSpecificMonthByType(currentUser.national_id, req.params.expenseType);
+            const summary = await this.TransactionModel.getSummaryOnSpecificMonthByType(currentUser.national_id, expenseType);
             logger.debug(`Raw summary expense by type: ${JSON.stringify(summary)}`);
 
             logger.debug(`budget.current_spending: ${budget.current_spending}`);
+            if (!super.verifyOwnership(currentUser, budget)) {
+                logger.error('User does not own the budget');
+                throw MyAppErrors.unauthorized('You are not authorized to access this budget');
+            }
             if (budget.current_spending != summary) {
                 logger.info('the cache(current_spending) in budget table and source of truth(summary) in transaction table are different');
                 budget.current_spending = summary.total_amount;
                 budget = await this.BudgetModel.update({
                     national_id: currentUser.national_id,
-                    expense_type: req.params.expenseType,
+                    expense_type: expenseType,
                     month: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
                 }, { current_spending: summary });
                 logger.debug(`updated budget to correct the cache(current_spending): ${JSON.stringify(budget)}`);
-            }
-            if (!super.verifyOwnership(currentUser, budget)) {
-                logger.error('User does not own the budget');
-                throw MyAppErrors.unauthorized('You are not authorized to access this budget');
             }
             logger.debug(`Budget retrieved: ${JSON.stringify(budget)}`);
             req.formattedResponse = formatResponse(200, 'Budget retrieved successfully', budget);
@@ -136,10 +138,47 @@ class BudgetController extends BaseController {
         }
     }
 
+    /**
+     * Getting Budgets history for provided query
+     * @param {object} req - request
+     * @param {string} req.query.budget - get all butget-historys for provided budget
+     * @param {number} req.query.month - get budgets and data of each budget for the provided month
+     * @param {Object} res - The HTTP response object.
+     * @param {function} next - The next middleware function.
+     */
+    async getBudgetHistory(req, res, next) {
+        try {
+            logger.info('Getting budget history');
+            const currentUser = await super.getCurrentUser(req);
+            const validatedFields = await super.verifyField(req.query, ['national_id', 'expenseType', 'month'], this.BudgetModel);
+            super.verifyType('Expense', validatedFields.expenseType);
+            const history = await this.BudgetModel.getBudgetHistory({
+                national_id: currentUser.national_id,
+                expense_type: validatedFields.expenseType,
+                month: validatedFields.month
+            });
+
+            const message = history.length > 0
+                ? 'Budget history retrieved successfully'
+                : 'No budget history found';
+
+            req.formattedResponse = formatResponse(200, message, history);
+            next();
+        } catch (error) {
+            logger.error(`Error getting budget history: ${error.message}`);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError(error.message));
+            }
+        }
+    }
+
     async updateBudget(req, res, next) {
         try {
             logger.info('Updating budget');
             logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+            // TODO - use query oaram instead of path param
             const data = {
                 ...req.body,
                 expense_type: req.params.expenseType
@@ -211,6 +250,7 @@ class BudgetController extends BaseController {
             logger.info('Deleting budget');
             const currentUser = await super.getCurrentUser(req);
 
+            // TODO - use query oaram instead of path param
             super.verifyType('Expense', req.params.expenseType);
 
             const budget = await this.BudgetModel.findOne({

@@ -140,12 +140,22 @@ class FinancialInstitutionModel extends BaseModel {
 
   async findAll() {
     logger.info("Finding all FI data...");
+    if (this._isTableEmpty()) {
+      logger.warn("No data found in the table");
+      logger.info("reintiliazing data...");
+      await this.initializeData();
+    }
     const result = await pgClient.query(`SELECT * FROM ${this.tableName}`);
     return result.rows;
   }
 
   async getFiCodeByName(bankName) {
     logger.info(`Getting FI code for bank: ${bankName}`);
+    if (this._isTableEmpty()) {
+      logger.warn("No data found in the table");
+      logger.info("reintiliazing data...");
+      await this.initializeData();
+    }
     const query = `SELECT fi_code FROM ${this.tableName} WHERE name_th LIKE $1`;
     const result = await pgClient.query(query, [`%${bankName}%`]);
     logger.debug(`result: ${JSON.stringify(result.rows[0])}`)

@@ -1,0 +1,51 @@
+%%{
+    init: {
+        "theme":"base",
+        "themeVariables": {
+            'labelBoxBorderColor': '#ff0000'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+sequenceDiagram
+    participant Client
+    participant Router
+    participant AuthController
+    participant UserModel
+    participant AuthUtils
+    participant UsedRefreshTokenModel
+
+    Client->>+Router: POST /login
+    Router->>+AuthController: login(req, res, next)
+    AuthController->>AuthController: verify email, password existing
+    AuthController->>+UserModel: checkPassword(email, password)
+    UserModel-->>-AuthController: { result, user }
+    AuthController->>+AuthUtils: createTokens(user.national_id)
+    AuthUtils-->>-AuthController: { accessToken, refreshToken }
+    AuthController->>-Router: Set-Cookie: access_token, refresh_token
+    Router-->>-Client: Response
+
+    Client->>+Router: POST /refresh
+    Router->>+AuthController: refresh(req, res, next)
+    AuthController->>AuthController: token existing
+    AuthController->>+AuthUtils: decodeToken(refreshToken)
+    AuthUtils-->>-AuthController: decoded
+    AuthController->>AuthController: nbf checking
+    AuthController->>+AuthUtils: verifyToken(refreshToken, secret)
+    AuthUtils-->>-AuthController: decoded
+    AuthController->>+UsedRefreshTokenModel: has(decoded.jti)
+    UsedRefreshTokenModel-->>-AuthController: isUsed
+    AuthController->>+UsedRefreshTokenModel: add(decoded.jti, new Date())
+    AuthController->>+AuthUtils: createTokens(decoded.sub)
+    AuthUtils-->>-AuthController: { accessToken, refreshToken }
+    AuthController->>-Router: Set-Cookie: access_token, refresh_token
+    Router-->>-Client: Response
+
+    Client->>+Router: POST /logout
+    Router->>+AuthController: logout(req, res, next)
+    AuthController->>UsedRefreshTokenModel: add(decoded.jti, new Date())
+    AuthController->>-Router: CLear-Cookie: access_token, refresh_token
+    Router-->>-Client: Response

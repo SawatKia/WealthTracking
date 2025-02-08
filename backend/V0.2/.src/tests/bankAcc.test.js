@@ -1,11 +1,13 @@
 const request = require("supertest");
-const { app } = require("../app");
+
 const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
+const UserModel = require('../models/UserModel');
+
+const { ValidationError } = require('../utilities/ValidationErrors');
+const { app } = require("../app");
 const { Logger } = require("../utilities/Utils");
 const logger = Logger("bankAcc.test");
-const UserModel = require('../models/UserModel');
-const { ValidationError } = require('../utilities/ValidationErrors');
 
 // Mock user for authentication
 const mockUser = {
@@ -30,8 +32,9 @@ describe('Bank Account Management', () => {
     let accessToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
@@ -65,10 +68,7 @@ describe('Bank Account Management', () => {
         }
     });
 
-    afterAll(async () => {
-        await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
-    });
+
 
     describe('Bank Account Creation', () => {
         const createBankAccountCases = [
@@ -234,23 +234,25 @@ describe('Bank Account Management', () => {
         test('get bank account', async () => {
             logger.info('Running test to get bank account');
 
-            await pgClient.truncateTables(pgClient.tables.BANK_ACCOUNTS);
+            // await pgClient.truncateTables(pgClient.tables.BANK_ACCOUNTS);
 
             // First create a bank account
-            await request(app)
-                .post('/api/v0.2/banks')
-                .set('Authorization', `Bearer ${accessToken}`)
-                .send(testBankAccount);
+            // await request(app)
+            //     .post('/api/v0.2/banks')
+            //     .set('Authorization', `Bearer ${accessToken}`)
+            //     .send(testBankAccount);
 
             const response = await request(app)
                 .get(`/api/v0.2/banks/${testBankAccount.account_number}/${testBankAccount.fi_code}`)
                 .set('Authorization', `Bearer ${accessToken}`);
+            logger.debug(`Response.body: ${JSON.stringify(response.body, null, 2).substring(0, 1000)}`);
 
             expect(response.status).toBe(200);
             expect(response.body.message).toBe('Bank account retrieved successfully');
-            expect(response.body.data.bankAccount).toEqual({
+            expect(Array.isArray(response.body.data.statements)).toBe(true);
+            expect(response.body.data.bank_account_details).toEqual({
                 ...testBankAccount,
-                national_id: mockUser.national_id
+                national_id: mockUser.national_id,
             });
         });
 
@@ -379,5 +381,10 @@ describe('Bank Account Management', () => {
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Bank account not found');
         });
+    });
+
+    afterAll(async () => {
+        await pgClient.release();
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 });

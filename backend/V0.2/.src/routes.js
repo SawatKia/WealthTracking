@@ -31,15 +31,18 @@ const authController = new AuthController();
 const debtController = new DebtController();
 const transactionController = new TransactionController();
 const budgetController = new BudgetController();
-if (NODE_ENV == 'development') {
-    logger.info('Generating swagger documentation');
-    const file = fs.readFileSync(path.join(__dirname, './swagger.yaml'), 'utf8');
-    // const file = fs.readFileSync('./swagger.yaml', 'utf8');
-    const swaggerDocument = YAML.parse(file)
-    logger.debug(`loaded swagger document: ${JSON.stringify(swaggerDocument, null, 2).substring(0, 50)}...`);
+
+if (NODE_ENV === 'development' || NODE_ENV === 'test') {
+    logger.info('Starting Swagger documentation setup...');
+    const swaggerPath = path.join(__dirname, './swagger.yaml');
+    const swaggerFile = fs.readFileSync(swaggerPath, 'utf8');
+    const swaggerDocument = YAML.parse(swaggerFile);
+    const swaggerSetup = swaggerUi.setup(swaggerDocument, { explorer: true });
     router.use('/docs', swaggerUi.serve);
-    router.get('/docs', swaggerUi.setup(swaggerDocument));
+    router.get('/docs', swaggerSetup);
+    logger.debug('Swagger documentation setup completed');
 }
+
 const allowedMethods = {
     '/': ['GET'],
     '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -68,7 +71,9 @@ const allowedMethods = {
     '/transactions/account/:account_number/:fi_code': ['GET'],
     '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
     '/budgets': ['GET', 'POST'],
-    '/budgets/:expenseType': ['GET', 'PATCH', 'DELETE'],
+    '/budgets/types': ['GET'],
+    '/budgets/history': ['GET'],
+    '/budgets/:expenseType': ['PATCH', 'DELETE'],
 }
 
 if (NODE_ENV != 'production') {
@@ -96,7 +101,7 @@ router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
-
+// all routes prefix with /api/v0.2
 // Public routes (no auth required)
 router.post('/login', authController.login);
 router.post('/users', userController.registerUser);  // Registration should be public
@@ -135,8 +140,7 @@ router.get('/banks/:account_number/:fi_code', bankAccountController.getBankAccou
 router.patch('/banks/:account_number/:fi_code', mdw.conditionalProfilePictureUpload, bankAccountController.updateBankAccount);
 router.delete('/banks/:account_number/:fi_code', bankAccountController.deleteBankAccount);
 
-
-router.get('/slip/quota', apiController.getQuotaInformation);
+router.get('/slip/quota', apiController.getSlipQuotaInformation);
 router.post('/slip/verify', mdw.conditionalSlipUpload, apiController.verifySlip);
 
 router.post('/debts', debtController.createDebt);
@@ -174,7 +178,8 @@ router.delete('/transactions/:transaction_id', transactionController.deleteTrans
 
 router.post('/budgets', budgetController.createBudget);
 router.get('/budgets', budgetController.getAllBudgets);
-router.get('/budgets/:expenseType', budgetController.getBudget);
+router.get('/budget/types', budgetController.getBudget);
+router.get('/budget/history', budgetController.getBudgetHistory);
 router.patch('/budgets/:expenseType', budgetController.updateBudget);
 router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 

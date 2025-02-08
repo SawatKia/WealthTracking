@@ -101,8 +101,8 @@ class DebtController extends BaseController {
             const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
             logger.debug(`debt retrieved: ${JSON.stringify(debt, null, 2)}`);
             if (!debt) {
-                logger.info('No debt found');
-                req.formattedResponse = formatResponse(200, 'No debt found', null);
+                logger.info('debt not found');
+                req.formattedResponse = formatResponse(404, 'debt not found', null);
                 return next();
             }
 

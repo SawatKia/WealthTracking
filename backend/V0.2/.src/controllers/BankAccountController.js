@@ -207,10 +207,8 @@ class BankAccountController extends BaseController {
 
             // 7. Send response
             req.formattedResponse = formatResponse(200, 'Bank account retrieved successfully', {
-                data: {
-                    bank_account_details: bankAccount,
-                    statements
-                }
+                bank_account_details: bankAccount,
+                statements
             });
             next();
         } catch (error) {

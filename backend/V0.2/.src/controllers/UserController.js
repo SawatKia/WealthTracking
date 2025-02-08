@@ -3,17 +3,21 @@ const path = require('path');
 
 const { Logger, formatResponse } = require('../utilities/Utils');
 const UserModel = require('../models/UserModel');
+const FinancialInstitutionModel = require('../models/FinancialInstitutionModel');
+const BankAccountModel = require('../models/BankAccountModel');
+
 const BaseController = require('./BaseController');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const logger = Logger('UserController');
-const BankAccountModel = require('../models/BankAccountModel');
 
 class UserController extends BaseController {
     constructor() {
         super();
         this.userModel = new UserModel();
         this.bankAccountModel = new BankAccountModel();
+        this.fiModel = new FinancialInstitutionModel();
         this.CASH_ACCOUNT_FI_CODE = '000';
+
 
         // Bind all methods to ensure correct 'this' context
         this.normalizeUsernameEmail = this.normalizeUsernameEmail.bind(this);
@@ -85,6 +89,12 @@ class UserController extends BaseController {
             const createdUser = await this.userModel.createUser(normalizedData);
             logger.debug(`createdUser: ${JSON.stringify(createdUser)}`);
 
+            const cashFi = await this.fiModel.findOne({ fi_code: this.CASH_ACCOUNT_FI_CODE });
+            logger.debug(`cashFi: ${JSON.stringify(cashFi)}`);
+            if (!cashFi) {
+                logger.error(`${this.CASH_ACCOUNT_FI_CODE} FI code in financial_institutions table NOT FOUND`);
+                throw MyAppErrors.notFound(`${this.CASH_ACCOUNT_FI_CODE} FI code not found`);
+            }
             // Create default cash account
             const cashAccount = {
                 account_number: `${createdUser.national_id}`,
