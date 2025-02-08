@@ -1,0 +1,48 @@
+# This is a basic workflow that is manually triggered
+
+name: Deploy to staging server
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build_deploy:
+    if: github.event.pull_request.merged == true && github.actor == ${{ secrets.TRIGGERS_USERNAME }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository # action checks-out your repository under $GITHUB_WORKSPACE, so your workflow can access it.
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Connection
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
+
+      - name: SSH and Build_Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
+          cd ~/WealthTracking
+          ./deploy.sh
+          EOF
+
+      - name: notify Discord
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.GUTHIB_TOKENS }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "Bob"
+          avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
+          title: "Deployment to Staging Server: {{STATUS}} - ${{ github.workflow }}"
+          description: "Automated deployment to the staging server triggered by ${{ github.event_name }}. Status: {{STATUS}}. Please verify the deployment and report any issues to the Dev team."
+          include-details: "true"
+          color-success: "#1ced11"
+          color-failure: "#eb4034"
+          color-cancelled: "#edcc11"
