@@ -17,26 +17,28 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH Connection
-        #   uses: webfactory/ssh-agent@v0.9.0
-        #   with:
-        #     ssh-private-key: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
         run: |
-          mkdir -p ~/.ssh 
+          echo "Setting up SSH connection..."
+          mkdir -p ~/.ssh
           echo "${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
+          echo "SSH setup complete. Testing connection..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"
 
-      - name: SSH and Build_Deploy
-        if: ${{ env.continue == 'true' }}
+      - name: Build and Deploy on Server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} -i ~/.ssh/id_rsa <<'EOF'
-          cd ~/WealthTracking
-          ./deploy.sh
+          echo "Starting build and deployment process on the server..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
+            echo "Navigating to project directory..."
+            cd ~/WealthTracking || exit 1
+            echo "Executing deploy script..."
+            ./deploy.sh || exit 1
+            echo "Deployment completed successfully."
           EOF
 
       - name: Notify Discord
-        if: ${{ env.continue == 'true' }}
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GUTHIB_TOKENS }}
@@ -49,3 +51,9 @@ jobs:
           color-success: "#1ced11"
           color-failure: "#eb4034"
           color-cancelled: "#edcc11"
+
+      - name: Delete SSH Key
+        run: |
+          echo "Cleaning up SSH key..."
+          rm -f ~/.ssh/id_rsa
+          echo "SSH key deleted."
