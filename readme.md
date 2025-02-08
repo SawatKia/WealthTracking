@@ -50,34 +50,31 @@ git checkout -b your-branch-name
 
 ### 2. Frontend Setup
 
-#### Creating a New Project
+# Update Change Fronted to React Native
+### Guide to Run the Project
+1. Check the Project Folder Path
+The project folder is located at this path
+  `cd .\frontend\V2.0`
 
-1. Remove the existing "frontend" directory if it exists
-2. Create a new frontend directory using your preferred framework (React, Vue, Angular, etc.) or whatever
-3. Open your created directory in your workspace and start coding.
+2. Run the Web Version
+Open a terminal in the project folder and run the following command to start the Expo development server:
+  `npx expo start`
+-After running the command, the terminal will display a QR code and some instructions.
+- To view the web version, press w on your keyboard. This will open the project in a browser.
 
-#### Modifying an Existing Project
+- You can also refer to this guide for creating your first app with Expo:
+[Expo - Create Your First App](https://docs.expo.dev/tutorial/create-your-first-app/)
 
-1. Open the project directory in your workspace.
-2. Open a terminal and navigate to the frontend directory:
+3. Run the App on Your Phone (Optional)
+- Download the Expo Go app on your phone from App Store or Google Play:
 
-```bash
-cd frontend
-```
+- Sign in to Expo Go:
+  Open the Expo Go app and sign in with your Expo account (if you don’t have one, create it).
 
-3. Install dependencies:
-
-```bash
-npm install
-```
-
-4. Start the frontend development server:
-
-```bash
-npm run start
-```
-
-- if you want to call the api you need to run the backend (this will running both frontend and backend at the same origin) **if you are in early stages of Frontend development, you probably only run your frontend with `npm run start` or whatever. for faster start your runtime.** running the backend can take some time.
+- Scan the QR Code:
+After you run npx expo start in the terminal, you will see a QR code.
+Open the camera on your phone and scan the QR code that appears in the terminal.
+- Once scanned, Expo Go will automatically open and load the app you’re developing.
 
 ### 3. Backend Setup
 
