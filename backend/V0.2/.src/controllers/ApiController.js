@@ -281,7 +281,7 @@ class ApiController {
   _isValidFile(file) {
     try {
       logger.info('Validating file...');
-      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+      const allowedExtensions = ['.jpg', '.jpeg', '.png'];
       const maxSize = 5 * 1024 * 1024; // 5MB
 
       const fileExtension = path.extname(file.originalname).toLowerCase();
