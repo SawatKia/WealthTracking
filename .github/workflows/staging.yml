@@ -34,4 +34,15 @@ jobs:
           EOF
 
       - name: notify Discord
-        run: |
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.GUTHIB_TOKENS }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "Bob"
+          avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
+          title: "Deployment to Staging Server: {{STATUS}} - ${{ github.workflow }}"
+          description: "Automated deployment to the staging server triggered by ${{ github.event_name }}. Status: {{STATUS}}. Please verify the deployment and report any issues to the Dev team."
+          include-details: "true"
+          color-success: "#1ced11"
+          color-failure: "#eb4034"
+          color-cancelled: "#edcc11"
