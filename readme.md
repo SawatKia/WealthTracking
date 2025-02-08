@@ -256,4 +256,4 @@ The deployment includes an automatic health check cron job that will:
   - `/A` option tells the tree command to use ASCII characters instead of extended characters. This will produce output using "|" and "+" symbols
   - `> backend_structure.txt`: Redirects the output to a text file named "backend_structure.txt"
 - to undo the lastest git local commit use this command `git reset --soft HEAD~1`
-- nothing update
+- nothing to update
