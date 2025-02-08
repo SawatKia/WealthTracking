@@ -220,7 +220,7 @@ class BankAccountUtils {
                     return this.formatAccountNumber(cleanedNumber, '030'); // GSB format
                 }
 
-                return accountNumber; // Return original if length doesn't match
+                return accountNumber; // Return original if length doesn't match any bank
             }
 
             // Format the cleaned number by matching the example structure
