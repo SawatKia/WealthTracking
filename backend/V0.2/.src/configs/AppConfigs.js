@@ -1,8 +1,19 @@
 // AppConfig.js
+const path = require('path');
 require('dotenv').config();
+if (typeof dotenv === 'undefined') {
+    const dotenv = require('dotenv');
+    // Load main environment variables
+    dotenv.config({ path: path.join(__dirname, '../../../../.env') });
+}
+
+// Cache env values at the top
+const NODE_ENV = process.env.NODE_ENV;
+const DB_RESET = process.env.DB_RESET === 'true';
+const RELOAD_MOCK_DATA = process.env.RELOAD_MOCK_DATA === 'true';
 
 const config = {
-    environment: process.env.NODE_ENV,
+    environment: NODE_ENV,
     appPort: process.env.APP_PORT || 3000,
     saltRounds: parseInt(process.env.SALT_ROUNDS, 10) || 10,
     postgres: {
@@ -28,7 +39,6 @@ const config = {
         url: process.env.EASYSLIP_URL,
         key: process.env.EASYSLIP_KEY,
     },
-    app_secret: process.env.APP_SECRET,
     app_domain: process.env.APP_DOMAIN,
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret',
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'your-refresh-token-secret',
@@ -37,8 +47,8 @@ const config = {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
-    databaseReset: process.env.FORCE_DB_RESET || false,
-    loadMockData: process.env.RELOAD_MOCK_DATA || false,
+    databaseReset: DB_RESET || NODE_ENV === 'test',
+    loadMockData: RELOAD_MOCK_DATA,
     gcp: {
         projectName: process.env.PROJECT_NAME,
         projectId: process.env.PROJECT_ID,
