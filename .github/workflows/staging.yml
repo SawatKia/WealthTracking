@@ -26,6 +26,7 @@ jobs:
       - name: Check Trigger User
         id: check_user
         run: |
+          echo "the trigger user is ${{ github.actor }} compared to ${{ secrets.TRIGGERS_USERNAME }}"
           if [ "${{ github.actor }}" = "${{ secrets.TRIGGERS_USERNAME }}" ]; then
             echo "Triggered by authorized user: ${{ github.actor }}"
             echo "continue=true" >> env.continue
