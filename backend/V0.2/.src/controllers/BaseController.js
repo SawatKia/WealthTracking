@@ -228,12 +228,14 @@ class BaseController {
 
         // Validate category first if provided
         if (category && !['Income', 'Expense', 'Transfer'].includes(category)) {
+            logger.error('Invalid category. Must be Income, Expense, or Transfer');
             throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
         }
 
         // If no type provided, just validate category
         if (!type) {
-            return true;
+            logger.warn('No type provided');
+            throw MyAppErrors.badRequest('No type provided');
         }
 
         // Get allowed types for the category
@@ -258,8 +260,13 @@ class BaseController {
             logger.debug(`mostSimilarWord: ${mostSimilarWord}`);
 
 
-            const errorMessage = `type "${type}" is not allowed for "${category}". Must be one of: ${allowedTypes.join(', ')}` +
-                (similarTypes.length > 0 ? `. Did you mean: ${[...new Set(similarTypes)].join(', ')}?` : ''); // Use Set to remove duplicates in suggestions
+            let errorMessage;
+            if (category === 'Transfer' && type !== 'Transfer') {
+                errorMessage = `For category "Transfer", the type must be "Transfer" only.`;
+            } else {
+                errorMessage = `type "${type}" is not allowed for "${category}". Must be one of: ${allowedTypes.join(', ')}` +
+                    (similarTypes.length > 0 ? `. Did you mean: ${[...new Set(similarTypes)].join(', ')}?` : ''); // Use Set to remove duplicates in suggestions
+            }
 
             logger.error(errorMessage);
             throw MyAppErrors.badRequest(errorMessage);
