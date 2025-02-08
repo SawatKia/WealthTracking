@@ -27,10 +27,10 @@ jobs:
                 ssh-private-key: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
 
         - name: SSH and Build_Deploy
-              run: |
-                ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
-                cd ~/WealthTracking
-                ./deploy.sh
-                EOF
+          run: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
+            cd ~/WealthTracking
+            ./deploy.sh
+            EOF
 
          
