@@ -1,9 +1,5 @@
-# This is a basic workflow that is manually triggered
-
 name: Deploy to staging server
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
 on:
   pull_request:
     types:
@@ -11,14 +7,15 @@ on:
     branches:
       - main
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true && github.actor == ${{ secrets.TRIGGERS_USERNAME }}
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    env:
+      continue: false
 
     steps:
-      - name: Checkout Repository # action checks-out your repository under $GITHUB_WORKSPACE, so your workflow can access it.
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup SSH Connection
@@ -26,22 +23,35 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}
 
+      - name: Check Trigger User
+        id: check_user
+        run: |
+          if [ "${{ github.actor }}" = "${{ secrets.TRIGGERS_USERNAME }}" ]; then
+            echo "Triggered by authorized user: ${{ github.actor }}"
+            echo "continue=true" >> env.continue
+          else
+            echo "Unauthorized user: ${{ github.actor }}"
+            echo "continue=false" >> env.continue
+          fi
+
       - name: SSH and Build_Deploy
+        if: env.continue == 'true'
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} <<'EOF'
           cd ~/WealthTracking
           ./deploy.sh
           EOF
 
-      - name: notify Discord
+      - name: Notify Discord
+        if: env.continue == 'true'
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GUTHIB_TOKENS }}
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
           username: "Bob"
           avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
-          title: "Deployment to Staging Server: {{STATUS}} - ${{ github.workflow }}"
-          description: "Automated deployment to the staging server triggered by ${{ github.event_name }}. Status: {{STATUS}}. Please verify the deployment and report any issues to the Dev team."
+          title: "Deployment to ${{ github.workflow }} Server: ${{ github.action_status }}"
+          description: "Automated deployment to the ${{ github.workflow }} server triggered by ${{ github.event_name }}. Status: ${{ github.action_status }}. Please verify the deployment and report any issues to the Dev team."
           include-details: "true"
           color-success: "#1ced11"
           color-failure: "#eb4034"
