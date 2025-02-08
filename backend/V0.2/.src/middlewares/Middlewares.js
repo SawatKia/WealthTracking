@@ -204,48 +204,6 @@ class Middlewares {
     };
   }
 
-  validateRequest(req, res, next) {
-    logger.info("Validating a new request's payload");
-
-    // Skip validation for GET and HEAD requests
-    if (req.method === 'GET' || req.method === 'HEAD') {
-      return next();
-    }
-
-    let rawBody = '';
-    let bodySize = 0;
-    const maxSize = 10 * 1024 * 1024; // 10MB limit
-
-    req.on('data', chunk => {
-      logger.info(`Received ${chunk.length} bytes of data`);
-      bodySize += chunk.length;
-      if (bodySize > maxSize) {
-        logger.error('Request payload too large');
-        return next(MyAppErrors.badRequest('Request payload too large'));
-      }
-      rawBody += chunk;
-    });
-
-    req.on('end', () => {
-      if (rawBody.length === 0) {
-        return next();
-      }
-
-      try {
-        JSON.parse(rawBody);
-        next();
-      } catch (e) {
-        logger.error(`JSON Parse Error: ${e.message}`);
-        return next(MyAppErrors.badRequest(`Invalid JSON: ${e.message}, please examine and correct your request payload`));
-      }
-    });
-
-    req.on('error', (err) => {
-      logger.error(`Request Error: ${err.message}`);
-      return next(MyAppErrors.badRequest('Error processing request'));
-    });
-  }
-
   /**
    * Rate limiting middleware to prevent too many requests
    */
@@ -284,15 +242,16 @@ class Middlewares {
       logBody = body;
     }
 
-    // Format headers with truncated values
-    const formattedHeaders = Object.entries(headers)
-      .map(([key, value]) => {
-        const truncatedValue = value && value.length > 50
-          ? `${value.substring(0, 50)}... [truncated]`
-          : value;
-        return `      ${key.padEnd(16)}: ${truncatedValue}`;
-      })
-      .join('\n');
+    const formatObjectEntries = (obj, lengthLimit = 50) => {
+      return Object.entries(obj)
+        .map(([key, value]) => {
+          const displayValue = value && String(value).length > lengthLimit
+            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+            : String(value);
+          return `${key.padEnd(26)}: ${displayValue}`;
+        })
+        .join('\n          ');
+    }
 
     // Prepare a human-friendly log message
     const requestLogMessage = `
@@ -300,19 +259,11 @@ class Middlewares {
       ----------------
       ${ip} => ${method} ${requestPath}
       Headers:
-  ${formattedHeaders}
-      Cookies: 
-        ${Object.keys(req.cookies)
-        .map(key => {
-          const cookieValue = req.cookies[key];
-          const displayValue = typeof cookieValue === 'string'
-            ? cookieValue.substring(0, 50)
-            : String(cookieValue);
-          return `${key}: ${displayValue}...`;
-        })
-        .join('\n      ')}
-      Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
-      Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
+          ${formatObjectEntries(headers)}
+      Cookies:
+          ${formatObjectEntries(req.cookies)}
+      Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
+      Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
       `;
 
     logger.info(requestLogMessage);
@@ -411,39 +362,54 @@ class Middlewares {
       ...headers
     };
 
-    const formattedHeaders = Object.entries(securityHeaders)
-      .map(([key, value]) => {
-        const truncatedValue = value && value.length > 50
-          ? `${value.substring(0, 50)}... [truncated]`
-          : value;
-        return `${key.padEnd(30)}: ${truncatedValue}`;
-      })
-      .join('\n          ');
+    const formatObjectEntries = (obj, lengthLimit = 50) => {
+      return Object.entries(obj)
+        .map(([key, value]) => {
+          const displayValue = value && String(value).length > lengthLimit
+            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+            : String(value);
+          return `${key.padEnd(26)}: ${displayValue}`;
+        })
+        .join('\n          ');
+    }
+
 
     const responseLogMessage = `
       ${isError ? 'Error Response:' : 'Outgoing Response:'}
       Headers:
-          ${formattedHeaders}
+          ${formatObjectEntries(securityHeaders)}
       ------------------
       ${req.method} ${req.path} => ${req.ip}
       Status: ${status_code}
       Message: ${message}
       Data: ${data ? JSON.stringify(data, null, 8).substring(0, 550) + (JSON.stringify(data, null, 8).length > 550 ? '...[truncated]...' : '') : ''}
       `;
+    const endingMessage = "=".repeat(10) + "End of response: " + `${status_code} => ${req.ip}` + "=".repeat(10);
 
-    logger[isError ? 'error' : 'debug'](responseLogMessage);
+    logger[isError ? 'error' : 'debug'](responseLogMessage + endingMessage);
     return securityHeaders;
   }
 
   responseHandler = (req, res, next) => {
     logger.info("Handling response");
+    let securityHeaders = {};
+    let status_code = 500;
+    let message = 'Internal Server Error';
+    let headers = {};
+    let data = null;
+
     if (req.formattedResponse) {
-      const { status_code, message, data, headers } = req.formattedResponse;
-      const securityHeaders = this.logResponse(req, status_code, message, data, headers);
-      res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
+      ({ status_code, message, data, headers } = req.formattedResponse);
+      securityHeaders = this.logResponse(req, status_code, message, data, headers);
     } else {
-      next();
+      logger.warn('Response not formatted in req.formattedResponse');
+      logger.warn('Sending an empty response');
+      res.send();
+      return;
     }
+
+    res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
+    return;
   }
 
   errorHandler = (err, req, res, next) => {
@@ -454,6 +420,13 @@ class Middlewares {
         logger.error(`MyAppError: ${err.message}`);
         logger.error(`stack: ${err.stack}`);
         response = formatResponse(err.statusCode, err.message, err.data);
+      } else if (err instanceof SyntaxError) {
+        response = formatResponse(400, "Invalid Syntax: " + err.message);
+        logger.error(`SyntaxError: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        if (err.message.includes('JSON')) {
+          response = formatResponse(400, "Invalid JSON format: " + err.message);
+        }
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
         logger.error(`stack: ${err.stack}`);

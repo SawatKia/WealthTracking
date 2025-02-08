@@ -17,7 +17,6 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
-app.use(mdw.validateRequest);
 // Apply CORS before other middleware
 app.use(mdw.corsMiddleware);
 
@@ -26,7 +25,8 @@ app.options('*', mdw.corsMiddleware);
 
 // Middleware to parse JSON
 // and set the limit for JSON and URL-encoded requests
-app.use(express.json({ limit: "10mb" }));
+// JSON parser with error handling
+app.use(express.json({ limit: "10mb" }), mdw.errorHandler);
 app.use(cookieParser());
 
 // Request logger middleware
