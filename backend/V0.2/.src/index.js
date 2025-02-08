@@ -346,6 +346,12 @@ const verifyEnvVars = (variables) => {
  * Function to display the WealthTrack app symbol in ASCII art
  */
 const showAppSymbol = () => {
+  const coins = ["💰 💰 💰", "💰 💰", "💰"];
+  const banknotes = ["💵💵💵💵", "💵💵💵", "💵💵"];
+  const transactions = ["📊 +5000 THB", "📊 -1200 THB", "📊 +7000 THB"];
+  const income = ["➕ 1200 THB", "➕ 8000 THB", "➕ 500 THB"];
+  const expense = ["➖ 1500 THB", "➖ 3000 THB", "➖ 2200 THB"];
+
   console.log(`
     ██╗    ██╗███████╗ █████╗ ██╗    ████████╗██╗  ██╗████████╗██████╗  █████╗  ██████╗██╗  ██╗
     ██║    ██║██╔════╝██╔══██╗██║    ╚══██╔══╝██║  ██║╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
@@ -356,21 +362,29 @@ const showAppSymbol = () => {
     -----------------------------------------------------------------------------------
     💰 Coins         💵 Banknotes         📊 Transactions          ➕ Income   ➖ Expense
     -----------------------------------------------------------------------------------
-    💰 💰 💰       💵💵💵💵         📊 +5000 THB       ➖ 1500 THB      📊 +1200 THB  
-    💰 💰          💵💵💵          📊 -1200 THB       ➕ 8000 THB      📊 -3000 THB  
-    💰             💵💵            📊 +7000 THB       ➖ 2200 THB      📊 +500 THB  
+  `);
+
+  for (let i = 0; i < coins.length; i++) {
+    console.log(
+      `\t${coins[i].padEnd(18)}${banknotes[i].padEnd(18)}${transactions[i].padEnd(22)}${income[i].padEnd(18)}${expense[i]}`
+    );
+  }
+
+  console.log(`
     -----------------------------------------------------------------------------------
     📢 WealthTrack server started... Track your finances wisely! 🚀
-
   `);
-}
+};
+
+showAppSymbol();
+
 
 /**
  * Start the Express server
  */
 const startExpressServer = () => {
   return new Promise((resolve, reject) => {
-    const server = app.app.listen(PORT, '0.0.0.0', () => {
+    const server = app.app.listen(PORT, () => {
       const endTime = Date.now();
       const timeTaken = endTime - app.startTime;
       showAppSymbol();
