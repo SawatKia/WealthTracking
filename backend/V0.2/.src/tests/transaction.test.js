@@ -1,13 +1,16 @@
 const request = require("supertest");
-const { app } = require("../app");
+
 const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
-const { Logger } = require("../utilities/Utils");
-const logger = Logger("transaction.test");
 const UserModel = require('../models/UserModel');
 const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
+
 const { ValidationError } = require('../utilities/ValidationErrors');
+const { app } = require("../app");
+const { Logger } = require("../utilities/Utils");
+const logger = Logger("transaction.test");
 
 // Mock user for authentication
 const mockUser = {
@@ -54,8 +57,9 @@ describe('Transaction Management', () => {
     let accessToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
@@ -321,6 +325,6 @@ describe('Transaction Management', () => {
 
     afterAll(async () => {
         await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 }); 

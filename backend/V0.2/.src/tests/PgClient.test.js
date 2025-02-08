@@ -1,9 +1,10 @@
 const request = require('supertest');
-const { app } = require('../app'); // Adjust the path to your Express app
+
 const PgClient = require('../services/PgClient');
 const FiModel = require('../models/FinancialInstitutionModel');
-const { Logger } = require('../utilities/Utils');
 
+const { app } = require('../app'); // Adjust the path to your Express app
+const { Logger } = require('../utilities/Utils');
 const logger = Logger('PgClient.test');
 
 describe('Cascading Constraints Tests', () => {
@@ -11,6 +12,7 @@ describe('Cascading Constraints Tests', () => {
     let refreshToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         await PgClient.init();
 
         const fi = new FiModel();
@@ -137,6 +139,6 @@ describe('Cascading Constraints Tests', () => {
     //TODO - add test to trigger modifying the balance of bank account when transaction is created or modified or deleted
     afterAll(async () => {
         await PgClient.release();
-        logger.debug(`Database disconnected: ${!PgClient.isConnected()}`);
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 }); 

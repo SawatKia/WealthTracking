@@ -1,9 +1,11 @@
 const request = require("supertest");
-const { app } = require("../app");
+
 const pgClient = require("../services/PgClient");
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
+
+const { app } = require("../app");
 const { Logger } = require("../utilities/Utils");
 const logger = Logger("users.test");
-const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
 
 // Mock user for authentication
 const mockUser = {
@@ -19,6 +21,7 @@ describe("Users Endpoints", () => {
   let accessToken;
 
   beforeAll(async () => {
+    await pgClient.cleanup();
     await pgClient.init();
     logger.debug("initialized finished")
     logger.info(`Database connected: ${await pgClient.isConnected()}`);
@@ -573,6 +576,6 @@ describe("Users Endpoints", () => {
 
   afterAll(async () => {
     await pgClient.release();
-    logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+    logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
   });
 });

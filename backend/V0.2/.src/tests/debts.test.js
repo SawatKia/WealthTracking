@@ -1,11 +1,12 @@
 const request = require('supertest');
-const { Logger } = require('../utilities/Utils');
 const { v4: uuidv4 } = require('uuid');
 
-const { app } = require('../app');
 const pgClient = require("../services/PgClient");
 const FiModel = require("../models/FinancialInstitutionModel");
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
 
+const { app } = require('../app');
+const { Logger } = require('../utilities/Utils');
 const logger = Logger('DebtTest');
 
 // Mock user for authentication
@@ -33,9 +34,10 @@ describe('Debt Management Flow', () => {
     let accessToken;
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         // Initialize database
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
@@ -286,6 +288,6 @@ describe('Debt Management Flow', () => {
 
     afterAll(async () => {
         await pgClient.release();
-        logger.debug(`Database disconnected: ${!pgClient.isConnected()}`);
+        logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
     });
 });

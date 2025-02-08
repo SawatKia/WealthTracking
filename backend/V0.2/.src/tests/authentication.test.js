@@ -1,8 +1,9 @@
 const request = require('supertest');
-const { app } = require('../app');
-const { Logger } = require('../utilities/Utils');
+
 const pgClient = require("../services/PgClient");
 
+const { app } = require('../app');
+const { Logger } = require('../utilities/Utils');
 const logger = Logger('AuthenticationTest');
 
 const testUser = {
@@ -19,9 +20,10 @@ describe('Authentication Flow', () => {
 
 
     beforeAll(async () => {
+        await pgClient.cleanup();
         // Register a test user first
         await pgClient.init();
-        logger.debug(`Database connected: ${pgClient.isConnected()}`);
+        logger.debug(`Database connected: ${await pgClient.isConnected()}`);
 
         await pgClient.truncateTables();
         logger.debug(`All rows deleted from tables`);
