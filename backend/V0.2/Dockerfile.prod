@@ -3,16 +3,17 @@ FROM node:20-alpine
 
 # Set up the environment variables
 ARG APP_DOMAIN
+ARG APP_PORT
 ARG NODE_ENV
 
-# Create a user and group to avoid running as root
-RUN apk add --no-cache curl && addgroup -S appgroup && adduser -S appuser -G appgroup
+# # Create a user and group to avoid running as root
+# RUN apk add --no-cache curl && addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Install curl for healthcheck only
+RUN apk update && apk add --no-cache curl
 
 # Set the working directory inside the container
 WORKDIR /usr/src/${APP_DOMAIN}
-
-# Set up uploads directory
-RUN mkdir -p uploads && chown -R appuser:appgroup uploads
 
 # Copy package files and install dependencies
 COPY package*.json ./
@@ -25,15 +26,11 @@ COPY sql ./sql
 # Copy the already built dist directory (if exists)
 COPY dist ./dist
 
-# Change to non-root user for security reasons
-USER appuser
+# # Change to non-root user for security reasons
+# USER appuser
 
 # Expose the application port
-EXPOSE 3000
-
-# Set up a health check for the server
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+EXPOSE ${APP_PORT}
 
 # Start the application
 CMD ["npm", "run", "start"]
