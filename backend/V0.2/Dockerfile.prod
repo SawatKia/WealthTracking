@@ -3,7 +3,7 @@ FROM node:20-alpine
 
 # Set up the environment variables
 ARG APP_DOMAIN
-ARG APP_PORT
+ARG APP_PORT = 3000
 ARG NODE_ENV
 
 # Create a user and group to avoid running as root

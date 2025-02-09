@@ -8,11 +8,10 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NODE_ENV=production
-        - APP_PORT=${APP_PORT:-3000}
         - APP_DOMAIN=${APP_DOMAIN}
     container_name: ${APP_DOMAIN}_prod
     ports:
-      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
+      - "0.0.0.0:3000:3000"
     volumes:
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads
     depends_on:
@@ -26,7 +25,7 @@ services:
       restart_policy:
         condition: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
