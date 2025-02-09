@@ -9,10 +9,11 @@ sleepWithTimer() {
 }
 
 healthStatus() {
-    # Use APP_PORT if defined, default to 3000 otherwise.
+    ip=${APP_IP:-127.0.0.1}
     port=${APP_PORT:-3000}
-    echo ">>> Checking server health status on http://localhost:${port}/health..."
-    serverResponse=$(curl -s http://localhost:${port}/health)
+    
+    echo ">>> Checking server health status on http://${ip}:${port}/health..."
+    serverResponse=$(curl -s http://${ip}:${port}/health)
 
     if [ -z "$serverResponse" ]; then
         echo ">>> No response from /health endpoint, falling back to docker ps check..."

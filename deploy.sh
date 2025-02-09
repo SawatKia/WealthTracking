@@ -22,4 +22,8 @@ fi
 echo "++++ Build process complete! ++++"
 
 echo ">>> Starting server containers process..."
+APP_IP="${APP_IP:-127.0.0.1}"    # Default to localhost if not provided
+APP_PORT="${APP_PORT:-3000}"     # Default to 3000 if not provided
+
+export APP_IP APP_PORT           # Make them available to start_server.sh
 ./start_server.sh
