@@ -40,9 +40,6 @@ jobs:
             echo "Pulling git repo..."
               git pull origin main --recurse-submodules
 
-            echo "chmod .sh files"
-              chmod +x *.sh
-
             echo "Executing deploy script..."
               ./deploy.sh || exit 1
             echo "Deployment completed successfully."
