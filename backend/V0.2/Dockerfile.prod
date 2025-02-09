@@ -1,8 +1,9 @@
-# Build Stage (if you’re using a multi-stage build, you might not need to build here)
+# Build Stage
 FROM node:20-bullseye-slim AS builder
-
+ARG APP_DOMAIN
 WORKDIR /usr/src/${APP_DOMAIN}
 
+# Copy directories that are relative to the build context (./backend/V0.2/)
 COPY statics ./statics
 COPY sql ./sql
 
@@ -10,7 +11,7 @@ COPY sql ./sql
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy the already built dist directory (assuming it exists in your context)
+# Copy the already built dist directory (assumes it was created by npm run build)
 COPY dist ./dist
 
 # Final Stage
@@ -26,8 +27,8 @@ RUN apk add --no-cache curl && \
 
 WORKDIR /usr/src/${APP_DOMAIN}
 
-# Copy from builder
-COPY --from=builder --chown=appuser:appgroup /usr/src/${APP_DOMAIN} ./
+# Copy everything from the builder stage
+COPY --from=builder --chown=appuser:appgroup . .
 
 RUN mkdir -p uploads && chown -R appuser:appgroup uploads
 

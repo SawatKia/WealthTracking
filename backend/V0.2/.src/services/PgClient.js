@@ -74,7 +74,6 @@ class PgClient {
 
   // Select appropriate database config based on environment
   initializeDatabaseConfig() {
-    logger.debug(`appConfigs: ${JSON.stringify(appConfigs, null, 2)}`);
     logger.info("Initializing database configuration...");
     let config;
     switch (NODE_ENV) {
