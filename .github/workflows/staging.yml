@@ -33,12 +33,18 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
             echo "the current user: $(whoami)"
             echo "the current directory: $(pwd)"
+
             echo "Navigating to project directory..."
-            cd ~/WealthTracking || exit 1
+              cd ~/WealthTracking || exit 1
+
             echo "Pulling git repo..."
-            git pull origin main --recurse-submodules
+              git pull origin main --recurse-submodules
+
+            echo "chmod .sh files"
+              chmod +x *.sh
+
             echo "Executing deploy script..."
-            ./deploy.sh || exit 1
+              ./deploy.sh || exit 1
             echo "Deployment completed successfully."
           EOF
 
