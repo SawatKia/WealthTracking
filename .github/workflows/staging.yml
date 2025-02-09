@@ -28,21 +28,15 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"
 
       - name: Build and Deploy on Server
-        env:
-          APP_IP: ${{ secrets.STAGING_SERVERS_IP }}
-          APP_PORT: "3000" # Replace with the desired port
         run: |
           echo "Starting build and deployment process on the server..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
             echo "Navigating to project directory..."
             cd ~/WealthTracking || exit 1
 
-            echo "Exporting environment variables..."
-            export APP_IP="${APP_IP}"
-            export APP_PORT="${APP_PORT}"
 
             echo "Executing deploy script..."
-            ./deploy.sh || exit 1
+            ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} 3000|| exit 1
             echo "Deployment completed successfully."
           EOF
 

@@ -9,8 +9,8 @@ sleepWithTimer() {
 }
 
 healthStatus() {
-    ip=${APP_IP:-127.0.0.1}
-    port=${APP_PORT:-3000}
+    ip=$1
+    port=$2 || 3000
     
     echo ">>> Checking server health status on http://${ip}:${port}/health..."
     serverResponse=$(curl -s http://${ip}:${port}/health)
