@@ -72,6 +72,7 @@ start_server() {
     if [ "${PWD##*/}" != "WealthTracking" ]; then
         echo ">>> Please run this script from the WealthTracking directory."
         exit 1
+    fi
     echo ">>> Stopping existing containers..."
     docker compose down
     sleepWithTimer 5
