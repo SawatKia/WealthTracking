@@ -11,17 +11,31 @@ sleepWithTimer() {
 healthStatus() {
     # Use APP_PORT if defined, default to 3000 otherwise.
     port=${APP_PORT:-3000}
-    echo "Checking server health status on port ${port}..."
+    echo ">>> Checking server health status on http://localhost:${port}/health..."
     serverResponse=$(curl -s http://localhost:${port}/health)
-    echo "Server healthy response: $serverResponse"
-    
-    echo "$serverResponse" | grep -q '"status":"healthy"'
+
+    if [ -z "$serverResponse" ]; then
+        echo ">>> No response from /health endpoint, falling back to docker ps check..."
+        # Check if the container "node-container" is running
+        dockerStatus=$(docker ps --filter "name=node-container" --format "{{.Status}}")
+        if [ -n "$dockerStatus" ]; then
+            echo "nodde-container status: $dockerStatus"
+            return 0
+        else
+            echo "Container is not running."
+            return 1
+        fi
+    else
+        echo "Server healthy response: $serverResponse"
+        echo "$serverResponse" | grep -q '"status":"healthy"'
+        return $?
+    fi
 }
 
 restartDockerDaemon() {
     if [[ "$(uname -s)" == "Linux" ]]; then
         echo "Restarting Docker daemon on Ubuntu..."
-        sudo systemctl restart docker
+        systemctl restart docker
         sleepWithTimer 10
     elif [[ "$(uname -s)" == "MINGW64_NT"* ]]; then
         echo "Restarting Docker Desktop on Windows..."
@@ -44,33 +58,41 @@ restartDockerDaemon() {
     echo "Waiting for Docker daemon to be ready..."
     until docker ps > /dev/null 2>&1; do
         echo "Waiting for Docker daemon..."
-        sleep 2
+        sleep 5
+        if ! docker info > /dev/null 2>&1; then
+            echo "Docker daemon is not running"
+            exit 1
+        fi
     done
     echo "Docker daemon is ready."
 }
 
 start_server() {
-    echo "Stopping existing containers..."
+    echo ">>> verifying the current directory..."
+    if [ "${PWD##*/}" != "WealthTracking" ]; then
+        echo ">>> Please run this script from the WealthTracking directory."
+        exit 1
+    echo ">>> Stopping existing containers..."
     docker compose down
     sleepWithTimer 5
 
-    echo "Starting server containers from built image..."
+    echo ">>> Starting server containers from built image..."
     if [ "$NODE_ENV" = "production" ]; then
         docker compose -f docker-compose.prod.yml up -d --no-build
     else
         docker compose up -d --no-build
     fi
 
-    echo "Waiting for server to start..."
+    echo ">>> Waiting for server to fully start..."
     sleepWithTimer 10
 
     retry_count=0
     max_retries=5
 
     while ! healthStatus; do
-        echo "Server is not responding."
+        echo ">>> Server is not responding."
         restartDockerDaemon
-        echo "Retrying server start..."
+        echo ">>> Retrying server start..."
         retry_count=$((retry_count + 1))
         if [ $retry_count -ge $max_retries ]; then
             echo "Exceeded maximum retries. Exiting..."
@@ -92,4 +114,5 @@ echo -e "\033[1;36mServer is ready to use!\033[0m"
 if [[ "$(uname -s)" == "Linux" ]]; then
     project_root=$(pwd)
     (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
+    echo ">>> cronjob created."
 fi
