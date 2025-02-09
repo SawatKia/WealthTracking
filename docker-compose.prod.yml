@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NODE_ENV=production
-        - APP_PORT=${APP_PORT}
+        - APP_PORT=${APP_PORT} || 3000
         - APP_DOMAIN=${APP_DOMAIN}
     container_name: ${APP_DOMAIN}_prod
     ports:
