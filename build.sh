@@ -3,6 +3,10 @@ if [ "${PWD##*/}" != "WealthTracking" ]; then
     echo "Please run this script from the WealthTracking directory."
     exit 1
 fi
+if [ !$(npm -v) ]; then
+    echo "npm is not installed."
+    exit 1
+fi
 
 cd backend/V0.2 || exit
 npm install
