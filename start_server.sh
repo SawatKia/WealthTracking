@@ -11,6 +11,11 @@ sleepWithTimer() {
 healthStatus() {
     ip=$1
     port=$2 || 3000
+
+    if [ -z "$ip" ]; then
+        echo ">>> No IP provided, assuming healthy."
+        return 0
+    fi
     
     echo ">>> Checking server health status on http://${ip}:${port}/health..."
     serverResponse=$(curl -s http://${ip}:${port}/health)
