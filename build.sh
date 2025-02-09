@@ -9,9 +9,11 @@ if [ !$(npm -v) ]; then
 fi
 
 cd backend/V0.2 || exit
+echo "Installing dependencies..."
 npm install
 
 # Build the application using Babel
+echo "Building the application..."
 npm run build
 
 # Change back to root directory
