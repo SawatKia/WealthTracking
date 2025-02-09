@@ -3,7 +3,6 @@ FROM node:20-alpine
 
 # Set up the environment variables
 ARG APP_DOMAIN
-ARG APP_PORT = 3000
 ARG NODE_ENV
 
 # Create a user and group to avoid running as root
@@ -30,11 +29,11 @@ COPY dist ./dist
 USER appuser
 
 # Expose the application port
-EXPOSE ${APP_PORT}
+EXPOSE 3000
 
 # Set up a health check for the server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${APP_PORT}/health || exit 1
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the application
 CMD ["npm", "run", "start"]
