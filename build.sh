@@ -20,4 +20,7 @@ npm run build
 cd ../../
 
 echo ">>> Building Docker images..."
+set -a
+source ./.env
+set +a
 docker compose -f docker-compose.prod.yml build --no-cache
