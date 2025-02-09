@@ -1,42 +1,40 @@
-# Build Stage
-FROM node:20-bullseye-slim AS builder
+# Use node:20-alpine as the base image
+FROM node:20-alpine
+
+# Set up the environment variables
 ARG APP_DOMAIN
+ARG APP_PORT
+ARG NODE_ENV
+
+# Create a user and group to avoid running as root
+RUN apk add --no-cache curl && addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Set the working directory inside the container
 WORKDIR /usr/src/${APP_DOMAIN}
 
-# Copy directories that are relative to the build context (./backend/V0.2/)
-COPY statics ./statics
-COPY sql ./sql
+# Set up uploads directory
+RUN mkdir -p uploads && chown -R appuser:appgroup uploads
 
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy the already built dist directory (assumes it was created by npm run build)
+# Copy the required directories
+COPY statics ./statics
+COPY sql ./sql
+
+# Copy the already built dist directory (if exists)
 COPY dist ./dist
 
-# Final Stage
-FROM node:20-alpine
-
-ARG APP_DOMAIN
-ARG APP_PORT
-ENV NODE_ENV=production
-
-RUN apk add --no-cache curl && \
-    addgroup -S appgroup && \
-    adduser -S appuser -G appgroup
-
-WORKDIR /usr/src/${APP_DOMAIN}
-
-# Copy everything from the builder stage
-COPY --from=builder --chown=appuser:appgroup . .
-
-RUN mkdir -p uploads && chown -R appuser:appgroup uploads
-
+# Change to non-root user for security reasons
 USER appuser
 
+# Expose the application port
 EXPOSE ${APP_PORT}
 
+# Set up a health check for the server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${APP_PORT}/health || exit 1
 
+# Start the application
 CMD ["npm", "run", "start"]
