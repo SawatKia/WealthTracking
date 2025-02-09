@@ -43,16 +43,25 @@ jobs:
       - name: Notify Discord
         uses: nobrayner/discord-webhook@v1
         with:
-          github-token: ${{ secrets.GUTHIB_TOKENS }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "Bob"
+          username: "🚀 Workflow Notifier"
           avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
-          title: "Deployment to ${{ github.workflow }} Server: ${{ github.action_status }}"
-          description: "Automated deployment to the ${{ github.workflow }} server triggered by ${{ github.event_name }}. Status: ${{ github.action_status }}. Please verify the deployment and report any issues to the Dev team."
+          title: "✨ Deployment Update for Workflow: **${{ github.workflow }}**"
+          description: |
+            🔔 **Event**: `${{ github.event_name }}`
+            📦 **Job**: `${{ github.job }}`
+            🔄 **Status**: `${{ job.status }}`
+            
+            Deployment to the **${{ github.workflow }}** server was triggered by `${{ github.event_name }}`.  
+            🛠️ **Action Status**: `${{ job.status }}`.  
+
+            Please verify the deployment and report any issues to the Dev team! 💬
           include-details: "true"
-          color-success: "#1ced11"
-          color-failure: "#eb4034"
-          color-cancelled: "#edcc11"
+          color-success: "#28a745"      # Green for success
+          color-failure: "#d73a49"     # Red for failure
+          color-cancelled: "#ffc107"   # Yellow for cancelled
+
 
       - name: Delete SSH Key
         run: |
