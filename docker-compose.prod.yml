@@ -1,6 +1,8 @@
 version: "3.8"
 services:
   node-server:
+    env_file: 
+      - ./.env
     build:
       context: ./backend/V0.2/
       dockerfile: Dockerfile.prod
@@ -9,8 +11,6 @@ services:
         - APP_PORT=${APP_PORT}
         - APP_DOMAIN=${APP_DOMAIN}
     container_name: ${APP_DOMAIN}_prod
-    env_file: 
-      - ./.env
     ports:
       - "0.0.0.0:${APP_PORT}:${APP_PORT}"
     volumes:
