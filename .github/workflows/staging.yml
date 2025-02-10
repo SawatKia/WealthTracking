@@ -9,7 +9,7 @@ on:
 
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true && github.actor == 'SawatKia'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -46,14 +46,15 @@ jobs:
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
           username: "🚀 Workflow Notifier"
           avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
-          title: "✨ Deployment Update for Workflow: **${{ github.workflow }}**"
+          title: "✨ **${{ github.workflow }}** ran **${{ job.status}}**"
           description: |
-            🔔 **Event**: `${{ github.event_name }}`
-            📦 **Job**: `${{ github.job }}`
-            🔄 **Status**: `${{ job.status }}`
+            🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
+            🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
+            📦 **Job** ran: `${{ github.job }}`
+            🔄 running **Status**: `${{ job.status }}`
 
-            Deployment to the **${{ github.workflow }}** server was triggered by `${{ github.event_name }}`.  
-            🛠️ **Action Status**: `${{ job.status }}`.  
+            **${{ github.workflow }}** was triggered by `${{ github.event_name }}`  
+            🛠️ **Action Status**: `${{ job.status }}`  
 
             Please verify the deployment and report any issues to the Dev team! 💬
           include-details: "true"
