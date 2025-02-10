@@ -52,14 +52,14 @@ class Logger {
         const testLogDir = path.join(
             __dirname,
             '../../logs',
-            NODE_ENV === 'test' ? `test-run-${process.env.JEST_WORKER_ID || Date.now()}` : ''
+            NODE_ENV === 'test' ? `test-run-${process.env.JEST_WORKER_ID || Date.now()}` : 'production-' + Date.now()
         );
 
         const commonRotateOptions = {
             dirname: testLogDir,
-            datePattern: NODE_ENV === 'test' ? 'YYYY-MM-DD-HH' : 'YYYY-MM-DD', // Adds hours and minutes to the filename
-            zippedArchive: NODE_ENV === 'production' ? true : false,             // Compress old log files
-            maxFiles: NODE_ENV === 'test' ? '7d' : '14d',                  // Retain logs for 14 days
+            datePattern: NODE_ENV === 'test' ? 'YYYY-MM-DD-HH' : 'YYYY-MM-DD',      // Adds hours and minutes to the filename
+            zippedArchive: NODE_ENV === 'production' ? true : false,                // Compress old log files
+            maxFiles: NODE_ENV === 'test' ? '7d' : '14d',                           // Retain logs for 14 days
         };
 
         const transports = [];
@@ -71,12 +71,12 @@ class Logger {
                 symlinkName: 'current-combined.log',
             }));
         }
-        // add console transport for error and info levels for all environments
+        // write  logs to console for any log levels and environments
         transports.push(new winston.transports.Console({
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
+                    return `${info.timestamp} [${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
                 })
             )
         }));
@@ -93,7 +93,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // global log format, if not specified
+                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // default (global) log format, if not specified
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },
