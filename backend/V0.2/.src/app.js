@@ -17,6 +17,9 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
+// Health check endpoint (before other routes)
+app.get("/health", mdw.healthCheck);
+
 // Apply CORS before other middleware
 app.use(mdw.corsMiddleware);
 

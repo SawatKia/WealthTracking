@@ -403,6 +403,7 @@ class Middlewares {
       securityHeaders = this.logResponse(req, status_code, message, data, headers);
     } else {
       logger.warn('Response not formatted in req.formattedResponse');
+      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
       logger.warn('Sending an empty response');
       res.send();
       return;
