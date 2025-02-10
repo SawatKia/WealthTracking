@@ -34,7 +34,6 @@ jobs:
             echo "Navigating to project directory..."
             cd ~/WealthTracking || exit 1
 
-
             echo "Executing deploy script..."
             ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} 3000|| exit 1
             echo "Deployment completed successfully."
@@ -52,16 +51,15 @@ jobs:
             🔔 **Event**: `${{ github.event_name }}`
             📦 **Job**: `${{ github.job }}`
             🔄 **Status**: `${{ job.status }}`
-            
+
             Deployment to the **${{ github.workflow }}** server was triggered by `${{ github.event_name }}`.  
             🛠️ **Action Status**: `${{ job.status }}`.  
 
             Please verify the deployment and report any issues to the Dev team! 💬
           include-details: "true"
-          color-success: "#28a745"      # Green for success
-          color-failure: "#d73a49"     # Red for failure
-          color-cancelled: "#ffc107"   # Yellow for cancelled
-
+          color-success: "#28a745" # Green for success
+          color-failure: "#d73a49" # Red for failure
+          color-cancelled: "#ffc107" # Yellow for cancelled
 
       - name: Delete SSH Key
         run: |
