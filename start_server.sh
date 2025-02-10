@@ -83,12 +83,8 @@ start_server() {
     docker compose down
     sleepWithTimer 5
 
-    echo ">>> Starting server containers from built image..."
-    if [ "$NODE_ENV" = "production" ]; then
-        docker compose -f docker-compose.prod.yml up -d --no-build
-    else
-        docker compose up -d --no-build
-    fi
+    echo ">>> Starting Production server containers from built image..."
+    docker compose -f docker-compose.prod.yml up -d --no-build
 
     echo ">>> Waiting for server to fully start..."
     sleepWithTimer 10
