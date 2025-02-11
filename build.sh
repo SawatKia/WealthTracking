@@ -1,25 +1,25 @@
 #!/bin/bash
 if [ "${PWD##*/}" != "WealthTracking" ]; then
-    echo ">>> Please run this script from the WealthTracking directory."
+    echo "\033[1;31m>>> Please run this script from the WealthTracking directory.\033[0m"
     exit 1
 fi
 
 if ! command -v npm &> /dev/null; then
-    echo ">>> npm is not installed."
+    echo "\033[1;34m>>>\033[0m npm is not installed."
     exit 1
 fi
 
 cd backend/V0.2 || exit
-echo ">>> Installing dependencies..."
+echo "\033[1;34m>>>\033[0m Installing dependencies..."
 npm ci
 
-echo ">>> Building the application using Babel..."
+echo "\033[1;34m>>>\033[0m Building the application using Babel..."
 npm run build
 
 # Change back to the WealthTracking root directory
 cd ../../
 
-echo ">>> Building Docker images..."
+echo "\033[1;34m>>>\033[0m Building Docker images..."
 set -a
 source ./.env
 set +a
