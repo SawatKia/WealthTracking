@@ -229,7 +229,12 @@ class Middlewares {
  */
   requestLogger(req, res, next) {
     logger.info(`entering the routing for ${req.method} ${req.url}`);
-    const { ip, method, path: requestPath, body, headers, query } = req;
+    const method = req.method;
+    const requestPath = req.path;
+    const body = req.body;
+    const headers = req.headers;
+    const query = req.query;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0';
 
     // Prepare the body for logging 
     let logBody;
