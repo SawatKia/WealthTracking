@@ -17,6 +17,8 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
+app.enable('trust proxy');
+
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);
 
