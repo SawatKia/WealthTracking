@@ -9,26 +9,26 @@ sleepWithTimer() {
 }
 
 healthStatus() {
-    ip=$1
-    port=$2 || 3000
+    ip=${1:-localhost}
+    port=${2:-3000}
 
     if [ -z "$ip" ]; then
-        echo ">>> No IP provided, assuming healthy."
+        echo "\033[1;34m>>>\033[0m No IP provided, assuming healthy."
         return 0
     fi
     
-    echo ">>> Checking server health status on http://${ip}:${port}/health..."
+    echo "\033[1;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health..."
     serverResponse=$(curl -s http://${ip}:${port}/health)
 
     if [ -z "$serverResponse" ]; then
-        echo ">>> No response from /health endpoint, falling back to docker ps check..."
+        echo "\033[1;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
         # Check if the container "node-container" is running
         dockerStatus=$(docker ps --filter "name=node-container" --format "{{.Status}}")
         if [ -n "$dockerStatus" ]; then
             echo "nodde-container status: $dockerStatus"
             return 0
         else
-            echo "Container is not running."
+            echo "\033[1;31mContainer is not running.\033[0m"
             return 1
         fi
     else
@@ -40,7 +40,7 @@ healthStatus() {
 
 restartDockerDaemon() {
     if [[ "$(uname -s)" == "Linux" ]]; then
-        echo "Restarting Docker daemon on Ubuntu..."
+        echo "\033[1;31mRestarting Docker daemon on Ubuntu...\033[0m"
         systemctl restart docker
         sleepWithTimer 10
     elif [[ "$(uname -s)" == "MINGW64_NT"* ]]; then
@@ -57,7 +57,7 @@ restartDockerDaemon() {
         echo "Waiting for Docker Desktop to initialize..."
         sleepWithTimer 15
     else
-        echo "Unsupported OS. Cannot restart Docker."
+        echo "\033[1;31mUnsupported OS. Cannot restart Docker.\033[0m"
         exit 1
     fi
 
@@ -74,28 +74,28 @@ restartDockerDaemon() {
 }
 
 start_server() {
-    echo ">>> verifying the current directory..."
+    echo "\033[1;34m>>>\033[0m verifying the current directory..."
     if [ "${PWD##*/}" != "WealthTracking" ]; then
-        echo ">>> Please run this script from the WealthTracking directory."
+        echo "\033[1;34m>>>\033[0m Please run this script from the WealthTracking directory."
         exit 1
     fi
-    echo ">>> Stopping existing containers..."
+    echo "\033[1;34m>>>\033[0m Stopping existing containers..."
     docker compose down
     sleepWithTimer 5
 
-    echo ">>> Starting Production server containers from built image..."
+    echo "\033[1;34m>>>\033[0m Starting Production server containers from built image..."
     docker compose -f docker-compose.prod.yml up -d --no-build
 
-    echo ">>> Waiting for server to fully start..."
+    echo "\033[1;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
 
     retry_count=0
-    max_retries=5
+    max_retries=1
 
     while ! healthStatus; do
-        echo ">>> Server is not responding."
+        echo "\033[1;34m>>>\033[0m Server is not responding."
         restartDockerDaemon
-        echo ">>> Retrying server start..."
+        echo "\033[1;34m>>>\033[0m Retrying server start..."
         retry_count=$((retry_count + 1))
         if [ $retry_count -ge $max_retries ]; then
             echo "Exceeded maximum retries. Exiting..."
@@ -111,11 +111,12 @@ start_server() {
 
 start_server
 echo -e "\a"
-echo -e "\033[1;36mServer is ready to use!\033[0m"
+echo -e "\033[1;36m++++Server is ready to use!++++\033[0m"
 
 # (Optional) Create a cronjob for Ubuntu (staging/production)
 if [[ "$(uname -s)" == "Linux" ]]; then
     project_root=$(pwd)
-    (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
-    echo ">>> cronjob created."
+    # (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
+    (crontab -l 2>/dev/null; echo "1 */1 * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
+    echo "\033[1;34m>>>\033[0m cronjob created."
 fi
