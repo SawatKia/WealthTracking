@@ -452,6 +452,8 @@ class Middlewares {
         .set({ ...securityHeaders, ...(err.headers || {}) })
         .json(response);
       return;
+    } else {
+      next();
     }
   }
 
