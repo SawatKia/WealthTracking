@@ -5,7 +5,7 @@ if [ "${PWD##*/}" != "WealthTracking" ]; then
 fi
 
 if ! command -v npm &> /dev/null; then
-    echo -e "\033[1;34m>>>\033[0m npm is not installed."
+    echo -e "\033[1;31mnpm is not installed.\033[0m"
     exit 1
 fi
 

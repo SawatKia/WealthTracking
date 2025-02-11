@@ -2,7 +2,7 @@
 
 echo -e "\033[1;34m>>>\033[0m verifying the current directory..."
 if [ "${PWD##*/}" != "WealthTracking" ]; then
-  echo -e "Please run this script from the WealthTracking directory."
+  echo -e "\033[1;31mPlease run this script from the WealthTracking directory.\033[0m"
   exit 1
 fi
 echo -e "\033[1;34m>>>\033[0m Pulling git repo..."
@@ -15,7 +15,7 @@ fi
 echo -e "\033[1;34m>>>\033[0m Building source code and Docker image process..."
 ./build.sh
 if [ $? -ne 0 ]; then
-  echo -e "Failed to build source code. Exiting..."
+  echo -e "\033[1;31mFailed to build source code. Exiting...\033[0m"
   exit 1
 fi
 
