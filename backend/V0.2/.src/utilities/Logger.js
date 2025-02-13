@@ -51,8 +51,7 @@ class Logger {
         // Generate unique log directory for test runs
         const testLogDir = path.join(
             __dirname,
-            '../../logs',
-            NODE_ENV === 'test' ? `test-run-${process.env.JEST_WORKER_ID || Date.now()}` : 'production-' + Date.now()
+            '../../logs/'
         );
 
         const commonRotateOptions = {
@@ -63,23 +62,29 @@ class Logger {
         };
 
         const transports = [];
-        if (NODE_ENV != 'development') {
-            // configure transports based on test and production environments
-            transports.push(new DailyRotateFile({
-                ...commonRotateOptions,
-                filename: 'combined-%DATE%.log',
-                symlinkName: 'current-combined.log',
-            }));
-        }
-        // write  logs to console for any log levels and environments
-        transports.push(new winston.transports.Console({
+        const fileTransport = new DailyRotateFile({
+            ...commonRotateOptions,
+            filename: 'combined-%DATE%.log',
+            symlinkName: 'current-combined.log',
+            level: 'debug', // Log debug and above levels to file
+        });
+
+        const consoleTransport = new winston.transports.Console({
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
                     return `${info.timestamp} [${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
                 })
-            )
-        }));
+            ),
+            level: NODE_ENV == 'development' ? 'debug' : 'info', // Log only info and above to console
+        });
+
+        if (NODE_ENV != 'development') {
+            // configure transports based on test and production environments
+            transports.push(fileTransport);
+        }
+        // write  logs to console for any log levels and environments
+        transports.push(consoleTransport);
 
 
         this.logger = winston.createLogger({
