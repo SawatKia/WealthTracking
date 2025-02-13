@@ -376,8 +376,6 @@ const showAppSymbol = () => {
   `);
 };
 
-showAppSymbol();
-
 
 /**
  * Start the Express server
