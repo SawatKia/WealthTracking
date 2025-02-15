@@ -1,8 +1,4 @@
 const express = require('express');
-const swaggerUi = require('swagger-ui-express');
-const fs = require("fs")
-const YAML = require('yaml')
-const path = require('path');
 
 const appConfigs = require('./configs/AppConfigs');
 const Utils = require('./utilities/Utils');
@@ -32,75 +28,17 @@ const debtController = new DebtController();
 const transactionController = new TransactionController();
 const budgetController = new BudgetController();
 
-if (NODE_ENV === 'development' || NODE_ENV === 'test') {
-    logger.info('Starting Swagger documentation setup...');
-    const swaggerPath = path.join(__dirname, './swagger.yaml');
-    const swaggerFile = fs.readFileSync(swaggerPath, 'utf8');
-    const swaggerDocument = YAML.parse(swaggerFile);
-    const swaggerSetup = swaggerUi.setup(swaggerDocument, { explorer: true });
-    router.use('/docs', swaggerUi.serve);
-    router.get('/docs', swaggerSetup);
-    logger.debug('Swagger documentation setup completed');
-}
-
-const allowedMethods = {
-    '/': ['GET'],
-    '/users': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/banks': ['POST', 'GET'],
-    '/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
-    '/debts': ['GET', 'POST', 'PATCH', 'DELETE'],
-    '/debts/:debt_id': ['GET', 'PATCH', 'DELETE'],
-    '/debts/:debt_id/payments': ['GET'],
-    '/slip/quota': ['GET'],
-    '/slip': ['POST'],
-    // '/fi': ['GET'],
-    // '/fi/:fi_code': ['GET'],
-    // '/fis/operating-banks': ['GET'],
-    '/slip/verify': ['POST', 'GET'],
-    '/cache': ['POST'],
-    '/cache/:key': ['GET', 'DELETE'],
-    '/login': ['POST'],
-    '/refresh': ['POST'],
-    '/logout': ['POST'],
-    '/google/login': ['POST'],
-    '/google/callback': ['GET'],
-    '/transactions': ['GET', 'POST'],
-    '/transactions/list/types': ['GET'],
-    '/transactions/summary/monthly': ['GET'],
-    '/transactions/summary/month-expenses': ['GET'],
-    '/transactions/account/:account_number/:fi_code': ['GET'],
-    '/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
-    '/budgets': ['GET', 'POST'],
-    '/budgets/types': ['GET'],
-    '/budgets/history': ['GET'],
-    '/budgets/:expenseType': ['PATCH', 'DELETE'],
-}
-
-if (NODE_ENV != 'production') {
-    allowedMethods['/fis'] = ['GET'];
-    allowedMethods['/fi/:fi_code'] = ['GET'];
-    allowedMethods['/fis/operating-banks'] = ['GET'];
-    allowedMethods['/cache'] = ['GET', 'POST'];
-    allowedMethods['/cache/:key'] = ['GET', 'DELETE'];
-}
-
 router.use((req, res, next) => {
     logger.info(`entering the routing for ${req.method} ${req.url}`);
     next();
 })
-// Global middleware setup
-router.use(async (req, res, next) => {
-    try {
-        // First validate the method
-        await mdw.methodValidator(allowedMethods)(req, res, next);
-    } catch (error) {
-        next(error);
-    }
-});
+
+
 router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
 })
+
 // all routes prefix with /api/v0.2
 // Public routes (no auth required)
 router.post('/login', authController.login);
@@ -184,9 +122,9 @@ router.patch('/budgets/:expenseType', budgetController.updateBudget);
 router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 
 
-router.use(mdw.unknownRouteHandler);
-router.use(mdw.errorHandler);
-router.use(mdw.responseHandler);
+// router.use(mdw.unknownRouteHandler);
+// router.use(mdw.errorHandler);
+// router.use(mdw.responseHandler);
 
 
 module.exports = router;
