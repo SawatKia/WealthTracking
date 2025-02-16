@@ -22,7 +22,7 @@ export interface Transaction {
   sender?: SenderReceiver;
   receiver?: SenderReceiver;
 }
-interface newSenderReceiver {
+export interface newSenderReceiver {
   fi_code: string;
   account_number: string;
 }
