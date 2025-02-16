@@ -20,7 +20,11 @@ const isDev = NODE_ENV === "development";
 logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
 logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
 
-app.enable('trust proxy');
+// trust nginx proxy
+app.set('trust proxy', 1);
+
+// disable Express framework advertisement
+app.disable("x-powered-by");
 
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);
@@ -96,7 +100,7 @@ const allowedMethods = {
   '/api/v0.2/transactions/account/:account_number/:fi_code': ['GET'],
   '/api/v0.2/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
   '/api/v0.2/budgets': ['GET', 'POST'],
-  '/api/v0.2/budgets/types': ['GET'],
+  '/api/v0.2/budget/types': ['GET'],
   '/api/v0.2/budgets/history': ['GET'],
   '/api/v0.2/budgets/:expenseType': ['PATCH', 'DELETE'],
 }
@@ -121,7 +125,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-
 // CORS Error handling middleware
 app.use((err, req, res, next) => {
   logger.error(`Error: ${err.message}`);
@@ -135,7 +138,6 @@ app.use((err, req, res, next) => {
   }
 });
 
-app.disable("x-powered-by");
 
 /**
  * Apply rate limiter in production
@@ -145,7 +147,6 @@ if (!isDev) {
   app.use(mdw.rateLimiter(5 * 1000, 3));
 }
 
-
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);
 
@@ -154,6 +155,7 @@ app.get('/favicon.ico', (req, res, next) => {
   req.fileResponse = faviconPath;
   next();
 });
+
 // API Routes
 // Modify the routes setup:
 try {

@@ -54,7 +54,8 @@ router.use([
     '/fis',
     '/debts',
     '/transactions',
-    '/budgets'
+    '/budgets',
+    '/budget'
 ], async (req, res, next) => {
     try {
         if (req.formattedResponse) {
