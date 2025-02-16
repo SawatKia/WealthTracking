@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter} from "expo-router";
 import api from "./axiosInstance";
-interface SenderReceiver {
+export interface SenderReceiver {
   fi_code: string;
   account_name: string;
   bank_name_en: string;
@@ -10,7 +10,7 @@ interface SenderReceiver {
   account_number: string;
 }
 
-interface Transaction {
+export interface Transaction {
   transaction_id: string;
   transaction_datetime: string;
   category: string;
@@ -22,7 +22,7 @@ interface Transaction {
   sender?: SenderReceiver;
   receiver?: SenderReceiver;
 }
-export interface newSenderReceiver {
+interface newSenderReceiver {
   fi_code: string;
   account_number: string;
 }
@@ -47,76 +47,77 @@ export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
+  
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
   const router = useRouter()
 
-  useEffect(() => {
-    const getAllTransactions = async () => {
-      try {
-        const response = await api.get('/transactions');
-        console.log(response.status)
-        // const { data } = response;
-        const data  = {  "status_code": 200,
-          "message": "Retrieved 2 transactions successfully",
-          "data": {
-            "transactions": [
-              {
-                "transaction_id": "4892c134-9015-4e4e-a75b-77b662050215",
-                "transaction_datetime": "2024-03-15T10:30:00.000Z",
-                "category": "Expense",
-                "type": "Food",
-                "amount": 100,
-                "note": "food hooman",
-                "national_id": "1234567890123",
-                "debt_id": null,
-                "sender": {
-                  "fi_code": "004",
-                  "account_name": "JOHN DOE",
-                  "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
-                  "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
-                  "display_name": "My Savings Account",
-                  "account_number": "1234567890"
-                }
-              },
-              {
-                "transaction_id": "2a8cec26-5be3-44b8-a010-eb0469289353",
-                "transaction_datetime": "2024-05-15T10:30:00.000Z",
-                "category": "Income",
-                "type": "Refund",
-                "amount": 100,
-                "note": "Monthly refund",
-                "national_id": "1234567890123",
-                "debt_id": null,
-                "receiver": {
-                  "fi_code": "004",
-                  "account_name": "JOHN DOE",
-                  "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
-                  "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
-                  "display_name": "My Savings Account",
-                  "account_number": "1234567890"
-                }
-              }
-            ]
-          }
-        }
-        console.log('data gell trans', data)
+  // useEffect(() => {
+    
 
-        if (data.status_code === 200) {
-          setTransactions(data.data.transactions);
-        } else {
-          setError(data.message);
-        }
-      } catch (err) {
-        setError('Failed to load transactions data.');
-      } finally {
-        setLoading(false);
+  //   getAllTransactions();
+  // }, []);
+  const getAllTransactions = async () => {
+    try {
+      const response = await api.get('/transactions');
+      console.log(response.status)
+      const data  = response;
+      // const data  = {  "status_code": 200,
+      //   "message": "Retrieved 2 transactions successfully",
+      //   "data": {
+      //     "transactions": [
+      //       {
+      //         "transaction_id": "4892c134-9015-4e4e-a75b-77b662050215",
+      //         "transaction_datetime": "2024-03-15T10:30:00.000Z",
+      //         "category": "Expense",
+      //         "type": "Food",
+      //         "amount": 100,
+      //         "note": "food hooman",
+      //         "national_id": "1234567890123",
+      //         "debt_id": null,
+      //         "sender": {
+      //           "fi_code": "004",
+      //           "account_name": "JOHN DOE",
+      //           "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
+      //           "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
+      //           "display_name": "My Savings Account",
+      //           "account_number": "1234567890"
+      //         }
+      //       },
+      //       {
+      //         "transaction_id": "2a8cec26-5be3-44b8-a010-eb0469289353",
+      //         "transaction_datetime": "2024-05-15T10:30:00.000Z",
+      //         "category": "Income",
+      //         "type": "Refund",
+      //         "amount": 100,
+      //         "note": "Monthly refund",
+      //         "national_id": "1234567890123",
+      //         "debt_id": null,
+      //         "receiver": {
+      //           "fi_code": "004",
+      //           "account_name": "JOHN DOE",
+      //           "bank_name_en": "KASIKORNBANK PUBLIC COMPANY LIMITED",
+      //           "bank_name_th": "ธนาคารกสิกรไทย จำกัด (มหาชน)",
+      //           "display_name": "My Savings Account",
+      //           "account_number": "1234567890"
+      //         }
+      //       }
+      //     ]
+      //   }
+      // }
+      // console.log( data)
+
+      console.log('data gell trans',data)
+      if (data.status === 200) {
+        return data.data.data.transactions;
+      } else {
+        setError(data.data.statusText);
       }
-    };
-
-    getAllTransactions();
-  }, []);
-
+    } catch (err) {
+      setError('Failed to load transactions data.');
+    } finally {
+      setLoading(false);
+    }
+  };
   // Function to delete a transaction
   const deleteTransaction = async (transactionId: string) => {
     try {
@@ -172,7 +173,7 @@ export const useTransactions = () => {
       try {
         const response = await api.get('/transactions/summary/month-expenses');
         if (response.status === 200) {
-          setMonthlyExpenses(response.data.data.summary);  // Set the monthly expenses data in state
+          return (response.data.data.summary);  // Set the monthly expenses data in state
         } else {
           throw new Error('Failed to fetch monthly expenses');
         }
@@ -182,9 +183,9 @@ export const useTransactions = () => {
     };
   
     // Fetch monthly expense when component mounts
-    useEffect(() => {
-      getMonthlyExpense();
-    }, []);
+    // useEffect(() => {
+    //   getMonthlyExpense();
+    // }, []);
 
     // Fetch monthly expense 12 month
     const getMonthlySummary = async () => {
@@ -199,7 +200,7 @@ export const useTransactions = () => {
     
             return {
               x: monthShort,
-              y: item.summary.income, // Change to `expense` or `balance` as needed
+              y: item.summary.expense, // Change to `expense` or `balance` as needed
             };
           });
     
@@ -215,5 +216,5 @@ export const useTransactions = () => {
     };
     
 
-  return { transactions, loading, error, deleteTransaction, editTransaction, createTransaction, monthlyExpenses, monthlyData, getMonthlySummary };
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary };
 };

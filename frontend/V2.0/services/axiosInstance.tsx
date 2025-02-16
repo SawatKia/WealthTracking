@@ -1,9 +1,9 @@
 // src/api/axiosInstance.ts
 import axios from "axios";
 import { storeToken, getToken, deleteToken } from "./AuthenService"; // Utility functions for token management
-
+// http://161.246.5.86
 const api = axios.create({
-  baseURL: "http://192.168.16.125:3000/api/v0.2", // Replace with your backend URL
+  baseURL: "http://localhost:3000/api/v0.2", // Replace with your backend URL
   headers: {
     "Content-Type": "application/json",
   },

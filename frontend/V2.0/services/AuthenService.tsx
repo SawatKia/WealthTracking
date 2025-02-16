@@ -12,9 +12,10 @@ export const login = async (email: string, password: string) => {
     "password": password,
   }
   try {
-    const response = await api.post('/login?platform=mobile', requestData);
+    // const response = await api.post('/login?platform=mobile', requestData);
     // console.log('login',response.data.data.tokens.access_token)
-    const token = response.data.data.tokens.access_token
+    // const token = response.data.data.tokens.access_token
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMTExMTExIiwiaWF0IjoxNzM4NjgxNTgyLCJuYmYiOjE3Mzg2ODE1ODIsImV4cCI6MTczODc2Nzk4MiwiaXNzIjoiV2VhbHRoVHJhY2sifQ.TdvJPp2DdQeT6He1p3_F-8j2Y0djWVQAYtySouzjMo4"
     if (token) {
       await storeToken(token); // Store the token securely
       return true;
@@ -63,8 +64,14 @@ export const getCredentials = async () => {
 
 export const clearCredentials = async () => {
   try {
-    await SecureStore.deleteItemAsync('rememberedEmail');
-    await SecureStore.deleteItemAsync('rememberedPassword');
+    if (Platform.OS === 'web') {
+ // Store token in browser storage
+    }
+    else{
+
+      await SecureStore.deleteItemAsync('rememberedPassword');
+      await SecureStore.deleteItemAsync('rememberedEmail');
+    }
   } catch (error) {
     console.error('Error clearing credentials:', error);
   }
@@ -74,17 +81,29 @@ export const clearCredentials = async () => {
 const TOKEN_KEY = 'authToken';
 
 export const storeToken = async (token: string) => {
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
+  if (Platform.OS === 'web') {
+    localStorage.setItem(TOKEN_KEY, token); // Store token in browser storage
+  } else {
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+  }
 };
 
 // Retrieve Token
 export const getToken = async (): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(TOKEN_KEY); // Get token from browser storage
+  } else {
   return await SecureStore.getItemAsync(TOKEN_KEY);
+  }
 };
 
 // Delete Token
 export const deleteToken = async () => {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(TOKEN_KEY);
+  } else {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
+  }
 };
 
 

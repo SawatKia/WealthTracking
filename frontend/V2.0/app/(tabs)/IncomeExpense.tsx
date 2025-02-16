@@ -54,6 +54,7 @@ const accounts = [
       {/* <GestureHandlerRootView style={styles.accountContainer}>
       </GestureHandlerRootView> */}
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
+      
       <TransactionCard selected = {selectedType}/>
  
       {/* Floating Button */}
@@ -75,6 +76,7 @@ const accounts = [
             style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
             onPress={() => {
               setAddshowAddPopup(false);
+              router.push('/UploadSlip')
               console.log('Navigate to Page 2');
   
               // Add your navigation logic here

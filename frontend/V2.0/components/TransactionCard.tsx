@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal,FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import IconMap from "../constants/IconMap";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
-import { useTransactions } from '../services/TransactionService';
+import { useTransactions, Transaction } from '../services/TransactionService';
 
 interface TransactionCardProps {
   selected: "Income" | "Expense" | "Transfer" | "All";
@@ -17,11 +17,26 @@ const colorMap: Record<string, string> = {
 };
 
 export default function TransactionCard({selected }: TransactionCardProps) {
-  const { transactions, loading, error, deleteTransaction } = useTransactions();
+  const { getAllTransactions, loading, error, deleteTransaction } = useTransactions();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
   // const [selectedType, setSelectedType] = useState<string>('All');
   // const [isExpanded, setIsExpanded] = useState(false);
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const data = await getAllTransactions();
+        console.log(data)
+        setTransactions(data ?? []);
+      }
+      catch(err){
+        console.log(err)
+      }
+    };
 
+    fetchTransactions();
+  }, []);
   const filteredTransactions = transactions.filter((transaction) => {
     if (selected === 'All') {
       return true; // Show all transactions
@@ -45,7 +60,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
     }
 
   return (
-    <View>
+    // <View>
       <FlatList
       
         data={filteredTransactions}
@@ -157,7 +172,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
         </View>
         )}
       />
-    </View>
+
   );
 }
 

@@ -4,18 +4,29 @@ import { VictoryPie, VictoryTheme, VictoryLabel } from "victory-native";
 import { useTransactions } from "../services/TransactionService";
 
 const ReportByCategory = () => {
-  const { monthlyExpenses, loading, error } = useTransactions();
+  const { getMonthlyExpense, loading, error } = useTransactions();
   const [chartData, setChartData] = useState<any[]>([]);
+  // const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
 
-  useEffect(() => {
-    if (monthlyExpenses) {
-      const data = monthlyExpenses.map((expense: any) => ({
-        x: expense.type,
-        y: expense.totalAmount,
-      }));
-      setChartData(data);
-    }
-  }, [monthlyExpenses]);
+    useEffect(() => {
+      const fetchMonthlyExpense= async () => {
+        try {
+          const data = await getMonthlyExpense();
+          if (data) {
+            const monthlyExpenses = data.map((expense: any) => ({
+              x: expense.type,
+              y: expense.totalAmount,
+            }));
+            setChartData(monthlyExpenses);
+          }
+        }
+        catch(err){
+          console.log(err)
+        }
+      };
+  
+      fetchMonthlyExpense();
+    }, []);
 
   // Log after state update to ensure it's up-to-date
   // useEffect(() => {
