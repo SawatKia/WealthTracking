@@ -375,6 +375,122 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION update_budget_spending()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Handle INSERT: if the new transaction is an expense, add its amount to the matching budget.
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.category = 'Expense' THEN
+            PERFORM 1 FROM budgets
+             WHERE national_id = NEW.national_id
+               AND expense_type = NEW.type
+               AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+            IF FOUND THEN
+                UPDATE budgets
+                SET current_spending = current_spending + NEW.amount
+                WHERE national_id = NEW.national_id
+                  AND expense_type = NEW.type
+                  AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+            END IF;
+        END IF;
+
+    -- Handle UPDATE: adjust budgets based on any changes between the old and new transaction.
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- Case 1: Both old and new transactions are expenses.
+        IF OLD.category = 'Expense' AND NEW.category = 'Expense' THEN
+            -- If they belong to the same budget (same expense type and month), adjust by the difference.
+            IF (OLD.type = NEW.type)
+               AND (DATE_TRUNC('month', OLD.transaction_datetime) = DATE_TRUNC('month', NEW.transaction_datetime)) THEN
+                PERFORM 1 FROM budgets
+                 WHERE national_id = NEW.national_id
+                   AND expense_type = NEW.type
+                   AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+                IF FOUND THEN
+                    UPDATE budgets
+                    SET current_spending = current_spending + (NEW.amount - OLD.amount)
+                    WHERE national_id = NEW.national_id
+                      AND expense_type = NEW.type
+                      AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+                END IF;
+            ELSE
+                -- If the budget category or month has changed, deduct the old amount...
+                PERFORM 1 FROM budgets
+                 WHERE national_id = OLD.national_id
+                   AND expense_type = OLD.type
+                   AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+                IF FOUND THEN
+                    UPDATE budgets
+                    SET current_spending = current_spending - OLD.amount
+                    WHERE national_id = OLD.national_id
+                      AND expense_type = OLD.type
+                      AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+                END IF;
+                -- ...and add the new amount to the new budget.
+                PERFORM 1 FROM budgets
+                 WHERE national_id = NEW.national_id
+                   AND expense_type = NEW.type
+                   AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+                IF FOUND THEN
+                    UPDATE budgets
+                    SET current_spending = current_spending + NEW.amount
+                    WHERE national_id = NEW.national_id
+                      AND expense_type = NEW.type
+                      AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+                END IF;
+            END IF;
+
+        -- Case 2: Transaction changed from expense to a non-expense.
+        ELSIF OLD.category = 'Expense' AND NEW.category <> 'Expense' THEN
+            PERFORM 1 FROM budgets
+             WHERE national_id = OLD.national_id
+               AND expense_type = OLD.type
+               AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+            IF FOUND THEN
+                UPDATE budgets
+                SET current_spending = current_spending - OLD.amount
+                WHERE national_id = OLD.national_id
+                  AND expense_type = OLD.type
+                  AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+            END IF;
+
+        -- Case 3: Transaction changed from a non-expense to an expense.
+        ELSIF OLD.category <> 'Expense' AND NEW.category = 'Expense' THEN
+            PERFORM 1 FROM budgets
+             WHERE national_id = NEW.national_id
+               AND expense_type = NEW.type
+               AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+            IF FOUND THEN
+                UPDATE budgets
+                SET current_spending = current_spending + NEW.amount
+                WHERE national_id = NEW.national_id
+                  AND expense_type = NEW.type
+                  AND month = DATE_TRUNC('month', NEW.transaction_datetime);
+            END IF;
+        END IF;
+
+    -- Handle DELETE: if the deleted transaction was an expense, deduct its amount from the budget.
+    ELSIF TG_OP = 'DELETE' THEN
+        IF OLD.category = 'Expense' THEN
+            PERFORM 1 FROM budgets
+             WHERE national_id = OLD.national_id
+               AND expense_type = OLD.type
+               AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+            IF FOUND THEN
+                UPDATE budgets
+                SET current_spending = current_spending - OLD.amount
+                WHERE national_id = OLD.national_id
+                  AND expense_type = OLD.type
+                  AND month = DATE_TRUNC('month', OLD.transaction_datetime);
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
 -- Create triggers in the correct order
 CREATE OR REPLACE TRIGGER after_transaction_relations
 AFTER INSERT OR UPDATE ON transactions
@@ -387,10 +503,10 @@ FOR EACH ROW
 EXECUTE FUNCTION update_bank_account_balance();
 
 CREATE OR REPLACE TRIGGER after_debt_payment
-AFTER INSERT OR UPDATE ON transactions
-FOR EACH ROW
-WHEN (NEW.type = 'Debt Payment')
-EXECUTE FUNCTION update_debt_payment();
+    AFTER INSERT OR UPDATE ON transactions
+    FOR EACH ROW
+    WHEN (NEW.type = 'Debt Payment')
+    EXECUTE FUNCTION update_debt_payment();
 
 -- Create budget timestamp trigger
 CREATE OR REPLACE TRIGGER trigger_update_budgets_timestamp
@@ -403,3 +519,8 @@ CREATE OR REPLACE TRIGGER after_transaction_budget_update
     AFTER INSERT OR UPDATE OR DELETE ON transactions
     FOR EACH ROW
     EXECUTE FUNCTION update_budget_spending(); 
+
+CREATE OR REPLACE TRIGGER trigger_update_budget_spending
+    AFTER INSERT OR UPDATE OR DELETE ON transactions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_budget_spending();
