@@ -181,7 +181,22 @@ class TransactionController extends BaseController {
 
             // Validate request body and convert types
             const validatedData = await super.verifyField(req.body, requiredFields, this.transactionModel);
+
+            // remove empty or null fields
+            Object.keys(validatedData).forEach(key => {
+                if (typeof validatedData[key] === 'string') {
+                    validatedData[key] = validatedData[key].trim();
+                }
+                if ([null, '', undefined, 'null', 'undefined'].includes(validatedData[key])) {
+                    logger.debug(`Removing empty or null field: ${key}`);
+                    delete validatedData[key];
+                }
+            });
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
+            if (validatedData.transaction_datetime > new Date()) {
+                logger.error('Transaction datetime cannot be in the future');
+                throw MyAppErrors.badRequest('Transaction datetime cannot be in the future');
+            }
 
             // Override type to "Debt Payment" if debt_id is specified
             if (uuidValidateV4(validatedData.debt_id)) {
@@ -406,12 +421,25 @@ class TransactionController extends BaseController {
             let updateData = {};
             const allowedFields = ['transaction_datetime', 'category', 'type', 'amount', 'note', 'sender', 'receiver'];
 
+            logger.debug(`received request body: ${JSON.stringify(req.body, null, 2)}`);
+            req.body = Object.entries(req.body).reduce((acc, [key, value]) => {
+                acc[key.toLowerCase()] = value;
+                return acc;
+            }, {});
+
+            logger.debug(`allowed request body: ${JSON.stringify(req.body, null, 2)}`);
+
             for (const field of allowedFields) {
-                if (req.body[field] !== undefined && req.body[field] !== existingTransaction[field]) {
-                    logger.debug(`field: ${field} add to updateData, since old value > new value: ${existingTransaction[field]} > ${req.body[field]}`);
-                    updateData[field] = req.body[field];
+                if (req.body[field] !== undefined) {
+                    logger.debug(`checking if field: \x1b[1;96m${field}\x1b[0m should be added to updateData`);
+                    const oldValue = existingTransaction[field] || null;
+                    if (JSON.stringify(req.body[field]) !== JSON.stringify(oldValue)) {
+                        logger.debug(`field: ${field} add to updateData, since old value !== new value: ${oldValue} !== ${req.body[field]}`);
+                        updateData[field] = req.body[field];
+                    }
                 }
             }
+
 
             // If category is modified, type must also be modified
             if (updateData.category && !updateData.type) {
