@@ -282,12 +282,16 @@ class BankAccountController extends BaseController {
                 throw MyAppErrors.badRequest('At least one field is required to update bank account information');
             }
 
+            convertedUpdateData.account_number = await this.BankAccountUtils.normalizeAccountNumber(convertedUpdateData.account_number);
+
             // 8. Perform update
             const primaryKeys = {
                 national_id: currentUser.national_id,
                 account_number: convertedUpdateData.account_number,
                 fi_code: convertedUpdateData.fi_code
             };
+            logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
+            logger.debug(`updateData: ${JSON.stringify(convertedUpdateData)}`);
 
             // Remove keys that are part of primary key from update data
             delete convertedUpdateData.account_number;

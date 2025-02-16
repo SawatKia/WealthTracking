@@ -9,7 +9,7 @@ on:
 
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && github.event.pull_request.merged_by.name == github.actor
     runs-on: ubuntu-latest
 
     steps:
@@ -28,41 +28,75 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"
 
       - name: Build and Deploy on Server
+        id: deploy
+        continue-on-error: true
         run: |
+          set -o pipefail
           echo "Starting build and deployment process on the server..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
+          # Capture output (both stdout and stderr) in a variable
+          output=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
             echo "Navigating to project directory..."
-            cd ~/WealthTracking || exit 1
-
+            cd ~/WealthTracking || { echo "Failed to navigate to project directory"; exit 1; }
+            
             echo "Executing deploy script..."
-            ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} 3000|| exit 1
+            ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} 3000 || { echo "Deployment script failed"; exit 1; }
+            
             echo "Deployment completed successfully."
           EOF
+          2>&1)
+          exit_code=$?
+          echo "$output"
+          if [ $exit_code -ne 0 ]; then
+            echo "reason=$output" >> $GITHUB_ENV
+            exit $exit_code
+          fi
 
-      - name: Notify Discord
+      - name: Notify Discord on Success
+        if: success()
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
           username: "🚀 Workflow Notifier"
           avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
-          title: "✨ **${{ github.workflow }}** ran **${{ job.status}}**"
+          title: "✨ **${{ github.workflow }}** ran **${{ job.status }}**"
           description: |
             🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
             🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
             📦 **Job** ran: `${{ github.job }}`
-            🔄 running **Status**: `${{ job.status }}`
+            🛠️ **Action Status**: `${{ job.status }}`
 
-            **${{ github.workflow }}** was triggered by `${{ github.event_name }}`  
-            🛠️ **Action Status**: `${{ job.status }}`  
+            Deployment completed successfully.
+          include-details: "true"
+          color-success: "#28a745" # Green for success
+          color-failure: "#d73a49" # Red for failure
+          color-cancelled: "#ffc107" # Yellow for cancelled
 
-            Please verify the deployment and report any issues to the Dev team! 💬
+      - name: Notify Discord on Failure
+        if: failure()
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "🚀 Workflow Notifier"
+          avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
+          title: "❌ **${{ github.workflow }}** failed"
+          description: |
+            🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
+            🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
+            📦 **Job** ran: `${{ github.job }}`
+            ❌ **Action Status**: `${{ job.status }}`
+
+            **Failure Reason:** ${{ env.reason }}
+
+            Please check the logs for more details.
           include-details: "true"
           color-success: "#28a745" # Green for success
           color-failure: "#d73a49" # Red for failure
           color-cancelled: "#ffc107" # Yellow for cancelled
 
       - name: Delete SSH Key
+        if: always()
         run: |
           echo "Cleaning up SSH key..."
           rm -f ~/.ssh/id_rsa

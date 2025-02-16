@@ -376,8 +376,6 @@ const showAppSymbol = () => {
   `);
 };
 
-showAppSymbol();
-
 
 /**
  * Start the Express server
@@ -387,16 +385,18 @@ const startExpressServer = () => {
     const server = app.app.listen(PORT, () => {
       const endTime = Date.now();
       const timeTaken = endTime - app.startTime;
+      logger.info("start express server...");
+
       showAppSymbol();
 
 
-      logger.debug('┌──────────────────────────────────────────┐');
-      logger.debug('│       Server started successfully        │');
-      logger.debug('├──────────────────────────────────────────┤');
-      logger.debug(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
-      logger.debug(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
-      logger.debug(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
-      logger.debug('└──────────────────────────────────────────┘');
+      logger.info('┌──────────────────────────────────────────┐');
+      logger.info('│       Server started successfully        │');
+      logger.info('├──────────────────────────────────────────┤');
+      logger.info(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
+      logger.info(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
+      logger.info(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
+      logger.info('└──────────────────────────────────────────┘');
       logger.info(`try sending a request to 🔗  \x1b[38;5;51mhttp://localhost:${PORT}/health\x1b[0m to verify server is running`);
       resolve(server);
     });
@@ -441,6 +441,7 @@ const startServer = async () => {
         // Continue server startup even if mock data fails
       }
     }
+
 
     await startExpressServer();
   } catch (error) {

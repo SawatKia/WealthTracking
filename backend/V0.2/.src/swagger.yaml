@@ -2085,6 +2085,13 @@ paths:
       security:
         - cookieAuth: []
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: expense_type
+          required: true
+          schema:
+            type: string
+          description: Type of expense to update budget for
       requestBody:
         required: true
         content:

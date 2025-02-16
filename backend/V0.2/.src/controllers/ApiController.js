@@ -492,6 +492,13 @@ class ApiController {
 
         // Prepare transaction data
         const transactionData = await this._prepareTransactionData(result.data, transactionCategory, transactionType, req);
+        if (transactionData.category === "Expense") {
+          logger.warn("delete receiver field since it is unnecessary fields");
+          delete transactionData.receiver;
+        } else if (transactionData.category === "Income") {
+          logger.warn("delete sender field since it is unnecessary fields");
+          delete transactionData.sender;
+        }
         logger.debug(`transaction to be create: ${JSON.stringify(transactionData)}`);
         const transaction = await this.transactionModel.create(transactionData);
         logger.debug(`transaction created: ${JSON.stringify(transaction)}`);

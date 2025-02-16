@@ -80,7 +80,7 @@ class BudgetController extends BaseController {
             }
             logger.debug(`Budget retrieved: ${JSON.stringify(budget)}`);
 
-            const summary = await this.TransactionModel.getSummaryOnSpecificMonthByType(currentUser.national_id, expenseType);
+            const summary = await this.TransactionModel.getSummaryExpenseOnSpecificMonthByType(currentUser.national_id, expenseType);
             logger.debug(`Raw summary expense by type: ${JSON.stringify(summary)}`);
 
             logger.debug(`budget.current_spending: ${budget.current_spending}`);
