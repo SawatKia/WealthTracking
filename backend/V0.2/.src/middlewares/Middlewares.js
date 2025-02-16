@@ -1,15 +1,18 @@
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const APP_ROOT = '/usr/src/WealthTrack';
 const cors = require('cors');
 
 const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
+
 const AuthUtils = require('../utilities/AuthUtils');
 const { json } = require('express');
-
+const { verifyToken } = AuthUtils;
+const logger = Logger("Middlewares");
+const NODE_ENV = appConfigs.environment;
+const APP_ROOT = '/usr/src/WealthTrack';
 // Custom storage engine that combines memory and disk storage
 class CustomStorage {
   constructor(options) {
@@ -99,9 +102,7 @@ const profilePictureToDiskStorage = multer.diskStorage({
 });
 // const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
-const { verifyToken } = AuthUtils;
-const logger = Logger("Middlewares");
-const NODE_ENV = appConfigs.environment;
+
 
 class Middlewares {
   constructor() {
@@ -372,10 +373,12 @@ class Middlewares {
 
         logger.debug(`Allowed methods: ${JSON.stringify(allowedMethods)}`);
 
+        // Helper function to match dynamic paths
         const matchPath = (incomingPath) => {
           for (const allowedPath in allowedMethods) {
-            const escapedPath = escapeString(allowedPath.replace(/:[^/]+/g, "[^/]+"));
-            const pathRegex = new RegExp(`^${escapedPath}$`);
+            const pathRegex = new RegExp(
+              `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
+            );
             if (pathRegex.test(incomingPath)) {
               return allowedPath;
             }
@@ -383,6 +386,7 @@ class Middlewares {
           return null;
         };
 
+        // Match incoming path against allowed paths
         const matchedPath = matchPath(path);
 
         logger.debug(`Matched path: ${matchedPath}`);
@@ -432,13 +436,11 @@ class Middlewares {
       limit,
       standardHeaders: true,
       legacyHeaders: false,
+      trustProxy: true,
       message: "Too many requests from this IP, please try again later.",
       handler: (req, res, next, options) => {
         logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-        res.status(options.statusCode).json({
-          status: options.statusCode,
-          message: options.message,
-        });
+        res.status(options.statusCode).json(formatResponse(options.statusCode, options.message, { retryAfter: res.getHeader('Retry-After') }));
       },
     });
   }
@@ -520,6 +522,20 @@ class Middlewares {
     next();
   }
 
+  /**
+   * Middleware to authenticate user requests.
+   *
+   * This middleware checks for an access token in the cookies or Authorization header of the incoming request.
+   * If a valid token is found, it verifies the token and attaches the authenticated user to the request object.
+   * If the token is invalid or missing, it responds with an unauthorized error.
+   *
+   * @param {Object} req - The request object, containing cookies and headers.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function in the stack.
+   *
+   * @throws {UnauthorizedError} - If the access token is invalid or not provided.
+   */
+
   authMiddleware(req, res, next) {
     logger.info("Authenticating user");
 
@@ -536,6 +552,7 @@ class Middlewares {
         next();
       } catch (err) {
         logger.warn('Invalid access token');
+        logger.debug(`error: ${err}`);
         next(MyAppErrors.unauthorized(
           AuthUtils.authenticationError.message,
           null,
@@ -614,6 +631,8 @@ class Middlewares {
 
     const formatObjectEntries = (obj, lengthLimit = 50) => {
       if (typeof obj !== 'object' || obj === null) return '';
+
+      //NOTE - improve to log nested object in the array
       return Object.entries(obj).map(([key, value]) => {
         let displayValue = value && String(value).length > lengthLimit
           ? `${String(value).substring(0, lengthLimit)}... [truncated]`
@@ -633,12 +652,12 @@ class Middlewares {
       File Response: ${fileResponse || 'None'}
       Message: ${message ? message : 'Not specified'}
       Data:
-          ${data ? formatObjectEntries(data) : 'Not specified'}
+          ${Array.isArray(data) ? JSON.stringify(data) : formatObjectEntries(data || { "None": "None" })}
     `;
 
-    const endingMessage = "=".repeat(5) + "End of response: " + `${req.method} ${req.path} => ${status_code} => ${req.ip}` + "=".repeat(5);
+    const endingMessage = "=".repeat(5) + ` End of response: ${req.method} ${req.path} => ${status_code} => ${req.ip} ` + "=".repeat(5);
 
-    logger[isError ? 'error' : 'info'](responseLogMessage + endingMessage);
+    logger[isError ? 'error' : 'info'](responseLogMessage + '\n' + endingMessage);
     return securityHeaders;
   };
 
@@ -736,6 +755,17 @@ class Middlewares {
   }
 
 
+  /**
+   * Format uptime given in seconds to a human readable format.
+   * The format is as follows:
+   * - If days > 0, days are included and the rest is ignored.
+   * - If hours > 0, hours are included and the rest is ignored.
+   * - If minutes > 0, minutes are included and the rest is ignored.
+   * - If seconds > 0, seconds are included.
+   * If no time units are greater than 0, the number of seconds is returned.
+   * @param {number} seconds
+   * @returns {string} A human readable format of the uptime.
+   */
   formatUptime(seconds) {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
