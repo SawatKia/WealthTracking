@@ -62,7 +62,7 @@ class TransactionModel extends BaseModel {
         }),
 
       amount: Joi.number()
-        .precision(2)
+        .precision(2).positive()
         .when(Joi.ref("$operation"), {
           is: "create",
           then: Joi.required(),
@@ -70,6 +70,7 @@ class TransactionModel extends BaseModel {
         })
         .messages({
           "number.base": "Amount must be a number.",
+          "number.positive": "Amount must be a positive number.",
           "number.precision": "Amount must have at most 2 decimal places.",
           "any.required": "Amount is required when creating a transaction.",
         }),
@@ -208,120 +209,179 @@ class TransactionModel extends BaseModel {
   // Add a new method to get the complex join query
   getTransactionWithDetailsQuery() {
     return `
-      WITH transaction_accounts AS (
-        SELECT 
-          t.*,
-          CASE 
-            WHEN t.category = 'Income' THEN 'receiver'
-            WHEN t.category = 'Expense' THEN 'sender'
-            WHEN t.category = 'Transfer' THEN 
-              CASE 
-                WHEN ba.account_number = t.sender_account_number AND ba.fi_code = t.sender_fi_code THEN 'sender'
-                WHEN ba.account_number = t.receiver_account_number AND ba.fi_code = t.receiver_fi_code THEN 'receiver'
-              END
-          END as role,
-          ba.account_number,
-          ba.fi_code,
-          ba.display_name,
-          ba.account_name,
-          fi.name_en as bank_name_en,
-          fi.name_th as bank_name_th
-        FROM transactions t
-        LEFT JOIN bank_accounts ba 
-          ON (t.sender_account_number = ba.account_number AND t.sender_fi_code = ba.fi_code)
-          OR (t.receiver_account_number = ba.account_number AND t.receiver_fi_code = ba.fi_code)
-        LEFT JOIN financial_institutions fi 
-          ON ba.fi_code = fi.fi_code
-        WHERE t.transaction_id = $1
+      WITH transaction_base AS (
+  SELECT
+    t.transaction_id,
+    t.transaction_datetime,
+    t.category,
+    t.type,
+    t.amount,
+    t.note,
+    t.national_id,
+    t.debt_id,
+    t.sender_account_number,
+    t.sender_fi_code,
+    t.receiver_account_number,
+    t.receiver_fi_code,
+    CASE
+      WHEN t.category = 'Income' THEN 'receiver'
+      WHEN t.category = 'Expense' THEN 'sender'
+      WHEN t.category = 'Transfer' THEN
+        CASE
+          WHEN t.sender_account_number IS NOT NULL THEN 'sender'
+          WHEN t.receiver_account_number IS NOT NULL THEN 'receiver'
+        END
+    END AS role
+  FROM transactions t
+  WHERE t.transaction_id = $1
+),
+transaction_sender AS (
+  SELECT
+    tb.transaction_id,
+    tb.transaction_datetime,
+    tb.category,
+    tb.type,
+    tb.amount,
+    tb.note,
+    tb.national_id,
+    tb.debt_id,
+    COALESCE(ba.account_number, tb.sender_account_number) AS sender_account_number,
+    COALESCE(ba.fi_code, tb.sender_fi_code) AS sender_fi_code,
+    ba.display_name AS sender_display_name,
+    ba.account_name AS sender_account_name,
+    fi.name_en AS sender_bank_name_en,
+    fi.name_th AS sender_bank_name_th
+  FROM transaction_base tb
+  LEFT JOIN bank_accounts ba
+    ON tb.sender_account_number = ba.account_number
+    AND tb.sender_fi_code = ba.fi_code
+  LEFT JOIN financial_institutions fi
+    ON ba.fi_code = fi.fi_code
+  WHERE tb.role = 'sender'
+),
+transaction_receiver AS (
+  SELECT
+    tb.transaction_id,
+    tb.transaction_datetime,
+    tb.category,
+    tb.type,
+    tb.amount,
+    tb.note,
+    tb.national_id,
+    tb.debt_id,
+    COALESCE(ba.account_number, tb.receiver_account_number) AS receiver_bank_account_number,
+    COALESCE(ba.fi_code, tb.receiver_fi_code) AS receiver_fi_code,
+    ba.display_name AS receiver_display_name,
+    ba.account_name AS receiver_account_name,
+    fi.name_en AS receiver_bank_name_en,
+    fi.name_th AS receiver_bank_name_th
+  FROM transaction_base tb
+  LEFT JOIN bank_accounts ba
+    ON tb.receiver_account_number = ba.account_number
+    AND tb.receiver_fi_code = ba.fi_code
+  LEFT JOIN financial_institutions fi
+    ON ba.fi_code = fi.fi_code
+  WHERE tb.role = 'receiver'
+)
+SELECT
+  COALESCE(ts.transaction_id, tr.transaction_id) AS transaction_id,
+  COALESCE(ts.transaction_datetime, tr.transaction_datetime) AS transaction_datetime,
+  COALESCE(ts.category, tr.category) AS category,
+  COALESCE(ts.type, tr.type) AS type,
+  COALESCE(ts.amount, tr.amount) AS amount,
+  COALESCE(ts.note, tr.note) AS note,
+  COALESCE(ts.national_id, tr.national_id) AS national_id,
+  COALESCE(ts.debt_id, tr.debt_id) AS debt_id,
+  CASE
+    WHEN COALESCE(ts.category, tr.category) = 'Income' THEN
+      jsonb_build_object(
+        'receiver', jsonb_build_object(
+          'account_number', tr.receiver_bank_account_number,
+          'fi_code', tr.receiver_fi_code,
+          'display_name', tr.receiver_display_name,
+          'account_name', tr.receiver_account_name,
+          'bank_name_en', tr.receiver_bank_name_en,
+          'bank_name_th', tr.receiver_bank_name_th
+        )
       )
-      SELECT 
-        transaction_id,
-        transaction_datetime,
-        category,
-        type,
-        amount,
-        note,
-        national_id,
-        debt_id,
-        CASE 
-          WHEN category = 'Income' THEN
-            jsonb_build_object(
-              'receiver', (
-                SELECT jsonb_build_object(
-                  'account_number', receiver_account_number,
-                  'fi_code', receiver_fi_code,
-                  'display_name', display_name,
-                  'account_name', account_name,
-                  'bank_name_en', bank_name_en,
-                  'bank_name_th', bank_name_th
-                )
-                FROM transaction_accounts 
-                WHERE role = 'receiver'
-                LIMIT 1
-              )
-            )
-          WHEN category = 'Expense' THEN
-            jsonb_build_object(
-              'sender', (
-                SELECT jsonb_build_object(
-                  'account_number', sender_account_number,
-                  'fi_code', sender_fi_code,
-                  'display_name', display_name,
-                  'account_name', account_name,
-                  'bank_name_en', bank_name_en,
-                  'bank_name_th', bank_name_th
-                )
-                FROM transaction_accounts 
-                WHERE role = 'sender'
-                LIMIT 1
-              )
-            )
-          WHEN category = 'Transfer' THEN
-            jsonb_build_object(
-              'sender', (
-                SELECT jsonb_build_object(
-                  'account_number', sender_account_number,
-                  'fi_code', sender_fi_code,
-                  'display_name', display_name,
-                  'account_name', account_name,
-                  'bank_name_en', bank_name_en,
-                  'bank_name_th', bank_name_th
-                )
-                FROM transaction_accounts 
-                WHERE role = 'sender'
-                LIMIT 1
-              ),
-              'receiver', (
-                SELECT jsonb_build_object(
-                  'account_number', receiver_account_number,
-                  'fi_code', receiver_fi_code,
-                  'display_name', display_name,
-                  'account_name', account_name,
-                  'bank_name_en', bank_name_en,
-                  'bank_name_th', bank_name_th
-                )
-                FROM transaction_accounts 
-                WHERE role = 'receiver'
-                LIMIT 1
-              )
-            )
-        END as account_details
-      FROM transaction_accounts
-      GROUP BY 
-        transaction_id,
-        transaction_datetime,
-        category,
-        type,
-        amount,
-        note,
-        national_id,
-        debt_id;
+    WHEN COALESCE(ts.category, tr.category) = 'Expense' THEN
+      jsonb_build_object(
+        'sender', jsonb_build_object(
+          'account_number', ts.sender_account_number,
+          'fi_code', ts.sender_fi_code,
+          'display_name', ts.sender_display_name,
+          'account_name', ts.sender_account_name,
+          'bank_name_en', ts.sender_bank_name_en,
+          'bank_name_th', ts.sender_bank_name_th
+        )
+      )
+    WHEN COALESCE(ts.category, tr.category) = 'Transfer' THEN
+      jsonb_build_object(
+        'sender', jsonb_build_object(
+          'account_number', ts.sender_account_number,
+          'fi_code', ts.sender_fi_code,
+          'display_name', ts.sender_display_name,
+          'account_name', ts.sender_account_name,
+          'bank_name_en', ts.sender_bank_name_en,
+          'bank_name_th', ts.sender_bank_name_th
+        ),
+        'receiver', jsonb_build_object(
+          'account_number', tr.receiver_bank_account_number,
+          'fi_code', tr.receiver_fi_code,
+          'display_name', tr.receiver_display_name,
+          'account_name', tr.receiver_account_name,
+          'bank_name_en', tr.receiver_bank_name_en,
+          'bank_name_th', tr.receiver_bank_name_th
+        )
+      )
+  END AS account_details
+FROM transaction_sender ts
+FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id;
+
     `;
   }
 
   // Add a method to format transaction data
   formatTransactionData(transaction) {
-    const accountDetails = transaction.account_details || {};
+    let sender = null;
+    let receiver = null;
+
+    if (transaction.category === 'Expense') {
+      sender = transaction.account_details?.sender ? {
+        account_number: transaction.account_details.sender.account_number,
+        fi_code: transaction.account_details.sender.fi_code,
+        display_name: transaction.account_details.sender.display_name,
+        account_name: transaction.account_details.sender.account_name,
+        bank_name_en: transaction.account_details.sender.bank_name_en,
+        bank_name_th: transaction.account_details.sender.bank_name_th
+      } : null;
+    } else if (transaction.category === 'Income') {
+      receiver = transaction.account_details?.receiver ? {
+        account_number: transaction.account_details.receiver.account_number,
+        fi_code: transaction.account_details.receiver.fi_code,
+        display_name: transaction.account_details.receiver.display_name,
+        account_name: transaction.account_details.receiver.account_name,
+        bank_name_en: transaction.account_details.receiver.bank_name_en,
+        bank_name_th: transaction.account_details.receiver.bank_name_th
+      } : null;
+    } else if (transaction.category === 'Transfer') {
+      sender = transaction.account_details?.sender ? {
+        account_number: transaction.account_details.sender.account_number,
+        fi_code: transaction.account_details.sender.fi_code,
+        display_name: transaction.account_details.sender.display_name,
+        account_name: transaction.account_details.sender.account_name,
+        bank_name_en: transaction.account_details.sender.bank_name_en,
+        bank_name_th: transaction.account_details.sender.bank_name_th
+      } : null;
+      receiver = transaction.account_details?.receiver ? {
+        account_number: transaction.account_details.receiver.account_number,
+        fi_code: transaction.account_details.receiver.fi_code,
+        display_name: transaction.account_details.receiver.display_name,
+        account_name: transaction.account_details.receiver.account_name,
+        bank_name_en: transaction.account_details.receiver.bank_name_en,
+        bank_name_th: transaction.account_details.receiver.bank_name_th
+      } : null;
+    }
 
     return {
       transaction_id: transaction.transaction_id,
@@ -332,11 +392,18 @@ class TransactionModel extends BaseModel {
       note: transaction.note,
       national_id: transaction.national_id,
       debt_id: transaction.debt_id,
-      ...(accountDetails.sender && { sender: accountDetails.sender }),
-      ...(accountDetails.receiver && { receiver: accountDetails.receiver })
+      ...(sender && { sender }),
+      ...(receiver && { receiver })
     };
   }
 
+  /**
+   * Create a new transaction record
+   * @param {Object} data - Transaction data to be created
+   * @param {Object} [options={ silent: false }] - Options for the create operation
+   * @param {boolean} [options.silent=false] - Whether to log the transaction creation
+   * @returns {Promise<Object>} The created transaction with all joined details
+   */
   async create(data, options = { silent: false }) {
     try {
       logger.info('Creating transaction');
@@ -654,7 +721,7 @@ class TransactionModel extends BaseModel {
         FROM months
         LEFT JOIN monthly_totals mt ON months.month_start = mt.month_start
         GROUP BY months.month_start
-        ORDER BY months.month_start DESC;
+        ORDER BY months.month_start ASC;
       `;
 
       const result = await this.executeQuery(query, params);

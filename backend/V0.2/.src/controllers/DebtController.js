@@ -51,7 +51,6 @@ class DebtController extends BaseController {
             const requiredFields = ['debt_id', 'fi_code', 'national_id', 'debt_name', 'start_date', 'current_installment', 'total_installments', 'loan_principle', 'loan_balance'];
             const validatedDebt = await super.verifyField(debtData, requiredFields, this.DebtModel);
 
-
             const debt = await this.DebtModel.findOne({ debt_id: validatedDebt.debt_id });
             logger.debug(`debt: ${JSON.stringify(debt, null, 2)}`);
             if (debt) {
@@ -101,8 +100,8 @@ class DebtController extends BaseController {
             const debt = await this.DebtModel.findOne({ debt_id: validatedDebtId.debt_id });
             logger.debug(`debt retrieved: ${JSON.stringify(debt, null, 2)}`);
             if (!debt) {
-                logger.info('No debt found');
-                req.formattedResponse = formatResponse(200, 'No debt found', null);
+                logger.info('debt not found');
+                req.formattedResponse = formatResponse(404, 'debt not found', null);
                 return next();
             }
 

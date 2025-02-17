@@ -1,7 +1,11 @@
+const fs = require('fs');
+
 const BaseController = require('./BaseController');
 const TransactionModel = require('../models/TransactionModel');
 const BankAccountModel = require('../models/BankAccountModel');
 const DebtModel = require('../models/DebtModel');
+
+const { BankAccountUtils } = require('../utilities/BankAccountUtils');
 const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const types = require('../../statics/types.json');
@@ -15,6 +19,7 @@ class TransactionController extends BaseController {
         super();
         this.transactionModel = new TransactionModel();
         this.bankAccountModel = new BankAccountModel();
+        this.BankAccountUtils = new BankAccountUtils();
         this.debtModel = new DebtModel();
 
         this.createTransaction = this.createTransaction.bind(this);
@@ -33,43 +38,122 @@ class TransactionController extends BaseController {
 
     async validateBankAccounts(sender, receiver) {
         logger.info('Validating bank accounts');
-        const errors = [];
 
-        if (sender) {
-            const senderAccount = await this.bankAccountModel.get(sender.account_number, sender.fi_code);
-            if (!senderAccount) {
-                logger.error(`Sender bank account not found: ${sender.account_number} ${sender.fi_code}`);
-                errors.push('Sender bank account not found');
+        try {
+            logger.debug(`before normalize sender: ${JSON.stringify(sender)}, receiver: ${JSON.stringify(receiver)}`);
+            // Normalize account numbers
+            if (sender) {
+                const normalizedSenderAccount = await this.BankAccountUtils.normalizeAccountNumber(sender.account_number);
+                sender.account_number = normalizedSenderAccount;
             }
-        }
-        logger.info('Sender bank account is valid');
 
-        if (receiver) {
-            const receiverAccount = await this.bankAccountModel.get(receiver.account_number, receiver.fi_code);
-            if (!receiverAccount) {
-                logger.error(`Receiver bank account not found: ${receiver.account_number} ${receiver.fi_code}`);
-                errors.push('Receiver bank account not found');
+            if (receiver) {
+                const normalizedReceiverAccount = await this.BankAccountUtils.normalizeAccountNumber(receiver.account_number);
+                receiver.account_number = normalizedReceiverAccount;
             }
+
+            logger.debug(`after normalized Sender: ${JSON.stringify(sender)}, Receiver: ${JSON.stringify(receiver)}`);
+
+            // Validate sender account exists
+            if (sender) {
+                const senderAccount = await this.bankAccountModel.get(sender.account_number, sender.fi_code);
+                if (!senderAccount) {
+                    throw new Error('Sender bank account not found');
+                }
+            }
+
+            // Validate receiver account exists
+            if (receiver) {
+                const receiverAccount = await this.bankAccountModel.get(receiver.account_number, receiver.fi_code);
+                if (!receiverAccount) {
+                    throw new Error('Receiver bank account not found');
+                }
+            }
+            logger.debug(`returning sender: ${JSON.stringify(sender)}, and receiver: ${JSON.stringify(receiver)}`);
+
+            return { sender, receiver };
+        } catch (error) {
+            logger.error(`Error validating bank accounts: ${error.message}`);
+            throw error;
         }
-        logger.info('Receiver bank account is valid');
-        return errors;
     }
 
-    async validateBankAccountBalance(accountNumber, fiCode, amount, transactionType) {
+    /**
+     * Validates whether the given account has sufficient balance to execute a transaction.
+     * @param {string} accountNumber - The account number to validate.
+     * @param {string} fiCode - The FI code of the account.
+     * @param {number} amount - The amount of the transaction.
+     * @param {string} transactionCategory - The category of the transaction (Income, Expense, Transfer).
+     * @param {Object} [existingTransaction] - An existing transaction to reverse its effect on the balance before validating.
+     * @returns {boolean} True if the account has sufficient balance, false otherwise.
+     * @throws {MyAppErrors.NotFoundError} If the account is not found.
+     * @throws {MyAppErrors.BadRequestError} If the account does not have sufficient balance.
+     */
+    async validateBankAccountBalance(accountNumber, fiCode, amount, transactionCategory, existingTransaction = null) {
         try {
             logger.info('Validating bank account balance');
-            logger.debug(`Account: ${accountNumber}, FI: ${fiCode}, Amount: ${amount}, Type: ${transactionType}`);
+            // Normalize account number
+            const convertedAccountNumber = await this.BankAccountUtils.normalizeAccountNumber(accountNumber, fiCode);
+            logger.debug(`Account: ${convertedAccountNumber}, FI: ${fiCode}, Amount: ${amount}, Category: ${transactionCategory}`);
 
-            const account = await this.bankAccountModel.get(accountNumber, fiCode);
+            const account = await this.bankAccountModel.get(convertedAccountNumber, fiCode);
             if (!account) {
-                logger.error(`Bank account not found: ${accountNumber} ${fiCode}`);
+                logger.error(`Bank account not found: ${convertedAccountNumber}, FI: ${fiCode}`);
                 throw MyAppErrors.notFound('Bank account not found');
             }
 
-            if (['Expense', 'Transfer'].includes(transactionType) && account.balance < amount) {
-                logger.error(`Insufficient balance. Available: ${account.balance}, Required: ${amount}`);
+            // If updating, “undo” the effect of the old transaction on this account—but only if the old transaction affected the same account.
+            if (existingTransaction) {
+                if (existingTransaction.category === 'Income') {
+                    logger.info('the old transaction is Income, if the new transaction\'s bank account and the old transaction\'s bank account are the same, we need to reverse the effect of the old transaction.');
+                    logger.debug(`old bank_accounts: ${existingTransaction.receiver.account_number}, ${existingTransaction.receiver.fi_code}`);
+                    logger.debug(`new bank_accounts: ${convertedAccountNumber}, ${account.fi_code}`);
+                    // Income originally increased the balance on the receiver account.
+                    if (existingTransaction.receiver &&
+                        existingTransaction.receiver.account_number === convertedAccountNumber &&
+                        existingTransaction.receiver.fi_code === account.fi_code) {
+                        //FIXME - doesn't it need to subtract from the old account instead of new account? >> it's the same bank account
+                        logger.debug(`Reversing income effect: subtracting ${existingTransaction.amount} from account ${convertedAccountNumber}`);
+                        account.balance -= existingTransaction.amount;
+                    }
+                } else if (existingTransaction.category === 'Expense') {
+                    logger.info('the old transaction is Expense, if the new transaction\'s bank account and the old transaction\'s bank account are the same, we need to reverse the effect of the old transaction.');
+                    logger.debug(`old bank_accounts: ${existingTransaction.sender.account_number}, ${existingTransaction.sender.fi_code}`);
+                    logger.debug(`new bank_accounts: ${convertedAccountNumber}, ${account.fi_code}`);
+                    // Expense originally decreased the balance on the sender account.
+                    if (existingTransaction.sender &&
+                        existingTransaction.sender.account_number === convertedAccountNumber &&
+                        existingTransaction.sender.fi_code === account.fi_code) {
+                        logger.debug(`Reversing expense effect: adding ${existingTransaction.amount} back to account ${convertedAccountNumber}`);
+                        account.balance += existingTransaction.amount;
+                    }
+                } else if (existingTransaction.category === 'Transfer') {
+                    logger.info('the old transaction is Transfer, if the new transaction\'s bank account and the old transaction\'s bank account are the same, we need to reverse the effect of the old transaction.');
+                    logger.debug(`old bank_accounts: ${existingTransaction.sender.account_number}, ${existingTransaction.sender.fi_code}`);
+                    logger.debug(`new bank_accounts: ${convertedAccountNumber}, ${account.fi_code}`);
+                    // In a transfer, one account was debited (sender) and one credited (receiver).
+                    if (existingTransaction.sender &&
+                        existingTransaction.sender.account_number === convertedAccountNumber &&
+                        existingTransaction.sender.fi_code === account.fi_code) {
+                        logger.debug(`Reversing transfer effect on sender: adding ${existingTransaction.amount} back to account ${convertedAccountNumber}`);
+                        account.balance += existingTransaction.amount;
+                    } else if (existingTransaction.receiver &&
+                        existingTransaction.receiver.account_number === convertedAccountNumber &&
+                        existingTransaction.receiver.fi_code === account.fi_code) {
+                        logger.debug(`Reversing transfer effect on receiver: subtracting ${existingTransaction.amount} from account ${convertedAccountNumber}`);
+                        account.balance -= existingTransaction.amount;
+                    }
+                }
+            }
+
+            // Now perform the check for sufficient funds.
+            // For Expense and Transfer (for sender), you need sufficient funds.
+            if (['Expense', 'Transfer'].includes(transactionCategory) && account.balance < amount) {
+                const requiredAmount = parseFloat(amount).toFixed(2);
+                const availableAmount = parseFloat(account.balance).toFixed(2);
+                logger.error(`Insufficient balance. Available: ${availableAmount}, Required: ${requiredAmount}`);
                 throw MyAppErrors.badRequest(
-                    `Insufficient balance. Available: ${account.balance}, Required: ${amount}`
+                    `Insufficient balance. Available: ${availableAmount}, Required: ${requiredAmount}`
                 );
             }
 
@@ -90,22 +174,40 @@ class TransactionController extends BaseController {
                 requiredFields.push('receiver');
             } else if (req.body.category === 'Transfer') {
                 requiredFields.push('sender', 'receiver');
-            } else {
-                throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
+            } else if (req.body.category) {
+                throw MyAppErrors.badRequest('Invalid category, must be Expense, Income, or Transfer');
             }
             const user = await super.getCurrentUser(req);
 
             // Validate request body and convert types
             const validatedData = await super.verifyField(req.body, requiredFields, this.transactionModel);
+
+            // remove empty or null fields
+            Object.keys(validatedData).forEach(key => {
+                if (typeof validatedData[key] === 'string') {
+                    validatedData[key] = validatedData[key].trim();
+                }
+                if ([null, '', undefined, 'null', 'undefined'].includes(validatedData[key])) {
+                    logger.debug(`Removing empty or null field: ${key}`);
+                    delete validatedData[key];
+                }
+            });
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
+            if (validatedData.transaction_datetime > new Date()) {
+                logger.error('Transaction datetime cannot be in the future');
+                throw MyAppErrors.badRequest('Transaction datetime cannot be in the future');
+            }
 
             // Override type to "Debt Payment" if debt_id is specified
-            logger.info('debt_id is provided, overriding type to "Debt Payment"');
-            if (validatedData.debt_id) {
+            if (uuidValidateV4(validatedData.debt_id)) {
+                logger.info('debt_id is provided, overriding type to "Debt Payment"');
                 logger.debug(`debt_id: ${validatedData.debt_id} is provided`);
                 validatedData.type = 'Debt Payment';
+                logger.info('type is overridden to "Debt Payment"');
+            } else if (validatedData.debt_id) {
+                logger.warn("invalid debt_id")
+                throw MyAppErrors.badRequest('Invalid debt_id');
             }
-            logger.info('type is overridden to "Debt Payment"');
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
 
             // Validate category  
@@ -146,8 +248,15 @@ class TransactionController extends BaseController {
 
             // Verify bank accounts exist
             if (validationErrors.length === 0) {
-                const bankAccountErrors = await this.validateBankAccounts(sender, receiver);
-                validationErrors.push(...bankAccountErrors);
+                // Validate bank accounts only if they exist
+                if (validatedData.sender || validatedData.receiver) {
+                    const { sender, receiver } = await this.validateBankAccounts(
+                        validatedData.sender,
+                        validatedData.receiver
+                    );
+                    validatedData.sender = sender;
+                    validatedData.receiver = receiver;
+                }
             }
             logger.info('bank accounts are valid');
 
@@ -167,16 +276,16 @@ class TransactionController extends BaseController {
             switch (validatedData.category) {
                 case 'Expense':
                     await this.validateBankAccountBalance(
-                        sender.account_number,
-                        sender.fi_code,
+                        validatedData.sender.account_number,
+                        validatedData.sender.fi_code,
                         validatedData.amount,
                         'Expense'
                     );
                     break;
                 case 'Transfer':
                     await this.validateBankAccountBalance(
-                        sender.account_number,
-                        sender.fi_code,
+                        validatedData.sender.account_number,
+                        validatedData.sender.fi_code,
                         validatedData.amount,
                         'Transfer'
                     );
@@ -184,6 +293,7 @@ class TransactionController extends BaseController {
             }
 
             if (validationErrors.length > 0) {
+                logger.error(`Validation errors: ${validationErrors.join('; ')}`);
                 throw MyAppErrors.badRequest(validationErrors.join('; '));
             }
 
@@ -213,7 +323,17 @@ class TransactionController extends BaseController {
             next();
         } catch (error) {
             logger.error(`Error creating transaction: ${error.message}`);
-            next(error);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else if (error.message.includes('Invalid number format for field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.name === 'ValidationError') {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('Missing required field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else {
+                next(error);
+            }
         }
     }
 
@@ -298,42 +418,68 @@ class TransactionController extends BaseController {
             logger.debug('Ownership verified');
 
             // Prepare update data with only fields present in the request body
-            const updateData = {};
+            let updateData = {};
             const allowedFields = ['transaction_datetime', 'category', 'type', 'amount', 'note', 'sender', 'receiver'];
+
+            logger.debug(`received request body: ${JSON.stringify(req.body, null, 2)}`);
+            req.body = Object.entries(req.body).reduce((acc, [key, value]) => {
+                acc[key.toLowerCase()] = value;
+                return acc;
+            }, {});
+
+            logger.debug(`allowed request body: ${JSON.stringify(req.body, null, 2)}`);
 
             for (const field of allowedFields) {
                 if (req.body[field] !== undefined) {
-                    updateData[field] = req.body[field];
+                    logger.debug(`checking if field: \x1b[1;96m${field}\x1b[0m should be added to updateData`);
+                    const oldValue = existingTransaction[field] || null;
+                    if (JSON.stringify(req.body[field]) !== JSON.stringify(oldValue)) {
+                        logger.debug(`field: ${field} add to updateData, since old value !== new value: ${oldValue} !== ${req.body[field]}`);
+                        updateData[field] = req.body[field];
+                    }
                 }
             }
 
-            // Validate category and type if they are being updated
+
+            // If category is modified, type must also be modified
+            if (updateData.category && !updateData.type) {
+                updateData.type = req.body.type;
+                updateData.amount = req.body.amount;
+            }
+
+            logger.debug(`preparing updateData: ${JSON.stringify(updateData, null, 2)}`);
+
             if (updateData.category) {
+                // Validate category and type if the category being updated
                 super.verifyType(updateData.category, updateData.type);
                 logger.info('category and type are valid');
-            }
-            logger.info('category and type are not being updated');
+            } else logger.info('category and type are not being updated');
 
-            // Validate bank accounts based on new category if they are being updated
+            // Validate bank accounts based on new category if the category being updated, since it need to change sender and receiver
             const validationErrors = [];
             if (updateData.category) {
+                logger.info('Validating bank accounts based on new category');
                 const { sender, receiver } = updateData;
                 switch (updateData.category) {
                     case 'Expense':
-                        if (!sender && !existingTransaction.sender) {
+                        if (!sender) {
+                            logger.error('Sender bank account is required for Expense transactions');
                             validationErrors.push('Sender bank account is required for Expense transactions');
                         }
                         break;
                     case 'Income':
-                        if (!receiver && !existingTransaction.receiver) {
+                        if (!receiver) {
+                            logger.error('Receiver bank account is required for Income transactions');
                             validationErrors.push('Receiver bank account is required for Income transactions');
                         }
                         break;
                     case 'Transfer':
-                        if (!sender && !existingTransaction.sender) {
+                        if (!sender) {
+                            logger.error('Sender bank account is required for Transfer transactions');
                             validationErrors.push('Sender bank account is required for Transfer transactions');
                         }
-                        if (!receiver && !existingTransaction.receiver) {
+                        if (!receiver) {
+                            logger.error('Receiver bank account is required for Transfer transactions');
                             validationErrors.push('Receiver bank account is required for Transfer transactions');
                         }
                         break;
@@ -342,11 +488,12 @@ class TransactionController extends BaseController {
                 // Verify new bank accounts exist if provided
                 logger.info('Verifying new bank accounts');
                 if (validationErrors.length === 0) {
-                    const bankAccountErrors = await this.validateBankAccounts(
-                        sender || existingTransaction.sender,
-                        receiver || existingTransaction.receiver
+                    const { sender: validatedSender, receiver: validatedReceiver } = await this.validateBankAccounts(
+                        sender,
+                        receiver
                     );
-                    validationErrors.push(...bankAccountErrors);
+                    updateData.sender = validatedSender ? validatedSender : sender;
+                    updateData.receiver = validatedReceiver ? validatedReceiver : receiver;
                 }
 
                 if (validationErrors.length > 0) {
@@ -354,23 +501,77 @@ class TransactionController extends BaseController {
                 }
                 logger.info('Bank accounts verified');
             }
-            logger.info('Bank accounts are not being updated');
 
             // If amount or category is being updated, validate balance
             if (updateData.amount || updateData.category) {
-                const amount = updateData.amount || existingTransaction.amount;
-                const category = updateData.category || existingTransaction.category;
-                const sender = updateData.sender || existingTransaction.sender;
+                logger.info('Amount or category are being updated, validating balance by these 2 object:');
+                //** 
+                //   if only the amount is updated, then the category, sender, and receiver might remain the same 
+                //   as in the original (existingTransaction). 
+                //
+                logger.debug(`existingTransaction(old): ${JSON.stringify(existingTransaction, null, 2)}`);
+                logger.debug(`updateData(to update): ${JSON.stringify(updateData, null, 2)}`);
+                const amount = updateData.amount /*|| existingTransaction.amount*/;
+                const category = updateData.category /*|| existingTransaction.category*/;
+                const sender = updateData.sender /*|| existingTransaction.sender*/;
+                const receiver = updateData.receiver /*|| existingTransaction.receiver*/;
+                logger.debug(`amount: ${amount}, category: ${category}, sender: ${JSON.stringify(sender, null, 2)}, receiver: ${JSON.stringify(receiver, null, 2)}`);
 
-                if (['Expense', 'Transfer'].includes(category) && sender) {
+                if (category === 'Expense' && sender) {
+                    logger.info('category modifying to Expense, validating sender balance');
                     await this.validateBankAccountBalance(
                         sender.account_number,
                         sender.fi_code,
                         amount,
-                        category
+                        category,
+                        existingTransaction
+                    );
+                } else if (category === 'Income' && receiver) {
+                    logger.info('category modifying to Income, validating receiver balance');
+                    await this.validateBankAccountBalance(
+                        receiver.account_number,
+                        receiver.fi_code,
+                        amount,
+                        category,
+                        existingTransaction
+                    );
+                } else if (category === 'Transfer' && sender && receiver) {
+                    logger.info('category modifying to Transfer, validating sender balance');
+                    await this.validateBankAccountBalance(
+                        sender.account_number,
+                        sender.fi_code,
+                        amount,
+                        category,
+                        existingTransaction
+                    );
+                    logger.info('Validating receiver balance');
+                    await this.validateBankAccountBalance(
+                        receiver.account_number,
+                        receiver.fi_code,
+                        amount,
+                        category,
+                        existingTransaction
                     );
                 }
+                logger.info('Balance validated');
             }
+
+            // update the object without reassigning
+            updateData = {
+                ...updateData,
+                ...(updateData.sender && {
+                    sender_account_number: updateData.sender.account_number,
+                    sender_fi_code: updateData.sender.fi_code
+                }),
+                ...(updateData.receiver && {
+                    receiver_account_number: updateData.receiver.account_number,
+                    receiver_fi_code: updateData.receiver.fi_code
+                })
+            };
+
+            // Remove the old sender and receiver objects
+            delete updateData.sender;
+            delete updateData.receiver;
 
             // Update the transaction
             logger.debug(`update transaction_id: ${transaction_id} updateData: ${JSON.stringify(updateData, null, 2)}`);
@@ -380,10 +581,45 @@ class TransactionController extends BaseController {
             );
             logger.debug(`updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}`);
 
+            // // Retrieve the updated transaction from the database
+            // const fullyUpdatedTransaction = await this.transactionModel.findOne({ transaction_id });
+
+            // // Fetch sender bank account details if available
+            // if (fullyUpdatedTransaction.sender_account_number && fullyUpdatedTransaction.sender_fi_code) {
+            //     const senderAccount = await this.bankAccountModel.get(
+            //         fullyUpdatedTransaction.sender_account_number,
+            //         fullyUpdatedTransaction.sender_fi_code
+            //     );
+            //     fullyUpdatedTransaction.sender = senderAccount;
+            // }
+
+            // // Fetch receiver bank account details if available
+            // if (fullyUpdatedTransaction.receiver_account_number && fullyUpdatedTransaction.receiver_fi_code) {
+            //     const receiverAccount = await this.bankAccountModel.get(
+            //         fullyUpdatedTransaction.receiver_account_number,
+            //         fullyUpdatedTransaction.receiver_fi_code
+            //     );
+            //     fullyUpdatedTransaction.receiver = receiverAccount;
+            // }
+
+            // // Handle Expense category, nullify receiver
+            // if (fullyUpdatedTransaction.category === 'Expense') {
+            //     fullyUpdatedTransaction.receiver = null;
+            // }
+
+            // logger.debug(`fullyUpdatedTransaction: ${JSON.stringify(fullyUpdatedTransaction, null, 2)}`);
+
+            // req.formattedResponse = formatResponse(200, 'Transaction updated successfully', fullyUpdatedTransaction);
+            // next();
+
             req.formattedResponse = formatResponse(200, 'Transaction updated successfully', updatedTransaction);
             next();
         } catch (error) {
             logger.error(`Error updating transaction: ${error.message}`);
+            if (error.message.includes('Insufficient balance')) {
+                next(MyAppErrors.unProcessableEntity(error.message));
+            }
+
             next(error);
         }
     }

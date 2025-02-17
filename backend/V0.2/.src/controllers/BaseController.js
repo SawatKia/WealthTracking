@@ -228,12 +228,14 @@ class BaseController {
 
         // Validate category first if provided
         if (category && !['Income', 'Expense', 'Transfer'].includes(category)) {
+            logger.error('Invalid category. Must be Income, Expense, or Transfer');
             throw MyAppErrors.badRequest('Invalid category. Must be Income, Expense, or Transfer');
         }
 
         // If no type provided, just validate category
         if (!type) {
-            return true;
+            logger.warn('No type provided');
+            throw MyAppErrors.badRequest('No type provided');
         }
 
         // Get allowed types for the category
@@ -242,21 +244,114 @@ class BaseController {
             throw MyAppErrors.badRequest(`Invalid category: ${category}`);
         }
 
+        logger.info(`verify if type is allowed for category`);
         if (!allowedTypes.includes(type)) {
             // Find similar types using string similarity
-            const similarTypes = allowedTypes.filter(t =>
+            let similarTypes = allowedTypes.filter(t =>
                 t.toLowerCase().includes(type.toLowerCase()) ||
                 type.toLowerCase().includes(t.toLowerCase())
             );
+            logger.debug(`similarTypes: ${JSON.stringify(similarTypes)}`);
 
-            const errorMessage = `Invalid type "${type}" for ${category}. Must be one of: ${allowedTypes.join(', ')}` +
-                (similarTypes.length > 0 ? `. Did you mean: ${similarTypes.join(', ')}?` : '');
+            const mostSimilarWord = this.findMostSimilarWord(type, allowedTypes);
+            if (mostSimilarWord && !similarTypes.includes(mostSimilarWord)) {
+                similarTypes.push(mostSimilarWord); // Append similar word if not duplicate
+            }
+            logger.debug(`mostSimilarWord: ${mostSimilarWord}`);
 
+
+            let errorMessage;
+            if (category === 'Transfer' && type !== 'Transfer') {
+                errorMessage = `For category "Transfer", the type must be "Transfer" only.`;
+            } else {
+                errorMessage = `type "${type}" is not allowed for "${category}". Must be one of: ${allowedTypes.join(', ')}` +
+                    (similarTypes.length > 0 ? `. Did you mean: ${[...new Set(similarTypes)].join(', ')}?` : ''); // Use Set to remove duplicates in suggestions
+            }
+
+            logger.error(errorMessage);
             throw MyAppErrors.badRequest(errorMessage);
         }
 
         logger.info('Type verification successful');
         return true;
+    }
+
+    jaroWinklerSimilarity(s1, s2) {
+        // Convert to lowercase for case insensitivity
+        s1 = s1.toLowerCase();
+        s2 = s2.toLowerCase();
+
+        const len1 = s1.length;
+        const len2 = s2.length;
+
+        if (len1 === 0 || len2 === 0) return 0;
+
+        const matchDistance = Math.floor(Math.max(len1, len2) / 2) - 1;
+        const matches1 = Array(len1).fill(false);
+        const matches2 = Array(len2).fill(false);
+
+        // Count matches
+        let matches = 0;
+        for (let i = 0; i < len1; i++) {
+            const start = Math.max(0, i - matchDistance);
+            const end = Math.min(i + matchDistance + 1, len2);
+
+            for (let j = start; j < end; j++) {
+                if (!matches2[j] && s1[i] === s2[j]) {
+                    matches1[i] = true;
+                    matches2[j] = true;
+                    matches++;
+                    break;
+                }
+            }
+        }
+
+        if (matches === 0) return 0;
+
+        // Count transpositions
+        let t = 0;
+        let point = 0;
+        for (let i = 0; i < len1; i++) {
+            if (matches1[i]) {
+                while (!matches2[point]) point++;
+                if (s1[i] !== s2[point]) t++;
+                point++;
+            }
+        }
+        t /= 2;
+
+        // Jaro similarity
+        const jaro =
+            (matches / len1 + matches / len2 + (matches - t) / matches) / 3;
+
+        // Winkler adjustment
+        let prefix = 0;
+        for (let i = 0; i < Math.min(len1, len2); i++) {
+            if (s1[i] === s2[i]) prefix++;
+            else break;
+        }
+        prefix = Math.min(4, prefix);
+
+        const scalingFactor = 0.1; // Winkler's adjustment factor
+        return jaro + prefix * scalingFactor * (1 - jaro);
+    }
+
+    // Function to find the most similar word
+    findMostSimilarWord(target, wordArray) {
+        logger.info('Finding most similar word');
+        logger.debug(`target: ${target}, wordArray: ${JSON.stringify(wordArray)}`);
+        let mostSimilarWord = null;
+        let highestSimilarity = -1;
+
+        for (const word of wordArray) {
+            const similarity = this.jaroWinklerSimilarity(target, word); // Use class method
+            if (similarity > highestSimilarity) {
+                highestSimilarity = similarity;
+                mostSimilarWord = word;
+            }
+        }
+        logger.info(`most similar word: ${mostSimilarWord} with similarity: ${highestSimilarity}`);
+        return mostSimilarWord;
     }
 }
 module.exports = BaseController;

@@ -51,11 +51,13 @@ class OcrMappingService {
                 logger.error('cannot mapping ocr text to EasySlip format');
                 throw new Error('cannot mapping ocr text to EasySlip format');
             }
+            logger.debug(`extractedData: ${JSON.stringify(extractedData, null, 2)}`);
 
             // Get bank IDs
             logger.info('Getting bank IDs');
             const senderBankCode = await this.FiModel.getFiCodeByName(extractedData.sender.bank.name);
             const receiverBankCode = await this.FiModel.getFiCodeByName(extractedData.receiver.bank.name);
+            logger.debug(`senderBankCode: ${senderBankCode}, receiverBankCode: ${receiverBankCode}`);
 
             // Build response
             return {

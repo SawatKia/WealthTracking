@@ -29,7 +29,9 @@ function getCaller() {
             callerFile = err.stack.shift();
             if (currentFile !== callerFile.getFileName()) break;
         }
-    } catch (e) { }
+    } catch (e) {
+        console.error('Error retrieving caller information:', e);
+    }
 
     Error.prepareStackTrace = originalFunc;
 
@@ -46,61 +48,43 @@ class Logger {
     constructor(moduleName) {
         const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
+        // Generate unique log directory for test runs
+        const testLogDir = path.join(
+            __dirname,
+            '../../logs/'
+        );
+
+        const commonRotateOptions = {
+            dirname: testLogDir,
+            datePattern: NODE_ENV === 'test' ? 'YYYY-MM-DD-HH' : 'YYYY-MM-DD',      // Adds hours and minutes to the filename
+            zippedArchive: NODE_ENV === 'production' ? true : false,                // Compress old log files
+            maxFiles: NODE_ENV === 'test' ? '7d' : '14d',                           // Retain logs for 14 days
+        };
+
         const transports = [];
-        // configure transports based on NODE_ENV
-        if (NODE_ENV === 'test') {
-            const testRotateOptions = {
-                datePattern: 'YYYY-MM-DD',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '1d',
-                createSymlink: true,
-                // options: { start: 0, flags: 'r+' }
-            };
+        const fileTransport = new DailyRotateFile({
+            ...commonRotateOptions,
+            filename: 'combined-%DATE%.log',
+            symlinkName: 'current-combined.log',
+            level: 'debug', // Log debug and above levels to file
+        });
 
-            // rotate error logs for test environment
-            transports.push(new DailyRotateFile({
-                ...testRotateOptions,
-                filename: 'log/error-%DATE%.log',
-                level: 'error',
-                symlinkName: 'current-error.log',
-            }));
-
-            // rotate combined logs for test environment
-            transports.push(new DailyRotateFile({
-                ...testRotateOptions,
-                filename: 'log/combined-%DATE%.log',
-                symlinkName: 'current-combined.log',
-            }));
-        } else if (NODE_ENV === 'production') {
-            // rotate error logs for production environment
-            transports.push(new DailyRotateFile({
-                filename: 'log/error-%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                level: 'error',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '7d'
-            }));
-
-            // rotate combined logs for production environment
-            transports.push(new DailyRotateFile({
-                filename: 'log/combined-%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                zippedArchive: true,
-                maxSize: '20m',
-                maxFiles: '14d'
-            }));
-        }
-        // add console transport for error and info levels
-        transports.push(new winston.transports.Console({
+        const consoleTransport = new winston.transports.Console({
             format: winston.format.combine(
                 winston.format.colorize(),
                 winston.format.printf(info => {
-                    return `[${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
+                    return `${info.timestamp} [${info.caller ? info.caller : info.label}] ${info.level}: ${info.message}`;
                 })
-            )
-        }));
+            ),
+            level: NODE_ENV == 'development' ? 'debug' : 'info', // Log only info and above to console
+        });
+
+        if (NODE_ENV != 'development') {
+            // configure transports based on test and production environments
+            transports.push(fileTransport);
+        }
+        // write  logs to console for any log levels and environments
+        transports.push(consoleTransport);
 
 
         this.logger = winston.createLogger({
@@ -114,7 +98,7 @@ class Logger {
                 winston.format.splat(),
                 winston.format.label({ label: moduleName }),
                 winston.format.printf(info => {
-                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // global log format, if not specified
+                    return `${info.timestamp} [${info.caller || info.label}] ${info.level} - ${info.message}`; // default (global) log format, if not specified
                 })
             ),
             defaultMeta: { service: 'wealthtrack-backend' },

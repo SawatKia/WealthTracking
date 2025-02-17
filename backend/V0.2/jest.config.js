@@ -15,4 +15,5 @@ module.exports = {
     maxWorkers: 4,
     // Set timeout to 5 minutes (300000 milliseconds)
     testTimeout: 300000,
+    testSequencer: './.src/tests/custom-sequencer.js',
 }; 

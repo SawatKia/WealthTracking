@@ -1,0 +1,103 @@
+name: Deploy to staging server
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  build_deploy:
+    if: github.event.pull_request.merged == true && github.event.pull_request.merged_by.name == github.actor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Connection
+        run: |
+          echo "Setting up SSH connection..."
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GH_ACTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+          echo "SSH setup complete. Testing connection..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"
+
+      - name: Build and Deploy on Server
+        id: deploy
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          echo "Starting build and deployment process on the server..."
+          # Capture output (both stdout and stderr) in a variable
+          output=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
+            echo "Navigating to project directory..."
+            cd ~/WealthTracking || { echo "Failed to navigate to project directory"; exit 1; }
+            
+            echo "Executing deploy script..."
+            ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} 3000 || { echo "Deployment script failed"; exit 1; }
+            
+            echo "Deployment completed successfully."
+          EOF
+          2>&1)
+          exit_code=$?
+          echo "$output"
+          if [ $exit_code -ne 0 ]; then
+            echo "reason=$output" >> $GITHUB_ENV
+            exit $exit_code
+          fi
+
+      - name: Notify Discord on Success
+        if: success()
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "🚀 Workflow Notifier"
+          avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
+          title: "✨ **${{ github.workflow }}** ran **${{ job.status }}**"
+          description: |
+            🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
+            🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
+            📦 **Job** ran: `${{ github.job }}`
+            🛠️ **Action Status**: `${{ job.status }}`
+
+            Deployment completed successfully.
+          include-details: "true"
+          color-success: "#28a745" # Green for success
+          color-failure: "#d73a49" # Red for failure
+          color-cancelled: "#ffc107" # Yellow for cancelled
+
+      - name: Notify Discord on Failure
+        if: failure()
+        uses: nobrayner/discord-webhook@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "🚀 Workflow Notifier"
+          avatar-url: "https://avatars.githubusercontent.com/u/88827707?v=4"
+          title: "❌ **${{ github.workflow }}** failed"
+          description: |
+            🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
+            🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
+            📦 **Job** ran: `${{ github.job }}`
+            ❌ **Action Status**: `${{ job.status }}`
+
+            **Failure Reason:** ${{ env.reason }}
+
+            Please check the logs for more details.
+          include-details: "true"
+          color-success: "#28a745" # Green for success
+          color-failure: "#d73a49" # Red for failure
+          color-cancelled: "#ffc107" # Yellow for cancelled
+
+      - name: Delete SSH Key
+        if: always()
+        run: |
+          echo "Cleaning up SSH key..."
+          rm -f ~/.ssh/id_rsa
+          echo "SSH key deleted."

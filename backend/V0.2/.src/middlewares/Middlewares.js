@@ -1,15 +1,18 @@
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const APP_ROOT = '/usr/src/WealthTrack';
 const cors = require('cors');
 
 const { Logger, formatResponse } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
+
 const AuthUtils = require('../utilities/AuthUtils');
 const { json } = require('express');
-
+const { verifyToken } = AuthUtils;
+const logger = Logger("Middlewares");
+const NODE_ENV = appConfigs.environment;
+const APP_ROOT = '/usr/src/WealthTrack';
 // Custom storage engine that combines memory and disk storage
 class CustomStorage {
   constructor(options) {
@@ -99,9 +102,7 @@ const profilePictureToDiskStorage = multer.diskStorage({
 });
 // const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
-const { verifyToken } = AuthUtils;
-const logger = Logger("Middlewares");
-const NODE_ENV = appConfigs.environment;
+
 
 class Middlewares {
   constructor() {
@@ -150,133 +151,281 @@ class Middlewares {
   }
 
   /**
-   * Middleware to validate the allowed methods for a specific path
-   * @param {Object} allowedMethods - Object with allowed methods for each path
-   * @returns {Function} - Express middleware function
+   * This middleware function validates the HTTP method and path of the incoming
+   * request against a set of allowed methods and paths. If the request is valid,
+   * it calls the next middleware function in the chain. If the request is invalid,
+   * it returns a 400, 405, or 404 error depending on the specific error.
+
+   * The validation is case-insensitive and allows for URL parameters. The
+   * validation is also performed after sanitizing the request data to prevent
+   * any potential security issues.
+
+   * @param {Object} allowedMethods - An object containing the allowed methods
+   *                                   for each path. The keys are the paths
+   *                                   and the values are arrays of allowed
+   *                                   methods.
+   * @returns {Function} - The middleware function to validate the request.
    */
   methodValidator(allowedMethods) {
-    return (req, res, next) => {
-      logger.debug(`allowedMethods: ${JSON.stringify(allowedMethods)}`);
-      const { method } = req;
-      const path = req.path;
+    // Common patterns that should not be sanitized
+    // const skipPatterns = {
+    //   'phone': /^\+?[\d\s()-]{8,}$/,
+    //   /* Explanation:
+    //   \+? - optional plus sign for international numbers
+    //   [\d\s()-] - can contain digits, spaces, parentheses, hyphens
+    //   {8,} - at least 8 characters long
+    //   Examples that match:
+    //   - +1 (555) 123-4567
+    //   - 555-123-4567
+    //   - 5551234567
+    //   */
 
-      logger.info("Validating request method and path");
-      logger.debug(`Request: Method=${method}, Path=${path}`);
-      logger.debug(`Environment: ${NODE_ENV}`);
+    //   'name': /^[\p{L}\s'-]{2,}$/u,
+    //   /* Explanation:
+    //   \p{L} - any kind of letter from any language
+    //   \s - spaces
+    //   '- - apostrophes and hyphens for names like O'Connor or Jean-Pierre
+    //   Examples that match:
+    //   - John Doe
+    //   - María José
+    //   - O'Connor
+    //   - Jean-Pierre
+    //   */
 
-      // Helper function to match dynamic paths
-      const matchPath = (incomingPath) => {
-        for (const allowedPath in allowedMethods) {
-          const pathRegex = new RegExp(
-            `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
-          );
-          if (pathRegex.test(incomingPath)) {
-            return allowedPath;
-          }
+    //   'date': /^\d{4}-\d{2}-\d{2}$/,
+    //   /* Explanation:
+    //   \d{4} - four digits for the year
+    //   \d{2} - two digits for the month
+    //   \d{2} - two digits for the day
+    //   Matches ISO format dates like:
+    //   - 2024-02-14
+    //   */
+
+    //   'url': /^https?:\/\/[\w\-.]+(:\d+)?([\/\w\-.?=%&#+]*)?$/,
+    //   /* Explanation:
+    //   https? - optional protocol (http or https)
+    //   :// - literal colon followed by two slashes
+    //   [\w\-.]+ - domain name can contain letters, numbers, dots, hyphens
+    //   (:\d+)? - optional port number
+    //   ([\/\w\-.?=%&#+]*)? - optional path and query string
+    //   Matches URLs like:
+    //   - http://example.com
+    //   - https://sub.domain.com:8080/path?param=value
+    //   */
+
+    //   'filename': /^[\w\-. ]+\.[a-zA-Z0-9]{2,4}$/,
+    //   /* Explanation:
+    //   [\w\-. ]+ - file name can contain letters, numbers, dots, hyphens, spaces
+    //   \.[a-zA-Z0-9]{2,4} - file extension
+    //   Matches filenames like:
+    //   - document.pdf
+    //   - my-photo.jpg
+    //   - report_2024.xlsx
+    //   */
+
+    //   'address': /^[\w\s,.'#-]{5,}$/,
+    //   /* Explanation:
+    //   [\w\s,.'#-] - address can contain letters, spaces, commas, dots, hashes, and hyphens
+    //   {5,} - at least 5 characters long
+    //   Matches addresses like:
+    //   - 123 Main St, Apt #4
+    //   - 45-A West Avenue
+    //   */
+
+    //   // User-related patterns
+    //   'email': /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}+\.{0,}[a-zA-Z]{0,}$/,
+    //   /* Explanation:
+    //   ^ - start of string
+    //   [a-zA-Z0-9._%+-]+ - username can contain letters, numbers, dots, underscores, percent, plus, minus
+    //   @ - literal @ symbol
+    //   [a-zA-Z0-9.-]+ - domain name can contain letters, numbers, dots, hyphens
+    //   \. - literal dot
+    //   [a-zA-Z]{2,} - top-level domain must be at least 2 letters
+    //   \.{0,} - optional dot
+    //   [a-zA-Z]{0,} - optional subdomain
+    //   $ - end of string
+    //   */
+    //   'national_id': /^[0-9]{13}$/, // For Thai national ID format
+    //   'username': /^[\w.-]{3,50}$/, // Alphanumeric with dots and hyphens, 3-50 chars
+    //   'profile_picture_uri': /^[\w\/.-]+$/, // For URI paths
+
+    //   // Bank account patterns
+    //   'account_number': /^(\d+-)+\d+$/,
+    //   /* Explanation:
+    //   ^ - start of string
+    //   (\d+-)+ - at least one group of digits with a dash
+    //   \d+ - at least one group of digits
+    //   $ - end of string
+    //   */
+    //   'fi_code': /^[0-9]+$/, // Financial institution codes
+
+    //   // Transaction patterns
+    //   'transaction_id': /^[\w-]{1,50}$/, // Alphanumeric with hyphens
+    //   'slip_uri': /^[\w\/.-]+$/, // For URI paths
+
+    //   // Debt patterns
+    //   'debt_id': /^[\w-]{1,50}$/, // Alphanumeric with hyphens
+    //   'debt_name': /^[\w\s'-]{1,100}$/, // Allow spaces, hyphens, apostrophes
+
+    //   // Money/Amount patterns
+    //   'amount': /^\d+(\.\d{1,2})?$/, // Decimal numbers with up to 2 decimal places
+    //   'balance': /^\d+(\.\d{1,2})?$/,
+    //   'monthly_limit': /^\d+(\.\d{1,2})?$/,
+
+    //   // Date patterns
+    //   'date': /^\d{4}-\d{2}-\d{2}$/, // ISO date format (YYYY-MM-DD)
+    //   'datetime': /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/, // ISO datetime
+    //   'month': /^\d{4}-\d{2}$/,
+
+    //   // Token patterns
+    //   'jti': /^[\w-]+$/, // JWT ID format
+
+    //   // Category/Type patterns (for fixed values)
+    //   'expense_type': /^(Food|Transport|Travel|Groceries|House|Borrowed|Cure|Pet|Education|Clothes|Cosmetics|Accessories|Insurance|Hobby|Utilities|Vehicle|Fee|Business|Game|Debt Payment|Other Expense)$/,
+    //   'auth_service': /^(local|google|facebook|apple)$/,
+    //   'role': /^[\w-]{2,20}$/,
+
+    //   // Slip patterns
+    //   'payload': /^[\w+=\/-]+$/, // Base64 and URL-safe characters
+    //   'trans_ref': /^[\w-]{1,255}$/,
+    // };
+
+    // Function to determine if a field should skip sanitization
+    const shouldSkipSanitization = (key, value) => {
+      logger.info(`Checking if field ${key} should skip sanitization...`);
+      // Convert value to string for testing if it's not already a string
+      const stringValue = String(value);
+
+      // Handle exact matches first
+      if (skipPatterns[key.toLowerCase()] &&
+        skipPatterns[key.toLowerCase()].test(stringValue)) {
+        logger.debug(`Field ${key} should skip sanitization. by exact match`);
+        return true;
+      }
+
+      // Handle partial matches (for fields that contain pattern names)
+      for (const [pattern, regex] of Object.entries(skipPatterns)) {
+        if (key.toLowerCase().includes(pattern) && regex.test(stringValue)) {
+          logger.debug(`Field ${key} should skip sanitization. by partial match`);
+          return true;
         }
-        return null;
-      };
-
-      // Match incoming path against allowed paths
-      const matchedPath = matchPath(path);
-
-      logger.debug(`Matched path: ${matchedPath}`);
-
-      // Check if a matching path exists in allowedMethods
-      if (!matchedPath) {
-        logger.error(`Path ${path} not found`);
-        return next(MyAppErrors.notFound(`${path} not available`));
       }
 
-      // Validate the method for the matched path
-      const methods = allowedMethods[matchedPath];
-      if (!methods.includes(method)) {
-        logger.error(`Method ${method} not allowed for ${path}`);
-        const errorMessage =
-          NODE_ENV === "production"
-            ? "Method not allowed"
-            : `${method} method not allowed for ${path}`;
-        return next(MyAppErrors.methodNotAllowed(errorMessage));
+      return false;
+    };
+
+    const escapeString = (str) => {
+      return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    };
+
+    const sanitizeObject = (obj) => {
+      if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+        throw MyAppErrors.badRequest("Invalid request.");
       }
 
-      logger.info(`Method ${method} is allowed for ${path}`);
-      return next();
+      const sanitized = {};
+      for (const key in obj) {
+        if (typeof obj[key] === "string") {
+          // Skip sanitization for validated patterns
+          if (shouldSkipSanitization(key, obj[key])) {
+            sanitized[key] = obj[key];
+          } else {
+            sanitized[key] = escapeString(obj[key]);
+          }
+        } else if (typeof obj[key] === "object") {
+          sanitized[key] = sanitizeObject(obj[key]);
+        } else {
+          sanitized[key] = obj[key];
+        }
+      }
+      return sanitized;
+    };
+
+    return (req, res, next) => {
+      try {
+        const method = String(req.method || "").toUpperCase().trim();
+        let path = String(req.path || "").trim();
+
+        logger.debug(`Validating request: Method=${method}, Path=${path}`);
+
+        // if (req.query && Object.keys(req.query).length > 0) {
+        //   logger.debug(`Original query: ${JSON.stringify(req.query)}`);
+        //   req.query = sanitizeObject(req.query);
+        //   logger.debug(`Normalized query: ${JSON.stringify(req.query)}`);
+        // }
+
+        // if (req.body && Object.keys(req.body).length > 0) {
+        //   logger.debug(`Original body: ${JSON.stringify(req.body)}`);
+        //   req.body = sanitizeObject(req.body);
+        //   logger.debug(`Normalized body: ${JSON.stringify(req.body)}`);
+        // }
+
+        // if (req.files) {
+        //   req.files.forEach((file) => {
+        //     logger.debug(`Original file: ${JSON.stringify(file)}`);
+        //     logger.debug(`Original file name: ${file.originalname}`);
+        //     file.originalname = escapeString(file.originalname);
+        //     file.mimetype = escapeString(file.mimetype);
+        //     logger.debug(`Normalized file: ${JSON.stringify(file)}`);
+        //     logger.debug(`Normalized file name: ${file.originalname}`);
+        //   });
+        // }
+
+        logger.debug(`Allowed methods: ${JSON.stringify(allowedMethods)}`);
+
+        // Helper function to match dynamic paths
+        const matchPath = (incomingPath) => {
+          for (const allowedPath in allowedMethods) {
+            const pathRegex = new RegExp(
+              `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
+            );
+            if (pathRegex.test(incomingPath)) {
+              return allowedPath;
+            }
+          }
+          return null;
+        };
+
+        // Match incoming path against allowed paths
+        const matchedPath = matchPath(path);
+
+        logger.debug(`Matched path: ${matchedPath}`);
+
+        if (!matchedPath) {
+          if (NODE_ENV !== "production") {
+            logger.warn(`Path ${path} not found`);
+          }
+          return next(MyAppErrors.notFound("Resource not found"));
+        }
+
+        if (!allowedMethods[matchedPath].includes(method)) {
+          if (NODE_ENV !== "production") {
+            logger.warn(`Method ${method} not allowed for ${path}`);
+          }
+          return next(MyAppErrors.methodNotAllowed("Method not allowed"));
+        }
+
+        if (NODE_ENV !== "production") {
+          logger.info(`Request method ${method} is allowed for ${path}`);
+        }
+        next();
+      } catch (error) {
+        if (error instanceof MyAppErrors) {
+          if (NODE_ENV !== "production") {
+            logger.error(`Sanitization error: ${error.message}`);
+          }
+          next(MyAppErrors.badRequest("Invalid request."));
+        } else {
+          if (NODE_ENV !== "production") {
+            logger.error(`Unexpected error during validation: ${error.message}`);
+          }
+          next(MyAppErrors.internalServerError("An unexpected error occurred"));
+        }
+      }
     };
   }
 
-  /**
-   * Middleware to handle API responses in a consistent format
-   */
-  responseHandler(req, res, next) {
-    logger.info("Handling response");
-    if (req.formattedResponse) {
-      const { status_code, message, data, headers } = req.formattedResponse;
 
-      // Add security headers
-      const securityHeaders = {
-        // 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', // Forces HTTPS connections
-        'X-Content-Type-Options': 'nosniff', // Prevents MIME type sniffing, Ensures files are treated exactly as declared
-        'X-Frame-Options': 'DENY', // Prevents clickjacking attacks
-        'X-XSS-Protection': '1; mode=block', // Prevents XSS attacks
-        'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`, // Restricts the sources of content that can be loaded
-        ...headers
-      };
-      // Format headers with truncated values
-      const formattedHeaders = Object.entries(securityHeaders)
-        .map(([key, value]) => {
-          const truncatedValue = value && value.length > 50
-            ? `${value.substring(0, 50)}... [truncated]`
-            : value;
-          return `          ${key.padEnd(26)}: ${truncatedValue}`;
-        })
-        .join('\n');
-
-      const responseLogMessage = `
-      Outgoing Response:
-      Headers:
-      ${formattedHeaders}
-      ------------------
-      ${req.method} ${req.path} => ${req.ip}
-      Status: ${status_code}
-      Message: ${message}
-      Data: ${data ? JSON.stringify(data, null, 8).substring(0, 150) + (JSON.stringify(data, null, 8).length > 150 ? '...[truncated]...' : '') : ''}
-      `;
-      logger.debug(responseLogMessage);
-
-      res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
-    } else {
-      next();
-    }
-  }
-
-  /**
-   * Middleware to handle errors in a consistent format
-   */
-  errorHandler(err, req, res, next) {
-    logger.info("Handling error");
-    if (!res.headersSent) {
-      let response;
-      if (err instanceof MyAppErrors) {
-        logger.error(`MyAppError: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(err.statusCode, err.message, err.data);
-      } else if (err instanceof Error) {
-        logger.error(`Error: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(500, err.message);
-      } else {
-        logger.error(`Unhandled error: ${err}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(500, "Internal Server Error");
-      }
-      logger.debug(`sending Error response: ${JSON.stringify(response)}`);
-      res
-        .status(response.status_code)
-        .set(err.headers || {})
-        .json(response);
-      return;
-    }
-  }
 
   /**
    * Rate limiting middleware to prevent too many requests
@@ -287,30 +436,105 @@ class Middlewares {
       limit,
       standardHeaders: true,
       legacyHeaders: false,
+      trustProxy: true,
       message: "Too many requests from this IP, please try again later.",
       handler: (req, res, next, options) => {
         logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-        res.status(options.statusCode).json({
-          status: options.statusCode,
-          message: options.message,
-        });
+        res.status(options.statusCode).json(formatResponse(options.statusCode, options.message, { retryAfter: res.getHeader('Retry-After') }));
       },
     });
   }
 
-  conditionalSlipUpload(req, res, next) {
-    if (req.is('multipart/form-data')) {
-      return uploadSlip.single('imageFile')(req, res, next);
-    }
-    next();
-  };
+  requestLogger(req, res, next) {
+    logger.info(`🡳🡳🡳 entering the routing for ${req.method} ${req.url}`);
 
-  conditionalProfilePictureUpload(req, res, next) {
-    if (req.is('multipart/form-data')) {
-      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
+    const getIP = (req) => {
+      // req.connection is deprecated
+      const conRemoteAddress = req.connection?.remoteAddress;
+      // req.socket is said to replace req.connection
+      const sockRemoteAddress = req.socket?.remoteAddress;
+      // some platforms use x-real-ip
+      const xRealIP = req.headers['x-real-ip'];
+      // most proxies use x-forwarded-for
+      const xForwardedForIP = (() => {
+        const xForwardedFor = req.headers['x-forwarded-for'];
+        if (xForwardedFor) {
+          // The x-forwarded-for header can contain a comma-separated list of
+          // IP's. Further, some are comma separated with spaces, so whitespace is trimmed.
+          const ips = xForwardedFor.split(',').map((ip) => ip.trim());
+          return ips[0];
+        }
+      })();
+      // prefer x-forwarded-for and fallback to the others
+      return xForwardedForIP || xRealIP || sockRemoteAddress || conRemoteAddress;
+    };
+
+    const method = req.method;
+    const requestPath = req.path;
+    const body = req.body;
+    const headers = req.headers;
+    const query = req.query;
+    const ip = getIP(req);
+    Object.defineProperty(req, 'ip', {
+      get: () => ip,
+      configurable: true // Allows the property to be redefined later if needed
+    });
+
+    // Prepare the body for logging 
+    let logBody;
+    if (body && body.base64Image) {
+      logBody = {
+        ...body,
+        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+      };
+    } else {
+      logBody = body;
     }
+
+    const formatObjectEntries = (obj, lengthLimit = 50) => {
+      if (typeof obj !== 'object' || obj === null) {
+        return '';
+      }
+      return Object.entries(obj || {})
+        .map(([key, value]) => {
+          const displayValue = value && String(value).length > lengthLimit
+            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+            : String(value);
+          return `${key.padEnd(26)}: ${displayValue}`;
+        })
+        .join('\n          ');
+    }
+
+    // Prepare a human-friendly log message
+    const requestLogMessage = `
+      🡳🡳🡳 Incoming Request 🡳🡳🡳 :
+      ----------------
+      ${ip} => ${method} ${requestPath}
+      Headers:
+          ${formatObjectEntries(headers)}
+      Cookies:
+          ${formatObjectEntries(req.cookies)}
+      Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
+      Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
+      `;
+
+    logger.info(requestLogMessage);
     next();
-  };
+  }
+
+  /**
+   * Middleware to authenticate user requests.
+   *
+   * This middleware checks for an access token in the cookies or Authorization header of the incoming request.
+   * If a valid token is found, it verifies the token and attaches the authenticated user to the request object.
+   * If the token is invalid or missing, it responds with an unauthorized error.
+   *
+   * @param {Object} req - The request object, containing cookies and headers.
+   * @param {Object} res - The response object.
+   * @param {Function} next - The next middleware function in the stack.
+   *
+   * @throws {UnauthorizedError} - If the access token is invalid or not provided.
+   */
 
   authMiddleware(req, res, next) {
     logger.info("Authenticating user");
@@ -328,6 +552,7 @@ class Middlewares {
         next();
       } catch (err) {
         logger.warn('Invalid access token');
+        logger.debug(`error: ${err}`);
         next(MyAppErrors.unauthorized(
           AuthUtils.authenticationError.message,
           null,
@@ -344,94 +569,29 @@ class Middlewares {
     }
   }
 
-  /**
-   * Request logger middleware to log incoming requests in a consistent format
-   */
-  requestLogger(req, res, next) {
-    logger.info(`entering the routing for ${req.method} ${req.url}`);
-    const { ip, method, path: requestPath, body, headers, query } = req;
-
-    // Prepare the body for logging 
-    let logBody;
-    if (body && body.base64Image) {
-      logBody = {
-        ...body,
-        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
-      };
-    } else {
-      logBody = body;
-    }
-
-    // Format headers with truncated values
-    const formattedHeaders = Object.entries(headers)
-      .map(([key, value]) => {
-        const truncatedValue = value && value.length > 50
-          ? `${value.substring(0, 50)}... [truncated]`
-          : value;
-        return `      ${key.padEnd(16)}: ${truncatedValue}`;
-      })
-      .join('\n');
-
-    // Prepare a human-friendly log message
-    const requestLogMessage = `
-    Incoming Request:
-    ----------------
-    ${ip} => ${method} ${requestPath}
-    Headers:
-${formattedHeaders}
-    Cookies: 
-      ${Object.keys(req.cookies)
-        .map(key => {
-          const cookieValue = req.cookies[key];
-          const displayValue = typeof cookieValue === 'string'
-            ? cookieValue.substring(0, 50)
-            : String(cookieValue);
-          return `${key}: ${displayValue}...`;
-        })
-        .join('\n      ')}
-    Body: ${logBody ? JSON.stringify(logBody, null, 6) : 'Empty'}
-    Query: ${query ? JSON.stringify(query, null, 6) : 'Empty'}
-    `;
-
-    logger.info(requestLogMessage);
-    next();
-  }
-
-  unknownRouteHandler(req, res, next) {
-    logger.info('Checking if the route is unknown...');
-    if (!req.formattedResponse) {
-      logger.error(`Unknown route: ${req.method} ${req.url}`);
-      next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
-    } else {
-      logger.info('route was handled and returned a response');
+  conditionalSlipUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadSlip.single('imageFile')(req, res, next);
     }
     next();
-  }
+  };
 
-  formatUptime(seconds) {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
-
-    return parts.join(' ') || seconds;
-  }
+  conditionalProfilePictureUpload(req, res, next) {
+    if (req.is('multipart/form-data')) {
+      return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
+    }
+    next();
+  };
 
   /**
-   * Health check middleware to check the health of the server
-   * 
-   * it provides:
-   * 
-   * - the current time in Bangkok
-   * - the uptime of the server
-   * - the environment
-   */
+ * Health check middleware to check the health of the server
+ * 
+ * it provides:
+ * 
+ * - the current time in Bangkok
+ * - the uptime of the server
+ * - the environment
+ */
   healthCheck(req, res, next) {
     const bkkTime = new Date().toLocaleString('en-GB', {
       timeZone: 'Asia/Bangkok',
@@ -456,6 +616,172 @@ ${formattedHeaders}
     );
     next();
   };
+
+  /**
+ * Helper method to log response details
+ */
+  logResponse = (req, status_code, message, data, headers = {}, isError = false, fileResponse = null) => {
+    const securityHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Content-Security-Policy': `default-src '${req.path === '/users/profile-picture' ? 'self; img-src data: blob:' : 'self'}'`,
+      ...headers
+    };
+
+    const formatObjectEntries = (obj, lengthLimit = 50) => {
+      if (typeof obj !== 'object' || obj === null) return '';
+
+      //NOTE - improve to log nested object in the array
+      return Object.entries(obj).map(([key, value]) => {
+        let displayValue = value && String(value).length > lengthLimit
+          ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+          : String(value);
+        if (key.includes('password')) displayValue = '*****';
+        return `${key.padEnd(26)}: ${displayValue}`;
+      }).join('\n          ');
+    };
+
+    const responseLogMessage = `
+      ${isError ? '🡱🡱🡱 Error Response 🡱🡱🡱 :' : '🡱🡱🡱 Outgoing Response 🡱🡱🡱 :'}
+      Headers:
+          ${formatObjectEntries(securityHeaders)}
+      ------------------
+      ${req.method} ${req.path} => ${req.ip}
+      Status: ${status_code}
+      File Response: ${fileResponse || 'None'}
+      Message: ${message ? message : 'Not specified'}
+      Data:
+          ${Array.isArray(data) ? JSON.stringify(data) : formatObjectEntries(data || { "None": "None" })}
+    `;
+
+    const endingMessage = "=".repeat(5) + ` End of response: ${req.method} ${req.path} => ${status_code} => ${req.ip} ` + "=".repeat(5);
+
+    logger[isError ? 'error' : 'info'](responseLogMessage + '\n' + endingMessage);
+    return securityHeaders;
+  };
+
+
+  responseHandler = (req, res, next) => {
+    logger.info("Handling response");
+    let securityHeaders = {};
+    let status_code = 500;
+    let message = 'Internal Server Error';
+    let headers = {};
+    let data = null;
+
+    if (req.fileResponse) {
+      logger.info("Sending file response");
+      securityHeaders = this.logResponse(req, 200, "none", data, headers, false, req.fileResponse);
+      return res.set(securityHeaders).status(200).sendFile(req.fileResponse);
+    }
+
+    // Handle Swagger UI requests specifically
+    if (req.url.startsWith('/api/v0.2/docs')) {
+      logger.debug('Skipping response handler for Swagger UI request');
+      return next();
+    }
+
+    if (req.formattedResponse) {
+      ({ status_code, message, data, headers } = req.formattedResponse);
+      securityHeaders = this.logResponse(req, status_code, message, data, headers);
+    } else {
+      logger.warn('Response not formatted in req.formattedResponse');
+      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
+      logger.warn('Sending an empty response');
+      res.send();
+      return;
+    }
+
+    res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
+    return;
+  }
+
+  errorHandler = (err, req, res, next) => {
+    logger.info("Handling error");
+    err.stack = appConfigs.environment === "production" ? "" : err.stack;
+    if (!res.headersSent) {
+      let response;
+      if (err instanceof MyAppErrors) {
+        logger.error(`MyAppError: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(err.statusCode, err.message, err.data);
+      } else if (err instanceof SyntaxError) {
+        response = formatResponse(400, "Invalid Syntax: " + err.message);
+        logger.error(`SyntaxError: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        if (err.message.includes('JSON')) {
+          response = formatResponse(400, "Invalid JSON format: " + err.message);
+        }
+      } else if (err instanceof Error) {
+        logger.error(`Error: ${err.message}`);
+        logger.error(`stack: ${err.stack}`);
+        response = formatResponse(500, err.message);
+      } else {
+        logger.error(`Unhandled error: ${err}`);
+        logger.error(`stack: ${appConfigs.environment === 'development' ? err.stack : err}`);
+        response = formatResponse(500, "Internal Server Error");
+      }
+
+      const securityHeaders = this.logResponse(
+        req,
+        response.status_code,
+        response.message,
+        response.data,
+        err.headers || {},
+        true
+      );
+
+      res
+        .status(response.status_code)
+        .set({ ...securityHeaders, ...(err.headers || {}) })
+        .json(response);
+      return;
+    } else {
+      next();
+    }
+  }
+
+  unknownRouteHandler(req, res, next) {
+    logger.info('Checking if the route is unknown...');
+
+    if (!req.formattedResponse) {
+      logger.error(`Unknown route: ${req.method} ${req.url}`);
+      return next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+    }
+
+    logger.info('Route was handled eariler and returned a response.');
+    next(); // Only called if req.formattedResponse is set
+  }
+
+
+  /**
+   * Format uptime given in seconds to a human readable format.
+   * The format is as follows:
+   * - If days > 0, days are included and the rest is ignored.
+   * - If hours > 0, hours are included and the rest is ignored.
+   * - If minutes > 0, minutes are included and the rest is ignored.
+   * - If seconds > 0, seconds are included.
+   * If no time units are greater than 0, the number of seconds is returned.
+   * @param {number} seconds
+   * @returns {string} A human readable format of the uptime.
+   */
+  formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+    return parts.join(' ') || seconds;
+  }
+
+
 }
 
 module.exports = new Middlewares();

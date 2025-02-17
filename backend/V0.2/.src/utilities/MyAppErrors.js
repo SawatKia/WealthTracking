@@ -9,26 +9,37 @@ class MyAppErrors extends Error {
 
     static badRequest(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Bad Request', 400, data, headers);
+        // return new MyAppErrors(`Bad Request: ${message}`, 400, data, headers);
     }
 
     static unauthorized(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Unauthorized', 401, data, headers);
+        // return new MyAppErrors(`Unauthorized: ${message}`, 401, data, headers);
     }
 
     static forbidden(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Forbidden', 403, data, headers);
+        // return new MyAppErrors(`Forbidden: ${message}`, 403, data, headers);
     }
 
     static notFound(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Not Found', 404, data, headers);
+        // return new MyAppErrors(`Not Found: ${message}`, 404, data, headers);
     }
 
     static methodNotAllowed(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Method Not Allowed', 405, data, headers);
+        // return new MyAppErrors(`Method Not Allowed: ${message}`, 405, data, headers);
     }
 
     static conflict(message, data = null, headers = {}) {
         return new MyAppErrors(message || 'Conflict', 409, data, headers);
+        // return new MyAppErrors(`Conflict: ${message}`, 409, data, headers);
+    }
+
+    static unProcessableEntity(message, data = null, headers = {}) {
+        return new MyAppErrors(message || 'Unprocessable Entity', 422, data, headers);
+        // return new MyAppErrors(`Unprocessable Entity: ${message}`, 422, data, headers);
     }
 
     static tooManyRequests(message, data = null, headers = {}) {

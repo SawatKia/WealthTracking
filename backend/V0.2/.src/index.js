@@ -294,11 +294,14 @@ const initializeServices = async () => {
   try {
     logger.info("Initializing services...");
 
-    if (!pgClient.isConnected()) {
-      logger.info("Connecting to database...");
-      await pgClient.init();
-      logger.info("Database connected");
+    // Initialize the PgClient
+    await pgClient.init();
+
+    if (!await pgClient.isConnected()) {
+      logger.error("Failed to connect to the database.");
+      throw new Error("Database connection failed.");
     }
+    logger.info("Database connection successful");
 
     await easySlip.init();
     await documentAiService.init();
@@ -314,23 +317,87 @@ const initializeServices = async () => {
   }
 };
 
+const verifyEnvVars = (variables) => {
+  try {
+    logger.info("env vars empty verification...");
+    if (typeof variables !== 'object') {
+      logger.error("env vars is not an object");
+      throw new Error("env vars is not an object");
+    }
+
+    if (Object.keys(variables).length === 0) {
+      logger.error("env vars is empty");
+      throw new Error("env vars is empty");
+    }
+
+    for (const [key, value] of Object.entries(variables)) {
+      if (value === undefined || value === null) {
+        logger.warn(`${key} is empty. Please set it in .env file, examine missing key in 🔗  \x1b[38;5;51mhttps://github.com/SawatKia/WealthTracking.git\x1b[0m`);
+      }
+    }
+    logger.info("env vars verification completed");
+  } catch (error) {
+    logger.error(`Error verifying env vars: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Function to display the WealthTrack app symbol in ASCII art
+ */
+const showAppSymbol = () => {
+  const coins = ["💰 💰 💰", "💰 💰", "💰"];
+  const banknotes = ["💵💵💵💵", "💵💵💵", "💵💵"];
+  const transactions = ["📊 +5000 THB", "📊 -1200 THB", "📊 +7000 THB"];
+  const income = ["➕ 1200 THB", "➕ 8000 THB", "➕ 500 THB"];
+  const expense = ["➖ 1500 THB", "➖ 3000 THB", "➖ 2200 THB"];
+
+  console.log(`
+    ██╗    ██╗███████╗ █████╗ ██╗    ████████╗██╗  ██╗████████╗██████╗  █████╗  ██████╗██╗  ██╗
+    ██║    ██║██╔════╝██╔══██╗██║    ╚══██╔══╝██║  ██║╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
+    ██║ █╗ ██║█████╗  ███████║██║       ██║   ███████║   ██║   ██████╔╝███████║██║     █████╔╝ 
+    ██║███╗██║██╔══╝  ██╔══██║██║       ██║   ██╔══██║   ██║   ██╔══██╗██╔══██║██║     ██╔═██╗ 
+    ╚███╔███╔╝███████╗██║  ██║███████╗  ██║   ██║  ██║   ██║   ██║  ██║██║  ██║╚██████╗██║  ██╗
+     ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚══════╝  ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
+    -----------------------------------------------------------------------------------
+    💰 Coins         💵 Banknotes         📊 Transactions          ➕ Income   ➖ Expense
+    -----------------------------------------------------------------------------------
+  `);
+
+  for (let i = 0; i < coins.length; i++) {
+    console.log(
+      `\t${coins[i].padEnd(18)}${banknotes[i].padEnd(18)}${transactions[i].padEnd(22)}${income[i].padEnd(18)}${expense[i]}`
+    );
+  }
+
+  console.log(`
+    -----------------------------------------------------------------------------------
+    📢 WealthTrack server started... Track your finances wisely! 🚀
+  `);
+};
+
+
 /**
  * Start the Express server
  */
 const startExpressServer = () => {
   return new Promise((resolve, reject) => {
-    const server = app.app.listen(PORT, '0.0.0.0', () => {
+    const server = app.app.listen(PORT, () => {
       const endTime = Date.now();
       const timeTaken = endTime - app.startTime;
+      logger.info("start express server...");
 
-      logger.debug('┌──────────────────────────────────────────┐');
-      logger.debug('│       Server started successfully        │');
-      logger.debug('├──────────────────────────────────────────┤');
-      logger.debug(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
-      logger.debug(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
-      logger.debug(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
-      logger.debug('└──────────────────────────────────────────┘');
-      logger.info(`try sending a request to localhost:${PORT}/health to verify server is running`);
+      showAppSymbol();
+
+
+      logger.info('┌──────────────────────────────────────────┐');
+      logger.info('│       Server started successfully        │');
+      logger.info('├──────────────────────────────────────────┤');
+      logger.info(`│ Environment: ${NODE_ENV.padEnd(28)}│`);
+      logger.info(`│ App is listening on port ${PORT.toString().padEnd(16)}│`);
+      logger.info(`│ Server startup time: ${timeTaken.toLocaleString('en-US')} ms`.padEnd(43) + '│');
+      logger.info('└──────────────────────────────────────────┘');
+      logger.info(`try sending a request to 🔗  \x1b[38;5;51mhttp://localhost:${PORT}/health\x1b[0m to verify server is running`);
       resolve(server);
     });
 
@@ -357,7 +424,12 @@ const startServer = async () => {
   logger.info("=".repeat(20) + " Starting server " + "=".repeat(20));
 
   try {
+    // Validate environment
+    verifyEnvVars(appConfigs);
+
+    // Initialize services
     await initializeServices();
+
     if (NODE_ENV === 'development' && String(appConfigs.loadMockData).toLowerCase() === 'true') {
       try {
         logger.info('Loading mock data...');
@@ -369,6 +441,7 @@ const startServer = async () => {
         // Continue server startup even if mock data fails
       }
     }
+
 
     await startExpressServer();
   } catch (error) {

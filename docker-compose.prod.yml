@@ -6,44 +6,45 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NODE_ENV=production
-        - APP_PORT=${APP_PORT}
         - APP_DOMAIN=${APP_DOMAIN}
-    container_name: ${APP_DOMAIN}_prod
+        - APP_PORT=${APP_PORT}
+    container_name: ${APP_DOMAIN}-prodContainer
     env_file: 
-      - ./.env.production
+      - ./.env
     ports:
-      - "127.0.0.1:${APP_PORT}:${APP_PORT}"
+      - "3000:3000"
     volumes:
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads
+      - ./backend/logs:/usr/src/${APP_DOMAIN}/logs
     depends_on:
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-      restart_policy:
-        condition: unless-stopped
+      redis:
+        condition: service_healthy
+    command: |
+      sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
-      interval: 30s
+      interval: 10m
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 120s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
     networks:
       - prod_network
+    dns: 8.8.8.8
 
   postgres:
     image: postgres:15-alpine
-    container_name: postgres_prod
+    container_name: postgres-prodContainer
     env_file: 
-      - ./.env.production
+      - ./.env
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -52,33 +53,26 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.75'
-          memory: 1G
-      restart_policy:
-        condition: unless-stopped
+    restart: unless-stopped
     networks:
       - prod_network
 
   redis:
     image: redis:alpine
-    container_name: redis_prod
+    container_name: redis-prodContainer
     volumes:
       - redis_data:/data
+    env_file:
+      - ./.env
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-      restart_policy:
-        condition: unless-stopped
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - prod_network
 
@@ -93,4 +87,4 @@ volumes:
 networks:
   prod_network:
     driver: bridge
-    internal: true  # Only internal communication between containers
+    # internal: true  # Only internal communication between containers

@@ -63,7 +63,6 @@ class DocumentAiService {
      * @returns {string} Extracted text
      */
     _extractText(document, textAnchor) {
-        logger.info('Extracting text from document');
         if (!textAnchor.textSegments || textAnchor.textSegments.length === 0) {
             logger.debug('No text segments found');
             return '';
@@ -71,7 +70,6 @@ class DocumentAiService {
 
         const startIndex = textAnchor.textSegments[0].startIndex || 0;
         const endIndex = textAnchor.textSegments[0].endIndex;
-        logger.debug(`startIndex: ${startIndex}, endIndex: ${endIndex}`);
         return document.text.substring(startIndex, endIndex);
     }
 
