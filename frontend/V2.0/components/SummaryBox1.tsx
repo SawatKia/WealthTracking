@@ -1,7 +1,6 @@
-// components/SummaryBox1.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTransactions } from '../services/TransactionService'; // Import the hook to access the API function
+import { useTransactions } from '../services/TransactionService'; 
 
 type IncomeSummaryProps = {
   text_box1: string;

@@ -1,11 +1,10 @@
-// components/SummaryBox2.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTransactions } from '../services/TransactionService'; // Import the hook to access the new function
+import { useTransactions } from '../services/TransactionService'; 
 
 type ExpenseSummaryProps = {
   text_box2: string;
-  amount?: number;  // Optional amount prop, we'll use the fetched value
+  amount?: number; 
 };
 
 const ExpenseSummary = ({ text_box2, amount }: ExpenseSummaryProps) => {
@@ -53,7 +52,7 @@ const styles = StyleSheet.create({
   container: {
     width: 170,
     height: 70,
-    backgroundColor: '#FF9997',  // Red background to represent expense
+    backgroundColor: '#FF9997',  
     padding: 15,
     borderRadius: 10,
     margin: 5,
