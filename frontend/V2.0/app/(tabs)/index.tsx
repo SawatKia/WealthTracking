@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView } from 'react-native';
 import SummaryCard from '../../components/SummaryCard';
 import SummaryBox1 from '../../components/SummaryBox1';
 import SummaryBox2 from '../../components/SummaryBox2';
+import PercentDebt from '../../components/percent_debt';
 import IncomeExpenseReport from '@/components/IncomeExpenseReport';
 import ReportByCategory from '../../components/reportByCategory';
 
@@ -27,7 +28,7 @@ export default function HomeScreen() {
         <Text style={styles.header}>Debt</Text>
         <SummaryCard typeAccount="Total Debt" balance={500} totalAccounts={3} typeList="items" />
         <View style={styles.rowIncomeExpense}>
-          <SummaryBox1 text_box1="Paid" amount={30} text_percent='%' />
+          <PercentDebt text="Paid" amount={30} percent="%" />
           <SummaryBox2 text_box2="This Installment" amount={1000000.0} />
         </View>
       </View>
