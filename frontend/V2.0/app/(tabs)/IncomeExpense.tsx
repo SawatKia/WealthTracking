@@ -7,71 +7,56 @@ import { Ionicons} from "@expo/vector-icons";
 import { useRouter } from 'expo-router';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// import TransactionDetails from '@components/';
 const accounts = [
   { name: "Account A", balance: 1000000, lastUpdated: "Today, 18:00 PM" },
   { name: "Account B", balance: 500000, lastUpdated: "Yesterday, 15:00 PM" },
+  { name: "Account C", balance: 2000, lastUpdated: "Yesterday, 15:00 PM" },
 ];
-
-const transactions = [
-  { id: 1, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999500 },
-  { id: 2, category: "insurance", description: "Insurance", amount: 10000, type: "Expense", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 989500 },
-  { id: 3, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 999000 },
-  { id: 4, category: "Transport", description: "Taxi", amount: 500, type: "Expense", date: "22 Feb 2024", time: "15:00 PM", fromAccount: "Account A", endBalance: 998500 },
-  { id: 5, category: "Transport", description: "Salary", amount: 1000, type: "Income", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
-  { id: 6, category: "Transfer", description: "Transfer", amount: 1000, type: "Transfer", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
-  { id: 7, category: "Transfer", description: "Transfer", amount: 1000, type: "Transfer", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
-];
-
 
 // export default function DebtScreen() {
   export default function IncomeExpenses () {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("Expense");
+  const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("All");
   const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const [filteredTransactions, setFilteredTransactions] = useState(transactions);
 
-  const handleSwipe = (direction: 'Left' | 'Right') => {
-    if (direction === 'Left') {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % accounts.length);
-    } else if (direction === 'Right') {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
-    }
-  };
-  useEffect(() => {
-    const filterLst = selectedType === "All" ? transactions : transactions.filter((transaction) => 
-      transaction.type === selectedType
-    );
-    console.log(filterLst)
-    setFilteredTransactions(filterLst)
-  }, [transactions, selectedType])
+
+  // const handleSwipe = (direction: 'Left' | 'Right') => {
+  //   if (direction === 'Left') {
+  //     setCurrentIndex((prevIndex) => (prevIndex + 1) % accounts.length);
+  //   } else if (direction === 'Right') {
+  //     setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     try {
+  //       // const res = await getAllTransactions();
+        
+  //       setTransactions(res.data.transactions || []);
+  //     } catch (error) {
+  //       console.error('Failed to load transaction:', error);
+  //     }
+  //   };
+
+  //   fetchUsers();
+  // }, []);
   const [showAddPopup, setAddshowAddPopup] = useState(false);
 
   return (
     <View style={styles.container}>
 
-      <GestureHandlerRootView style={styles.accountContainer}>
         <AccountCard
-          account={accounts[currentIndex]}
-          currentIndex={currentIndex}
-          totalAccounts={accounts.length}
-          onSwipe={handleSwipe}
+          account={accounts}
         />
-      </GestureHandlerRootView>
+      {/* <GestureHandlerRootView style={styles.accountContainer}>
+      </GestureHandlerRootView> */}
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
-      <FlatList
-  data={filteredTransactions}
-  keyExtractor={(item) => item.id.toString()}
-  renderItem={({ item }) => (
-    <TransactionCard 
-      transaction={item}
-      onDelete={(id) => console.log(`Delete transaction with id: ${id}`)}
-      onEdit={(id) => console.log(`Edit transaction with id: ${id}`)}
-    />
-  )}
-/>
+      
+      <TransactionCard selected = {selectedType}/>
  
-
       {/* Floating Button */}
       {showAddPopup && (
         <View style={styles.popup}>
@@ -91,6 +76,7 @@ const transactions = [
             style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
             onPress={() => {
               setAddshowAddPopup(false);
+              router.push('/UploadSlip')
               console.log('Navigate to Page 2');
   
               // Add your navigation logic here
@@ -126,8 +112,13 @@ const transactions = [
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f0f4f8" },
-
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',  // Ensures children take full width
+    padding: 16,
+    backgroundColor: "#f0f4f8"
+  },
   accountContainer: {
     backgroundColor: '#F5F5F5',
     marginBottom: 10

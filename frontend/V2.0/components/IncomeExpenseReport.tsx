@@ -1,65 +1,53 @@
-import React from 'react';
-import { View, Dimensions } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
-import { color } from 'react-native-elements/dist/helpers';
+// IncomeExpensesReport.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import { VictoryChart, VictoryBar, VictoryLine } from 'victory-native';
+import { VictoryTheme } from 'victory-native';
+import { useTransactions } from '../services/TransactionService'; // Import the service
 
-export default function App() {
-    const data = {
-        labels: ["January", "February", "March", "April", "May", "June"],
-        datasets: [
-          {
-            data: [20, 45, 28, 80, 99, 43]
-          }
-        ]
-      };
+const IncomeExpensesReport = () => {
+  const { monthlyData, getMonthlySummary, error } = useTransactions(); // Get monthlyData from the hook
 
-    const chartConfig = {
-      backgroundColor: '#cf0000',
-      backgroundGradientFrom: '#ffffff',
-      backgroundGradientTo: '#ffffff',
-      // color: (opacity = 0) => `rgba(0, 0, 0, ${opacity})`,
-      labelColor: () => "#000000",
-      color:() => '#4957AA',
-      
-      //  barPercentage: 0.5, // Adjust bar width
-    
-    propsForBackgroundLines: {
-      stroke: "#140a0a", // Light gray for grid lines
-      color:'fff'
-    },
-      style: {
-        borderRadius: 16,
-        // color:'#fff'
-      }
-    }
-  const screenWidth = Dimensions.get('window').width;
+  useEffect(() => {
+    // Fetch monthly summary data when the component mounts
+    getMonthlySummary();
+    console.log(monthlyData)
+  }, []); // Only run once on mount
 
-  const graphStyle = {
-    marginVertical: 8,
-    ...chartConfig.style
+  // If there is an error, show the error message
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'red' }}>Error: {error}</Text>
+      </View>
+    );
   }
 
-  return (
-    <View>
-      <BarChart
-                width={screenWidth * 0.9}
-                height={200}
-                data={data}
-                chartConfig={chartConfig}
-                style={graphStyle}
-                yAxisLabel="$"
-                yAxisSuffix=""
-                // withInnerLines={false}
-                // showBarTops={false}
-                // yAxisInterval={1}
-                // flatColor = {true}
-                verticalLabelRotation={0} // Keep labels horizontal
-                withInnerLines={true} // Keep grid lines
-                showBarTops={false} // No rounded tops
-                fromZero={true} // Start y-axis from zero
+  // Calculate the average y value for the line chart
+  const averageY = monthlyData.reduce((sum, item) => sum + item.y, 0) / monthlyData.length || 0;
 
-              />
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginTop: 35 }}>Income/Expenses Report</Text>
+      <VictoryChart domainPadding={{ x: 10 }} theme={VictoryTheme.clean}>
+        <VictoryBar data={monthlyData} />
+        <VictoryLine
+          data={monthlyData.map(item => ({
+            x: item.x,
+            y: averageY,
+          }))}
+          style={{
+            data: {
+              stroke: 'red',
+              strokeWidth: 2,
+              strokeOpacity: 0.6,
+              strokeDasharray: '5,5',
+            },
+          }}
+        />
+      </VictoryChart>
     </View>
   );
-}
+};
 
+export default IncomeExpensesReport;

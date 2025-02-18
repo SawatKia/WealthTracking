@@ -12,7 +12,7 @@ import {
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Use Ionicons for the eye icon
 import { Link, useRouter } from "expo-router";
-import { signUp } from "../services/Authen";
+import { signUp } from "../services/AuthenService";
 
 export default function SignUpScreen() {
   const router = useRouter();

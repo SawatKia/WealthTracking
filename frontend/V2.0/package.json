@@ -37,6 +37,7 @@
     "react-native-dropdown-picker": "^5.4.6",
     "react-native-elements": "^3.4.3",
     "react-native-gesture-handler": "^2.22.0",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-modern-datepicker": "^1.0.0-beta.91",
     "react-native-reanimated": "~3.16.1",
@@ -44,7 +45,9 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "^15.11.1",
     "react-native-ui-datepicker": "^2.0.4",
-    "react-native-web": "~0.19.13"
+    "react-native-web": "~0.19.13",
+    "victory": "^37.3.6",
+    "victory-native": "^37.3.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
