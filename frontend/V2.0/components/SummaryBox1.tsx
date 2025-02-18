@@ -10,7 +10,7 @@ type IncomeSummaryProps = {
 };
 
 const SummaryBox1 = ({ text_box1, text_percent, amount }: IncomeSummaryProps) => {
-  const { getMonthlyIncome } = useTransactions(); // Access the function to fetch monthly income data
+  const { getSummaryIncome } = useTransactions(); // Access the function to fetch monthly income data
 
   const [income, setIncome] = useState<number>(0); // State to store the fetched income
   const [loading, setLoading] = useState<boolean>(true); // To manage loading state
@@ -21,7 +21,7 @@ const SummaryBox1 = ({ text_box1, text_percent, amount }: IncomeSummaryProps) =>
     const fetchIncome = async () => {
       try {
         setLoading(true);
-        const data = await getMonthlyIncome(1); // Get the income for the latest month
+        const data = await getSummaryIncome(1); // Get the income for the latest month
         setIncome(data); // Update the income state
       } catch (err) {
         setError('Failed to load income data');
@@ -31,7 +31,7 @@ const SummaryBox1 = ({ text_box1, text_percent, amount }: IncomeSummaryProps) =>
     };
 
     fetchIncome(); // Call the function to fetch the income
-  }, [getMonthlyIncome]); // Re-run this effect if the getMonthlyIncome function changes (optional)
+  }, [getSummaryIncome]); // Re-run this effect if the getMonthlyIncome function changes (optional)
 
   if (loading) {
     return <Text style={styles.loadingText}>Loading...</Text>; // Display a loading message if fetching
