@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import SummaryCard from '../../components/SummaryCard';
-import SummaryBox1 from '../../components/SummaryBox1';
-import SummaryBox2 from '../../components/SummaryBox2';
+import SummaryBox1 from '../../components/IncomeSummary';
+import SummaryBox2 from '../../components/ExpenseSummary';
 import PercentDebt from '../../components/PercentDebt';
 import CurrentInstallment from '../../components/CurrentInstallment';
 import IncomeExpenseReport from '@/components/IncomeExpenseReport';
