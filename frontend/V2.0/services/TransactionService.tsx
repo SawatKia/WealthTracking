@@ -49,6 +49,7 @@ export const useTransactions = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+  const [incomeData, setIncomeData] = useState<number>(0);
   const router = useRouter()
 
   // useEffect(() => {
@@ -214,7 +215,26 @@ export const useTransactions = () => {
         console.error(error);
       }
     };
+
+    const getMonthlyIncome = async (monthCount: number): Promise<number> => {
+      try {
+        const response = await api.get('/transactions/summary/monthly', {
+          params: {
+            monthCount: monthCount,
+          },
+        });
+    
+        if (response.status === 200 && response.data && response.data.data) {
+          return response.data.data[0]?.summary?.income || 0; // Ensure it returns a number
+        } else {
+          throw new Error('Failed to retrieve data');
+        }
+      } catch (error) {
+        console.error('Error fetching monthly income:', error);
+        throw error; // Re-throw the error so that the component can handle it
+      }
+    };
     
 
-  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary };
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getMonthlyIncome };
 };
