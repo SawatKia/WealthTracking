@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
-import DateTimePicker from "react-native-ui-datepicker"; // ✅ เปลี่ยนมาใช้ DateTimePicker
+import DateTimePicker from "react-native-ui-datepicker";
 import { useRouter } from "expo-router";
 import dayjs from "dayjs";
-import { Ionicons } from "@expo/vector-icons"; // ✅ เพิ่ม Ionicons
+import { Ionicons } from "@expo/vector-icons";
+import { useDebt } from '../services/DebtService';
 
 const debtCategories = [
     "Credit Card Debt",
@@ -17,26 +18,34 @@ const debtCategories = [
 const AddDebtDetail = () => {
     const [debtName, setDebtName] = useState("");
     const [category, setCategory] = useState(null);
-    const [date, setDate] = useState(dayjs()); // ✅ ใช้ dayjs สำหรับจัดการวันที่
+    const [date, setDate] = useState(dayjs());
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [amount, setAmount] = useState("");
     const [installmentAmount, setInstallmentAmount] = useState("");
     const [totalInstallments, setTotalInstallments] = useState("");
     const [paymentChannel, setPaymentChannel] = useState("");
     const [openCategory, setOpenCategory] = useState(false);
+
+    const { createDebt } = useDebt();  // Access createDebt function
     const router = useRouter();
 
     const handleSave = () => {
-        console.log("Saved Debt Details:", {
-            debtName,
-            category,
-            date: dayjs(date).format("DD MMM YYYY HH:mm"),
-            amount,
-            installmentAmount,
-            totalInstallments,
-            paymentChannel,
-        });
-        router.push("/(tabs)/Debt");
+        // Convert string fields to numbers
+        const debtDetails = {
+            debt_name: debtName,
+            start_date: dayjs(date).format("YYYY-MM-DD HH:mm"), // Ensure date format is correct
+            current_installment: 1, // Starting installment is 1 by default, adjust as needed
+            total_installments: Number(totalInstallments), // Convert string to number
+            loan_principle: Number(amount), // Convert amount to number
+            loan_balance: Number(amount), // Convert amount to number (or adjust based on your logic)
+            fi_code: null, // Assuming fi_code is null, but adjust as necessary
+        };
+
+        console.log("Saved Debt Details:", debtDetails);
+
+        createDebt(debtDetails); // Call createDebt with debtDetails
+
+        router.push("/(tabs)/Account");
     };
 
     const onChangeDate = (params: any) => {
@@ -91,6 +100,7 @@ const AddDebtDetail = () => {
                                 color="#9AC9F3"
                             />
                             {date ? <Text>{dayjs(date).format("DD MMM YYYY ")}</Text> : "..."}
+
                             <Ionicons
                                 name="time"
                                 size={20}
@@ -98,6 +108,7 @@ const AddDebtDetail = () => {
                                 color="#9AC9F3"
                             />
                             {date ? <Text>{dayjs(date).format("HH:mm")}</Text> : "..."}
+
                         </TouchableOpacity>
                         {isDatePickerVisible && (
                             <DateTimePicker
@@ -184,11 +195,6 @@ const styles = StyleSheet.create({
     cancelButtonStyle: { backgroundColor: "#E2E2E2", paddingVertical: 12, paddingHorizontal: 35, borderRadius: 8 },
     saveButton: { backgroundColor: "#9AC9F3", paddingVertical: 12, paddingHorizontal: 50, borderRadius: 8 },
     buttonText: { fontSize: 16, fontWeight: "600" },
-    modalOverlay: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-    calendarContainer: { backgroundColor: "#fff", padding: 20, borderRadius: 10, alignItems: "center" },
-    closeButton: { marginTop: 10, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: "#9AC9F3", borderRadius: 8 },
-    closeButtonText: { fontSize: 16, color: "#fff", fontWeight: "600" },
-    cancelButton: { backgroundColor: "#E2E2E2" },
     inputButton: {
         flexDirection: "row",
         backgroundColor: "#4957AA40",
