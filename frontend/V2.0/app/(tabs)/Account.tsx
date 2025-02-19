@@ -1,29 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from "react-native";
 import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons"; // เพิ่ม Ionicons
+import { Ionicons } from "@expo/vector-icons";
+import { Account, useAccount } from "../../services/AccountService"; // นำเข้า useAccount
+import { Transaction, useTransactions } from "../../services/TransactionService";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-// ข้อมูลบัญชีธนาคาร
-const bankAccounts = [
-  { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0 },
-  { name: "Krungthai", owner: "Miss Jane Cooper", accountNumber: "217-1-65465-3", balance: 50000.0 },
-];
-
-// ข้อมูลธุรกรรมล่าสุด
-const recentTransactions = [
-  { id: 1, type: "Deposit", accountNumber: "645-8-23195-9", amount: 500.0, color: "green" },
-  { id: 2, type: "Withdraw", accountNumber: "217-1-65465-3", amount: 100.0, color: "red" },
-  { id: 3, type: "Deposit", accountNumber: "645-8-23195-9", amount: 1500.0, color: "green" },
-  { id: 4, type: "Withdraw", accountNumber: "217-1-65465-3", amount: 200.0, color: "red" },
-  { id: 5, type: "Deposit", accountNumber: "645-8-23195-9", amount: 3000.0, color: "green" },
-];
 
 export default function BankAccountScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [bankAccounts, setBankAccounts] = useState<Account[]>([]); // สร้าง state สำหรับ bankAccounts
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+
   const router = useRouter();
+  const { getAllAccounts } = useAccount();
+  const { getAllTransactions } = useTransactions();
+
+
+  // ดึงข้อมูลบัญชีจาก API เมื่อคอมโพเนนต์ถูกโหลด
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const accounts = await getAllAccounts();
+      setBankAccounts(accounts);
+    };
+
+    const fetchTransactions = async () => {
+      const transactions = await getAllTransactions();
+      console.log("Fetched Transactions:", transactions); // ตรวจสอบข้อมูลที่ได้
+      if (transactions) {
+        setRecentTransactions(transactions);
+      } else {
+        setRecentTransactions([]); // ตั้งค่าเป็น array ว่างแทน undefined
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   // คำนวณยอดรวมของทุกบัญชี
   const totalBalance = bankAccounts.reduce((total, account) => total + account.balance, 0);
@@ -61,12 +75,12 @@ export default function BankAccountScreen() {
       <PanGestureHandler onHandlerStateChange={handleSwipe}>
         <View style={styles.accountContainer}>
           <View style={styles.accountCard}>
-            <Text style={styles.bankName}>{bankAccounts[currentIndex].name}</Text>
-            <Text style={styles.accountOwner}>{bankAccounts[currentIndex].owner}</Text>
-            <Text style={styles.accountNumber}>{bankAccounts[currentIndex].accountNumber}</Text>
+            <Text style={styles.bankName}>{bankAccounts[currentIndex]?.display_name}</Text>
+            <Text style={styles.accountOwner}>{bankAccounts[currentIndex]?.account_name}</Text>
+            <Text style={styles.accountNumber}>{bankAccounts[currentIndex]?.account_number}</Text>
             <Text style={styles.balanceText}>Bank Balance</Text>
             <Text style={styles.balanceAmount}>
-              {bankAccounts[currentIndex].balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
+              {bankAccounts[currentIndex]?.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
           </View>
         </View>
@@ -83,15 +97,14 @@ export default function BankAccountScreen() {
       </View>
 
       {/* ประวัติธุรกรรมล่าสุด */}
-      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}> Recent Transactions</Text>
       <FlatList
-        data={recentTransactions.slice(0, 5)} // แสดงแค่ 5 รายการแรก
-        keyExtractor={(item) => item.id.toString()}
+        data={recentTransactions ? recentTransactions.slice(0, 5) : []}
+        keyExtractor={(item) => item.transaction_id.toString()}
         renderItem={({ item }) => (
           <View style={styles.transactionCard}>
             <Text style={[styles.transactionType, { color: "#333333" }]}>{item.type}</Text>
-            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number : {item.accountNumber}</Text>
-            <Text style={[styles.transactionAmount, { color: item.color }]}>
+            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number : {item.sender?.account_number || "N/A"}</Text>
+            <Text style={[styles.transactionAmount, { color: item.type === "Income" ? "green" : "red" }]}>
               {item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
           </View>
