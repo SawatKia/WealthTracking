@@ -8,11 +8,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useDebt } from '../services/DebtService';
 
 const debtCategories = [
-    "Credit Card Debt",
-    "Mortgage Debt",
-    "Car Loan Debt",
-    "Student Loan Debt",
-    "Other",
+    { label: "Credit Card Debt", value: "Credit Card Debt", fi_code: "001" },
+    { label: "Mortgage Debt", value: "Mortgage Debt", fi_code: "002" },
+    { label: "Car Loan Debt", value: "Car Loan Debt", fi_code: "003" },
+    { label: "Student Loan Debt", value: "Student Loan Debt", fi_code: "004" },
+    { label: "Other", value: "Other", fi_code: "005" },
 ];
 
 const AddDebtDetail = () => {
@@ -30,23 +30,23 @@ const AddDebtDetail = () => {
     const router = useRouter();
 
     const handleSave = () => {
-        // Convert string fields to numbers
+        const selectedCategory = debtCategories.find(cat => cat.value === category);
+
         const debtDetails = {
             debt_name: debtName,
-            start_date: dayjs(date).format("YYYY-MM-DD HH:mm"), // Ensure date format is correct
-            current_installment: 1, // Starting installment is 1 by default, adjust as needed
-            total_installments: Number(totalInstallments), // Convert string to number
-            loan_principle: Number(amount), // Convert amount to number
-            loan_balance: Number(amount), // Convert amount to number (or adjust based on your logic)
-            fi_code: null, // Assuming fi_code is null, but adjust as necessary
+            start_date: dayjs(date).format("YYYY-MM-DD HH:mm"),
+            current_installment: 1,
+            total_installments: Number(totalInstallments),
+            loan_principle: Number(amount),
+            loan_balance: Number(amount),
+            fi_code: selectedCategory ? selectedCategory.fi_code : null,
         };
 
         console.log("Saved Debt Details:", debtDetails);
-
-        createDebt(debtDetails); // Call createDebt with debtDetails
-
-        router.push("/(tabs)/Account");
+        createDebt(debtDetails);
+        router.push("/(tabs)/Debt");
     };
+
 
     const onChangeDate = (params: any) => {
         setDate(params.date);
@@ -75,7 +75,7 @@ const AddDebtDetail = () => {
                         <DropDownPicker
                             open={openCategory}
                             value={category}
-                            items={debtCategories.map((cat) => ({ label: cat, value: cat }))}
+                            items={debtCategories.map((cat) => ({ label: cat.label, value: cat.value }))}
                             setOpen={setOpenCategory}
                             setValue={setCategory}
                             placeholder="Select Category..."
