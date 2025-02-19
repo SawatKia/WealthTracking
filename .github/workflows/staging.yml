@@ -9,7 +9,7 @@ on:
 
 jobs:
   build_deploy:
-    if: github.event.pull_request.merged == true && github.event.pull_request.merged_by.name == github.actor
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
