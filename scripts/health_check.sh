@@ -2,6 +2,51 @@
 #!/bin/bash
 source ./utils.sh
 
+# List of required containers and their expected states
+readonly REQUIRED_CONTAINERS=(
+    "WealthTrack-prodContainer"
+    "redis-prodContainer"
+    "postgres-prodContainer"
+)
+
+check_container_health() {
+    local container_name=$1
+    local container_status
+    
+    container_status=$(docker ps --filter "name=$container_name" --format "{{.Status}}")
+    
+    if [ -z "$container_status" ]; then
+        log_error "Container $container_name is not running"
+        return 1
+    fi
+    
+    if ! echo "$container_status" | grep -q "(healthy)"; then
+        log_error "Container $container_name is running but not healthy: $container_status"
+        return 1
+    fi
+    
+    log_status "Container \033[1;32m$container_name\033[0m is healthy: $container_status"
+    return 0
+}
+
+check_all_containers() {
+    local all_healthy=true
+    
+    for container in "${REQUIRED_CONTAINERS[@]}"; do
+        if ! check_container_health "$container"; then
+            all_healthy=false
+        fi
+    done
+    
+    if [ "$all_healthy" = true ]; then
+        log_success "All required containers are healthy"
+        return 0
+    else
+        log_error "Some containers are unhealthy"
+        return 1
+    fi
+}
+
 check_server_health() {
     local ip=${1:-localhost}
     local port
@@ -27,19 +72,11 @@ check_server_health() {
     fi
     
     log_info "Checking server health status on ${health_url}..."
-    local serverResponse=$(curl -s "http://${ip}:${port}/health")
+    local serverResponse=$(curl -s "${health_url}")
     
     if [ -z "$serverResponse" ]; then
-        log_info "No response from /health endpoint, falling back to docker ps check..."
-        local dockerStatus=$(docker ps --filter "name=WealthTrack-prodContainer" --format "{{.Status}}")
-        
-        if [ -n "$dockerStatus" ]; then
-            log_status "WealthTrack-prodContainer status: $dockerStatus"
-            return 0
-        else
-            log_error "Container is not running."
-            return 1
-        fi
+        log_info "No response from /health endpoint, checking container health..."
+        return $(check_all_containers)
     else
         echo -e "Server healthy response: $serverResponse"
         if echo "$serverResponse" | grep -q '"status":"healthy"'; then

@@ -4,6 +4,12 @@ source ./utils.sh
 source ./docker_management.sh
 source ./health_check.sh
 
+check_all_containers_health() {
+    log_info "Checking health of all required containers..."
+    check_all_containers
+    return $?
+}
+
 start_server() {
     verify_directory
     
@@ -39,14 +45,20 @@ start_server() {
 }
 
 main() {
-    if [ "$1" = "check_health" ]; then
-        check_server_health "$2"
-    else
-        start_server "$1"
-        echo -e "\a"
-        log_success "++++Server is ready to use!++++"
-        setup_cronjob
-    fi
+    case "$1" in
+        "check-health")
+            check_server_health "$2"
+            ;;
+        "check-all")
+            check_all_containers_health
+            ;;
+        *)
+            start_server "$1"
+            echo -e "\a"
+            log_success "++++Server is ready to use!++++"
+            setup_cronjob
+            ;;
+    esac
 }
 
 main "$@"

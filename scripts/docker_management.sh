@@ -4,7 +4,7 @@ source ./utils.sh
 
 restart_docker_daemon() {
     if [ "$(uname -s)" = "Linux" ]; then
-        log_info "Restarting Docker daemon on Ubuntu..."
+        log_error "Restarting Docker daemon on Ubuntu..."
         systemctl restart docker
         countdown_timer 10
     elif [ "$(uname -s)" = "MINGW64_NT"* ]; then
@@ -37,8 +37,31 @@ restart_docker_daemon() {
 
 setup_cronjob() {
     if [ "$(uname -s)" = "Linux" ]; then
-        log_info "Setting up health check cronjob..."
-        (crontab -l 2>/dev/null | grep -v "start_server.sh" ; echo "*/5 * * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh check_health; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
-        log_success "Cronjob created successfully."
+        log_info "Setting up health check cronjobs..."
+        
+        # Create a temporary file for the new crontab
+        local temp_crontab=$(mktemp)
+        
+        # Get existing crontab without our managed entries
+        crontab -l 2>/dev/null | grep -v "WealthTracking monitoring" | \
+            grep -v "start_server.sh" | \
+            grep -v "deploy.sh" > "$temp_crontab" || true
+        
+        # Add our health check crontabs
+        {
+            echo "# WealthTracking monitoring - Added $(date)"
+            # Check every 5 minutes, restart if main server health check fails
+            echo "*/5 * * * * cd $(pwd) && /bin/sh -c 'if ! ./start_server.sh check-health; then ./start_server.sh; fi'"
+            # Every hour, check all containers and do full redeploy if any are unhealthy
+            echo "0 * * * * cd $(pwd) && /bin/sh -c 'if ! ./start_server.sh check-all; then ./deploy.sh; fi'"
+        } >> "$temp_crontab"
+        
+        # Install the new crontab
+        crontab "$temp_crontab"
+        rm "$temp_crontab"
+        
+        log_success "Cronjobs created successfully:"
+        log_info "  - Main server health check every 5 minutes with container restart"
+        log_info "  - Full containers health check every hour with redeploy if needed"
     fi
 }

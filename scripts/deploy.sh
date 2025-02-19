@@ -20,7 +20,7 @@ Parameters:
 
 Examples:
     ./deploy.sh                    # Deploy to localhost:3000
-    ./deploy.sh 192.168.1.100     # Deploy to production server at 192.168.1.100
+    ./deploy.sh 192.168.1.100      # Deploy to production server at 192.168.1.100
     ./deploy.sh -h                 # Show this help message
 
 Additional Scripts:
