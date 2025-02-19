@@ -751,8 +751,10 @@ class TransactionController extends BaseController {
             const { type, month } = req.query;
             logger.debug(`type: ${type}, month: ${month}`);
 
-            super.verifyType('Expense', type);
-            logger.info(`type: ${type} is valid`);
+            if (type) {
+                super.verifyType('Expense', type);
+            }
+            logger.debug(`using type: ${type}`);
 
             const user = await super.getCurrentUser(req);
 

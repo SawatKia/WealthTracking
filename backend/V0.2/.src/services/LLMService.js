@@ -1,10 +1,12 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { Logger } = require('../utilities/Utils');
-const transactionTypes = require('../../statics/types.json');
-const logger = Logger('LLMService');
-const appConfigs = require('../configs/AppConfigs');
 const fs = require('fs');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 const SystemPrompts = require('./SystemPrompts');
+const appConfigs = require('../configs/AppConfigs');
+const transactionTypes = require('../../statics/types.json');
+const { Logger } = require('../utilities/Utils');
+
+const logger = Logger('LLMService');
 
 class LLMService {
     constructor() {

@@ -1,40 +1,59 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
-import { GestureHandlerRootView, PanGestureHandler, GestureHandlerGestureEvent } from "react-native-gesture-handler";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from "react-native";
+import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Account, useAccount } from "../../services/AccountService"; // นำเข้า useAccount
+import { Transaction, useTransactions } from "../../services/TransactionService";
 
-// ข้อมูลบัญชีธนาคาร
-const bankAccounts = [
-  { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0, lastUpdated: "Today, 14:30 PM" },
-  { name: "Krungthai", owner: "Miss Jane Cooper", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
-];
+const { width: screenWidth } = Dimensions.get("window");
 
-// ข้อมูลธุรกรรมล่าสุด
-const recentTransactions = [
-  { id: 1, type: "Deposit", accountNumber: "645-8-23195-9", amount: 500.0, color: "green" },
-  { id: 2, type: "Withdraw", accountNumber: "217-1-65465-3", amount: 100.0, color: "red" },
-  { id: 3, type: "Deposit", accountNumber: "645-8-23195-9", amount: 1500.0, color: "green" },
-  { id: 4, type: "Withdraw", accountNumber: "217-1-65465-3", amount: 200.0, color: "red" },
-  { id: 5, type: "Deposit", accountNumber: "645-8-23195-9", amount: 3000.0, color: "green" },
-];
 
 export default function BankAccountScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [bankAccounts, setBankAccounts] = useState<Account[]>([]); // สร้าง state สำหรับ bankAccounts
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+
   const router = useRouter();
+  const { getAllAccounts } = useAccount();
+  const { getAllTransactions } = useTransactions();
+
+
+  // ดึงข้อมูลบัญชีจาก API เมื่อคอมโพเนนต์ถูกโหลด
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const accounts = await getAllAccounts();
+      setBankAccounts(accounts);
+    };
+
+    const fetchTransactions = async () => {
+      const transactions = await getAllTransactions();
+      console.log("Fetched Transactions:", transactions); // ตรวจสอบข้อมูลที่ได้
+      if (transactions) {
+        setRecentTransactions(transactions);
+      } else {
+        setRecentTransactions([]); // ตั้งค่าเป็น array ว่างแทน undefined
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   // คำนวณยอดรวมของทุกบัญชี
   const totalBalance = bankAccounts.reduce((total, account) => total + account.balance, 0);
 
   // ฟังก์ชันสำหรับเลื่อนการ์ดบัญชีธนาคาร
-  const handleSwipe = (event: GestureHandlerGestureEvent) => {
-    const { nativeEvent } = event;
+  const handleSwipe = ({ nativeEvent }: any) => {
+    const { translationX, state } = nativeEvent;
 
-    const { translationX } = nativeEvent as unknown as { translationX: number };
-
-    if (translationX < -50) {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % bankAccounts.length);
-    } else if (translationX > 50) {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + bankAccounts.length) % bankAccounts.length);
+    if (state === State.END) {
+      if (translationX < -50) {
+        // ลากไปทางซ้าย
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % bankAccounts.length);
+      } else if (translationX > 50) {
+        // ลากไปทางขวา
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + bankAccounts.length) % bankAccounts.length);
+      }
     }
   };
 
@@ -53,15 +72,15 @@ export default function BankAccountScreen() {
       </View>
 
       {/* การ์ดแสดงบัญชีธนาคาร */}
-      <PanGestureHandler onGestureEvent={handleSwipe}>
+      <PanGestureHandler onHandlerStateChange={handleSwipe}>
         <View style={styles.accountContainer}>
           <View style={styles.accountCard}>
-            <Text style={styles.bankName}>{bankAccounts[currentIndex].name}</Text>
-            <Text style={styles.accountOwner}>{bankAccounts[currentIndex].owner}</Text>
-            <Text style={styles.accountNumber}>{bankAccounts[currentIndex].accountNumber}</Text>
+            <Text style={styles.bankName}>{bankAccounts[currentIndex]?.display_name}</Text>
+            <Text style={styles.accountOwner}>{bankAccounts[currentIndex]?.account_name}</Text>
+            <Text style={styles.accountNumber}>{bankAccounts[currentIndex]?.account_number}</Text>
             <Text style={styles.balanceText}>Bank Balance</Text>
             <Text style={styles.balanceAmount}>
-              {bankAccounts[currentIndex].balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
+              {bankAccounts[currentIndex]?.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
           </View>
         </View>
@@ -78,15 +97,14 @@ export default function BankAccountScreen() {
       </View>
 
       {/* ประวัติธุรกรรมล่าสุด */}
-      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}> Recent Transactions</Text>
       <FlatList
-        data={recentTransactions.slice(0, 5)} // แสดงแค่ 5 รายการแรก
-        keyExtractor={(item) => item.id.toString()}
+        data={recentTransactions ? recentTransactions.slice(0, 5) : []}
+        keyExtractor={(item) => item.transaction_id.toString()}
         renderItem={({ item }) => (
           <View style={styles.transactionCard}>
             <Text style={[styles.transactionType, { color: "#333333" }]}>{item.type}</Text>
-            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number : {item.accountNumber}</Text>
-            <Text style={[styles.transactionAmount, { color: item.color }]}>
+            <Text style={[styles.transactionDetails, { color: "#333333" }]}>Account Number : {item.sender?.account_number || "N/A"}</Text>
+            <Text style={[styles.transactionAmount, { color: item.type === "Income" ? "green" : "red" }]}>
               {item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
           </View>
@@ -95,7 +113,7 @@ export default function BankAccountScreen() {
 
       {/* ปุ่มเพิ่มบัญชี */}
       <TouchableOpacity style={styles.floatingButton} onPress={navigateToAddAccount}>
-        <Text style={styles.floatingButtonText}>+</Text>
+        <Ionicons name="add" size={45} color="#ffffff" /> {/* เปลี่ยนจาก Text เป็น Ionicons */}
       </TouchableOpacity>
     </GestureHandlerRootView>
   );
@@ -112,6 +130,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    width: screenWidth - 32, // ความกว้างของการ์ด
   },
   accountCard: {
     padding: 16,
@@ -150,27 +169,19 @@ const styles = StyleSheet.create({
   transactionAmount: { fontSize: 14 },
   floatingButton: {
     position: "absolute",
-    bottom: 10,
-    right: 10,
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#7F8CD9", // สีพื้นหลัง
     width: 60,
     height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4957AA",
-    marginLeft: -30,
-    marginTop: -30,
+    borderRadius: 30, // ทำให้เป็นวงกลม
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    paddingLeft: 20,
-    paddingRight: 20,
-  },
-  floatingButtonText: {
-    color: "#fff",
-    fontSize: 60,
-    marginLeft: -10,
-    marginTop: -16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5, // สำหรับ Android
   },
   dotContainer: {
     flexDirection: "row",

@@ -7,12 +7,36 @@ class Utils {
             message: message,
             data: data,
             ...(headers || {}),
-        }
+        };
     }
+
 
     static Logger(moduleName) {
         return new Logger(moduleName);
     }
+    /**
+     * Formats a given Date object as a string that represents the time
+     * in the Asia/Bangkok timezone. The string is formatted as
+     * "Weekday, Year Month Day, Hour:Minute:Second Timezone".
+     * @param {Date} time - Date object to format
+     * @returns {string} Formatted string
+     */
+
+    static formatBkkTime(time) {
+        const date = new Date(time);
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short',
+            hour12: false
+        };
+        return date.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', ...options });
+    }
 }
 
-module.exports = Utils
+module.exports = Utils;

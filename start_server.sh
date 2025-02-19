@@ -5,7 +5,7 @@ sleepWithTimer() {
         printf "\r\033[34mCountdown: %2d\033[0m   " "$i"
         sleep 1
     done
-    echo -e -e "\nDone!"
+    echo -e "\n"
 }
 
 healthStatus() {
@@ -13,15 +13,15 @@ healthStatus() {
     port=${2:-3000}
 
     if [ -z "$ip" ]; then
-        echo -e "\033[1;34m>>>\033[0m No IP provided, assuming healthy."
+        echo -e "\033[7;34m>>>\033[0m No IP provided, assuming healthy."
         return 0
     fi
-    
-    echo -e "\033[1;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health..."
+
+    echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health..."
     serverResponse=$(curl -s http://${ip}:${port}/health)
 
     if [ -z "$serverResponse" ]; then
-        echo -e "\033[1;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
+        echo -e "\033[7;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
         # Check if the container "WealthTrack-prodContainer" is running
         dockerStatus=$(docker ps --filter "name=WealthTrack-prodContainer" --format "{{.Status}}")
         if [ -n "$dockerStatus" ]; then
@@ -39,11 +39,11 @@ healthStatus() {
 }
 
 restartDockerDaemon() {
-    if [[ "$(uname -s)" == "Linux" ]]; then
+    if [ "$(uname -s)" = "Linux" ]; then
         echo -e "\033[1;31mRestarting Docker daemon on Ubuntu...\033[0m"
         systemctl restart docker
         sleepWithTimer 10
-    elif [[ "$(uname -s)" == "MINGW64_NT"* ]]; then
+    elif [ "$(uname -s)" = "MINGW64_NT"* ]; then
         echo -e "Restarting Docker Desktop on Windows..."
         if tasklist | findstr "Docker Desktop.exe" > /dev/null 2>&1; then
             echo -e "Stopping Docker Desktop..."
@@ -74,28 +74,28 @@ restartDockerDaemon() {
 }
 
 start_server() {
-    echo -e "\033[1;34m>>>\033[0m verifying the current directory..."
+    echo -e "\033[7;34m>>>\033[0m verifying the current directory..."
     if [ "${PWD##*/}" != "WealthTracking" ]; then
         echo -e "\033[1;31mPlease run this script from the WealthTracking directory.\033[0m"
         exit 1
     fi
-    echo -e "\033[1;34m>>>\033[0m Stopping existing containers..."
+    echo -e "\033[7;34m>>>\033[0m Stopping existing containers..."
     docker compose down
     sleepWithTimer 5
 
-    echo -e "\033[1;34m>>>\033[0m Starting Production server containers from built image..."
+    echo -e "\033[7;34m>>>\033[0m Starting Production server containers from built image..."
     docker compose -f docker-compose.prod.yml up -d --no-build
 
-    echo -e "\033[1;34m>>>\033[0m Waiting for server to fully start..."
+    echo -e "\033[7;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
 
     retry_count=0
-    max_retries=1
+    max_retries=3
 
     while ! healthStatus; do
-        echo -e "\033[1;34m>>>\033[0m Server is not responding."
+        echo -e "\033[7;34m>>>\033[0m Server is not responding."
         restartDockerDaemon
-        echo -e "\033[1;34m>>>\033[0m Retrying server start..."
+        echo -e "\033[7;34m>>>\033[0m Retrying server start..."
         retry_count=$((retry_count + 1))
         if [ $retry_count -ge $max_retries ]; then
             echo -e "\033[1;33mExceeded maximum retries. Exiting...\033[0m"
@@ -110,13 +110,12 @@ start_server() {
 }
 
 start_server
-echo -e -e "\a"
-echo -e -e "\033[1;32m++++Server is ready to use!++++\033[0m"
+echo -e "\a"
+echo -e "\033[1;32m++++Server is ready to use!++++\033[0m"
+echo -e "\x1b[38;5;49m>>>\x1b[0m Color testing"
 
 # (Optional) Create a cronjob for Ubuntu (staging/production)
-if [[ "$(uname -s)" == "Linux" ]]; then
-    project_root=$(pwd)
-    # (crontab -l 2>/dev/null; echo -e "*/5 * * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
-    (crontab -l 2>/dev/null; echo -e "1 */1 * * * /bin/bash -c 'if ! $project_root/start_server.sh healthStatus; then $project_root/start_server.sh; fi'") | crontab -
-    echo -e "\033[1;34m>>>\033[0m cronjob created."
+if [ "$(uname -s)" = "Linux" ]; then
+    echo -e "\033[7;34m>>>\033[0m cronjob created."
+    (crontab -l 2>/dev/null | grep -v "start_server.sh" ; echo -e "*/5 * * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
 fi

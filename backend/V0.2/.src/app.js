@@ -1,4 +1,3 @@
-const startTime = Date.now();
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const swaggerUi = require('swagger-ui-express');
@@ -11,14 +10,15 @@ const routes = require('./routes');
 const mdw = require("./middlewares/Middlewares");
 const appConfigs = require("./configs/AppConfigs");
 
+const serverTime = require('./utilities/StartTime');
 const NODE_ENV = appConfigs.environment;
-const { Logger, formatResponse } = Utils;
+const { Logger, formatResponse, formatBkkTime } = Utils;
 const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 
-logger.info(`timer started at ${new Date(startTime).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok' })}`);
-logger.warn(`Imports completed after ${Date.now() - startTime}ms`);
+logger.info(`Server started at ${serverTime.getFormattedStartTime()}`);
+logger.warn(`Imports completed after ${serverTime.getUptime()}ms`);
 
 // trust nginx proxy
 app.set('trust proxy', 1);
@@ -74,7 +74,6 @@ const allowedMethods = {
   '/health': ['GET'],
   '/favicon.ico': ['GET'],
   '/api': ['GET'],
-  '/api/test-timeout': ['GET'],
   //routes.js
   '/api/v0.2/': ['GET'],
   '/api/v0.2/users': ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -104,8 +103,8 @@ const allowedMethods = {
   '/api/v0.2/budgets/history': ['GET'],
   '/api/v0.2/budgets/:expenseType': ['PATCH', 'DELETE'],
 }
-
 if (NODE_ENV != 'production') {
+  allowedMethods['/api/test-timeout'] = ['GET'];
   allowedMethods['/api/v0.2/fis'] = ['GET'];
   allowedMethods['/api/v0.2/fi/:fi_code'] = ['GET'];
   allowedMethods['/api/v0.2/fis/operating-banks'] = ['GET'];
@@ -125,23 +124,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-// CORS Error handling middleware
-app.use((err, req, res, next) => {
-  logger.error(`Error: ${err.message}`);
-  if (err.message === 'Not allowed by CORS') {
-    res.status(403).json({
-      status: "error",
-      message: "Not allowed by CORS"
-    });
-  } else {
-    next(err);
-  }
-});
-
-
-/**
- * Apply rate limiter in production
- */
+// Apply rate limiter in production
 if (!isDev) {
   // 3reqs per 5secs
   app.use(mdw.rateLimiter(5 * 1000, 3));
@@ -177,10 +160,7 @@ app.get("/api", (req, res, next) => {
 // Set connection timeout to 3 seconds
 app.use((req, res, next) => {
   res.setTimeout(3000, () => {
-    res.status(408).json({
-      status: "error",
-      message: "Request timeout"
-    });
+    req.formattedResponse = formatResponse(408, "Request timeout", null);
   });
   next();
 });
@@ -198,4 +178,4 @@ app.use(mdw.errorHandler);
 // Global response handler
 app.use(mdw.responseHandler);
 
-module.exports = { app, startTime };
+module.exports = app;
