@@ -2,30 +2,70 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { useRouter } from "expo-router";
+import { useAccount } from '../services/AccountService';
 
 const bankList = [
-    "Bank of Thailand", "Bangkok Bank", "Kasikorn Bank", "Krungthai Bank",
-    "JPMorgan Chase", "Oversea-Chinese Banking Corporation", "TMB Thanachart Bank",
-    "Siam Commercial Bank", "Citibank", "Sumitomo Mitsui Banking Corporation",
-    "Standard Chartered Bank (Thai)", "CIMB Thai Bank", "RHB Bank", "United Overseas Bank (Thai)",
-    "Bank of Ayudhya", "Mega International Commercial Bank", "Bank of America", "Indian Overseas Bank",
-    "Government Savings Bank", "Hongkong and Shanghai Banking Corporation", "Deutsche Bank Bangkok Branch",
-    "Government Housing Bank", "Bank for Agriculture and Agricultural Cooperatives", "Export-Import Bank of Thailand",
-    "Mizuho Bank Bangkok Branch", "BNP Paribas", "Bank of China (Thai)", "Islamic Bank of Thailand", "Tisco Bank",
-    "Kiatnakin Phatra Bank", "ICBC (Thai)", "Thai Credit Bank", "Land and Houses Bank", "Sumitomo Mitsui Trust Bank (Thai)",
-    "SME Development Bank"
+    { name: "Bank of Thailand", fi_code: "001" },
+    { name: "Bangkok Bank", fi_code: "002" },
+    { name: "Kasikorn Bank", fi_code: "003" },
+    { name: "Krungthai Bank", fi_code: "004" },
+    { name: "JPMorgan Chase", fi_code: "005" },
+    { name: "Oversea-Chinese Banking Corporation", fi_code: "006" },
+    { name: "TMB Thanachart Bank", fi_code: "007" },
+    { name: "Siam Commercial Bank", fi_code: "008" },
+    { name: "Citibank", fi_code: "009" },
+    { name: "Sumitomo Mitsui Banking Corporation", fi_code: "010" },
+    { name: "Standard Chartered Bank (Thai)", fi_code: "011" },
+    { name: "CIMB Thai Bank", fi_code: "012" },
+    { name: "RHB Bank", fi_code: "013" },
+    { name: "United Overseas Bank (Thai)", fi_code: "014" },
+    { name: "Bank of Ayudhya", fi_code: "015" },
+    { name: "Mega International Commercial Bank", fi_code: "016" },
+    { name: "Bank of America", fi_code: "017" },
+    { name: "Indian Overseas Bank", fi_code: "018" },
+    { name: "Government Savings Bank", fi_code: "019" },
+    { name: "Hongkong and Shanghai Banking Corporation", fi_code: "020" },
+    { name: "Deutsche Bank Bangkok Branch", fi_code: "021" },
+    { name: "Government Housing Bank", fi_code: "022" },
+    { name: "Bank for Agriculture and Agricultural Cooperatives", fi_code: "023" },
+    { name: "Export-Import Bank of Thailand", fi_code: "024" },
+    { name: "Mizuho Bank Bangkok Branch", fi_code: "025" },
+    { name: "BNP Paribas", fi_code: "026" },
+    { name: "Bank of China (Thai)", fi_code: "027" },
+    { name: "Islamic Bank of Thailand", fi_code: "028" },
+    { name: "Tisco Bank", fi_code: "029" },
+    { name: "Kiatnakin Phatra Bank", fi_code: "030" },
+    { name: "ICBC (Thai)", fi_code: "031" },
+    { name: "Thai Credit Bank", fi_code: "032" },
+    { name: "Land and Houses Bank", fi_code: "033" },
+    { name: "Sumitomo Mitsui Trust Bank (Thai)", fi_code: "034" },
+    { name: "SME Development Bank", fi_code: "035" }
 ];
 
 const AddAccountDetail = () => {
-    const [bankName, setBankName] = useState(null);
+    const [fi_code, setFi_code] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
-    const [accountName, setAccountName] = useState("");
-    const [accountNumber, setAccountNumber] = useState("");
-    const [remainingBalance, setRemainingBalance] = useState("");
+    const [display_name, setDisplay_name] = useState<string>("");
+    const [account_name, setAccount_name] = useState<string>("");
+    const [account_number, setAccount_number] = useState<string>("");
+    const [balance, setBalance] = useState<number | string>("");
+    const { createAccount } = useAccount(); // Destructure the createAccount function
     const router = useRouter();
 
     const handleSave = () => {
-        console.log("Saved Account Details:", { bankName, accountName, accountNumber, remainingBalance });
+        const accountDetails = {
+            account_number,
+            fi_code,
+            display_name,
+            account_name,
+            balance: parseFloat(balance as string),
+        };
+
+        console.log("Saved Account Details:", accountDetails);
+        // Call createAccount to save the account
+        createAccount(accountDetails);
+
+        // Optionally navigate back to the Account page after saving
         router.push("/(tabs)/Account");
     };
 
@@ -44,10 +84,13 @@ const AddAccountDetail = () => {
                         <Text style={styles.label}>Bank Name</Text>
                         <DropDownPicker
                             open={open}
-                            value={bankName}
-                            items={bankList.map(bank => ({ label: bank, value: bank }))}
+                            value={fi_code}
+                            items={bankList.map(bank => ({
+                                label: bank.name,
+                                value: bank.fi_code
+                            }))}
                             setOpen={setOpen}
-                            setValue={setBankName}
+                            setValue={setFi_code}
                             placeholder="Select Bank..."
                             searchable={true}
                             style={styles.dropdown}
@@ -57,37 +100,48 @@ const AddAccountDetail = () => {
                         />
                     </View>
 
-                    {/* Account Name Input */}
+                    {/* Display Name Input */}
                     <View style={[styles.inputContainer, { zIndex: 4000 }]}>
+                        <Text style={styles.label}>Display Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={display_name}
+                            onChangeText={setDisplay_name}
+                            placeholder="Enter Display Name"
+                        />
+                    </View>
+
+                    {/* Account Name Input */}
+                    <View style={[styles.inputContainer, { zIndex: 3000 }]}>
                         <Text style={styles.label}>Account Name</Text>
                         <TextInput
                             style={styles.input}
-                            value={accountName}
-                            onChangeText={setAccountName}
+                            value={account_name}
+                            onChangeText={setAccount_name}
                             placeholder="Enter Account Name"
                         />
                     </View>
 
                     {/* Account Number Input */}
-                    <View style={[styles.inputContainer, { zIndex: 3000 }]}>
+                    <View style={[styles.inputContainer, { zIndex: 2000 }]}>
                         <Text style={styles.label}>Account Number</Text>
                         <TextInput
                             style={styles.input}
-                            value={accountNumber}
-                            onChangeText={setAccountNumber}
+                            value={account_number}
+                            onChangeText={setAccount_number}
                             placeholder="Enter Account Number"
                             keyboardType="numeric"
                         />
                     </View>
 
-                    {/* Remaining Balance Input */}
-                    <View style={[styles.inputContainer, { zIndex: 2000 }]}>
+                    {/* Balance Input */}
+                    <View style={[styles.inputContainer, { zIndex: 1000 }]}>
                         <Text style={styles.label}>Remaining Balance</Text>
                         <TextInput
                             style={styles.input}
-                            value={remainingBalance}
-                            onChangeText={setRemainingBalance}
-                            placeholder="Enter Remaining Balance"
+                            value={balance.toString()}
+                            onChangeText={(text) => setBalance(text)}
+                            placeholder="Enter Balance"
                             keyboardType="numeric"
                         />
                     </View>

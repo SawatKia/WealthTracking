@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
-import { GestureHandlerRootView, PanGestureHandler, GestureHandlerGestureEvent } from "react-native-gesture-handler";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from "react-native";
+import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons"; // เพิ่ม Ionicons
+
+const { width: screenWidth } = Dimensions.get("window");
 
 // ข้อมูลบัญชีธนาคาร
 const bankAccounts = [
-  { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0, lastUpdated: "Today, 14:30 PM" },
-  { name: "Krungthai", owner: "Miss Jane Cooper", accountNumber: "217-1-65465-3", balance: 50000.0, lastUpdated: "Yesterday, 16:00 PM" },
+  { name: "Kasikorn", owner: "Miss Jane Cooper", accountNumber: "645-8-23195-9", balance: 25890.0 },
+  { name: "Krungthai", owner: "Miss Jane Cooper", accountNumber: "217-1-65465-3", balance: 50000.0 },
 ];
 
 // ข้อมูลธุรกรรมล่าสุด
@@ -26,15 +29,17 @@ export default function BankAccountScreen() {
   const totalBalance = bankAccounts.reduce((total, account) => total + account.balance, 0);
 
   // ฟังก์ชันสำหรับเลื่อนการ์ดบัญชีธนาคาร
-  const handleSwipe = (event: GestureHandlerGestureEvent) => {
-    const { nativeEvent } = event;
+  const handleSwipe = ({ nativeEvent }: any) => {
+    const { translationX, state } = nativeEvent;
 
-    const { translationX } = nativeEvent as unknown as { translationX: number };
-
-    if (translationX < -50) {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % bankAccounts.length);
-    } else if (translationX > 50) {
-      setCurrentIndex((prevIndex) => (prevIndex - 1 + bankAccounts.length) % bankAccounts.length);
+    if (state === State.END) {
+      if (translationX < -50) {
+        // ลากไปทางซ้าย
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % bankAccounts.length);
+      } else if (translationX > 50) {
+        // ลากไปทางขวา
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + bankAccounts.length) % bankAccounts.length);
+      }
     }
   };
 
@@ -53,7 +58,7 @@ export default function BankAccountScreen() {
       </View>
 
       {/* การ์ดแสดงบัญชีธนาคาร */}
-      <PanGestureHandler onGestureEvent={handleSwipe}>
+      <PanGestureHandler onHandlerStateChange={handleSwipe}>
         <View style={styles.accountContainer}>
           <View style={styles.accountCard}>
             <Text style={styles.bankName}>{bankAccounts[currentIndex].name}</Text>
@@ -95,7 +100,7 @@ export default function BankAccountScreen() {
 
       {/* ปุ่มเพิ่มบัญชี */}
       <TouchableOpacity style={styles.floatingButton} onPress={navigateToAddAccount}>
-        <Text style={styles.floatingButtonText}>+</Text>
+        <Ionicons name="add" size={45} color="#ffffff" /> {/* เปลี่ยนจาก Text เป็น Ionicons */}
       </TouchableOpacity>
     </GestureHandlerRootView>
   );
@@ -112,6 +117,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    width: screenWidth - 32, // ความกว้างของการ์ด
   },
   accountCard: {
     padding: 16,
@@ -150,27 +156,19 @@ const styles = StyleSheet.create({
   transactionAmount: { fontSize: 14 },
   floatingButton: {
     position: "absolute",
-    bottom: 10,
-    right: 10,
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#7F8CD9", // สีพื้นหลัง
     width: 60,
     height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4957AA",
-    marginLeft: -30,
-    marginTop: -30,
+    borderRadius: 30, // ทำให้เป็นวงกลม
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    paddingLeft: 20,
-    paddingRight: 20,
-  },
-  floatingButtonText: {
-    color: "#fff",
-    fontSize: 60,
-    marginLeft: -10,
-    marginTop: -16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5, // สำหรับ Android
   },
   dotContainer: {
     flexDirection: "row",

@@ -1,24 +1,14 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import React, { useState,useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Modal,FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import IconMap from "../constants/IconMap";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
-type TransactionCardProps = {
-  transaction: {
-    id: number;
-    type: string;
-    category: string;
-    description: string;
-    amount: number;
-    date: string;
-    time: string;
-    fromAccount: string;
-    endBalance: number;
-  };
-  onDelete: (id: number) => void;
-  onEdit: (id: number) => void;
-};
+import { useTransactions, Transaction } from '../services/TransactionService';
+
+interface TransactionCardProps {
+  selected: "Income" | "Expense" | "Transfer" | "All";
+}
 
 const colorMap: Record<string, string> = {
   Expense: "#FF3D00",
@@ -26,132 +16,166 @@ const colorMap: Record<string, string> = {
   Transfer: "#ff9f00",
 };
 
-export default function TransactionCard({
-  transaction,
-  onDelete,
-  onEdit,
-}: TransactionCardProps) {
-  const color = colorMap[transaction.type];
-  const iconName =
-    IconMap[transaction.category.toLowerCase()] || "alert-circle-outline";
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+export default function TransactionCard({selected }: TransactionCardProps) {
+  const { getAllTransactions, loading, error, deleteTransaction } = useTransactions();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const showTransactionDetails = () => {
-    setModalVisible(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
+  // const [selectedType, setSelectedType] = useState<string>('All');
+  // const [isExpanded, setIsExpanded] = useState(false);
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const data = await getAllTransactions();
+        console.log(data)
+        setTransactions(data ?? []);
+      }
+      catch(err){
+        console.log(err)
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+  const filteredTransactions = transactions.filter((transaction) => {
+    if (selected === 'All') {
+      return true; // Show all transactions
+    }
+    return transaction.category === selected;
+  });
+
+  const handleEdit = (transactionId: string) =>{
+    console.log('handle edit')
+  }
+  const handleDelete = (transactionId: string) => {
+    deleteTransaction(transactionId);
   };
 
-  const hideTransactionDetails = () => {
-    console.log('press hide')
-    setModalVisible(false);
-  };
+    if (error) {
+      return (
+        <View >
+          <Text>{error}</Text>
+        </View>
+      );
+    }
 
   return (
-    <View style={styles.card}>
-      <TouchableOpacity
-        onPress={showTransactionDetails}
-        style={styles.mainContent}
-      >
-        {/* Image on the left */}
-        <MaterialCommunityIcons
-          name={iconName}
-          style={styles.icon}
-          color="#4a4a8e"
-        />
-
-        {/* Description and Date in the center */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.description}>{transaction.description}</Text>
-          <Text style={styles.date}>{transaction.date}</Text>
-        </View>
-
-        {/* Amount on the right */}
-        <View style={styles.rightContainer}>
-          <Text style={[styles.amount, { color }]}>
-            {transaction.type === "Income"
-              ? "+"
-              : transaction.type === "Expense"
-              ? "-"
-              : ""}
-            ฿{transaction.amount.toLocaleString()}
-          </Text>
-          <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-            <Ionicons
-              name={isExpanded ? "chevron-up-outline" : "chevron-down-outline"}
-              size={24}
+    // <View>
+      <FlatList
+      
+        data={filteredTransactions}
+        keyExtractor={(item) => item.transaction_id}
+        renderItem={({ item: transaction }) => (
+        
+        <View style={styles.card}>
+          <TouchableOpacity
+            onPress={() => setSelectedTransaction(transaction.transaction_id)}
+            style={styles.mainContent}
+          >
+            {/* Image on the left */}
+            <MaterialCommunityIcons
+              name={IconMap[transaction.type.toLowerCase()] || "alert-circle-outline"}
+              style={styles.icon}
               color="#4a4a8e"
             />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
 
-      {isExpanded && (
-        <View style={styles.additionalDetails}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>From Account</Text>
-            <Text style={styles.detailValue}>{transaction.fromAccount}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>End Balance</Text>
-            <Text style={styles.detailValue}>
-              ฿{transaction.endBalance.toLocaleString()}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Bottom Popup Modal */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={hideTransactionDetails}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.bottomModalContainer}>
-            <View style={styles.headerModal}>
-      {/* Modal Content */}
-                <Text style={styles.modalTitle}>Transaction Details</Text>
-              <TouchableOpacity onPress={hideTransactionDetails} style={styles.closeButton}>
-                <Ionicons name="close-outline" size={24} color="#333" />
-               </TouchableOpacity>
-            </View>
-            {/* Close Button */}
-
-
-            
-
-            <View style={styles.modalContent}>
-              <Text style={styles.modalLabel}>Description: </Text>
-              <Text>{transaction.description}</Text>
-            </View>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalLabel}>Date: </Text>
-              <Text>{transaction.date}</Text>
-            </View>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalLabel}>Amount: </Text>
-              <Text style={{ color }}>
-                {transaction.type === "Income" ? "+" : "-"}฿
-                {transaction.amount.toLocaleString()}
+            {/* Description and Date in the center */}
+            <View style={styles.infoContainer}>
+              <Text style={styles.description}>{transaction.type}</Text>
+              <Text style={styles.date}>
+                {new Date(transaction.transaction_datetime).toLocaleDateString()}
               </Text>
             </View>
 
-            {/* Actions */}
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={() => onDelete(transaction.id)}>
-                <Text>Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => onEdit(transaction.id)}>
-                <Text>Edit</Text>
-              </TouchableOpacity>
+            {/* Amount on the right */}
+            <View style={styles.rightContainer}>
+              <Text style={[styles.amount, { color : colorMap[transaction.category] }]}>
+                {transaction.category === "Income"
+                  ? "+"
+                  : transaction.category === "Expense"
+                  ? "-"
+                  : ""}
+                ฿{transaction.amount.toLocaleString()}
+              </Text>
+              {/* <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
+                <Ionicons
+                  name={isExpanded ? "chevron-up-outline" : "chevron-down-outline"}
+                  size={24}
+                  color="#4a4a8e"
+                />
+              </TouchableOpacity> */}
             </View>
-          </View>
+          </TouchableOpacity>
+
+          {/* {isExpanded && (
+            <View style={styles.additionalDetails}>
+              {
+              transaction.category === "Expense" && transaction.sender && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>From Account</Text>
+                  <Text style={styles.detailValue}>
+                    {transaction.sender.account_name}
+                  </Text>
+                </View>
+              )}
+
+            </View>
+            
+          )} */}
+
+          {/* Bottom Popup Modal */}
+          <Modal
+            visible={selectedTransaction === transaction.transaction_id}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setSelectedTransaction(null)}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.bottomModalContainer}>
+                <View style={styles.headerModal}>
+                  <Text style={styles.modalTitle}>Transaction Details</Text>
+                  <TouchableOpacity
+                    onPress={() => setSelectedTransaction(null)}
+                    style={styles.closeButton}
+                  >
+                    <Ionicons name="close-outline" size={24} color="#333" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalLabel}>Description: </Text>
+                  <Text>{transaction.note}</Text>
+                </View>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalLabel}>Date: </Text>
+                  <Text>{new Date(transaction.transaction_datetime).toLocaleDateString()}</Text>
+                </View>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalLabel}>Amount: </Text>
+                  <Text style={{ color : colorMap[transaction.category] }}>
+                    {transaction.category === "Income" ? "+" : "-"}฿
+                    {transaction.amount.toLocaleString()}
+                  </Text>
+                </View>
+
+                {/* Actions */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity onPress={() => handleDelete(transaction.transaction_id)}>
+                    <Text>Delete</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleEdit(transaction.transaction_id)}>
+                    <Text>Edit</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
-      </Modal>
-    </View>
+        )}
+      />
+
   );
 }
+
 
 const styles = StyleSheet.create({
   card: {

@@ -1,104 +1,86 @@
-import React from 'react';
-import { Dimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import React, { useEffect, useState } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
+import { VictoryPie, VictoryTheme, VictoryLabel } from "victory-native";
+import { useTransactions } from "../services/TransactionService";
 
-const screenWidth = Dimensions.get("window").width;
+const ReportByCategory = () => {
+  const { getMonthlyExpense, loading, error } = useTransactions();
+  const [chartData, setChartData] = useState<any[]>([]);
+  // const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
 
-const chartConfig = {
-  backgroundColor: "#e26a00",
-  backgroundGradientFrom: "#fb8c00",
-  backgroundGradientTo: "#ffa726",
-  decimalPlaces: 2, // Optional, shows decimal points in numbers
-  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-  style: {
-    borderRadius: 16
-  }
-};
+    useEffect(() => {
+      const fetchMonthlyExpense= async () => {
+        try {
+          const data = await getMonthlyExpense();
+          if (data) {
+            const monthlyExpenses = data.map((expense: any) => ({
+              x: expense.type,
+              y: expense.totalAmount,
+            }));
+            setChartData(monthlyExpenses);
+          }
+        }
+        catch(err){
+          console.log(err)
+        }
+      };
+  
+      fetchMonthlyExpense();
+    }, []);
 
-const data = [
-  {
-    name: "Food",
-    amount: 10000,
-    color: "#7F8CD9",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15
-  },
-  {
-    name: "Transport",
-    amount: 5000,
-    color: "#4957AA",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15
-  },
-  {
-    name: "Other",
-    amount: 4500,
-    color: "#DDDDDD",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15
-  },
-  {
-    name: "Travel",
-    amount: 7500,
-    color: "#ffffff",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15
-  },
-  {
-    name: "Education",
-    amount: 18000,
-    color: "#9AC9F3",
-    legendFontColor: "#7F7F7F",
-    legendFontSize: 15
-  }
-];
-
-// Function to calculate the percentage of each category
-const calculatePercentage = (amount: number, total: number) => {
-  return ((amount / total) * 100).toFixed(1); // Rounds to 1 decimal point
-};
-
-// Total amount for percentage calculation
-const totalAmount = data.reduce((sum, category) => sum + category.amount, 0);
-
-
-const reportByCategory = () => {
-  const updatedData = data.map((category) => ({
-    ...category,
-    name: `${category.name}\n${calculatePercentage(category.amount, totalAmount)}%`, // Add percentage to name
-  }));
+  // Log after state update to ensure it's up-to-date
+  // useEffect(() => {
+  //   console.log("Updated chart data:", chartData);
+  // }, [chartData]);
 
   return (
-    // <PieChart
-    //   data={data}
-    //   width={screenWidth *3/4}
-    //   height={225}
-    //   chartConfig={chartConfig}
-    //   accessor={"population"}
-    //   backgroundColor={"transparent"}
-    //   paddingLeft={"15"}
-    //   center={[10, 50]}
-    //   absolute
-    // />
-    <PieChart
-        data={data}
-        width={screenWidth * 0.9}
-        height={220}
-        // chartConfig={{
-        //   backgroundColor: "transparent",
-        //   backgroundGradientFrom: '#eff3ff',
-        //   backgroundGradientTo: '#efefef',
-        //   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        // }}
-        chartConfig={chartConfig}
-        accessor="amount"
-        backgroundColor="transparent"
-        paddingLeft="15"
-        absolute = {false} // if True : Displays absolute numbers instead of percentages
-        // withLabel={true} // Display category names and percentages
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      {/* <Text
+        style={{
+          fontSize: 20,
+          marginBottom: 20,
+          marginTop: 30,
+          alignSelf: "flex-end",
+        }}
+      >
+        Link to budget page
+      </Text> */}
+      <Text style={{ fontSize: 20,fontWeight: 'bold', marginTop: 35 }}>Expenses Report</Text>
+      
+      <VictoryPie
+        data={chartData}
+        theme={VictoryTheme.clean}
+        // innerRadius={68}
+        labelRadius={150}
+        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]}
+        // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]}
+        style={{
+          labels: {
+            fontSize: 10,
+            fill: "#000",
+          },
+          data: {
+            fillOpacity: 0.9,
+            borderWidth: 20,
+            borderRadius: 20,
+          },
+          parent: {
+            backgroundColor: "transparent",
+            borderRadius: 20,
+            padding: 2,
+          },
+        }}
       />
+      <VictoryLabel
+        textAnchor="middle"
+        style={{ fontSize: 14 }}
+        x={200}
+        y={200}
+        text="Expense"
 
+      />
+    </View>
   );
 };
 
-export default reportByCategory;
+export default ReportByCategory;

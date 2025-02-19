@@ -1,19 +1,36 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, SafeAreaView, Pressable, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  SafeAreaView,
+  Pressable,
+  Alert,
+} from "react-native";
 import { Dimensions } from "react-native";
-import { Ionicons} from "@expo/vector-icons"; 
+import { Ionicons } from "@expo/vector-icons";
 
-import { Link, router, useRouter } from 'expo-router';
+import { Link, router, useRouter } from "expo-router";
 
 import { useAuth } from "@/context/AuthContext";
+import {
+  saveCredentials,
+  getCredentials,
+  clearCredentials,
+} from "@/services/AuthenService";
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const router = useRouter()
+  const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isChecked, setIsChecked] = useState(false); // State for the checkbox
+
+  const [rememberMe, setRememberMe] = useState(false);
 
   // const [error, setError] = useState({ email: '', password: '' });
 
@@ -40,14 +57,31 @@ export default function LoginScreen() {
   //   setError(newError);
   //   return isValid;
   // };
-
+  useEffect(() => {
+    // Retrieve saved credentials when the screen loads
+    const loadSavedCredentials = async () => {
+      const { email, password } = await getCredentials();
+      if (email && password) {
+        setEmail(email);
+        setPassword(password);
+        setRememberMe(true);
+      }
+    };
+    loadSavedCredentials();
+  }, []);
 
   const handleLogin = async () => {
     try {
       const response = await login(email, password);
-      console.log('Login Success', `Welcome, ${response}`)
+      console.log("Login Success", `Welcome, ${response}`);
+      if (response && rememberMe) {
+        // Save credentials if "Remember Me" is checked
+        await saveCredentials(email, password);
+      } else {
+        // Clear credentials if login fails or "Remember Me" is not selected
+        await clearCredentials();
+      }
       // router.push('/(tabs)')
-      
     } catch (error) {
       console.error(error);
     }
@@ -59,6 +93,7 @@ export default function LoginScreen() {
 
   const toggleCheckbox = () => {
     setIsChecked(!isChecked); // Toggle the checkbox state
+    setRememberMe(!rememberMe);
   };
 
   return (
@@ -70,16 +105,15 @@ export default function LoginScreen() {
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Welcome Back</Text>
         </View>
-        
+
         {/* Username Input */}
-        <TextInput 
-          style={styles.input} 
-          placeholder="Email" 
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
           placeholderTextColor="#f5f5f5"
           onChangeText={setEmail}
-          
         />
-        
+
         {/* Password Input */}
         <View style={styles.passwordContainer}>
           <TextInput
@@ -90,22 +124,32 @@ export default function LoginScreen() {
             placeholderTextColor="#f5f5f5"
             secureTextEntry={!isPasswordVisible} // Toggle visibility
           />
-          <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color="#ffffff" />
+          <TouchableOpacity
+            onPress={togglePasswordVisibility}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={isPasswordVisible ? "eye-off" : "eye"}
+              size={24}
+              color="#ffffff"
+            />
           </TouchableOpacity>
         </View>
-        
 
         {/* Options Row */}
         <View style={styles.options}>
           {/* Checkbox with Remember me */}
           <View style={styles.checkboxContainer}>
-            <TouchableOpacity onPress={toggleCheckbox} style={[styles.checkbox, isChecked && styles.checked]}>
-              {isChecked && <Ionicons name="checkmark" size={16} color="#fff" />}
+            <TouchableOpacity
+              onPress={toggleCheckbox}
+              style={[styles.checkbox, isChecked && styles.checked]}
+            >
+              {isChecked && (
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              )}
             </TouchableOpacity>
             <Text style={styles.rememberMe}>Remember me</Text>
           </View>
-
 
           {/* Forgot password */}
           <TouchableOpacity>
@@ -117,44 +161,43 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Log In</Text>
         </TouchableOpacity>
-        
+
         {/* Divider */}
         <Text style={styles.orText}>or</Text>
-        
+
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton} >
+        <TouchableOpacity style={styles.googleButton}>
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>
-        
+
         {/* Sign Up Link */}
         <Text style={styles.signupText}>
-          Don’t have an account? 
+          Don’t have an account?
           <Link href="/SignUp" asChild>
             <Pressable>
               <Text style={styles.signupLink}>Sign Up</Text>
             </Pressable>
-           </Link>
-          
+          </Link>
         </Text>
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const { width, height } = Dimensions.get("window");
 const circleSize = Math.min(width, height);
 const styles = StyleSheet.create({
   background: {
     backgroundColor: "#7F8CD9",
-    width: "100%", 
-    height: "100%", 
+    width: "100%",
+    height: "100%",
     flex: 1,
   },
   circle1: {
     position: "absolute",
-    top: -(circleSize) * 0.4,
-    left: -(circleSize) * 0.20,
+    top: -circleSize * 0.4,
+    left: -circleSize * 0.2,
     width: circleSize,
     height: circleSize,
     borderRadius: circleSize / 2,
@@ -163,11 +206,11 @@ const styles = StyleSheet.create({
   },
   circle2: {
     position: "absolute",
-    top: (circleSize * 0.5) * 0.1,
-    left: (circleSize * 0.5),
+    top: circleSize * 0.5 * 0.1,
+    left: circleSize * 0.5,
     width: circleSize * 0.5,
     height: circleSize * 0.5,
-    borderRadius: circleSize * 0.5 / 2,
+    borderRadius: (circleSize * 0.5) / 2,
     backgroundColor: "#99bbff",
     opacity: 0.5,
   },
