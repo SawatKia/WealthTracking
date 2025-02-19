@@ -1,31 +1,17 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ImageSourcePropType, Modal } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, Modal } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
-// @ts-ignore
 import DatePicker from 'react-native-modern-datepicker';
-
-type Field = 'username' | 'birthday' | 'email' | 'password' | 'language';
-type SetEditingFunction = React.Dispatch<React.SetStateAction<boolean>>;
-type SetValueFunction = React.Dispatch<React.SetStateAction<string>>;
-
-interface DetailItemProps {
-  icon: ImageSourcePropType;
-  title: string;
-  value: string;
-  isEditing: boolean;
-  setEditing: SetEditingFunction;
-  tempValue: string;
-  setTempValue: SetValueFunction;
-  field: Field;
-}
+import { useUsers } from '../../services/ProfileService'; // Import the useUsers hook
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [username, setUsername] = useState("Jane Cooper");
-  const [birthday, setBirthday] = useState("1990-01-01");
-  const [email, setEmail] = useState("jane.cooper@example.com");
-  const [password, setPassword] = useState("********");
+  const { Users, loading, error, getAllUsers, editUser } = useUsers(); // Get user data and functions
+
+  const [username, setUsername] = useState('');
+  const [birthday, setBirthday] = useState('');
+  const [email, setEmail] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [editingUsername, setEditingUsername] = useState(false);
@@ -34,14 +20,34 @@ export default function ProfileScreen() {
   const [editingPassword, setEditingPassword] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const [tempUsername, setTempUsername] = useState(username);
-  const [tempBirthday, setTempBirthday] = useState(birthday);
-  const [tempEmail, setTempEmail] = useState(email);
-  const [tempPassword, setTempPassword] = useState("");
+  const [tempUsername, setTempUsername] = useState('');
+  const [tempBirthday, setTempBirthday] = useState('');
+  const [tempEmail, setTempEmail] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
+  const [tempConfirmPassword, setTempConfirmPassword] = useState('');
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Load user data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      const users = await getAllUsers();
+      if (users.length > 0) {
+        const user = users[0]; // Assuming you want to use the first user
+        setUsername(user.username);
+        setBirthday(user.date_of_birth);
+        setEmail(user.email);
+        setProfileImage(user.profile_picture_url);
+        setTempUsername(user.username);
+        setTempBirthday(user.date_of_birth);
+        setTempEmail(user.email);
+      }
+    };
+
+    fetchData();
+  }, [getAllUsers]);
+
   const handleEditPhoto = async () => {
-    // ขอสิทธิ์การเข้าถึงคลังรูปภาพ
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
@@ -49,7 +55,6 @@ export default function ProfileScreen() {
       return;
     }
 
-    // เปิด Image Picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -75,25 +80,35 @@ export default function ProfileScreen() {
     setShowLogoutModal(false);
   };
 
-  const handleSave = (field: Field) => {
-    switch (field) {
-      case 'username':
-        setUsername(tempUsername);
-        setEditingUsername(false);
-        break;
-      case 'birthday':
-        setBirthday(tempBirthday);
-        setEditingBirthday(false);
-        break;
-      case 'email':
-        setEmail(tempEmail);
-        setEditingEmail(false);
-        break;
-      case 'password':
-        setPassword(tempPassword);
-        setEditingPassword(false);
-        break;
+  const handleSave = (field: string) => {
+    if (field === "password" && tempPassword !== tempConfirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
     }
+
+    const updatedUser = {
+      national_id: "sample_id", // You should get this dynamically (perhaps from the fetched user data)
+      username: tempUsername,
+      email: tempEmail,
+      password: tempPassword,
+      confirm_password: tempConfirmPassword, // Assuming it's the same as password
+      date_of_birth: tempBirthday,
+    };
+
+    // Call the editUser function to update the user
+    editUser(updatedUser).then((success) => {
+      if (success) {
+        setUsername(tempUsername);
+        setBirthday(tempBirthday);
+        setEmail(tempEmail);
+        setEditingUsername(false);
+        setEditingBirthday(false);
+        setEditingEmail(false);
+        setEditingPassword(false);
+      } else {
+        Alert.alert("Error", "Failed to update the user information.");
+      }
+    });
   };
 
   const handleDateSelect = (selectedDate: string) => {
@@ -105,16 +120,7 @@ export default function ProfileScreen() {
     handleSave('birthday');
   };
 
-  const renderDetailItem = ({
-    icon,
-    title,
-    value,
-    isEditing,
-    setEditing,
-    tempValue,
-    setTempValue,
-    field
-  }: DetailItemProps) => {
+  const renderDetailItem = ({ icon, title, value, isEditing, setEditing, tempValue, setTempValue, field }: any) => {
     return (
       <View style={styles.detailItem}>
         <View style={styles.detailLeft}>
@@ -163,11 +169,8 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Modal
-        visible={showCalendar}
-        transparent={true}
-        animationType="fade"
-      >
+      {/* Modal for Calendar */}
+      <Modal visible={showCalendar} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.calendarContainer}>
             <DatePicker
@@ -253,10 +256,11 @@ export default function ProfileScreen() {
         })}
         <View style={styles.separator} />
 
+        {/* Password Update */}
         {renderDetailItem({
           icon: require("../../assets/images/Change-Password.png"),
           title: "Password",
-          value: password,
+          value: "********",
           isEditing: editingPassword,
           setEditing: setEditingPassword,
           tempValue: tempPassword,
@@ -281,27 +285,17 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <Modal
-        visible={showLogoutModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={cancelLogout}
-      >
+      {/* Logout Modal */}
+      <Modal visible={showLogoutModal} transparent={true} animationType="fade" onRequestClose={cancelLogout}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Logout</Text>
             <Text style={styles.modalMessage}>Are you sure you want to log out?</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={cancelLogout}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={cancelLogout}>
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmLogout}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={confirmLogout}>
                 <Text style={styles.modalButtonText}>Log Out</Text>
               </TouchableOpacity>
             </View>
