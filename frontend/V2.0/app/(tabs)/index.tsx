@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
 import { StyleSheet, ScrollView } from 'react-native';
 import SummaryCard from '../../components/SummaryCard';
 import SummaryBox1 from '../../components/IncomeSummary';
@@ -9,8 +9,25 @@ import IncomeExpenseReport from '@/components/IncomeExpenseReport';
 import ReportByCategory from '../../components/reportByCategory';
 
 import { View, Text } from '@/components/Themed';
+import { useTransactions,MonthlySummary } from '@/services/TransactionService'; 
 
 export default function HomeScreen() {
+  const {getMonthlySummary, getSummaryExpense, getSummaryIncome,error } = useTransactions(); // Get monthlyData from the hook
+  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+  useEffect(() => {
+      const fetchMonthlySummary = async () => {
+        try {
+          const data = await getMonthlySummary();
+          console.log('getMonthlySummary',data)
+          setMonthlyData(data ?? []);
+        }
+        catch(err){
+          console.log(err)
+        }
+      };
+  
+      fetchMonthlySummary();
+    }, []);
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -19,11 +36,11 @@ export default function HomeScreen() {
         <SummaryCard typeAccount="Total" balance={1000} totalAccounts={5} typeList="accounts" />
         
         <View style={styles.rowIncomeExpense}>
-          <SummaryBox1 text_box1="Income" text_percent='' amount={10000000.0} />
-          <SummaryBox2 text_box2="Expense" amount={1000000.0} />
+          <SummaryBox1 text_box1="Income" text_percent='' amount={getSummaryIncome()} />
+          <SummaryBox2 text_box2="Expense" amount={getSummaryExpense()} />
         </View>
 
-        <IncomeExpenseReport />
+        <IncomeExpenseReport monthlyData ={monthlyData}/>
         <ReportByCategory />
 
         <Text style={styles.header}>Debt</Text>

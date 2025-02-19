@@ -31,7 +31,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.warn("Token expired. Attempting refresh...");
       try {
-        const refreshResponse = await api.post("/refresh-token");
+        const refreshResponse = await api.post("/refresh-token?platform=mobile");
         const newToken = refreshResponse.data.token;
 
         if (newToken) {

@@ -4,45 +4,24 @@ import { useTransactions } from '../services/TransactionService';
 
 type ExpenseSummaryProps = {
   text_box2: string;
-  amount?: number; 
+  amount?: string; 
 };
 
 const ExpenseSummary = ({ text_box2, amount }: ExpenseSummaryProps) => {
-  const { getSummaryExpense } = useTransactions(); // Access the new function to fetch monthly expense
-  const [expense, setExpense] = useState<number>(0);  // State to store the fetched expense
-  const [loading, setLoading] = useState<boolean>(true);  // Loading state for the request
-  const [error, setError] = useState<string | null>(null);  // Error state
+ 
+  // if (loading) {
+  //   return <Text style={styles.loadingText}>Loading...</Text>;  // Loading indicator
+  // }
 
-  useEffect(() => {
-    // Fetch the monthly expense data when the component mounts
-    const fetchExpense = async () => {
-      try {
-        setLoading(true);
-        const data = await getSummaryExpense();  // Call the new function to get expense data
-        setExpense(data);  // Set the expense state
-      } catch (err) {
-        setError('Failed to load expense data');  // Set error message
-      } finally {
-        setLoading(false);  // Stop loading
-      }
-    };
-
-    fetchExpense();  // Execute the fetch function
-  }, [getSummaryExpense]);  // Dependency array to ensure it runs on mount
-
-  if (loading) {
-    return <Text style={styles.loadingText}>Loading...</Text>;  // Loading indicator
-  }
-
-  if (error) {
-    return <Text style={styles.errorText}>{error}</Text>;  // Show error message
-  }
+  // if (error) {
+  //   return <Text style={styles.errorText}>{error}</Text>;  // Show error message
+  // }
 
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{text_box2}</Text>
       <Text style={styles.amount}>
-        -{expense.toLocaleString("en-US", { minimumFractionDigits: 2 })} {/* Display fetched expense */}
+        -{amount} {/* Display fetched expense */}
       </Text>
     </View>
   );
