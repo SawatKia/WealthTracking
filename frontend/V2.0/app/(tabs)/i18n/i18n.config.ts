@@ -1,5 +1,11 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+const en = require("../translations/en.json");
+const th = require("../translations/th.json");
+
+
+
+
 
 const resources = {
   en: {
