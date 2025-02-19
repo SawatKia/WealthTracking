@@ -67,6 +67,9 @@ const config = {
             common: process.env.GEMINI_COMMON_MODEL,
         },
     },
+    googleSheet: {
+        id: process.env.GOOGLE_SHEET_ID,
+    }
 };
 
 module.exports = config;

@@ -3,9 +3,11 @@ const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 
-const { Logger, formatResponse } = require("../utilities/Utils");
+const { Logger, formatResponse, formatBkkTime } = require("../utilities/Utils");
+const serverTime = require("../utilities/StartTime");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
+const GoogleSheetService = require("../services/GoogleSheetService");
 
 const AuthUtils = require('../utilities/AuthUtils');
 const { json } = require('express');
@@ -125,6 +127,7 @@ class Middlewares {
           // 'https://your-production-domain.com', // Production web client
           // 'capacitor://localhost',          // Capacitor/Ionic
           // 'ionic://localhost',              // Ionic specific
+          '*', // Allow all origins
         ];
 
         if (allowedOrigins.includes(origin)) {
@@ -133,7 +136,7 @@ class Middlewares {
           callback(new Error('Not allowed by CORS'));
         }
       },
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: [
         'Content-Type',
         'Authorization',
@@ -290,56 +293,56 @@ class Middlewares {
     //   'trans_ref': /^[\w-]{1,255}$/,
     // };
 
-    // Function to determine if a field should skip sanitization
-    const shouldSkipSanitization = (key, value) => {
-      logger.info(`Checking if field ${key} should skip sanitization...`);
-      // Convert value to string for testing if it's not already a string
-      const stringValue = String(value);
+    // // Function to determine if a field should skip sanitization
+    // const shouldSkipSanitization = (key, value) => {
+    //   logger.info(`Checking if field ${key} should skip sanitization...`);
+    //   // Convert value to string for testing if it's not already a string
+    //   const stringValue = String(value);
 
-      // Handle exact matches first
-      if (skipPatterns[key.toLowerCase()] &&
-        skipPatterns[key.toLowerCase()].test(stringValue)) {
-        logger.debug(`Field ${key} should skip sanitization. by exact match`);
-        return true;
-      }
+    //   // Handle exact matches first
+    //   if (skipPatterns[key.toLowerCase()] &&
+    //     skipPatterns[key.toLowerCase()].test(stringValue)) {
+    //     logger.debug(`Field ${key} should skip sanitization. by exact match`);
+    //     return true;
+    //   }
 
-      // Handle partial matches (for fields that contain pattern names)
-      for (const [pattern, regex] of Object.entries(skipPatterns)) {
-        if (key.toLowerCase().includes(pattern) && regex.test(stringValue)) {
-          logger.debug(`Field ${key} should skip sanitization. by partial match`);
-          return true;
-        }
-      }
+    //   // Handle partial matches (for fields that contain pattern names)
+    //   for (const [pattern, regex] of Object.entries(skipPatterns)) {
+    //     if (key.toLowerCase().includes(pattern) && regex.test(stringValue)) {
+    //       logger.debug(`Field ${key} should skip sanitization. by partial match`);
+    //       return true;
+    //     }
+    //   }
 
-      return false;
-    };
+    //   return false;
+    // };
 
-    const escapeString = (str) => {
-      return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    };
+    // const escapeString = (str) => {
+    //   return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // };
 
-    const sanitizeObject = (obj) => {
-      if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
-        throw MyAppErrors.badRequest("Invalid request.");
-      }
+    // const sanitizeObject = (obj) => {
+    //   if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    //     throw MyAppErrors.badRequest("Invalid request.");
+    //   }
 
-      const sanitized = {};
-      for (const key in obj) {
-        if (typeof obj[key] === "string") {
-          // Skip sanitization for validated patterns
-          if (shouldSkipSanitization(key, obj[key])) {
-            sanitized[key] = obj[key];
-          } else {
-            sanitized[key] = escapeString(obj[key]);
-          }
-        } else if (typeof obj[key] === "object") {
-          sanitized[key] = sanitizeObject(obj[key]);
-        } else {
-          sanitized[key] = obj[key];
-        }
-      }
-      return sanitized;
-    };
+    //   const sanitized = {};
+    //   for (const key in obj) {
+    //     if (typeof obj[key] === "string") {
+    //       // Skip sanitization for validated patterns
+    //       if (shouldSkipSanitization(key, obj[key])) {
+    //         sanitized[key] = obj[key];
+    //       } else {
+    //         sanitized[key] = escapeString(obj[key]);
+    //       }
+    //     } else if (typeof obj[key] === "object") {
+    //       sanitized[key] = sanitizeObject(obj[key]);
+    //     } else {
+    //       sanitized[key] = obj[key];
+    //     }
+    //   }
+    //   return sanitized;
+    // };
 
     return (req, res, next) => {
       try {
@@ -405,9 +408,7 @@ class Middlewares {
           return next(MyAppErrors.methodNotAllowed("Method not allowed"));
         }
 
-        if (NODE_ENV !== "production") {
-          logger.info(`Request method ${method} is allowed for ${path}`);
-        }
+        logger.debug(`Request method ${method} is allowed for ${path}`);
         next();
       } catch (error) {
         if (error instanceof MyAppErrors) {
@@ -440,7 +441,7 @@ class Middlewares {
       message: "Too many requests from this IP, please try again later.",
       handler: (req, res, next, options) => {
         logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-        res.status(options.statusCode).json(formatResponse(options.statusCode, options.message, { retryAfter: res.getHeader('Retry-After') }));
+        req.formattedResponse = formatResponse(options.statusCode, options.message, { retryAfter: res.getHeader('Retry-After') });
       },
     });
   }
@@ -474,51 +475,61 @@ class Middlewares {
     const body = req.body;
     const headers = req.headers;
     const query = req.query;
-    const ip = getIP(req);
-    Object.defineProperty(req, 'ip', {
-      get: () => ip,
-      configurable: true // Allows the property to be redefined later if needed
-    });
-
-    // Prepare the body for logging 
-    let logBody;
-    if (body && body.base64Image) {
-      logBody = {
-        ...body,
-        base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
-      };
-    } else {
-      logBody = body;
-    }
-
-    const formatObjectEntries = (obj, lengthLimit = 50) => {
-      if (typeof obj !== 'object' || obj === null) {
-        return '';
+    try {
+      // Store the request log on the request object
+      if (GoogleSheetService.isConnected()) {
+        const requestLog = GoogleSheetService.prepareRequestLog(req);
+        req.requestLog = requestLog; // Store for later use in response handler
       }
-      return Object.entries(obj || {})
-        .map(([key, value]) => {
-          const displayValue = value && String(value).length > lengthLimit
-            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
-            : String(value);
-          return `${key.padEnd(26)}: ${displayValue}`;
-        })
-        .join('\n          ');
+
+      const ip = getIP(req);
+      Object.defineProperty(req, 'ip', {
+        get: () => ip,
+        configurable: true // Allows the property to be redefined later if needed
+      });
+
+      // Prepare the body for logging 
+      let logBody;
+      if (body && body.base64Image) {
+        logBody = {
+          ...body,
+          base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+        };
+      } else {
+        logBody = body;
+      }
+
+      const formatObjectEntries = (obj, lengthLimit = 50) => {
+        if (typeof obj !== 'object' || obj === null) {
+          return '';
+        }
+        return Object.entries(obj || {})
+          .map(([key, value]) => {
+            const displayValue = value && String(value).length > lengthLimit
+              ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+              : String(value);
+            return `${key.padEnd(26)}: ${displayValue}`;
+          })
+          .join('\n          ');
+      }
+
+      // Prepare a human-friendly log message
+      const requestLogMessage = `
+        🡳🡳🡳 Incoming Request 🡳🡳🡳 :
+        ----------------
+        ${ip} => ${method} ${requestPath}
+        Headers:
+            ${formatObjectEntries(headers)}
+        Cookies:
+            ${formatObjectEntries(req.cookies)}
+        Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
+        Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
+        `;
+
+      logger.info(requestLogMessage);
+    } catch (error) {
+      logger.error(`Error occurred during request logging: ${error.message}`);
     }
-
-    // Prepare a human-friendly log message
-    const requestLogMessage = `
-      🡳🡳🡳 Incoming Request 🡳🡳🡳 :
-      ----------------
-      ${ip} => ${method} ${requestPath}
-      Headers:
-          ${formatObjectEntries(headers)}
-      Cookies:
-          ${formatObjectEntries(req.cookies)}
-      Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
-      Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
-      `;
-
-    logger.info(requestLogMessage);
     next();
   }
 
@@ -593,7 +604,7 @@ class Middlewares {
  * - the environment
  */
   healthCheck(req, res, next) {
-    const bkkTime = new Date().toLocaleString('en-GB', {
+    const currentBkkTime = new Date().toLocaleString('en-GB', {
       timeZone: 'Asia/Bangkok',
       weekday: 'short',
       day: '2-digit',
@@ -604,18 +615,20 @@ class Middlewares {
       second: '2-digit',
       hour12: false
     });
+
     req.formattedResponse = formatResponse(
       200,
       "you are connected to the /health, running in Environment: " + NODE_ENV,
       {
         status: "healthy",
-        timestamp: bkkTime,
-        uptime: this.formatUptime(process.uptime()) || process.uptime(),
+        timestamp: currentBkkTime,
+        server_start_at: serverTime.getFormattedStartTime(),
+        uptime: serverTime.formatUptime(),
         environment: appConfigs.environment
       }
     );
     next();
-  };
+  }
 
   /**
  * Helper method to log response details
@@ -662,7 +675,7 @@ class Middlewares {
   };
 
 
-  responseHandler = (req, res, next) => {
+  responseHandler = async (req, res, next) => {
     logger.info("Handling response");
     let securityHeaders = {};
     let status_code = 500;
@@ -680,6 +693,12 @@ class Middlewares {
     if (req.url.startsWith('/api/v0.2/docs')) {
       logger.debug('Skipping response handler for Swagger UI request');
       return next();
+    }
+
+    // Log response to Google Sheet if service is connected
+    if (GoogleSheetService.isConnected() && req.requestLog) {
+      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+      await GoogleSheetService.appendLog(completeLog);
     }
 
     if (req.formattedResponse) {
@@ -702,7 +721,10 @@ class Middlewares {
     err.stack = appConfigs.environment === "production" ? "" : err.stack;
     if (!res.headersSent) {
       let response;
-      if (err instanceof MyAppErrors) {
+      if (err.message === 'Not allowed by CORS') {
+        response = formatResponse(403, "Not allowed by CORS", null);
+        logger.error(`CORS Error: ${err.message}`);
+      } else if (err instanceof MyAppErrors) {
         logger.error(`MyAppError: ${err.message}`);
         logger.error(`stack: ${err.stack}`);
         response = formatResponse(err.statusCode, err.message, err.data);

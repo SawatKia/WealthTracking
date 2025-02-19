@@ -126,6 +126,8 @@ GEMINI_KEY=<your-own-key> # https://aistudio.google.com/app/apikey
 GEMINI_CLASSIFICATION_MODEL=gemini-1.5-pro
 GEMINI_MAPPING_MODEL=gemini-2.0-flash-exp # for long token usage
 GEMINI_COMMON_MODEL=gemini-1.5-flash-8b
+
+GOOGLE_SHEET_ID=<logMonitoringSheetId> # only in production
 ```
 
 1. Open Docker Desktop.

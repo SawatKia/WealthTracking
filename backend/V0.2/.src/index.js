@@ -9,10 +9,19 @@ const OcrMappingService = require("./services/OcrMappingService");
 const pgClient = require("./services/PgClient");
 const easySlip = require("./services/EasySlip");
 const LLMService = require("./services/LLMService");
+const GoogleSheetService = require("./services/GoogleSheetService");
+const app = require("./app");
 
+const types = require("./../statics/types.json");
+const serverTime = require('./utilities/StartTime');
 const Utils = require("./utilities/Utils");
 const appConfigs = require("./configs/AppConfigs");
+
 const { v4: uuidv4 } = require('uuid');
+const NODE_ENV = appConfigs.environment;
+const { Logger, formatResponse } = Utils;
+const logger = Logger("Index");
+const PORT = appConfigs.appPort || 3000;
 
 // Shuffle array using Fisher-Yates algorithm
 function shuffle(array) {
@@ -31,13 +40,6 @@ function shuffle(array) {
   }
 }
 
-const app = require("./app");
-const types = require("./../statics/types.json")
-
-const NODE_ENV = appConfigs.environment;
-const { Logger, formatResponse } = Utils;
-const logger = Logger("Index");
-const PORT = appConfigs.appPort || 3000;
 /**
  * Load mock data for development environment
  */
@@ -307,6 +309,7 @@ const initializeServices = async () => {
     await documentAiService.init();
     await LLMService.init();
     await OcrMappingService.init();
+    await GoogleSheetService.init();
 
     const fi = new FiModel();
     await fi.initializeData();
@@ -382,9 +385,8 @@ const showAppSymbol = () => {
  */
 const startExpressServer = () => {
   return new Promise((resolve, reject) => {
-    const server = app.app.listen(PORT, () => {
-      const endTime = Date.now();
-      const timeTaken = endTime - app.startTime;
+    const server = app.listen(PORT, () => {
+      const timeTaken = serverTime.getUptime();
       logger.info("start express server...");
 
       showAppSymbol();
