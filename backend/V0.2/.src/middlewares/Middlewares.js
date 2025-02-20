@@ -447,7 +447,7 @@ class Middlewares {
   }
 
   requestLogger(req, res, next) {
-    logger.info(`🡳🡳🡳 entering the routing for ${req.method} ${req.url}`);
+    logger.info(`⬇️  ⬇️  ⬇️  entering the routing for ${req.method} ${req.url}`);
 
     const getIP = (req) => {
       // req.connection is deprecated
@@ -515,7 +515,7 @@ class Middlewares {
 
       // Prepare a human-friendly log message
       const requestLogMessage = `
-        🡳🡳🡳 Incoming Request 🡳🡳🡳 :
+        ⬇️  ⬇️  ⬇️  Incoming Request ⬇️  ⬇️  ⬇️  :
         ----------------
         ${ip} => ${method} ${requestPath}
         Headers:
@@ -604,17 +604,7 @@ class Middlewares {
  * - the environment
  */
   healthCheck(req, res, next) {
-    const currentBkkTime = new Date().toLocaleString('en-GB', {
-      timeZone: 'Asia/Bangkok',
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
+    const currentBkkTime = formatBkkTime();
 
     req.formattedResponse = formatResponse(
       200,
@@ -656,7 +646,7 @@ class Middlewares {
     };
 
     const responseLogMessage = `
-      ${isError ? '🡱🡱🡱 Error Response 🡱🡱🡱 :' : '🡱🡱🡱 Outgoing Response 🡱🡱🡱 :'}
+      ⬆️  ⬆️  ⬆️  Outgoing Response ⬆️  ⬆️  ⬆️  :
       Headers:
           ${formatObjectEntries(securityHeaders)}
       ------------------
@@ -674,96 +664,6 @@ class Middlewares {
     return securityHeaders;
   };
 
-
-  responseHandler = async (req, res, next) => {
-    logger.info("Handling response");
-    let securityHeaders = {};
-    let status_code = 500;
-    let message = 'Internal Server Error';
-    let headers = {};
-    let data = null;
-
-    if (req.fileResponse) {
-      logger.info("Sending file response");
-      securityHeaders = this.logResponse(req, 200, "none", data, headers, false, req.fileResponse);
-      return res.set(securityHeaders).status(200).sendFile(req.fileResponse);
-    }
-
-    // Handle Swagger UI requests specifically
-    if (req.url.startsWith('/api/v0.2/docs')) {
-      logger.debug('Skipping response handler for Swagger UI request');
-      return next();
-    }
-
-    // Log response to Google Sheet if service is connected
-    if (GoogleSheetService.isConnected() && req.requestLog) {
-      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-      await GoogleSheetService.appendLog(completeLog);
-    }
-
-    if (req.formattedResponse) {
-      ({ status_code, message, data, headers } = req.formattedResponse);
-      securityHeaders = this.logResponse(req, status_code, message, data, headers);
-    } else {
-      logger.warn('Response not formatted in req.formattedResponse');
-      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
-      logger.warn('Sending an empty response');
-      res.send();
-      return;
-    }
-
-    res.set(securityHeaders).status(status_code).json(formatResponse(status_code, message, data));
-    return;
-  }
-
-  errorHandler = (err, req, res, next) => {
-    logger.info("Handling error");
-    err.stack = appConfigs.environment === "production" ? "" : err.stack;
-    if (!res.headersSent) {
-      let response;
-      if (err.message === 'Not allowed by CORS') {
-        response = formatResponse(403, "Not allowed by CORS", null);
-        logger.error(`CORS Error: ${err.message}`);
-      } else if (err instanceof MyAppErrors) {
-        logger.error(`MyAppError: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(err.statusCode, err.message, err.data);
-      } else if (err instanceof SyntaxError) {
-        response = formatResponse(400, "Invalid Syntax: " + err.message);
-        logger.error(`SyntaxError: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        if (err.message.includes('JSON')) {
-          response = formatResponse(400, "Invalid JSON format: " + err.message);
-        }
-      } else if (err instanceof Error) {
-        logger.error(`Error: ${err.message}`);
-        logger.error(`stack: ${err.stack}`);
-        response = formatResponse(500, err.message);
-      } else {
-        logger.error(`Unhandled error: ${err}`);
-        logger.error(`stack: ${appConfigs.environment === 'development' ? err.stack : err}`);
-        response = formatResponse(500, "Internal Server Error");
-      }
-
-      const securityHeaders = this.logResponse(
-        req,
-        response.status_code,
-        response.message,
-        response.data,
-        err.headers || {},
-        true
-      );
-
-      res
-        .status(response.status_code)
-        .set({ ...securityHeaders, ...(err.headers || {}) })
-        .json(response);
-      return;
-    } else {
-      next();
-    }
-  }
-
   unknownRouteHandler(req, res, next) {
     logger.info('Checking if the route is unknown...');
 
@@ -776,6 +676,106 @@ class Middlewares {
     next(); // Only called if req.formattedResponse is set
   }
 
+  errorHandler = (err, req, res, next) => {
+    logger.info("Handling error");
+    err.stack = appConfigs.environment === "production" ? "...removed..." : err.stack;
+
+    let response;
+    // if no response has been sent
+    if (!res.headersSent) {
+      if (err.message === 'Not allowed by CORS') {
+        logger.error(`CORS Error: ${err.message}`);
+        response = formatResponse(403, "Not allowed by CORS", null);
+
+      } else if (err instanceof MyAppErrors) {
+        logger.error(`MyAppError: ${err.message}`);
+        response = formatResponse(err.statusCode, err.message, err.data);
+
+      } else if (err instanceof SyntaxError) {
+        logger.error(`SyntaxError: ${err.message}`);
+        response = formatResponse(400, "Invalid Syntax: " + err.message);
+
+        if (err.message.includes('JSON')) {
+          logger.error('JSONError');
+          response = formatResponse(400, "Invalid JSON format: " + err.message);
+        } else {
+          logger.error('SyntaxError');
+          response = formatResponse(400, "Invalid Syntax: " + err.message);
+        }
+
+      } else if (err instanceof Error) {
+        logger.error(`Error: ${err.message}`);
+        response = formatResponse(500, err.message);
+
+      } else {
+        logger.error(`Unhandled error: ${err}`);
+        response = formatResponse(500, "Internal Server Error");
+      }
+      logger.error(`stack: ${err.stack}`);
+
+      // Store error headers for use in response handler
+      req.errorHeaders = err.headers || {};
+
+      // Set the formatted response
+      req.formattedResponse = response;
+    }
+
+    // Continue to response handler
+    next();
+  }
+
+  // Response Handler - Central place for sending all responses
+  responseHandler = async (req, res, next) => {
+    logger.info("Handling response");
+
+    // Handle Swagger UI requests specifically
+    if (req.url.startsWith('/api/v0.2/docs')) {
+      logger.debug('Skipping response handler for Swagger UI request');
+      return next();
+    }
+
+    // Handle file responses
+    if (req.fileResponse) {
+      logger.info("Sending file response");
+      const securityHeaders = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
+      return res.set(securityHeaders).status(200).sendFile(req.fileResponse);
+    }
+
+    // If no formatted response exists, log warning and send empty response
+    if (!req.formattedResponse) {
+      logger.warn('Response not formatted in req.formattedResponse');
+      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
+      logger.warn('Sending an empty response');
+      return res.send();
+    }
+
+    const { status_code, message, data } = req.formattedResponse;
+
+    // Combine error headers (if any) with regular headers
+    const headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
+
+    // Get security headers
+    const securityHeaders = this.logResponse(
+      req,
+      status_code,
+      message,
+      data,
+      headers,
+      !!req.error // Pass true if error exists
+    );
+
+    // Log response to Google Sheet if service is connected
+    if (GoogleSheetService.isConnected() && req.requestLog) {
+      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+      await GoogleSheetService.appendLog(completeLog);
+    }
+
+    // Send response with combined headers
+    res
+      .set({ ...securityHeaders, ...headers })
+      .status(status_code)
+      .json(formatResponse(status_code, message, data));
+  }
 
   /**
    * Format uptime given in seconds to a human readable format.
