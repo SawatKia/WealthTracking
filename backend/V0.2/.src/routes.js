@@ -123,9 +123,6 @@ router.patch('/budgets/:expenseType', budgetController.updateBudget);
 router.delete('/budgets/:expenseType', budgetController.deleteBudget);
 
 
-// router.use(mdw.unknownRouteHandler);
-// router.use(mdw.errorHandler);
-// router.use(mdw.responseHandler);
 
 
 module.exports = router;
