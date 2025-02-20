@@ -269,41 +269,49 @@ class AuthController extends BaseController {
         return stateToken;
     }
 
-
     /**
-     * Verifies a state token and returns the associated action if valid.
-     * 
+     * Verifies the given state token and returns the associated action and platform
+     * if it is valid and not expired. If the state token is invalid, expired, or
+     * not found, an error is thrown.
+     *
      * @param {string} stateToken - The state token to be verified.
-     * @returns {string|null} The associated action if the token is valid, otherwise null.
+     * @returns {{action: string, platform: string}} - The associated action and
+     * platform of the state token.
+     * @throws {Error} - If the state token is invalid, expired, or not found.
      */
     _verifyStateToken(stateToken) {
         logger.info('Verifying state token');
         logger.debug(`Verifying state token: ${stateToken}`);
-        const stateData = this.pendingStates.get(stateToken);
-        logger.debug(`Extracted state data: ${JSON.stringify(stateData, null, 2)}`);
+        try {
+            const stateData = this.pendingStates.get(stateToken);
+            logger.debug(`Extracted state data: ${JSON.stringify(stateData, null, 2)}`);
 
-        if (!stateData) {
-            logger.warn('State token not found');
-            return null;
-        }
+            if (!stateData) {
+                logger.warn('State token not found');
+                throw new Error('Invalid or expired state token');
+            }
 
-        if (!uuidValidateV4(stateToken)) {
-            logger.warn('Invalid state token');
-            return null;
-        }
-        logger.info(`State token ${stateToken} is valid`);
+            if (!uuidValidateV4(stateToken)) {
+                logger.warn('Invalid state token');
+                throw new Error('Invalid or expired state token');
+            }
+            logger.info(`State token ${stateToken} is valid`);
 
-        if (Date.now() > stateData.expiryTime) {
-            logger.warn('State token expired');
+            if (Date.now() > stateData.expiryTime) {
+                logger.warn('State token expired');
+                this.pendingStates.delete(stateToken);
+                throw new Error('Invalid or expired state token');
+            }
+            logger.info(`State token ${stateToken} is not expired`);
+
+            // Remove the used token
             this.pendingStates.delete(stateToken);
-            return null;
+            logger.info(`State token ${stateToken} removed`);
+            return { action: stateData.action, platform: stateData.platform };
+        } catch (error) {
+            logger.error(`Error verifying state token: ${error.message}`);
+            throw error;
         }
-        logger.info(`State token ${stateToken} is not expired`);
-
-        // Remove the used token
-        this.pendingStates.delete(stateToken);
-        logger.info(`State token ${stateToken} removed`);
-        return { action: stateData.action, platform: stateData.platform };
     }
 
     _cleanupExpiredStates() {
@@ -386,12 +394,19 @@ class AuthController extends BaseController {
             logger.debug('Google User data:', JSON.stringify(googleUser, null, 2));
 
             // Check if user exists in our database
-            const existingUser = await this.userModel.findOne({ email: googleUser.email }) || await this.userModel.findOne({ national_id: googleUser.sub });
+            const existingUserEmail = await this.userModel.findOne({ email: googleUser.email });
+            const existingUserNationalId = await this.userModel.findOne({ national_id: googleUser.sub });
 
             if (action === 'register') {
                 logger.info(`Registering user with email: ${googleUser.email}`);
-                if (existingUser) {
+
+                if (existingUserEmail) {
                     logger.warn(`User with email ${googleUser.email} already exists`);
+                    throw MyAppErrors.badRequest('User already exists. Please login instead.');
+                }
+
+                if (existingUserNationalId) {
+                    logger.warn(`User with national_id ${googleUser.sub} already exists`);
                     throw MyAppErrors.badRequest('User already exists. Please login instead.');
                 }
 
@@ -423,7 +438,8 @@ class AuthController extends BaseController {
                 }
             } else if (action === 'login') {
                 logger.info(`Logging in user with email: ${googleUser.email}`);
-                if (!existingUser) {
+                const existingUser = existingUserEmail || existingUserNationalId;
+                if (!existingUser || existingUserEmail.national_id !== googleUser.sub) {
                     logger.warn(`No user found with email ${googleUser.email} or national_id ${googleUser.sub}`);
                     throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
                 }
