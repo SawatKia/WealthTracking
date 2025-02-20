@@ -2,7 +2,6 @@ const winston = require('winston');
 const path = require('path');
 const { format } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
-
 const appConfigs = require('../configs/AppConfigs');
 
 const NODE_ENV = appConfigs.environment;
@@ -48,10 +47,9 @@ class Logger {
     constructor(moduleName) {
         const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
-        // Generate unique log directory for test runs
         const testLogDir = path.join(
             __dirname,
-            '../../logs/'
+            '../logs/'
         );
 
         const commonRotateOptions = {
