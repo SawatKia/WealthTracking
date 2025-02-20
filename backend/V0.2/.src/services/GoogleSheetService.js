@@ -6,6 +6,9 @@ const creds = require('../configs/nodeJsGoogleSheet-serviceAccount.json');
 require('dotenv/config');
 
 const logger = Logger('GoogleSheetService');
+const MAX_RETRIES = 5;
+const MAX_BACKOFF_MS = 64000; // 64 seconds
+const INITIAL_BACKOFF_MS = 1000; // 1 second
 
 class GoogleSheetService {
     constructor() {
@@ -14,6 +17,7 @@ class GoogleSheetService {
         this.connected = false;
         this.activeSheet = null;
         this.targetSheetid = null;
+        this.columnMapping = null;
         this.initializeAuth();
         this.initializeLogColumns();
 
@@ -51,6 +55,23 @@ class GoogleSheetService {
             'response-data',
             'processing-duration-ms'
         ];
+
+        this.columnMapping = {
+            'request-timestamp': 'requestTimestamp',
+            'request-ip': 'requestIp',
+            'request-method': 'requestMethod',
+            'request-path': 'requestPath',
+            'request-headers': 'requestHeaders',
+            'request-parameters': 'requestParameters',
+            'request-query': 'requestQuery',
+            'request-body': 'requestBody',
+            'response-timestamp': 'responseTimestamp',
+            'response-header': 'responseHeader',
+            'response-status': 'responseStatus',
+            'response-message': 'responseMessage',
+            'response-data': 'responseData',
+            'processing-duration-ms': 'processingDurationMs'
+        };
     }
 
     /**
@@ -74,9 +95,8 @@ class GoogleSheetService {
             await this.setActiveSheet();
             this.targetSheetid = this.activeSheet?.sheetId;
             if (this.activeSheet) {
-                logger.debug(`metadata: ${JSON.stringify(await this.metadata(), null, 2)}`);
+                logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
             }
-
 
             logger.info('GoogleSheetService successfully initialized');
             return true;
@@ -131,16 +151,19 @@ class GoogleSheetService {
         logger.info('Initializing spreadsheet');
         try {
             this.doc = new GoogleSpreadsheet(appConfigs.googleSheet.id, this.serviceAccount);
-            // Load the document properties and sheets
-            await this.doc.loadInfo();
+            // Load the document properties and sheets with retry
+            await this.retryWithExponentialBackoff(async () => {
+                await this.doc.loadInfo();
+            });
             logger.debug(`Loaded spreadsheet: ${this.doc.title}`);
         } catch (error) {
-            logger.error('Error initializing spreadsheet:', error);
+            logger.error(`Error initializing spreadsheet: ${error.message}`);
             throw error;
         }
     }
 
     _verifyEnvironment() {
+        logger.info('Verifying environment...');
         if (appConfigs.environment !== 'production') {
             logger.warn('GoogleSheetService is disabled in non-production environments');
             return false;
@@ -152,7 +175,6 @@ class GoogleSheetService {
      * Checks if the GoogleSheetService is connected to a spreadsheet
      * @returns {boolean} True if connected, false otherwise
      */
-
     isConnected() {
         return this.connected;
     }
@@ -186,13 +208,14 @@ class GoogleSheetService {
                     });
                     logger.debug(`New sheet created: ${this.activeSheet.title}`);
                 } catch (error) {
-                    logger.error('Error creating new sheet:', error);
+                    logger.error(`Error creating new sheet: ${error.message}`);
                     throw error;
                 }
             }
 
             await this._validateSheetStructure();
             logger.info(`Active sheet set to: ${this.activeSheet.title}`);
+            await this.displayFirst10Rows();
             this.connected = true;
             return true;
         } catch (error) {
@@ -215,12 +238,12 @@ class GoogleSheetService {
                 (this.targetSheetid ? this.doc.sheetsById[this.targetSheetid] : null) ||
                 this.doc.sheetsByIndex[0]
             );
-            logger.debug(`slected sheet: ${sheet}`);
+            logger.debug(`slected sheet: ${sheet?.title || 'null'}`);
 
             // Try to find the sheet using different methods
             return sheet
         } catch (error) {
-            logger.error("Error finding sheet:", error);
+            logger.error(`Error finding sheet: ${error.message}`);
             return null;
         }
     }
@@ -242,39 +265,32 @@ class GoogleSheetService {
     async validateAndInitializeHeaders() {
         logger.info("Validating headers...");
         try {
-            const currentHeaders = await this.activeSheet.loadHeaderRow();
+            const currentHeaders = await this.retryWithExponentialBackoff(async () => {
+                return await this.activeSheet.loadHeaderRow();
+            });
+
             logger.debug(`current headers: ${JSON.stringify(currentHeaders)}`);
             const currentHeaderSet = new Set(currentHeaders);
-            logger.debug(`current header set: ${typeof currentHeaderSet} - ${JSON.stringify(currentHeaderSet)}`);
             const requiredHeaders = this.logColumns;
-            logger.debug(`required headers: ${JSON.stringify(requiredHeaders)}`);
 
-            // Check for missing headers
             const missingHeaders = requiredHeaders.filter(header => !currentHeaderSet.has(header));
 
             if (missingHeaders.length > 0) {
                 logger.debug(`missing headers: ${missingHeaders.join(', ')}`);
 
-                // re-write the headers
-                logger.debug(`headers to add: ${typeof requiredHeaders} - ${JSON.stringify(requiredHeaders)}`);
-                if (Array.isArray(requiredHeaders)) {
-                    requiredHeaders.map((header) => {
-                        if (typeof header !== "string") {
-                            logger.error(`Header ${header} is not a string`);
-                            throw new Error(`Header ${header} is not a string`);
-                        }
-                    })
-                } else {
+                if (!Array.isArray(requiredHeaders)) {
                     logger.error('requiredHeaders is not an array');
                     throw new Error("requiredHeaders is not an array");
                 }
 
-                this.activeSheet.setHeaderRow(requiredHeaders, 1);
+                await this.retryWithExponentialBackoff(async () => {
+                    await this.activeSheet.setHeaderRow(requiredHeaders, 1);
+                });
 
                 logger.info('Headers updated successfully');
             }
         } catch (error) {
-            logger.error('Error validating headers:', error);
+            logger.error(`Error validating headers: ${error.message}`);
             throw error;
         }
     }
@@ -308,7 +324,7 @@ class GoogleSheetService {
             logger.debug(`Request log prepared: ${JSON.stringify(requestLog)}`);
             return requestLog;
         } catch (error) {
-            logger.error('Error preparing request log:', error);
+            logger.error(`Error preparing request log: ${error.message}`);
             throw error;
         }
     }
@@ -322,11 +338,8 @@ class GoogleSheetService {
     prepareResponseLog(request, response) {
         logger.info('Preparing response log entry...');
         try {
-            // Calculate processing duration
+            // get response time ms
             const responseTimeMs = new Date().getTime();
-            const processingDurationMs = responseTimeMs - request.requestTimeMs;
-
-            logger.debug(`Request processing took ${processingDurationMs}ms`);
 
             // Combine request log with response data and processing duration
             const logEntry = {
@@ -336,7 +349,7 @@ class GoogleSheetService {
                 responseStatus: response.status_code,
                 responseMessage: response.message,
                 responseData: JSON.stringify(response.data),
-                processingDurationMs: processingDurationMs
+                processingDurationMs: responseTimeMs - request.requestTimeMs
             };
 
             logger.debug(`Complete log entry prepared: ${JSON.stringify(logEntry)}`);
@@ -348,28 +361,11 @@ class GoogleSheetService {
     }
 
     async _formatRowData(logEntry) {
-        // Create a mapping between hyphenated and camelCase keys
-        const columnMapping = {
-            'request-timestamp': 'requestTimestamp',
-            'request-ip': 'requestIp',
-            'request-method': 'requestMethod',
-            'request-path': 'requestPath',
-            'request-headers': 'requestHeaders',
-            'request-parameters': 'requestParameters',
-            'request-query': 'requestQuery',
-            'request-body': 'requestBody',
-            'response-timestamp': 'responseTimestamp',
-            'response-header': 'responseHeader',
-            'response-status': 'responseStatus',
-            'response-message': 'responseMessage',
-            'response-data': 'responseData',
-            'processing-duration-ms': 'processingDurationMs'
-        };
 
         // Create the row data object using the mapping
         const rowData = {};
         for (const column of this.logColumns) {
-            const camelCaseKey = columnMapping[column];
+            const camelCaseKey = this.columnMapping[column];
             rowData[column] = logEntry[camelCaseKey] ?? 'N/A';
         }
 
@@ -388,7 +384,6 @@ class GoogleSheetService {
      */
     async appendLog(logEntry) {
         logger.info('Appending log entry to sheet...');
-
         if (!this._verifyEnvironment() || !this.connected) {
             return;
         }
@@ -398,20 +393,54 @@ class GoogleSheetService {
                 await this.setActiveSheet();
             }
 
-            // Format the row data before adding
             const formattedData = await this._formatRowData(logEntry);
 
-            // Ensure the sheet is loaded with the latest data
-            await this.activeSheet.loadCells();
+            // Ensure the sheet is loaded with the latest data with retry
+            await this.retryWithExponentialBackoff(async () => {
+                await this.activeSheet.loadCells();
+            });
 
-            // Add the row and save
-            const row = await this.activeSheet.addRow(formattedData);
-            await this.activeSheet.saveUpdatedCells();
+            // Add the row and save with retry
+            const row = await this.retryWithExponentialBackoff(async () => {
+                const newRow = await this.activeSheet.addRow(formattedData);
+                await this.activeSheet.saveUpdatedCells();
+                return newRow;
+            });
 
             logger.info(`Log entry successfully added to sheet with row ID: ${row._rowNumber}`);
             return row;
         } catch (error) {
-            logger.error('Failed to append log entry:', error);
+            logger.error(`Failed to append log entry: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Tries to execute the given operation with exponential backoff on failure if the
+     * error is a rate limit error (429). If the operation fails and the retry count
+     * is less than MAX_RETRIES, waits for a duration calculated by the formula
+     * 2^retryCount * INITIAL_BACKOFF_MS + random() * 1000, and then retries the
+     * operation. If the retry count exceeds MAX_RETRIES, the error is re-thrown.
+     * @param {Function} operation - The operation to retry on failure.
+     * @param {number} retryCount - The current retry count. Defaults to 0.
+     * @returns {Promise} - Resolves to the result of the operation if successful, or
+     * rejects with the error if all retries fail.
+     */
+    async retryWithExponentialBackoff(operation, retryCount = 0) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (error.code === 429 && retryCount < MAX_RETRIES) {
+                const waitTime = Math.min(
+                    (Math.pow(2, retryCount) * INITIAL_BACKOFF_MS) + Math.random() * 1000,
+                    MAX_BACKOFF_MS
+                );
+
+                logger.warn(`Rate limit exceeded. Retrying in ${waitTime}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+
+                return retryWithExponentialBackoff(operation, retryCount + 1);
+            }
             throw error;
         }
     }
@@ -424,10 +453,100 @@ class GoogleSheetService {
    * @returns {Promise<GoogleSpreadsheetRow[]>} Array of fetched rows
    */
     async getSheetRows(startRowIdx, finalRowIdx) {
-        const offset = startRowIdx - 1; // Convert to 0-based index
+        const offset = startRowIdx - 1;
         const limit = finalRowIdx - startRowIdx + 1;
+
+        try {
+            return await this.retryWithExponentialBackoff(async () => {
+                return await this.activeSheet.getRows({
+                    offset,
+                    limit
+                });
+            });
+        } catch (error) {
+            logger.error(`Failed to get sheet rows: ${error.message}`);
+            throw error;
+        }
     }
-    //TODO - shows first 10 rows
+
+    /**
+     * Fetches the first 10 rows of the active sheet and logs them as two separate tables
+     * - one for request data and one for response data. Also logs the total number of rows
+     * in the sheet and the sheet title.
+     * @async
+     * @returns {Promise<void>} Resolves if successful, rejects with an error otherwise.
+     */
+    /**
+ * Displays the first 10 rows of the sheet in a table format in the logs
+ * @returns {Promise<void>}
+ */
+    async displayFirst10Rows() {
+        try {
+            logger.info('Fetching first 10 rows of the sheet...');
+
+            if (!this.activeSheet) {
+                logger.warn('No active sheet found');
+                return;
+            }
+
+            const rows = await this.getSheetRows(1, 10);
+
+            if (!rows || rows.length === 0) {
+                logger.info('No rows found in the sheet');
+                return;
+            }
+            logger.info(`fetching ${rows.length} rows`);
+            rows.forEach((row, idx) => {
+                logger.debug(`Row[${idx + 1}]: ${JSON.stringify(row.toObject())}`);
+            })
+
+            // Split headers into request and response groups
+            const requestHeaders = this.logColumns.filter(header => header.startsWith('request-'));
+            const responseHeaders = this.logColumns.filter(header => header.startsWith('response-') || header === 'processing-duration-ms');
+
+            // Create separate table data for request and response
+            const processRowData = (row, headers) => {
+                const rowData = {};
+                headers.forEach(header => {
+                    let value = row[header];
+
+                    if (value === undefined || value === null || value === '') {
+                        value = 'N/A';
+                    }
+
+                    // Truncate long values to keep table readable
+                    const maxValueLength = 10;
+                    if (typeof value === 'string' && value.length > maxValueLength) {
+                        value = value.substring(0, maxValueLength - 3) + '...';
+                    }
+
+                    // Remove the 'request-' or 'response-' prefix for cleaner column headers
+                    const displayHeader = header
+                        .replace('request-', '')
+                        .replace('response-', '');
+
+                    rowData[displayHeader] = value;
+                });
+                return rowData;
+            };
+
+            const requestData = rows.map(row => processRowData(row.toObject(), requestHeaders));
+            const responseData = rows.map(row => processRowData(row.toObject(), responseHeaders));
+
+            // Log the tables with metadata
+            logger.info(`Sheet: ${this.activeSheet.title}`);
+            logger.info(`Total rows in sheet: ${this.activeSheet.rowCount}`);
+            logger.info('First 10 rows - Request Data:');
+            console.table(requestData);
+
+            logger.info('First 10 rows - Response Data:');
+            console.table(responseData);
+
+        } catch (error) {
+            logger.error(`Error displaying first 10 rows: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = new GoogleSheetService();
