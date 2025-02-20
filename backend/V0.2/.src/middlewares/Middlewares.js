@@ -519,9 +519,9 @@ class Middlewares {
         ----------------
         ${ip} => ${method} ${requestPath}
         Headers:
-            ${formatObjectEntries(headers)}
+          ${formatObjectEntries(headers)}
         Cookies:
-            ${formatObjectEntries(req.cookies)}
+          ${formatObjectEntries(req.cookies)}
         Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
         Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
         `;
@@ -604,7 +604,8 @@ class Middlewares {
  * - the environment
  */
   healthCheck(req, res, next) {
-    const currentBkkTime = formatBkkTime();
+    const currentTime = new Date().getTime();
+    const currentBkkTime = formatBkkTime(currentTime);
 
     req.formattedResponse = formatResponse(
       200,
