@@ -338,6 +338,9 @@ class GoogleSheetService {
     prepareResponseLog(request, response) {
         logger.info('Preparing response log entry...');
         try {
+            if (!this._verifyEnvironment()) {
+                return;
+            }
             // get response time ms
             const responseTimeMs = new Date().getTime();
 
