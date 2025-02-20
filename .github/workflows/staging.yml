@@ -40,7 +40,7 @@ jobs:
             cd ~/WealthTracking || { echo "Failed to navigate to project directory"; exit 1; }
             
             echo "Executing deploy script..."
-            ./scripts/deploy.sh ${{ secrets.STAGING_SERVERS_IP }} || { echo "Deployment script failed"; exit 1; }
+            ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} || { echo "Deployment script failed"; exit 1; }
             
             echo "Deployment completed successfully."
           EOF
