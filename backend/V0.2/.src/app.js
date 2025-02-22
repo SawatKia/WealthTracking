@@ -69,6 +69,8 @@ app.use(cookieParser());
 // Request logger middleware
 app.use(mdw.requestLogger);
 
+app.use(mdw.securityMiddleware);
+
 const allowedMethods = {
   //app.js
   '/health': ['GET'],
