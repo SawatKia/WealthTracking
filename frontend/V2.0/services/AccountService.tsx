@@ -29,7 +29,8 @@ export const useAccount = () => {
         try {
             const response = await api.get('/banks');
             if (response.status === 200) {
-                return response.data.data.Accounts || [];  // Ensure it always returns an array
+                console.log(response.data.data)
+                return response.data.data.bankAccounts || [];  // Ensure it always returns an array
             } else {
                 setError(response.data.statusText);
                 return [];

@@ -27,6 +27,7 @@ import { RootStackParamList } from "../constants/NavigateType"; // Import the ty
 import SelectCategoryModal from "./SelectCategoryModal";
 
 import { newSenderReceiver,useTransactions } from '../services/TransactionService';
+import { useAccount } from '../services/AccountService';
 import { ScrollView } from "react-native-gesture-handler";
 
 type CreateTransactionRouteProp = RouteProp<
@@ -67,7 +68,8 @@ export default function CreateTransaction({
 }: {
   route: CreateTransactionRouteProp;
 }) {
-  const { createTransaction, } = useTransactions();
+  const { createTransaction } = useTransactions();
+  const { getAllAccounts } = useAccount();
   const router = useRouter()
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
   const [sizeOption, setsizeOption] = useState(0);
@@ -86,15 +88,19 @@ export default function CreateTransaction({
     category: null as string | null,
     type: null as string | null,
   });
-  const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Selected value
-  const [selectedAccountItem, setSelectedAccountItem] = useState<
-  { label: string; value: string }[]
-  >([]);
+  const [selectedAccountItem, setSelectedAccountItem] = useState<string | null>(null);
+  const [selectedAccountValue, setSelectedAccountValue] = useState<{ account_number: string; fi_code: string } | null>(null);
+  
 
-  const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); // Selected value
-  const [selectedAccountTransItem, setSelectedAccountTransItem] = useState<
-  { label: string; value: string }[]
-  >([]);
+
+  const [selectedAccountTransValue, setSelectedAccountTransValue] =  useState<
+  { label: string; value: { account_number: string; fi_code: string } }[]
+>([]); // Selected value
+  const [accountItems, setAccountItems] =  useState<
+  { label: string; value: string}[]
+>([]);
+const [selectedAccount, setSelectedAccount] = useState<{ account_number: string; fi_code: string } | null>(null);
+
   const [note, setNote] = useState("");
   
   const handleSelectCategory = (category: string,type: string) => {
@@ -118,16 +124,10 @@ export default function CreateTransaction({
     let sender : newSenderReceiver | null = null;
     let receiver : newSenderReceiver| null = null;
     if (selectedCategory.type == 'Income') {
-      receiver = {
-          account_number: "1234567890",
-          fi_code: "004"
-        }
+      receiver = selectedAccount
   }
     else if(selectedCategory.type == 'Expense'){
-      sender = {
-          account_number: "0000000001",
-          fi_code: "004"
-        }
+      sender = selectedAccount
     }
   else{
       sender =  {
@@ -149,7 +149,8 @@ export default function CreateTransaction({
       sender,
       receiver
     }
-    createTransaction(requestBody)
+    console.log(requestBody)
+    // createTransaction(requestBody)
     // console.log('send data :', respond)
   }
 
@@ -160,18 +161,28 @@ export default function CreateTransaction({
     const fetchData = async () => {
       try {
         // Transform API data into items format for the dropdown
-        setsizeOption(options.bank_accounts.length)
-        const accountItems = options.bank_accounts.map((item) => ({
-          label: item.display_name, // Display name as label
-          value: item.display_name, // Use name as value too
+        const data = await getAllAccounts()
+        console.log('account : ',data)
+        setsizeOption(data.length)
+        const items = data.map((item) => ({
+          label: item.display_name,
+          value: JSON.stringify({ account_number: item.account_number, fi_code: item.fi_code }), // Store object as string
         }));
+        setAccountItems(items);
+        
+        console.log(items);
+        
+        // Example: Selecting the first item from the list
+        // if (accountItems.length > 0) {
+        //   setSelectedAccountItem(accountItems[0].label); // Set the first label
+        //   setSelectedAccountValue(accountItems[0].value); // Set the first value
+        // }
 
         if (selectedCategory.type == 'Transfer'){
 
-          setSelectedAccountTransItem(accountItems);
+          // setSelectedAccountTransItem(accountItems);
         }
 
-        setSelectedAccountItem(accountItems);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -318,22 +329,32 @@ export default function CreateTransaction({
           <View
             style={[
               styles.inputsContainer,
-              { height: isAccountPickerVisible ? 150 : null },
+              { height: isAccountPickerVisible ? 50 * sizeOption : null },
             ]}
           >
             <DropDownPicker
-              open={isAccountPickerVisible}
-              value={selectedAccountValue}
-              items={selectedAccountItem}
-              setOpen={setAccountPickerVisibility}
-              setValue={setSelectedAccountValue}
-              setItems={setSelectedAccountItem}
-              placeholder="[Select Acount]"
-              style={styles.inputButton}
-              disableBorderRadius={true}
-              textStyle={{ textAlign: "center" }}
-              dropDownContainerStyle={styles.dropdownContainer}
-            />
+            open={isAccountPickerVisible}
+            value={selectedAccount ? JSON.stringify(selectedAccount) : null} // Store as string
+            items={accountItems}
+            setOpen={setAccountPickerVisibility}
+            setValue={setSelectedAccount}
+            setItems={setAccountItems}
+            placeholder="[Select Account]"
+            style={styles.inputButton}
+            disableBorderRadius={true}
+            textStyle={{ textAlign: "center" }}
+            dropDownContainerStyle={styles.dropdownContainer}
+            onChangeValue={(val) => {
+              if (val) {
+                console.log(val)
+                const parsedValue = JSON.parse(val); // Convert back to object
+                setSelectedAccount(parsedValue); // Update state
+                console.log(accountItems)
+
+              }
+            }}
+          />
+
           </View>
 
           {/* <Text>Select an Option:</Text> */}
@@ -355,10 +376,10 @@ export default function CreateTransaction({
         <View
           style={[
             styles.inputsContainer,
-            { height: isAccountTransPickerVisible ? 150 : null },
+            { height: isAccountTransPickerVisible ? 50 * sizeOption : null },
           ]}
         >
-          <DropDownPicker
+          {/* <DropDownPicker
             open={isAccountTransPickerVisible}
             value={selectedAccountTransValue}
             items={selectedAccountItem}
@@ -370,7 +391,7 @@ export default function CreateTransaction({
             disableBorderRadius={true}
             textStyle={{ textAlign: "center" }}
             dropDownContainerStyle={styles.dropdownContainer}
-          />
+          /> */}
         </View>
 
         {/* <Text>Select an Option:</Text> */}
