@@ -25,10 +25,27 @@ interface AddDebtDetail {
 }
 
 export const useDebt = () => {
-    const [Accounts, setAccounts] = useState<Debt[]>([]);
+    const [Debt, setDebt] = useState<Debt[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter()
+
+    const getAllDebts = async (): Promise<Debt[]> => {
+        try {
+            const response = await api.get('/debts');
+            if (response.status === 200) {
+                return response.data.data.Debts || [];  // Ensure it always returns an array
+            } else {
+                setError(response.data.statusText);
+                return [];
+            }
+        } catch (err) {
+            setError('Failed to load Debts data.');
+            return [];  // Return an empty array on failure
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const createDebt = async (AddDebtDetail: AddDebtDetail) => {
         try {
@@ -50,6 +67,6 @@ export const useDebt = () => {
         }
     };
 
-    return { createDebt };
+    return { loading, error, createDebt, getAllDebts };
 
 };

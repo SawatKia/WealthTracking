@@ -47,7 +47,9 @@ class MyAppErrors extends Error {
     }
 
     static internalServerError(message, data = null, headers = {}) {
-        return new MyAppErrors(message || 'Internal Server Error', 500, data, headers);
+        let preparedMessage = 'Internal Server Error';
+        preparedMessage += ', please try again';
+        return new MyAppErrors(preparedMessage, 500, data, headers);
     }
 
     static serviceUnavailable(message, data = null, headers = {}) {

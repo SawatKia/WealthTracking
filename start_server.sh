@@ -41,7 +41,7 @@ healthStatus() {
 restartDockerDaemon() {
     if [ "$(uname -s)" = "Linux" ]; then
         echo -e "\033[1;31mRestarting Docker daemon on Ubuntu...\033[0m"
-        systemctl restart docker
+        sudo systemctl restart docker
         sleepWithTimer 10
     elif [ "$(uname -s)" = "MINGW64_NT"* ]; then
         echo -e "Restarting Docker Desktop on Windows..."
@@ -112,7 +112,6 @@ start_server() {
 start_server
 echo -e "\a"
 echo -e "\033[1;32m++++Server is ready to use!++++\033[0m"
-echo -e "\x1b[38;5;49m>>>\x1b[0m Color testing"
 
 # (Optional) Create a cronjob for Ubuntu (staging/production)
 if [ "$(uname -s)" = "Linux" ]; then

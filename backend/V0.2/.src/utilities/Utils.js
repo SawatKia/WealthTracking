@@ -25,15 +25,16 @@ class Utils {
     static formatBkkTime(time) {
         const date = new Date(time);
         const options = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
+            timeZone: 'Asia/Bangkok',
+            weekday: 'short',
             day: 'numeric',
+            month: 'numeric',
+            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            timeZoneName: 'short',
-            hour12: false
+            hour12: false,
+            timeZoneName: 'short'
         };
         return date.toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', ...options });
     }
