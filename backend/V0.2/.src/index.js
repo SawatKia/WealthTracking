@@ -9,7 +9,7 @@ const OcrMappingService = require("./services/OcrMappingService");
 const pgClient = require("./services/PgClient");
 const easySlip = require("./services/EasySlip");
 const LLMService = require("./services/LLMService");
-const GoogleSheetService = require("./services/GoogleSheetService");
+const GoogleSheetService = require("./services/GoogleSheetService.js");
 const app = require("./app");
 
 const types = require("./../statics/types.json");
@@ -310,6 +310,7 @@ const initializeServices = async () => {
     await LLMService.init();
     await OcrMappingService.init();
     await GoogleSheetService.init();
+    //TODO - display if any serveice failed to init 
 
     const fi = new FiModel();
     await fi.initializeData();
