@@ -69,6 +69,7 @@ const config = {
     },
     googleSheet: {
         id: process.env.GOOGLE_SHEET_ID,
+        pathToServiceAccount: process.env.GOOGLE_SHEET_APPLICATION_CREDENTIALS,
     }
 };
 
