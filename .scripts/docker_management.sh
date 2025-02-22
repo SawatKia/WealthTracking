@@ -50,8 +50,8 @@ setup_cronjob() {
         # Add our health check crontabs
         {
             echo "# WealthTracking monitoring - Added $(date)"
-            # Check every 5 minutes, restart if main server health check fails
-            echo "*/5 * * * * cd $(pwd) && /bin/sh -c 'if ! ./start_server.sh check-health; then ./start_server.sh; fi'"
+            # Check every hours at minute 15th, restart if main server health check fails
+            echo "15 */1 * * * cd $(pwd) && /bin/sh -c 'if ! ./start_server.sh check-health; then ./start_server.sh; fi'"
             # Every hour, check all containers and do full redeploy if any are unhealthy
             echo "0 * * * * cd $(pwd) && /bin/sh -c 'if ! ./start_server.sh check-all; then ./deploy.sh; fi'"
         } >> "$temp_crontab"
