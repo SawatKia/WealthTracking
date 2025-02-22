@@ -70,6 +70,7 @@ check_server_health() {
     else
         health_url="http://${ip}/health"
     fi
+    health_url+="?service=cronjob check_server_health"
     
     log_info "Checking server health status on ${health_url}..."
     local serverResponse=$(curl -s "${health_url}")

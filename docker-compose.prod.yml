@@ -14,8 +14,12 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - uploads_data:/usr/src/${APP_DOMAIN}/uploads
-      - ./backend/logs:/usr/src/${APP_DOMAIN}/logs
+      # no needs to oaccess from host machine, the app access inside constainer only.
+      - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
+      # sometimes need to examine the logs
+      - ./backend/V0.2/logs:/usr/src/${APP_DOMAIN}/logs 
+      # need to access the black list from Nginx
+      - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,11 +28,11 @@ services:
     command: |
       sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
-      interval: 10m
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose\ healthcheck"]
+      interval: 1h
       timeout: 10s
       retries: 3
-      start_period: 120s
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
