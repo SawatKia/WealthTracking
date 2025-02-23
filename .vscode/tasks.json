@@ -14,7 +14,7 @@
         {
             "label": "docker-compose down",
             "type": "shell",
-            "command": "docker compose down",
+            "command": "docker-compose down --remove-orphans --volumes",
             "problemMatcher": []
         },
         {
