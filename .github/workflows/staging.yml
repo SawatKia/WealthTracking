@@ -16,8 +16,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: verify server port connectivity
+        run: |
+          nc -zv ${{ secrets.STAGING_SERVERS_IP }} ${{ secrets.STAGING_SERVER_PORT }}
+
       - name: Setup SSH Connection
-        continue-on-error: true
         run: |
           echo "Setting up SSH connection..."
           mkdir -p ~/.ssh
@@ -30,7 +33,6 @@ jobs:
 
       - name: Build and Deploy on Server
         id: deploy
-        continue-on-error: true
         run: |
           set -o pipefail
           echo "Starting build and deployment process on the server..."
