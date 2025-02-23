@@ -23,16 +23,12 @@ import DropDownPicker from "react-native-dropdown-picker";
 import dayjs, { Dayjs } from "dayjs";
 
 import { RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../constants/NavigateType"; // Import the type definition
-import SelectCategoryModal from "./SelectCategoryModal";
+import { RootStackParamList } from "@/constants/NavigateType"; // Import the type definition
+import SelectCategoryModal from "../SelectCategoryModal";
 
-import { newSenderReceiver,useTransactions } from '../services/TransactionService';
+import { newSenderReceiver,useTransactions } from '@/services/TransactionService';
+import { useAccount } from '@/services/AccountService';
 import { ScrollView } from "react-native-gesture-handler";
-
-type CreateTransactionRouteProp = RouteProp<
-  RootStackParamList,
-  "CreateTransaction"
->;
 
 const options = {
   bank_accounts: [
@@ -62,12 +58,11 @@ const options = {
     },
   ],
 };
-export default function CreateTransaction({
-  route,
-}: {
-  route: CreateTransactionRouteProp;
-}) {
-  const { createTransaction, } = useTransactions();
+export default function EditTransaction() {
+  const id = useLocalSearchParams().id as string;
+  console.log(id, typeof(id))
+  const { getTransactionbyId } = useTransactions();
+  const { getAllAccounts } = useAccount();
   const router = useRouter()
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
   const [sizeOption, setsizeOption] = useState(0);
@@ -86,15 +81,16 @@ export default function CreateTransaction({
     category: null as string | null,
     type: null as string | null,
   });
-  const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Selected value
-  const [selectedAccountItem, setSelectedAccountItem] = useState<
-  { label: string; value: string }[]
-  >([]);
+  const [selectedAccountItem, setSelectedAccountItem] = useState<string | null>(null);
 
-  const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); // Selected value
-  const [selectedAccountTransItem, setSelectedAccountTransItem] = useState<
-  { label: string; value: string }[]
-  >([]);
+
+  const [accountItems, setAccountItems] =  useState<
+  { label: string; value: string}[]
+>([]);
+const [selectedAccount, setSelectedAccount] = useState<{ account_number: string; fi_code: string } | null>(null);
+const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Holds string value for DropDownPicker
+const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); 
+
   const [note, setNote] = useState("");
   
   const handleSelectCategory = (category: string,type: string) => {
@@ -117,27 +113,19 @@ export default function CreateTransaction({
     // let senderReceiver: { sender?: any; receiver?: any } = {}; 
     let sender : newSenderReceiver | null = null;
     let receiver : newSenderReceiver| null = null;
+    console.log(selectedAccountValue)
+    console.log(selectedAccountTransValue)
+
+    
     if (selectedCategory.type == 'Income') {
-      receiver = {
-          account_number: "1234567890",
-          fi_code: "004"
-        }
+      receiver = JSON.parse(selectedAccountValue || "")
   }
     else if(selectedCategory.type == 'Expense'){
-      sender = {
-          account_number: "0000000001",
-          fi_code: "004"
-        }
+      sender =  JSON.parse(selectedAccountValue || "")
     }
   else{
-      sender =  {
-        account_number: "1234567890",
-        fi_code: "004"
-      }
-      receiver = {
-        account_number: "1234567890",
-        fi_code: "004"
-      }
+    sender =  JSON.parse(selectedAccountValue || "")
+    receiver = JSON.parse(selectedAccountTransValue || "")
   }
     const requestBody = {
       "transaction_datetime": dayjs(date).toString(),
@@ -149,7 +137,8 @@ export default function CreateTransaction({
       sender,
       receiver
     }
-    createTransaction(requestBody)
+    // console.log(requestBody)
+    // createTransaction(requestBody)
     // console.log('send data :', respond)
   }
 
@@ -160,18 +149,23 @@ export default function CreateTransaction({
     const fetchData = async () => {
       try {
         // Transform API data into items format for the dropdown
-        setsizeOption(options.bank_accounts.length)
-        const accountItems = options.bank_accounts.map((item) => ({
-          label: item.display_name, // Display name as label
-          value: item.display_name, // Use name as value too
+        const dataAccount = await getAllAccounts()
+        console.log('account : ',dataAccount)
+        setsizeOption(dataAccount.length)
+        const items = dataAccount.map((item) => ({
+          label: item.display_name,
+          value: JSON.stringify({ account_number: item.account_number, fi_code: item.fi_code }), // Store object as string
         }));
+        setAccountItems(items);
 
-        if (selectedCategory.type == 'Transfer'){
+        const dataTrans = await getTransactionbyId(id)
+        setDate(dataTrans.transaction_datetime)
+        // setSelectedCategory({ category, type });
+        // setSelectedCategory({dataTrans.type, dataTrans.type})
+        // 
+        console.log(dataTrans);
+      
 
-          setSelectedAccountTransItem(accountItems);
-        }
-
-        setSelectedAccountItem(accountItems);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -318,22 +312,25 @@ export default function CreateTransaction({
           <View
             style={[
               styles.inputsContainer,
-              { height: isAccountPickerVisible ? 150 : null },
+              { height: isAccountPickerVisible ? 50 * sizeOption : null },
             ]}
           >
-            <DropDownPicker
-              open={isAccountPickerVisible}
-              value={selectedAccountValue}
-              items={selectedAccountItem}
-              setOpen={setAccountPickerVisibility}
-              setValue={setSelectedAccountValue}
-              setItems={setSelectedAccountItem}
-              placeholder="[Select Acount]"
-              style={styles.inputButton}
-              disableBorderRadius={true}
-              textStyle={{ textAlign: "center" }}
-              dropDownContainerStyle={styles.dropdownContainer}
-            />
+       <DropDownPicker
+  open={isAccountPickerVisible}
+  multiple={false}  // Ensure single-select mode
+  value={selectedAccountValue} // Use string value
+  items={accountItems}
+  setOpen={setAccountPickerVisibility}
+  setValue={setSelectedAccountValue}
+  setItems={setAccountItems}
+  placeholder="[Select Account]"
+  style={styles.inputButton}
+  disableBorderRadius={true}
+  textStyle={{ textAlign: "center" }}
+  dropDownContainerStyle={styles.dropdownContainer}
+/>
+
+
           </View>
 
           {/* <Text>Select an Option:</Text> */}
@@ -355,22 +352,23 @@ export default function CreateTransaction({
         <View
           style={[
             styles.inputsContainer,
-            { height: isAccountTransPickerVisible ? 150 : null },
+            { height: isAccountTransPickerVisible ? 50 * sizeOption : null },
           ]}
         >
-          <DropDownPicker
-            open={isAccountTransPickerVisible}
-            value={selectedAccountTransValue}
-            items={selectedAccountItem}
-            setOpen={setAccountTransPickerVisibility}
-            setValue={setSelectedAccountTransValue}
-            setItems={setSelectedAccountItem}
-            placeholder="[Select Acount]"
-            style={styles.inputButton}
-            disableBorderRadius={true}
-            textStyle={{ textAlign: "center" }}
-            dropDownContainerStyle={styles.dropdownContainer}
-          />
+        <DropDownPicker
+  open={isAccountTransPickerVisible}
+  multiple={false}  // Ensure single-select mode
+  value={selectedAccountTransValue} // Use string value
+  items={accountItems}
+  setOpen={setAccountTransPickerVisibility}
+  setValue={setSelectedAccountTransValue}
+  setItems={setAccountItems}
+  placeholder="[Select Account]"
+  style={styles.inputButton}
+  disableBorderRadius={true}
+  textStyle={{ textAlign: "center" }}
+  dropDownContainerStyle={styles.dropdownContainer}
+/>
         </View>
 
         {/* <Text>Select an Option:</Text> */}

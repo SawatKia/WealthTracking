@@ -23,7 +23,7 @@ import {
 } from "@/services/AuthenService";
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
   const [email, setEmail] = useState("");
@@ -85,6 +85,9 @@ export default function LoginScreen() {
     } catch (error) {
       console.error(error);
     }
+  };
+  const handleGoogleLogin = async () => {
+    await loginWithGoogle();
   };
 
   const togglePasswordVisibility = () => {
@@ -166,7 +169,7 @@ export default function LoginScreen() {
         <Text style={styles.orText}>or</Text>
 
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton}>
+        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>

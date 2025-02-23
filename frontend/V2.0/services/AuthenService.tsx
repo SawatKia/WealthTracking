@@ -12,10 +12,10 @@ export const login = async (email: string, password: string) => {
     "password": password,
   }
   try {
-    // const response = await api.post('/login?platform=mobile', requestData);
-    // console.log('login',response.data.data.tokens.access_token)
-    // const token = response.data.data.tokens.access_token
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMTExMTExIiwiaWF0IjoxNzM4NjgxNTgyLCJuYmYiOjE3Mzg2ODE1ODIsImV4cCI6MTczODc2Nzk4MiwiaXNzIjoiV2VhbHRoVHJhY2sifQ.TdvJPp2DdQeT6He1p3_F-8j2Y0djWVQAYtySouzjMo4"
+    const response = await api.post('/login?platform=mobile', requestData);
+    console.log('login',response.data.data.tokens.access_token)
+    const token = response.data.data.tokens.access_token
+    // const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMTExMTExIiwiaWF0IjoxNzM4NjgxNTgyLCJuYmYiOjE3Mzg2ODE1ODIsImV4cCI6MTczODc2Nzk4MiwiaXNzIjoiV2VhbHRoVHJhY2sifQ.TdvJPp2DdQeT6He1p3_F-8j2Y0djWVQAYtySouzjMo4"
     if (token) {
       await storeToken(token); // Store the token securely
       return true;
@@ -40,6 +40,19 @@ export const signUp = async (nationalId:string, username: string, email:string, 
   }
   return api.post('/users', requestData);
 };
+
+export const signUpGoogle = async() =>{
+  const response = await api.post('/google/login?action=register&platform=mobile')
+  return response.data
+}
+
+export const loginGoogle = async() =>{
+  const response = await api.post('/google/login?action=login&platform=mobile')
+  console.log(response.data.data)
+  const responseGoogle = await api.get(response.data.data)
+  console.log(responseGoogle)
+  return response.data
+}
 
 
 export const saveCredentials = async (email: string, password: string) => {

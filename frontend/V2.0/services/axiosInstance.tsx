@@ -2,8 +2,9 @@
 import axios from "axios";
 import { storeToken, getToken, deleteToken } from "./AuthenService"; // Utility functions for token management
 // http://161.246.5.86
+
 const api = axios.create({
-  baseURL: "http://161.246.5.86/api/v0.2", // Replace with your backend URL
+  baseURL: "http://192.168.16.139/api/v0.2", // Replace with your backend URL
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,7 +32,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.warn("Token expired. Attempting refresh...");
       try {
-        const refreshResponse = await api.post("/refresh-token");
+        const refreshResponse = await api.post("/refresh-token?platform=mobile");
         const newToken = refreshResponse.data.token;
 
         if (newToken) {

@@ -3,25 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { VictoryChart, VictoryBar, VictoryLine } from 'victory-native';
 import { VictoryTheme } from 'victory-native';
-import { useTransactions } from '../services/TransactionService'; // Import the service
+import { useTransactions,MonthlySummary } from '../services/TransactionService'; // Import the service
 
-const IncomeExpensesReport = () => {
-  const { monthlyData, getMonthlySummary, error } = useTransactions(); // Get monthlyData from the hook
-
-  useEffect(() => {
-    // Fetch monthly summary data when the component mounts
-    getMonthlySummary();
-    console.log(monthlyData)
-  }, []); // Only run once on mount
+const IncomeExpensesReport = ({ monthlyData }: { monthlyData: MonthlySummary[] }) => {
 
   // If there is an error, show the error message
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'red' }}>Error: {error}</Text>
-      </View>
-    );
-  }
 
   // Calculate the average y value for the line chart
   const averageY = monthlyData.reduce((sum, item) => sum + item.y, 0) / monthlyData.length || 0;
