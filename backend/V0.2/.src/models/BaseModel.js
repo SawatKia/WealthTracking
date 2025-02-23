@@ -36,6 +36,15 @@ class BaseModel {
     }
   }
 
+  /**
+   * Executes the given operation within a transaction.
+   * If the operation succeeds, the transaction is committed.
+   * If the operation fails, the transaction is rolled back.
+   * If `withTransaction` is false, the operation is executed without a transaction.
+   * @param {Function} operation - The operation to execute within the transaction
+   * @param {boolean} withTransaction - Whether to execute the operation within a transaction
+   * @returns {Promise<*>} - The result of the operation
+   */
   async executeWithTransaction(operation, withTransaction = true) {
     try {
       if (!withTransaction) {
@@ -142,19 +151,21 @@ class BaseModel {
   async list(nationalId) {
     try {
       logger.info(`Listing records from ${this.tableName}`);
-      if (this.tableName === 'financial_institutions') {
-        logger.debug(`Listing financial institutions data`);
-        const result = await this.pgClient.query(`SELECT * FROM ${this.tableName}`);
-        logger.debug(`Listing financial institutions data result: ${JSON.stringify(result.rows)}`);
+      return await this.executeWithTransaction(async () => {
+        if (this.tableName === 'financial_institutions') {
+          logger.debug(`Listing financial institutions data`);
+          const result = await this.pgClient.query(`SELECT * FROM ${this.tableName}`);
+          logger.debug(`Listing financial institutions data result: ${JSON.stringify(result.rows)}`);
+          return result.rows;
+        } else if (!nationalId || typeof nationalId !== 'string') { // For other tables
+          logger.error("National ID is empty or not a string");
+          throw new ValidationError("National ID is empty or not a string");
+        }
+        const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
+        const result = await this.pgClient.query(sql, [nationalId]);
+        logger.debug(`Listing result: ${JSON.stringify(result.rows)}`);
         return result.rows;
-      } else if (!nationalId || typeof nationalId !== 'string') { // For other tables
-        logger.error("National ID is empty or not a string");
-        throw new ValidationError("National ID is empty or not a string");
-      }
-      const sql = `SELECT * FROM ${this.tableName} WHERE national_id = $1`;
-      const result = await this.pgClient.query(sql, [nationalId]);
-      logger.debug(`Listing result: ${JSON.stringify(result.rows)}`);
-      return result.rows;
+      });
     } catch (error) {
       logger.error(`Error listing records: ${error}`);
       throw error;
@@ -177,16 +188,18 @@ class BaseModel {
       logger.info("Finding one...");
       logger.debug(`primaryKeys: ${JSON.stringify(primaryKeys)}`);
 
-      const keys = Object.keys(primaryKeys);
-      const values = Object.values(primaryKeys);
-      const condition = keys
-        .map((key, index) => `"${key}" = $${index + 1}`)
-        .join(" AND ");
+      return await this.executeWithTransaction(async () => {
+        const keys = Object.keys(primaryKeys);
+        const values = Object.values(primaryKeys);
+        const condition = keys
+          .map((key, index) => `"${key}" = $${index + 1}`)
+          .join(" AND ");
 
-      const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
-      const result = await this.pgClient.query(sql, values);
-      logger.debug("findOne result: " + JSON.stringify(result.rows[0]));
-      return result.rows[0];
+        const sql = `SELECT * FROM ${this.tableName} WHERE ${condition}`;
+        const result = await this.pgClient.query(sql, values);
+        logger.debug("findOne result: " + JSON.stringify(result.rows[0]));
+        return result.rows[0];
+      });
     } catch (error) {
       logger.error(`Error finding one record: ${error}`);
       throw error;
