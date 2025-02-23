@@ -16,7 +16,7 @@ services:
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
-      - ./frontend/build:/usr/src/${APP_DOMAIN}/frontend_build
+      - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,7 +32,7 @@ services:
                npm run dev;
              fi"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:${APP_PORT}/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:${APP_PORT}/health?service=docker-compose\ healthcheck"]
       interval: 5m # Poll every 5 minutes after the container is healthy
       timeout: 10s # Allow up to 10 seconds for each health check command
       retries: 3 # Retry up to 3 times before considering the container unhealthy

@@ -501,7 +501,7 @@ paths:
                 - $ref: "#/components/schemas/UserUpdateRequest"
                 - type: object
                   properties:
-                    profile_picture:
+                    profilePicture:
                       type: string
                       format: binary
                       description: "Profile picture file (jpg, jpeg, png)"
@@ -2246,7 +2246,7 @@ components:
           type: string
           format: date
           example: "1990-01-01"
-        currentPassword:
+        password:
           type: string
           format: password
           description: "Required when updating user information"

@@ -17,8 +17,8 @@ healthStatus() {
         return 0
     fi
 
-    echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health..."
-    serverResponse=$(curl -s http://${ip}:${port}/health)
+    echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health?service=cronjob healthStatus..."
+    serverResponse=$(curl -s http://${ip}:${port}/health?service=cronjob healthStatus)
 
     if [ -z "$serverResponse" ]; then
         echo -e "\033[7;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
@@ -116,5 +116,6 @@ echo -e "\033[1;32m++++Server is ready to use!++++\033[0m"
 # (Optional) Create a cronjob for Ubuntu (staging/production)
 if [ "$(uname -s)" = "Linux" ]; then
     echo -e "\033[7;34m>>>\033[0m cronjob created."
-    (crontab -l 2>/dev/null | grep -v "start_server.sh" ; echo -e "*/5 * * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
+    (crontab -l 2>/dev/null | grep -v "start_server.sh" ; echo -e "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
+    (crontab -l 2>/dev/null ; echo "*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh") | crontab -
 fi

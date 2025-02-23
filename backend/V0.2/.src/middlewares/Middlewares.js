@@ -7,10 +7,9 @@ const { Logger, formatResponse, formatBkkTime } = require("../utilities/Utils");
 const serverTime = require("../utilities/StartTime");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const appConfigs = require("../configs/AppConfigs");
-const GoogleSheetService = require("../services/GoogleSheetService");
+const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
-const { json } = require('express');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -104,7 +103,6 @@ const profilePictureToDiskStorage = multer.diskStorage({
 });
 // const uploadSlipToDisk = multer({ storage: slipToDiskStorage });
 const uploadProfilePictureToDisk = multer({ storage: profilePictureToDiskStorage });
-
 
 class Middlewares {
   constructor() {
@@ -426,11 +424,6 @@ class Middlewares {
     };
   }
 
-
-
-  /**
-   * Rate limiting middleware to prevent too many requests
-   */
   rateLimiter(windowMs = 15 * 60 * 1000, limit = 100) {
     return require("express-rate-limit")({
       windowMs,
@@ -446,15 +439,103 @@ class Middlewares {
     });
   }
 
+  securityMiddleware(req, res, next) {
+    const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
+    logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
+    const SUSPICIOUS_PATTERNS = [
+      "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
+      "/admin/",   // ป้องกัน brute force ไปที่ /admin
+      "wp-login",  // ป้องกันการสแกน WordPress
+      "eval(",     // ป้องกัน XSS และ SQL Injection
+      "cgi-bin",   // ป้องกัน CGI-based attack
+      "passwd",    // ป้องกันการพยายามอ่านไฟล์ passwd
+      "union select", // ป้องกัน SQL Injection
+      "exec(", "system(", "passthru(", "shell_exec(", // ป้องกัน RCE
+      ".git/config", // พยายามเข้าถึง Git repo
+      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", // พยายามอ่านไฟล์ .env
+      "/prod/.env", "/production/.git/config", "/www/.git/config", // พยายามดึง environment configs
+      "/modules/utils/.git/config", "/templates/.git/config", "/user_area/.git/config",
+      "/test_configs/.git/config", "/images/.git/config", "/core/config/.git/config",
+      "/data/private/.git/config", "/static/content/.git/config",
+      "/libs/js/iframe.js" // อาจเป็นการโจมตี iframe injection
+    ];
+    logger.debug(`Loaded suspicious patterns: ${JSON.stringify(SUSPICIOUS_PATTERNS)}`);
+
+    // Load blacklist from JSON file
+    const loadBlacklist = () => {
+      try {
+        if (!fs.existsSync(BLACKLIST_FILE)) return new Set();
+        const data = JSON.parse(fs.readFileSync(BLACKLIST_FILE, "utf-8"));
+        logger.debug(`Loaded blacklist: ${JSON.stringify(data.blocked_ips)}`);
+        return new Set(data.blocked_ips || []);
+      } catch (err) {
+        logger.error("Error loading blacklist:", err);
+        return new Set();
+      }
+    };
+
+    // Save blacklist to JSON file
+    const saveBlacklist = (blacklist) => {
+      try {
+        fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({ blocked_ips: [...blacklist] }, null, 2));
+        logger.debug(`Saved blacklist: ${JSON.stringify([...blacklist])}`);
+      } catch (err) {
+        logger.error("Error saving blacklist:", err);
+      }
+    };
+
+    let blacklist = loadBlacklist();
+    logger.debug(`blacklist:${typeof blacklist} - ${JSON.stringify(blacklist)}`);
+    const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+
+    if (blacklist.has(clientIp)) {
+      logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
+      return next(MyAppErrors.forbidden());
+    }
+
+    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) =>
+      req.url.includes(pattern) ||
+      JSON.stringify(req.query).includes(pattern) ||
+      JSON.stringify(req.body).includes(pattern)
+    );
+
+    if (suspicious) {
+      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
+
+      blacklist.add(clientIp);
+      logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+      saveBlacklist(blacklist);
+
+      return next(MyAppErrors.forbidden());
+    } else logger.debug(`/// Request from ${clientIp} is not suspicious`);
+
+    next();
+  }
+
+  healthCheck(req, res, next) {
+    const currentTime = new Date().getTime();
+    const currentBkkTime = formatBkkTime(currentTime);
+
+    req.formattedResponse = formatResponse(
+      200,
+      "you are connected to the /health, running in Environment: " + NODE_ENV,
+      {
+        status: "healthy",
+        timestamp: currentBkkTime,
+        server_start_at: serverTime.getFormattedStartTime(),
+        uptime: serverTime.formatUptime(),
+        environment: appConfigs.environment
+      }
+    );
+    next();
+  }
+
   requestLogger(req, res, next) {
-    logger.info(`⬇️  ⬇️  ⬇️  entering the routing for ${req.method} ${req.url}`);
+    logger.info(`\u2193 \u2193 \u2193 ---entering the routing for ${req.method} ${req.url}`);
 
     const getIP = (req) => {
-      // req.connection is deprecated
       const conRemoteAddress = req.connection?.remoteAddress;
-      // req.socket is said to replace req.connection
       const sockRemoteAddress = req.socket?.remoteAddress;
-      // some platforms use x-real-ip
       const xRealIP = req.headers['x-real-ip'];
       // most proxies use x-forwarded-for
       const xForwardedForIP = (() => {
@@ -493,30 +574,25 @@ class Middlewares {
       if (body && body.base64Image) {
         logBody = {
           ...body,
-          base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`,
+          base64Image: `${body.base64Image.substring(0, 50)}... [truncated]`
         };
       } else {
         logBody = body;
       }
 
       const formatObjectEntries = (obj, lengthLimit = 50) => {
-        if (typeof obj !== 'object' || obj === null) {
-          return '';
-        }
-        return Object.entries(obj || {})
-          .map(([key, value]) => {
-            const displayValue = value && String(value).length > lengthLimit
-              ? `${String(value).substring(0, lengthLimit)}... [truncated]`
-              : String(value);
-            return `${key.padEnd(26)}: ${displayValue}`;
-          })
-          .join('\n          ');
+        if (typeof obj !== 'object' || obj === null) return '';
+        return Object.entries(obj || {}).map(([key, value]) => {
+          const displayValue = value && String(value).length > lengthLimit
+            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+            : String(value);
+          return `${key.padEnd(26)}: ${displayValue}`;
+        }).join('\n          ');
       }
 
-      // Prepare a human-friendly log message
       const requestLogMessage = `
-        ⬇️  ⬇️  ⬇️  Incoming Request ⬇️  ⬇️  ⬇️  :
-        ----------------
+        \u2193 \u2193 \u2193 ---Incoming Request---\u2193 \u2193 \u2193   :
+        ------------------
         ${ip} => ${method} ${requestPath}
         Headers:
           ${formatObjectEntries(headers)}
@@ -524,7 +600,7 @@ class Middlewares {
           ${formatObjectEntries(req.cookies)}
         Body: ${logBody ? JSON.stringify(logBody, null, 6).replace(/^/gm, '      ') : 'Empty'}
         Query: ${query ? JSON.stringify(query, null, 6).replace(/^/gm, '      ') : 'Empty'}
-        `;
+      `;
 
       logger.info(requestLogMessage);
     } catch (error) {
@@ -533,24 +609,9 @@ class Middlewares {
     next();
   }
 
-  /**
-   * Middleware to authenticate user requests.
-   *
-   * This middleware checks for an access token in the cookies or Authorization header of the incoming request.
-   * If a valid token is found, it verifies the token and attaches the authenticated user to the request object.
-   * If the token is invalid or missing, it responds with an unauthorized error.
-   *
-   * @param {Object} req - The request object, containing cookies and headers.
-   * @param {Object} res - The response object.
-   * @param {Function} next - The next middleware function in the stack.
-   *
-   * @throws {UnauthorizedError} - If the access token is invalid or not provided.
-   */
-
   authMiddleware(req, res, next) {
     logger.info("Authenticating user");
 
-    // Check for token in both cookie and Authorization header
     const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
 
     logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
@@ -585,39 +646,16 @@ class Middlewares {
       return uploadSlip.single('imageFile')(req, res, next);
     }
     next();
-  };
+  }
 
   conditionalProfilePictureUpload(req, res, next) {
+    logger.debug(`Middleware triggered: conditionalProfilePictureUpload`);
+    logger.debug(`req.is('multipart/form-data'): ${req.is('multipart/form-data')}`);
+    logger.debug(`Request body:`, req.body);
+    logger.debug(`Request file:`, req.file);
     if (req.is('multipart/form-data')) {
       return uploadProfilePictureToDisk.single('profilePicture')(req, res, next);
     }
-    next();
-  };
-
-  /**
- * Health check middleware to check the health of the server
- * 
- * it provides:
- * 
- * - the current time in Bangkok
- * - the uptime of the server
- * - the environment
- */
-  healthCheck(req, res, next) {
-    const currentTime = new Date().getTime();
-    const currentBkkTime = formatBkkTime(currentTime);
-
-    req.formattedResponse = formatResponse(
-      200,
-      "you are connected to the /health, running in Environment: " + NODE_ENV,
-      {
-        status: "healthy",
-        timestamp: currentBkkTime,
-        server_start_at: serverTime.getFormattedStartTime(),
-        uptime: serverTime.formatUptime(),
-        environment: appConfigs.environment
-      }
-    );
     next();
   }
 
@@ -647,7 +685,7 @@ class Middlewares {
     };
 
     const responseLogMessage = `
-      ⬆️  ⬆️  ⬆️  Outgoing Response ⬆️  ⬆️  ⬆️  :
+      \u2191 \u2191 \u2191  Outgoing Response \u2191 \u2191 \u2191  :
       Headers:
           ${formatObjectEntries(securityHeaders)}
       ------------------
@@ -669,8 +707,10 @@ class Middlewares {
     logger.info('Checking if the route is unknown...');
 
     if (!req.formattedResponse) {
-      logger.error(`Unknown route: ${req.method} ${req.url}`);
-      return next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+      if (!req.url.includes('favicon.ico')) {
+        logger.error(`Unknown route: ${req.method} ${req.url}`);
+        return next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
+      }
     }
 
     logger.info('Route was handled eariler and returned a response.');
