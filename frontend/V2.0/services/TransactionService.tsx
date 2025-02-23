@@ -38,7 +38,7 @@ interface newTransaction {
   receiver?: newSenderReceiver | null;
 }
 
-interface MonthlySummary{
+export interface MonthlySummary{
   x: string,
   y: number,
 }
@@ -49,6 +49,9 @@ export const useTransactions = () => {
   const [error, setError] = useState<string | null>(null);
   
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
+  // const [incomeData, setIncomeData] = useState<number>(0);
   const router = useRouter()
 
   // useEffect(() => {
@@ -129,7 +132,17 @@ export const useTransactions = () => {
       setError('Failed to delete transaction.');
     }
   };
-
+  const getTransactionbyId = async (transactionId: string) => {
+    try {
+      const response = await api.get(`/transactions/${transactionId}`);
+      if (response.status === 200) {
+        console.log(response.data.data.transaction)
+        return  response.data.data.transaction
+      }
+    } catch (err) {
+      setError('Failed to update transaction.');
+    }
+  };
   // Function to edit a transaction
   const editTransaction = async (transactionId: string, updatedTransaction: Transaction) => {
     try {
@@ -190,31 +203,77 @@ export const useTransactions = () => {
     // Fetch monthly expense 12 month
     const getMonthlySummary = async () => {
       try {
+        setLoading(true); // Start loading
+        setError(null);
         const response = await api.get('/transactions/summary/monthly');
         const data = response.data;
     
         if (data?.status_code === 200) {
-          const summary = data.data.summary.map((item: any) => {
-            const monthShort = new Date(item.month).toLocaleString('default', { month: 'short' });
-            console.log(monthShort);
-    
-            return {
-              x: monthShort,
-              y: item.summary.expense, // Change to `expense` or `balance` as needed
-            };
+          // const summary = data.data.summary.map((item: any) => {
+          //   const monthShort = new Date(item.month).toLocaleString('default', { month: 'short' });
+          //   console.log(monthShort,item.summary.income,item.summary.expense);
+          //   return {
+          //     x: monthShort,
+          //     y: item.summary.expense, // Change to `expense` or `balance` as needed
+          //   };
+
+          // });
+          const currentYear = new Date().getFullYear();
+
+            // Filter only data from the current year
+          const filteredSummary = data.data.summary.filter((item: any) => {
+            const itemYear = new Date(item.month).getFullYear();
+            return itemYear === currentYear;
           });
-    
+
+          const summary = filteredSummary.map((item: any) => ({
+            x: new Date(item.month).toLocaleString('default', { month: 'short' }),
+            y: item.summary.expense,
+          }));
+
+
           console.log(summary);
           setMonthlyData(summary); // Set the summary data for monthly expenses
+          const lastItem = data.data.summary[data.data.summary.length - 1];
+          if (lastItem) {
+            setIncome(lastItem.summary.income);
+            setExpense(lastItem.summary.expense);
+          }
+          return summary
         } else {
           setError('Failed to fetch monthly summary');
         }
       } catch (error) {
         setError('An error occurred while fetching monthly summary');
         console.error(error);
+      }finally {
+        setLoading(false); // Stop loading
       }
     };
-    
 
-  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary };
+    const getSummaryIncome = () => {
+      if (loading) return 'Loading...';
+      return income.toFixed(2);
+    };
+    
+    const getSummaryExpense = () => {
+      if (loading) return 'Loading...';
+      return expense.toFixed(2);
+    };
+    
+    // const getSummaryExpense = async (): Promise<number> => {
+    //   try {
+    //     const response = await api.get('/transactions/summary/monthly');
+    //     if (response.status === 200 && response.data && response.data.data) {
+    //       return response.data.data.summary.expense || 0; // Access the expense data in the response
+    //     } else {
+    //       throw new Error('Failed to retrieve expense data');
+    //     }
+    //   } catch (error) {
+    //     console.error('Error fetching monthly expense:', error);
+    //     throw error;  // Re-throw the error so the component can handle it
+    //   }
+    // };    
+
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId };
 };

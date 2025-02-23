@@ -12,7 +12,7 @@ import {
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Use Ionicons for the eye icon
 import { Link, useRouter } from "expo-router";
-import { signUp } from "../services/AuthenService";
+import { signUp, signUpGoogle } from "../services/AuthenService";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -98,6 +98,17 @@ export default function SignUpScreen() {
       );
       console.log("Sign Up Success", "You can now log in", response);
       router.push("/Login");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSignUpGoogle = async () => {
+
+    try{
+      const response = await signUpGoogle()
+      console.log("Sign Up Google Success", "You can now log in", response.data);
+      router.push(response.data);
     } catch (error) {
       console.error(error);
     }
@@ -221,7 +232,7 @@ export default function SignUpScreen() {
         <Text style={styles.orText}>or</Text>
 
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton}>
+        <TouchableOpacity style={styles.googleButton} onPress={handleSignUpGoogle}>
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>
