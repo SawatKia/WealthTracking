@@ -12,12 +12,7 @@ import {
   GestureHandlerRootView,
   GestureHandlerGestureEvent,
 } from "react-native-gesture-handler";
-
-type Account = {
-  name: string;
-  balance: number;
-  lastUpdated: string;
-};
+import { Account } from "@/services/AccountService"; // นำเข้า useAccount
 
 type AccountCardProps = {
   account: Account[];
@@ -27,7 +22,7 @@ export default function AccountCard({
   account,
 }: AccountCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const totalBalance = account.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalBalance = account.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
   const handleSwipe = (event: GestureHandlerGestureEvent) => {
     const { nativeEvent } = event;
     const { translationX } = nativeEvent as unknown as { translationX: number };
@@ -73,13 +68,13 @@ export default function AccountCard({
         
         <View style={styles.accountContainer}>
           <View style={styles.card}>
-            <Text style={styles.name}>{account[currentIndex].name}</Text>
+            <Text style={styles.name}>{account[currentIndex].display_name}</Text>
             <Text style={styles.balance}>
               ฿{account[currentIndex].balance.toLocaleString()}
             </Text>
-            <Text style={styles.updated}>
+            {/* <Text style={styles.updated}>
               Last Updated: {account[currentIndex].lastUpdated}
-            </Text>
+            </Text> */}
             {/* <Text style={styles.indicator}>{`${
               currentIndex + 1
             } / ${account.length}`}</Text> */}

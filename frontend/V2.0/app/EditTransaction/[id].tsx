@@ -61,7 +61,7 @@ const options = {
 export default function EditTransaction() {
   const id = useLocalSearchParams().id as string;
   console.log(id, typeof(id))
-  const { getTransactionbyId } = useTransactions();
+  const { getTransactionbyId, editTransaction } = useTransactions();
   const { getAllAccounts } = useAccount();
   const router = useRouter()
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
@@ -90,6 +90,7 @@ export default function EditTransaction() {
 const [selectedAccount, setSelectedAccount] = useState<{ account_number: string; fi_code: string } | null>(null);
 const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Holds string value for DropDownPicker
 const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); 
+const [displayname, setdisplayname] = useState("[Select Account]")
 
   const [note, setNote] = useState("");
   
@@ -134,45 +135,81 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
       "amount": parseFloat(parseFloat(amount).toFixed(2)),
       "debt_id" : null,
       "note": note,
-      sender,
-      receiver
     }
+    
     // console.log(requestBody)
-    // createTransaction(requestBody)
+    const data = editTransaction(id, requestBody)
+    console.log(data)
+    
+
     // console.log('send data :', respond)
   }
 
   // Extract the setCategory function passed as a prop
   // const setCategory = params.setCategory as (category: string) => void;
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDataTrans = async () => {
       try {
-        // Transform API data into items format for the dropdown
-        const dataAccount = await getAllAccounts()
-        console.log('account : ',dataAccount)
-        setsizeOption(dataAccount.length)
+        if (!id) {
+          console.warn("No ID found!");
+          return;
+        }
+  
+        // Fetch accounts
+        const dataAccount = await getAllAccounts();
+        console.log("Accounts: ", dataAccount);
+        setsizeOption(dataAccount.length);
+  
         const items = dataAccount.map((item) => ({
           label: item.display_name,
-          value: JSON.stringify({ account_number: item.account_number, fi_code: item.fi_code }), // Store object as string
+          value: JSON.stringify({ 
+            account_number: item.account_number, 
+            fi_code: item.fi_code 
+          }), // Store object as string
         }));
+  
         setAccountItems(items);
-
-        const dataTrans = await getTransactionbyId(id)
-        setDate(dataTrans.transaction_datetime)
-        // setSelectedCategory({ category, type });
-        // setSelectedCategory({dataTrans.type, dataTrans.type})
-        // 
-        console.log(dataTrans);
-      
-
+        console.log('account item',accountItems)
+  
+        // Fetch transaction data
+        const dataTrans = await getTransactionbyId(id);
+        console.log("Transaction Data: ", dataTrans);
+  
+        setDate(dataTrans.transaction_datetime);
+        handleSelectCategory(dataTrans.type, dataTrans.category);
+  
+        // Ensure sender exists before accessing properties
+        if (dataTrans.sender) {
+          setdisplayname(dataTrans.sender.display_name)
+          const sender = JSON.stringify({
+            account_number: dataTrans.sender.account_number,
+            fi_code: dataTrans.sender.fi_code,
+          });
+          setSelectedAccountValue(sender); // Set default selection
+  
+        }
+        if (dataTrans.receiver) {
+          setdisplayname(dataTrans.receiver.display_name)
+          const receiver = JSON.stringify({
+            account_number: dataTrans.receiver.account_number,
+            fi_code: dataTrans.receiver.fi_code,
+          });
+          setSelectedAccountValue(receiver); 
+          
+        }
+        setAmount(dataTrans.amount)
+        setNote(dataTrans.note)
+        console.log('selectaccount value',selectedAccountValue)
+  
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-
-    fetchData();
-  }, []);
+  
+    fetchDataTrans();
+  }, [id]);
+  
+  
 
   const onChangeDate = (params: any) => {
     setDate(params.date);
@@ -303,7 +340,7 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
             name="albums"
             style={styles.iconTitle}
             size={20}
-            color="#fff"
+            color="#fff" 
           />
           <Text style={styles.title}>{selectedCategory.type == 'Transfer' ? 'Sender Account':'Account'}</Text>
         </View>
@@ -318,17 +355,19 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
        <DropDownPicker
   open={isAccountPickerVisible}
   multiple={false}  // Ensure single-select mode
-  value={selectedAccountValue} // Use string value
+  value={selectedAccountValue} // Use the stored JSON value
   items={accountItems}
   setOpen={setAccountPickerVisibility}
-  setValue={setSelectedAccountValue}
+  setValue={setSelectedAccountValue} // Ensure state updates properly
   setItems={setAccountItems}
-  placeholder="[Select Account]"
+  placeholder={displayname}
   style={styles.inputButton}
   disableBorderRadius={true}
   textStyle={{ textAlign: "center" }}
   dropDownContainerStyle={styles.dropdownContainer}
+  disabled={true} 
 />
+
 
 
           </View>

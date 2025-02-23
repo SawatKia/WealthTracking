@@ -6,21 +6,42 @@ import TransactionCard from "../../components/TransactionCard";
 import { Ionicons} from "@expo/vector-icons"; 
 import { useRouter } from 'expo-router';
 
+import { Account, useAccount } from "@/services/AccountService"; // นำเข้า useAccount
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // import TransactionDetails from '@components/';
-const accounts = [
-  { name: "Account A", balance: 1000000, lastUpdated: "Today, 18:00 PM" },
-  { name: "Account B", balance: 500000, lastUpdated: "Yesterday, 15:00 PM" },
-  { name: "Account C", balance: 2000, lastUpdated: "Yesterday, 15:00 PM" },
-];
+// const accounts = [
+//   { name: "Account A", balance: 1000000, lastUpdated: "Today, 18:00 PM" },
+//   { name: "Account B", balance: 500000, lastUpdated: "Yesterday, 15:00 PM" },
+//   { name: "Account C", balance: 2000, lastUpdated: "Yesterday, 15:00 PM" },
+// ];
 
 // export default function DebtScreen() {
   export default function IncomeExpenses () {
   const router = useRouter();
+  const { getAllAccounts } = useAccount();
   const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("All");
+  const [bankAccounts, setBankAccounts] = useState<Account[]>([]); 
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  useEffect(() => {
+      const fetchDataAccountInEx = async () => {
+        try {
+          // Transform API data into items format for the dropdown
+          const data = await getAllAccounts()
+          setBankAccounts(data)
+          console.log('account bank : ',bankAccounts)
+
+  
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+  
+      fetchDataAccountInEx();
+    }, []);
 
   // const handleSwipe = (direction: 'Left' | 'Right') => {
   //   if (direction === 'Left') {
@@ -49,7 +70,7 @@ const accounts = [
     <View style={styles.container}>
 
         <AccountCard
-          account={accounts}
+          account={bankAccounts}
         />
       {/* <GestureHandlerRootView style={styles.accountContainer}>
       </GestureHandlerRootView> */}

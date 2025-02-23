@@ -37,6 +37,14 @@ interface newTransaction {
   sender?: newSenderReceiver | null;
   receiver?: newSenderReceiver | null;
 }
+interface editTransaction {
+  transaction_datetime: string;
+  category: string;
+  type: string;
+  amount: number;
+  note: string | null;
+  debt_id: string | null;
+}
 
 export interface MonthlySummary{
   x: string,
@@ -124,9 +132,9 @@ export const useTransactions = () => {
   // Function to delete a transaction
   const deleteTransaction = async (transactionId: string) => {
     try {
-      const response = await api.delete(`https://api.example.com/transactions/${transactionId}`);
+      const response = await api.delete(`/transactions/${transactionId}`);
       if (response.status === 200) {
-        setTransactions((prev) => prev.filter((t) => t.transaction_id !== transactionId));
+        return response.status
       }
     } catch (err) {
       setError('Failed to delete transaction.');
@@ -144,15 +152,12 @@ export const useTransactions = () => {
     }
   };
   // Function to edit a transaction
-  const editTransaction = async (transactionId: string, updatedTransaction: Transaction) => {
+  const editTransaction = async (transactionId: string, updatedTransaction: editTransaction) => {
     try {
-      const response = await api.put(`https://api.example.com/transactions/${transactionId}`, updatedTransaction);
+      const response = await api.patch(`/transactions/${transactionId}`, updatedTransaction);
       if (response.status === 200) {
-        setTransactions((prev) =>
-          prev.map((t) =>
-            t.transaction_id === transactionId ? { ...t, ...updatedTransaction } : t
-          )
-        );
+        router.push('/(tabs)/IncomeExpense')
+        return response.data.data
       }
     } catch (err) {
       setError('Failed to update transaction.');
