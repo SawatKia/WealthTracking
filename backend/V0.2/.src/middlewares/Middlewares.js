@@ -10,6 +10,7 @@ const appConfigs = require("../configs/AppConfigs");
 const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
+const app = require('../app.js');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -109,29 +110,72 @@ class Middlewares {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
 
-    // Add CORS configuration
+    // CORS configuration
     this.corsOptions = {
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, Postman)
-        if (!origin) {
+        // Development environment
+        if (appConfigs.environment === 'development') {
+          const devAllowedOrigins = [
+            // Allow any localhost port
+            /^http:\/\/localhost:\d+$/,
+            // Allow Expo development client
+            /^exp:\/\/[\w\-]+\.[\w\-]+\.exp\.direct:\d+$/,
+            // Allow Expo Go app
+            /^exp:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+            // Allow local network IP for Expo
+            /^exp:\/\/[\w\-]+\.local:\d+$/,
+            // Allow Expo web development
+            /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/
+          ];
+
+          // Allow requests with no origin (like mobile apps, Postman)
+          if (!origin) {
+            return callback(null, true);
+          }
+
+          // Check if origin matches any of the allowed patterns
+          const isAllowed = devAllowedOrigins.some(pattern =>
+            pattern instanceof RegExp ?
+              pattern.test(origin) :
+              pattern === origin
+          );
+
+          if (isAllowed) {
+            return callback(null, true);
+          }
+
+          // Allow all origins for development
           return callback(null, true);
         }
+        // Production environment
+        else {
+          const prodAllowedOrigins = [
+            // Your production web app domain
+            'https://your-production-app.com',
+            // Your production API domain
+            'https://api.your-production-app.com',
+            // Expo production app
+            /^https:\/\/[\w-]+\.expo\.dev$/,
+            // Published Expo app
+            /^exp:\/\/exp\.host\/@your-username\/.*$/
+          ];
 
-        const allowedOrigins = [
-          // Add your allowed origins here
-          'http://localhost:3000',          // Development
-          'exp://localhost:19000',          // Expo development server
-          'exp://192.168.x.x:19000', // Local network IP for mobile device testing
-          // 'https://your-production-domain.com', // Production web client
-          // 'capacitor://localhost',          // Capacitor/Ionic
-          // 'ionic://localhost',              // Ionic specific
-          '*', // Allow all origins
-        ];
+          // Allow mobile app requests (no origin)
+          if (!origin) {
+            return callback(null, true);
+          }
 
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
+          const isAllowed = prodAllowedOrigins.some(pattern =>
+            pattern instanceof RegExp ?
+              pattern.test(origin) :
+              pattern === origin
+          );
+
+          if (isAllowed) {
+            return callback(null, true);
+          }
+
+          return callback(new Error('Not allowed by CORS'));
         }
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -139,12 +183,12 @@ class Middlewares {
         'Content-Type',
         'Authorization',
         'X-Requested-With',
-        'X-Refresh-Token', // For refresh token
+        'X-Refresh-Token',
         'Accept',
       ],
-      credentials: true, // Allow credentials (cookies)
-      maxAge: 86400, // Cache preflight requests for 24 hours
-      exposedHeaders: ['Content-Length', 'X-Rate-Limit'] // Headers that can be exposed to the client
+      credentials: true,
+      maxAge: 86400,
+      exposedHeaders: ['Content-Length', 'X-Rate-Limit']
     };
 
     // Create CORS middleware
@@ -469,7 +513,7 @@ class Middlewares {
         logger.debug(`Loaded blacklist: ${JSON.stringify(data.blocked_ips)}`);
         return new Set(data.blocked_ips || []);
       } catch (err) {
-        logger.error("Error loading blacklist:", err);
+        logger.error(`Error loading blacklist: ${err}`);
         return new Set();
       }
     };
@@ -502,8 +546,10 @@ class Middlewares {
     if (suspicious) {
       logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
 
-      blacklist.add(clientIp);
-      logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+      if (!blacklist.has(clientIp)) {
+        blacklist.add(clientIp);
+        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+      }
       saveBlacklist(blacklist);
 
       return next(MyAppErrors.forbidden());
