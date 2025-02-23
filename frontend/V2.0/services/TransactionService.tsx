@@ -132,7 +132,17 @@ export const useTransactions = () => {
       setError('Failed to delete transaction.');
     }
   };
-
+  const getTransactionbyId = async (transactionId: string) => {
+    try {
+      const response = await api.get(`/transactions/${transactionId}`);
+      if (response.status === 200) {
+        console.log(response.data.data.transaction)
+        return  response.data.data.transaction
+      }
+    } catch (err) {
+      setError('Failed to update transaction.');
+    }
+  };
   // Function to edit a transaction
   const editTransaction = async (transactionId: string, updatedTransaction: Transaction) => {
     try {
@@ -265,5 +275,5 @@ export const useTransactions = () => {
     //   }
     // };    
 
-  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense };
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId };
 };

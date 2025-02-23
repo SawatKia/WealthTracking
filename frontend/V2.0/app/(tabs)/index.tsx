@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import SummaryCard from '../../components/SummaryCard';
 import SummaryBox1 from '../../components/IncomeSummary';
 import SummaryBox2 from '../../components/ExpenseSummary';
@@ -8,6 +8,7 @@ import CurrentInstallment from '../../components/CurrentInstallment';
 import IncomeExpenseReport from '@/components/IncomeExpenseReport';
 import ReportByCategory from '../../components/reportByCategory';
 
+import { Ionicons} from "@expo/vector-icons"; 
 import { View, Text } from '@/components/Themed';
 import { useTransactions,MonthlySummary } from '@/services/TransactionService'; 
 
@@ -31,8 +32,15 @@ export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text style={styles.header}>Account</Text>
-        
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Account</Text>
+          <TouchableOpacity style = {styles.summaryButton}>
+            <Ionicons name="pie-chart" size={25} color="#000000" />
+            <Text style = {{margin:5}}>Summary</Text>
+          </TouchableOpacity>
+          
+
+        </View>
         <SummaryCard typeAccount="Total" balance={1000} totalAccounts={5} typeList="accounts" />
         
         <View style={styles.rowIncomeExpense}>
@@ -68,6 +76,21 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f0f4f8"
   },
+  headerContainer:{
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    margin:10
+
+  },
+  summaryButton:{
+    flexDirection: 'row',
+    justifyContent:'center',
+    alignItems:'center',
+    backgroundColor:"#ffd358",
+    paddingHorizontal:10,
+    borderRadius:10
+
+  },
   scrollContainer: {
     flexGrow: 1, // Ensure the content fills the screen height when needed
     backgroundColor: "#f0f4f8",
@@ -82,7 +105,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
     textAlign: 'left',
-    marginBottom: 10,
+    // marginBottom: 10,
   },
   temp: {
     color: '#7fa1ff',

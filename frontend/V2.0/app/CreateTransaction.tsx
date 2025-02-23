@@ -89,17 +89,14 @@ export default function CreateTransaction({
     type: null as string | null,
   });
   const [selectedAccountItem, setSelectedAccountItem] = useState<string | null>(null);
-  const [selectedAccountValue, setSelectedAccountValue] = useState<{ account_number: string; fi_code: string } | null>(null);
-  
 
 
-  const [selectedAccountTransValue, setSelectedAccountTransValue] =  useState<
-  { label: string; value: { account_number: string; fi_code: string } }[]
->([]); // Selected value
   const [accountItems, setAccountItems] =  useState<
   { label: string; value: string}[]
 >([]);
 const [selectedAccount, setSelectedAccount] = useState<{ account_number: string; fi_code: string } | null>(null);
+const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Holds string value for DropDownPicker
+const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); 
 
   const [note, setNote] = useState("");
   
@@ -123,21 +120,19 @@ const [selectedAccount, setSelectedAccount] = useState<{ account_number: string;
     // let senderReceiver: { sender?: any; receiver?: any } = {}; 
     let sender : newSenderReceiver | null = null;
     let receiver : newSenderReceiver| null = null;
+    console.log(selectedAccountValue)
+    console.log(selectedAccountTransValue)
+
+    
     if (selectedCategory.type == 'Income') {
-      receiver = selectedAccount
+      receiver = JSON.parse(selectedAccountValue || "")
   }
     else if(selectedCategory.type == 'Expense'){
-      sender = selectedAccount
+      sender =  JSON.parse(selectedAccountValue || "")
     }
   else{
-      sender =  {
-        account_number: "1234567890",
-        fi_code: "004"
-      }
-      receiver = {
-        account_number: "1234567890",
-        fi_code: "004"
-      }
+    sender =  JSON.parse(selectedAccountValue || "")
+    receiver = JSON.parse(selectedAccountTransValue || "")
   }
     const requestBody = {
       "transaction_datetime": dayjs(date).toString(),
@@ -149,8 +144,8 @@ const [selectedAccount, setSelectedAccount] = useState<{ account_number: string;
       sender,
       receiver
     }
-    console.log(requestBody)
-    // createTransaction(requestBody)
+    // console.log(requestBody)
+    createTransaction(requestBody)
     // console.log('send data :', respond)
   }
 
@@ -332,28 +327,21 @@ const [selectedAccount, setSelectedAccount] = useState<{ account_number: string;
               { height: isAccountPickerVisible ? 50 * sizeOption : null },
             ]}
           >
-            <DropDownPicker
-            open={isAccountPickerVisible}
-            value={selectedAccount ? JSON.stringify(selectedAccount) : null} // Store as string
-            items={accountItems}
-            setOpen={setAccountPickerVisibility}
-            setValue={setSelectedAccount}
-            setItems={setAccountItems}
-            placeholder="[Select Account]"
-            style={styles.inputButton}
-            disableBorderRadius={true}
-            textStyle={{ textAlign: "center" }}
-            dropDownContainerStyle={styles.dropdownContainer}
-            onChangeValue={(val) => {
-              if (val) {
-                console.log(val)
-                const parsedValue = JSON.parse(val); // Convert back to object
-                setSelectedAccount(parsedValue); // Update state
-                console.log(accountItems)
+       <DropDownPicker
+  open={isAccountPickerVisible}
+  multiple={false}  // Ensure single-select mode
+  value={selectedAccountValue} // Use string value
+  items={accountItems}
+  setOpen={setAccountPickerVisibility}
+  setValue={setSelectedAccountValue}
+  setItems={setAccountItems}
+  placeholder="[Select Account]"
+  style={styles.inputButton}
+  disableBorderRadius={true}
+  textStyle={{ textAlign: "center" }}
+  dropDownContainerStyle={styles.dropdownContainer}
+/>
 
-              }
-            }}
-          />
 
           </View>
 
@@ -379,19 +367,20 @@ const [selectedAccount, setSelectedAccount] = useState<{ account_number: string;
             { height: isAccountTransPickerVisible ? 50 * sizeOption : null },
           ]}
         >
-          {/* <DropDownPicker
-            open={isAccountTransPickerVisible}
-            value={selectedAccountTransValue}
-            items={selectedAccountItem}
-            setOpen={setAccountTransPickerVisibility}
-            setValue={setSelectedAccountTransValue}
-            setItems={setSelectedAccountItem}
-            placeholder="[Select Acount]"
-            style={styles.inputButton}
-            disableBorderRadius={true}
-            textStyle={{ textAlign: "center" }}
-            dropDownContainerStyle={styles.dropdownContainer}
-          /> */}
+        <DropDownPicker
+  open={isAccountTransPickerVisible}
+  multiple={false}  // Ensure single-select mode
+  value={selectedAccountTransValue} // Use string value
+  items={accountItems}
+  setOpen={setAccountTransPickerVisibility}
+  setValue={setSelectedAccountTransValue}
+  setItems={setAccountItems}
+  placeholder="[Select Account]"
+  style={styles.inputButton}
+  disableBorderRadius={true}
+  textStyle={{ textAlign: "center" }}
+  dropDownContainerStyle={styles.dropdownContainer}
+/>
         </View>
 
         {/* <Text>Select an Option:</Text> */}
