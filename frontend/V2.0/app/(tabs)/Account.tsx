@@ -36,7 +36,7 @@ export default function BankAccountScreen() {
       }
     };
 
-    fetchTransactions();
+    fetchAccounts();
   }, []);
 
   // คำนวณยอดรวมของทุกบัญชี

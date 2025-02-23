@@ -5,6 +5,7 @@ import IconMap from "../constants/IconMap";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { useTransactions, Transaction } from '../services/TransactionService';
+import { useRouter } from "expo-router";
 
 interface TransactionCardProps {
   selected: "Income" | "Expense" | "Transfer" | "All";
@@ -17,6 +18,7 @@ const colorMap: Record<string, string> = {
 };
 
 export default function TransactionCard({selected }: TransactionCardProps) {
+  const router = useRouter()
   const { getAllTransactions, loading, error, deleteTransaction } = useTransactions();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -45,7 +47,9 @@ export default function TransactionCard({selected }: TransactionCardProps) {
   });
 
   const handleEdit = (transactionId: string) =>{
-    console.log('handle edit')
+    setSelectedTransaction('')
+    router.push(`/EditTransaction/${transactionId}`);
+
   }
   const handleDelete = (transactionId: string) => {
     deleteTransaction(transactionId);
