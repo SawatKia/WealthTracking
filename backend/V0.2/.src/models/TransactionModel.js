@@ -488,6 +488,7 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
           transaction_datetime DESC`;
       let result = await super.executeQuery(query, [nationalId], { silent: true });
       result = result.rows;
+      result = result.length > 500 ? `${result.slice(0, 497)}... [truncated]` : result;
       logger.debug(`result: ${JSON.stringify(result)}`);
 
       // Fix: Use Promise.all with map to handle async operations
@@ -500,7 +501,7 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
       );
 
       const transactionString = JSON.stringify(transactions);
-      const truncatedString = transactionString.length > 500 ? `${transactionString.slice(0, 497)}...` : transactionString;
+      const truncatedString = transactionString.length > 500 ? `${transactionString.slice(0, 497)}... [truncated]` : transactionString;
       logger.debug(`transactions: ${truncatedString}`);
       return transactions;
     } catch (error) {
