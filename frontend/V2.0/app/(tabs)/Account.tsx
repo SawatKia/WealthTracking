@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from "react-native";
 import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
 import { Account, useAccount } from "../../services/AccountService"; // นำเข้า useAccount
 import { Transaction, useTransactions } from "../../services/TransactionService";
 
 const { width: screenWidth } = Dimensions.get("window");
-
 
 export default function BankAccountScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -18,29 +17,28 @@ export default function BankAccountScreen() {
   const { getAllAccounts } = useAccount();
   const { getAllTransactions } = useTransactions();
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchData = async () => {
+        const accounts = await getAllAccounts();
+        console.log("Fetched Accounts:", accounts); // ตรวจสอบข้อมูลบัญชีที่ได้
+        setBankAccounts(accounts);
 
-  // ดึงข้อมูลบัญชีจาก API เมื่อคอมโพเนนต์ถูกโหลด
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      const accounts = await getAllAccounts();
-      setBankAccounts(accounts);
-    };
+        const transactions = await getAllTransactions();
+        console.log("Fetched Transactions:", transactions); // ตรวจสอบข้อมูลธุรกรรมที่ได้
+        if (transactions) {
+          setRecentTransactions(transactions);
+        } else {
+          setRecentTransactions([]); // ตั้งค่าเป็น array ว่างแทน undefined
+        }
+      };
 
-    const fetchTransactions = async () => {
-      const transactions = await getAllTransactions();
-      console.log("Fetched Transactions:", transactions); // ตรวจสอบข้อมูลที่ได้
-      if (transactions) {
-        setRecentTransactions(transactions);
-      } else {
-        setRecentTransactions([]); // ตั้งค่าเป็น array ว่างแทน undefined
-      }
-    };
-
-    fetchAccounts();
-  }, []);
+      fetchData();
+    }, [])
+  );
 
   // คำนวณยอดรวมของทุกบัญชี
-  const totalBalance = bankAccounts.reduce((total, account) => total + account.balance, 0);
+  const totalBalance = bankAccounts.reduce((total, account) => total + parseFloat(account.balance), 0);
 
   // ฟังก์ชันสำหรับเลื่อนการ์ดบัญชีธนาคาร
   const handleSwipe = ({ nativeEvent }: any) => {
@@ -61,6 +59,16 @@ export default function BankAccountScreen() {
   const navigateToAddAccount = () => {
     router.push("/AddAccount"); // นำทางไปยัง AddAccount.tsx
   };
+
+  // คำนวณช่วงของจุดที่แสดง
+  const visibleDots = 10; // จำนวนจุดที่แสดง
+  const halfVisibleDots = Math.floor(visibleDots / 2);
+
+  const startIndex = Math.max(0, Math.min(currentIndex - halfVisibleDots, bankAccounts.length - visibleDots));
+  const endIndex = Math.min(startIndex + visibleDots, bankAccounts.length);
+
+  // แสดงจุดเฉพาะในช่วงที่คำนวณได้
+  const visibleDotIndexes = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i);
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -88,7 +96,7 @@ export default function BankAccountScreen() {
 
       {/* จุดแสดงการ์ดที่แสดงอยู่ */}
       <View style={styles.dotContainer}>
-        {bankAccounts.map((_, index) => (
+        {visibleDotIndexes.map((index) => (
           <View
             key={index}
             style={[styles.dot, currentIndex === index && styles.activeDot]}

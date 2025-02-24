@@ -1,46 +1,8 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { useRouter } from "expo-router";
 import { useAccount } from '../services/AccountService';
-
-const bankList = [
-    { name: "Bank of Thailand", fi_code: "001" },
-    { name: "Bangkok Bank", fi_code: "002" },
-    { name: "Kasikorn Bank", fi_code: "003" },
-    { name: "Krungthai Bank", fi_code: "004" },
-    { name: "JPMorgan Chase", fi_code: "005" },
-    { name: "Oversea-Chinese Banking Corporation", fi_code: "006" },
-    { name: "TMB Thanachart Bank", fi_code: "007" },
-    { name: "Siam Commercial Bank", fi_code: "008" },
-    { name: "Citibank", fi_code: "009" },
-    { name: "Sumitomo Mitsui Banking Corporation", fi_code: "010" },
-    { name: "Standard Chartered Bank (Thai)", fi_code: "011" },
-    { name: "CIMB Thai Bank", fi_code: "012" },
-    { name: "RHB Bank", fi_code: "013" },
-    { name: "United Overseas Bank (Thai)", fi_code: "014" },
-    { name: "Bank of Ayudhya", fi_code: "015" },
-    { name: "Mega International Commercial Bank", fi_code: "016" },
-    { name: "Bank of America", fi_code: "017" },
-    { name: "Indian Overseas Bank", fi_code: "018" },
-    { name: "Government Savings Bank", fi_code: "019" },
-    { name: "Hongkong and Shanghai Banking Corporation", fi_code: "020" },
-    { name: "Deutsche Bank Bangkok Branch", fi_code: "021" },
-    { name: "Government Housing Bank", fi_code: "022" },
-    { name: "Bank for Agriculture and Agricultural Cooperatives", fi_code: "023" },
-    { name: "Export-Import Bank of Thailand", fi_code: "024" },
-    { name: "Mizuho Bank Bangkok Branch", fi_code: "025" },
-    { name: "BNP Paribas", fi_code: "026" },
-    { name: "Bank of China (Thai)", fi_code: "027" },
-    { name: "Islamic Bank of Thailand", fi_code: "028" },
-    { name: "Tisco Bank", fi_code: "029" },
-    { name: "Kiatnakin Phatra Bank", fi_code: "030" },
-    { name: "ICBC (Thai)", fi_code: "031" },
-    { name: "Thai Credit Bank", fi_code: "032" },
-    { name: "Land and Houses Bank", fi_code: "033" },
-    { name: "Sumitomo Mitsui Trust Bank (Thai)", fi_code: "034" },
-    { name: "SME Development Bank", fi_code: "035" }
-];
 
 const AddAccountDetail = () => {
     const [fi_code, setFi_code] = useState<string | null>(null);
@@ -48,24 +10,63 @@ const AddAccountDetail = () => {
     const [display_name, setDisplay_name] = useState<string>("");
     const [account_name, setAccount_name] = useState<string>("");
     const [account_number, setAccount_number] = useState<string>("");
-    const [balance, setBalance] = useState<number | string>("");
-    const { createAccount } = useAccount(); // Destructure the createAccount function
+    const [balance, setBalance] = useState<string>("");
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [bankList, setBankList] = useState<{ label: string; value: string }[]>([]);
+    const { createAccount, getAllAccounts, getAllfi_code } = useAccount();
     const router = useRouter();
 
-    const handleSave = () => {
+    useEffect(() => {
+        const fetchBankData = async () => {
+            const fiCodes = await getAllfi_code();
+            const bankOptions = fiCodes.map(bank => ({
+                label: bank.name_en, // หรือ name_th ตามที่คุณต้องการ
+                value: bank.fi_code
+            }));
+            setBankList(bankOptions); // เก็บข้อมูลธนาคารใน state
+        };
+
+        fetchBankData();
+    }, []);
+
+    const validateInputs = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!fi_code) newErrors.fi_code = "Bank Name is required";
+        if (!display_name) newErrors.display_name = "Display Name is required";
+        if (!account_name) newErrors.account_name = "Account Name is required";
+        if (!account_number) newErrors.account_number = "Account Number is required";
+        if (!balance) newErrors.balance = "Remaining Balance is required";
+
+        if (display_name.length > 30) {
+            newErrors.display_name = "Display Name must be no more than 30 characters";
+        }
+
+        if (!/^\d{10}$/.test(account_number)) {
+            newErrors.account_number = "Account Number must be exactly 10 digits";
+        }
+
+        if (!/^\d+(\.\d{1,2})?$/.test(balance)) {
+            newErrors.balance = "Remaining Balance must be a valid number";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = async () => {
+        if (!validateInputs()) return;
+
         const accountDetails = {
             account_number,
             fi_code,
             display_name,
             account_name,
-            balance: parseFloat(balance as string),
+            balance: balance.toString(),
         };
 
-        console.log("Saved Account Details:", accountDetails);
-        // Call createAccount to save the account
-        createAccount(accountDetails);
-
-        // Optionally navigate back to the Account page after saving
+        await createAccount(accountDetails);
+        await getAllAccounts();
         router.push("/(tabs)/Account");
     };
 
@@ -85,10 +86,7 @@ const AddAccountDetail = () => {
                         <DropDownPicker
                             open={open}
                             value={fi_code}
-                            items={bankList.map(bank => ({
-                                label: bank.name,
-                                value: bank.fi_code
-                            }))}
+                            items={bankList} // ใช้ bankList ที่ได้จาก API
                             setOpen={setOpen}
                             setValue={setFi_code}
                             placeholder="Select Bank..."
@@ -98,6 +96,7 @@ const AddAccountDetail = () => {
                             zIndex={5000}
                             zIndexInverse={4000}
                         />
+                        {errors.fi_code && <Text style={styles.errorText}>{errors.fi_code}</Text>}
                     </View>
 
                     {/* Display Name Input */}
@@ -108,7 +107,9 @@ const AddAccountDetail = () => {
                             value={display_name}
                             onChangeText={setDisplay_name}
                             placeholder="Enter Display Name"
+                            maxLength={30}
                         />
+                        {errors.display_name && <Text style={styles.errorText}>{errors.display_name}</Text>}
                     </View>
 
                     {/* Account Name Input */}
@@ -120,6 +121,7 @@ const AddAccountDetail = () => {
                             onChangeText={setAccount_name}
                             placeholder="Enter Account Name"
                         />
+                        {errors.account_name && <Text style={styles.errorText}>{errors.account_name}</Text>}
                     </View>
 
                     {/* Account Number Input */}
@@ -131,7 +133,9 @@ const AddAccountDetail = () => {
                             onChangeText={setAccount_number}
                             placeholder="Enter Account Number"
                             keyboardType="numeric"
+                            maxLength={10}
                         />
+                        {errors.account_number && <Text style={styles.errorText}>{errors.account_number}</Text>}
                     </View>
 
                     {/* Balance Input */}
@@ -139,11 +143,12 @@ const AddAccountDetail = () => {
                         <Text style={styles.label}>Remaining Balance</Text>
                         <TextInput
                             style={styles.input}
-                            value={balance.toString()}
-                            onChangeText={(text) => setBalance(text)}
+                            value={balance}
+                            onChangeText={setBalance}
                             placeholder="Enter Balance"
                             keyboardType="numeric"
                         />
+                        {errors.balance && <Text style={styles.errorText}>{errors.balance}</Text>}
                     </View>
 
                     {/* Buttons */}
@@ -239,6 +244,11 @@ const styles = StyleSheet.create({
         color: "#333333",
         fontSize: 16,
         fontWeight: "600",
+    },
+    errorText: {
+        color: "red",
+        fontSize: 12,
+        marginTop: 5,
     },
 });
 
