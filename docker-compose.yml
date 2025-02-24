@@ -42,7 +42,7 @@ services:
     restart: always
     networks:
       - app_network
-
+  
   pgadmin:
     container_name: pgadmin4_container
     image: dpage/pgadmin4
