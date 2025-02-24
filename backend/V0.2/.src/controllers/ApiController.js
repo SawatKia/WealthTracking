@@ -669,7 +669,7 @@ class ApiController {
       return transactionData;
     } catch (error) {
       logger.error(`Error preparing transaction data: ${error.message}`);
-      throw new Error(`Failed to prepare transaction data: ${error.message}`);
+      throw new Error(error.message);
     }
   }
 }
