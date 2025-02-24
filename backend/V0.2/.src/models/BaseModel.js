@@ -80,25 +80,43 @@ class BaseModel {
    * @throws {ValidationError} - If the client name is invalid.
    * @throws {Error} - If there is an error during query execution.
    */
-
   async executeQuery(sql, params, options = { silent: false, withTransaction: true }, clientName = 'target') {
     try {
-      logger.info("Executing query...");
+      if (!options.silent) {
+        logger.info("Executing query...");
+      }
+
       if (clientName !== 'target' && clientName !== 'temp') {
         logger.error("Invalid client name");
         throw new ValidationError("Invalid client name");
       }
-      logger.debug(`using client: ${clientName}`);
+
+      if (!options.silent) {
+        logger.debug(`using client: ${clientName}`);
+      }
+
       return await this.executeWithTransaction(async () => {
         let pgClientToUse = await this.pgClient.createClient(clientName);
         const result = await this.pgClient.query(sql, params, options, pgClientToUse);
-        logger.debug(`Executed SQL query: ${sql}`);
-        logger.debug(`Query params: ${params}, typeof: ${typeof params}`);
-        logger.debug(`Query result: ${JSON.stringify(result)}`);
+
+        if (!options.silent) {
+          logger.debug(`Executed SQL query: ${sql}`);
+          logger.debug(`Query params: ${params}, typeof: ${typeof params}`);
+
+          const resultString = JSON.stringify(result);
+          const maxLength = 500;
+          const truncatedResultString = resultString.length > maxLength
+            ? `${resultString.substring(0, maxLength)}... [truncated]`
+            : resultString;
+          logger.debug(`Query result: ${truncatedResultString}`);
+        }
+
         return result;
-      }, options.withTransaction);
+      }, options.withTransaction); // Pass withTransaction option to executeWithTransaction
     } catch (error) {
-      logger.error(`Error executing query: ${error}`);
+      if (!options.silent) {
+        logger.error(`Error executing query: ${error}`);
+      }
       throw error;
     }
   }
