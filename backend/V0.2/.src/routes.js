@@ -47,19 +47,10 @@ router.post('/google/login', authController.googleLogin);
 router.get('/google/callback', authController.googleCallback);
 
 // Protected routes (auth required)
-router.use([
-    '/banks',
-    '/users',  // Only protect user operations AFTER registration
-    '/slip',
-    '/fis',
-    '/debts',
-    '/transactions',
-    '/budgets',
-    '/budget'
-], async (req, res, next) => {
+router.use(async (req, res, next) => {
     try {
         if (req.formattedResponse) {
-            next();
+            return next();
         } else {
             await mdw.authMiddleware(req, res, next);
         }

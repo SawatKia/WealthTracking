@@ -521,8 +521,6 @@ class PgClient {
     }
   }
 
-
-
   /**
    * Truncate tables by name or all tables
    * @param {string | string[]} table - The name of the table to truncate or an array of table names to truncate.

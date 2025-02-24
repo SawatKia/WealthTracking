@@ -1,3 +1,5 @@
+const serverTime = require('./utilities/StartTime');
+
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const swaggerUi = require('swagger-ui-express');
@@ -10,15 +12,12 @@ const routes = require('./routes');
 const mdw = require("./middlewares/Middlewares");
 const appConfigs = require("./configs/AppConfigs");
 
-const serverTime = require('./utilities/StartTime');
 const NODE_ENV = appConfigs.environment;
 const { Logger, formatResponse, formatBkkTime } = Utils;
 const logger = Logger("app");
 const app = express();
 const isDev = NODE_ENV === "development";
 
-logger.info(`Server started at ${serverTime.getFormattedStartTime()}`);
-logger.warn(`Imports completed after ${serverTime.getUptime()}ms`);
 
 // trust nginx proxy
 app.set('trust proxy', 1);
@@ -54,6 +53,8 @@ if (NODE_ENV === 'development' || NODE_ENV === 'test') {
     logger.error(`Stack trace: ${error.stack}`);
   }
 }
+logger.info(`Server started at ${serverTime.getFormattedStartTime()}`);
+logger.warn(`Imports completed after ${serverTime.getUptime()}ms`);
 
 // Apply CORS before other middleware
 app.use(mdw.corsMiddleware);

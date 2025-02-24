@@ -537,6 +537,8 @@ class ApiController {
       logger.error(`Error processing slip verification: ${error.message}`);
       if (error instanceof MyAppErrors) {
         next(error);
+      } else if (error.message.includes("account not found in user's accounts")) {
+        next(MyAppErrors.badRequest(error.message));
       } else {
         next(MyAppErrors.internalServerError("Internal server error"));
       }
@@ -622,14 +624,17 @@ class ApiController {
       // Verify the transaction matches user's accounts based on category
       logger.info("Applying found user bank account's based on category");
       if (category === 'Income' && !receiverAccount) {
-        logger.error('Receiver account not found in user\'s accounts');
-        throw new Error('Receiver account not found in user\'s accounts');
+        const errorMessage = "specified receiver account not found in user's accounts";
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       } else if (category === 'Expense' && !senderAccount) {
-        logger.error('Sender account not found in user\'s accounts');
-        throw new Error('Sender account not found in user\'s accounts');
+        const errorMessage = "specified sender account not found in user's accounts";
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       } else if (category === 'Transfer' && (!senderAccount || !receiverAccount)) {
-        logger.error('Both sender and receiver accounts must be found for transfers');
-        throw new Error('Both sender and receiver accounts must be found for transfers');
+        const errorMessage = "specified sender or receiver account not found in user's accounts";
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       const transactionData = {
@@ -664,7 +669,7 @@ class ApiController {
       return transactionData;
     } catch (error) {
       logger.error(`Error preparing transaction data: ${error.message}`);
-      throw new Error(`Failed to prepare transaction data: ${error.message}`);
+      throw new Error(error.message);
     }
   }
 }

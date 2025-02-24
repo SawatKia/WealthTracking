@@ -33,7 +33,8 @@ class MockGoogleSheetService {
 
 // Factory function to create the appropriate service instance
 function createGoogleSheetService() {
-    if (appConfigs.environment !== 'production') {
+    const expectedEnvironment = 'production';
+    if (appConfigs.environment !== expectedEnvironment) {
         return new MockGoogleSheetService();
     }
 
@@ -55,15 +56,11 @@ function createGoogleSheetService() {
             this.activeSheet = null;
             this.targetSheetid = null;
             this.columnMapping = null;
-            this.expectedEnvironment = 'production';
+            this.serviceAccount = null;
+            this.columnMapping = null;
+            this.logColumns = null;
 
-            // Only initialize if in production environment
-            if (appConfigs.environment === this.expectedEnvironment) {
-                this.initializeAuth();
-                this.initializeLogColumns();
-            } else {
-                logger.info('GoogleSheetService disabled in non-production environment');
-            }
+            this.expectedEnvironment = expectedEnvironment;
 
             // Bind all methods to the class
             Object.getOwnPropertyNames(GoogleSheetService.prototype).forEach(key => {
@@ -74,6 +71,7 @@ function createGoogleSheetService() {
         }
 
         initializeAuth() {
+            logger.info('Initializing GoogleSheet authentication...');
             this.serviceAccount = new JWT({
                 email: creds.client_email,
                 key: creds.private_key,
@@ -82,6 +80,7 @@ function createGoogleSheetService() {
         }
 
         initializeLogColumns() {
+            logger.info('Initializing log columns...');
             // Define log columns with clear mapping to request/response fields
             this.logColumns = [
                 'request-timestamp',
@@ -130,6 +129,14 @@ function createGoogleSheetService() {
                 return true;
             }
             try {
+                // Only initialize if in production environment
+                if (this._verifyEnvironment()) {
+                    this.initializeAuth();
+                    this.initializeLogColumns();
+                } else {
+                    logger.info('GoogleSheetService disabled in non-production environment');
+                    return false;
+                }
 
                 if (!this.serviceAccount) {
                     logger.warn('GoogleSheet authentication not initialized');
@@ -142,6 +149,15 @@ function createGoogleSheetService() {
                 if (this.activeSheet) {
                     logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
                 }
+                Object.keys(appConfigs.googleSheet).forEach(key => {
+                    logger.debug(`typeof appConfigs.googleSheet.${key}: ${typeof appConfigs.googleSheet[key]}`);
+                    if (appConfigs.googleSheet[key] === undefined || appConfigs.googleSheet[key] === '' || appConfigs.googleSheet[key] === null) {
+                        logger.warn(`appConfigs.googleSheet.${key} is undefined or empty or null. Please set it in .env file, examine missing key in 🔗  \x1b[38;5;51mhttps://github.com/SawatKia/WealthTracking.git\x1b[0m`);
+                    } else {
+                        appConfigs.environment === 'development' ? logger.debug(`appConfigs.googleSheet.${key}: ${appConfigs.googleSheet[key]}`) :
+                            logger.debug(`appConfigs.googleSheet.${key}: ${'*'.repeat(appConfigs.googleSheet[key].length)}`);
+                    }
+                });
 
                 logger.info('GoogleSheetService successfully initialized');
                 return true;
@@ -269,6 +285,8 @@ function createGoogleSheetService() {
                 return false;
             }
         }
+
+
 
         async _findSheet(sheetName) {
             logger.info("findSheet by name and index");
@@ -485,6 +503,21 @@ function createGoogleSheetService() {
             try {
                 return await operation();
             } catch (error) {
+                // Centralize certificate error handling
+                if (error.message && error.message.includes("unable to verify the first certificate")) {
+                    logger.warn("internet connection error, retrying...");
+                    // Trigger auto-authentication script
+                    // This is executed only once per error even if retries are remaining
+                    exec("nohup python3 /home/kksurin/Documents/auto-authen-kmitl-main/authen.py", (err, stdout, stderr) => {
+                        if (err) {
+                            logger.error(`Failed to run auto-auth script: ${err.message}`);
+                        } else {
+                            logger.info("Auto-auth script executed successfully.");
+                        }
+                    });
+                }
+
+                // If error is related to rate limiting and we haven't exceeded retries, retry the operation
                 if (error.code === 429 && retryCount < MAX_RETRIES) {
                     const waitTime = Math.min(
                         (Math.pow(2, retryCount) * INITIAL_BACKOFF_MS) + Math.random() * 1000,

@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "3000:3000"
+      - "${APP_PORT}:${APP_PORT}"
     volumes:
       # no needs to oaccess from host machine, the app access inside constainer only.
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
