@@ -419,7 +419,6 @@ class TransactionController extends BaseController {
 
             // Prepare update data with only fields present in the request body
             let updateData = {};
-            const allowedFields = ['transaction_datetime', 'category', 'type', 'amount', 'note', 'sender', 'receiver'];
 
             logger.debug(`received request body: ${JSON.stringify(req.body, null, 2)}`);
             req.body = Object.entries(req.body).reduce((acc, [key, value]) => {
@@ -427,8 +426,29 @@ class TransactionController extends BaseController {
                 return acc;
             }, {});
 
-            logger.debug(`allowed request body: ${JSON.stringify(req.body, null, 2)}`);
+            logger.debug(`converted body's key to lowercase: ${JSON.stringify(req.body, null, 2)}`);
 
+            if (req.body.account_number) {
+                logger.error('account_number is not allowed to be updated, to update the bank account, please use sender or receiver objects');
+                const sample = {
+                    "transaction_datetime": "2021-07-01T00:00:00.000Z",
+                    "category": "Expense",
+                    "type": "Food",
+                    "amount": 100,
+                    "note": "Lunch",
+                    "sender": {
+                        "account_number": "1234567890",
+                        "fi_code": "001"
+                    },
+                    "receiver": {
+                        "account_number": "0987654321",
+                        "fi_code": "002"
+                    }
+                }
+                next(MyAppErrors.badRequest('account_number is not allowed to be updated, to update the bank account, please specified sender or receiver objects example in data field', sample));
+            }
+
+            const allowedFields = ['transaction_datetime', 'category', 'type', 'amount', 'note', 'sender', 'receiver'];
             for (const field of allowedFields) {
                 if (req.body[field] !== undefined) {
                     logger.debug(`checking if field: \x1b[1;96m${field}\x1b[0m should be added to updateData`);
@@ -438,6 +458,13 @@ class TransactionController extends BaseController {
                         updateData[field] = req.body[field];
                     }
                 }
+            }
+
+            // return if no modified fields
+            if (!Object.keys(updateData).length === 0) {
+                logger.info('No modifiedfields to update');
+                req.formattedResponse = formatResponse(200, 'No modifiedfields to update, return existing transaction instead', { transaction: existingTransaction });
+                return next();
             }
 
 
