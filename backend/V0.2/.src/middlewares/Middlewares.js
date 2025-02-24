@@ -119,6 +119,7 @@ class Middlewares {
 
         const allowedOrigins = [
           // Add your allowed origins here
+          'http://localhost:8081',          // Development
           'http://localhost:3000',          // Development
           'exp://localhost:19000',          // Expo development server
           'exp://192.168.x.x:19000', // Local network IP for mobile device testing

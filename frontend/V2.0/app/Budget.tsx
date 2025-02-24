@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import PieChart from "../components/PieChartBudget";
-import CategoryBudgetCard from "../components/CategoryBudgetCard";
+import CategoryBudgetCard from "../components/BudgetCard";
 
 const categories = [
   { id: "1", category: "Food", amount: 500, left: 125, overspent: null },
