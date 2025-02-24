@@ -7,8 +7,8 @@ const fs = require('fs');
 class DocumentAiService {
     constructor() {
         logger.info('Initializing DocumentAiService');
-        logger.debug(`appConfigs.documentAi: ${JSON.stringify(appConfigs.documentAi, null, 2)}`);
-        logger.debug(`appConfigs.gcp: ${JSON.stringify(appConfigs.gcp, null, 2)}`)
+        // logger.debug(`appConfigs.documentAi: ${JSON.stringify(appConfigs.documentAi, null, 2)}`);
+        // logger.debug(`appConfigs.gcp: ${JSON.stringify(appConfigs.gcp, null, 2)}`)
 
         // Initialize configuration from appConfigs
         this.projectName = appConfigs.gcp.projectName;
