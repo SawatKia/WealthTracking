@@ -1,8 +1,50 @@
-export async function getBudgetData() {
-    return [
-      { id: "1", category: "Food", budget: 500, spent: 375 },
-      { id: "2", category: "Groceries", budget: 300, spent: 1100 }, // Overspent
-      { id: "3", category: "Transport", budget: 200, spent: 120 },
-    ];
-  }
-  
+import api from "./axiosInstance";
+import { useState, useEffect } from 'react';
+import { useRouter } from "expo-router";
+import CreateBudget from "@/app/CreateBudget";
+
+interface newBudget {
+  expense_type: string;
+  monthly_limit: string;
+}
+
+export const useBudget =  () => {
+    const router = useRouter()
+    const [error, setError] = useState<string | null>(null);
+
+    const createBudget = async (newBudget: newBudget) => {
+        try {
+          console.log('create')
+          console.log(newBudget)
+          const response = await api.post('/budgets', newBudget);
+          console.log('respond create',response.status)
+          if (response.status === 201) {
+            router.push('/Budget')
+            console.log('create budgets successfully')
+    
+          }
+          else{
+            console.log(response.status)
+          }
+        } catch (err) {
+          setError(`Failed to create budgets. ${err}`);
+          console.log(error)
+        }
+      };
+
+      const getBudgets = async () => {
+        try {
+          const response = await api.get('/budgets');
+          if (response.status === 200) {
+            return response.data.data; 
+          } else {
+            throw new Error('Failed to fetch budgets');
+          }
+        } catch (err) {
+          setError(`Failed to fetch budgets: ${err}`);
+          return [];
+        }
+      };
+    
+    return { createBudget, getBudgets, error };
+};

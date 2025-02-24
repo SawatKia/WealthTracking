@@ -1,69 +1,50 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Ionicons} from "@expo/vector-icons"; 
 import IconMap from "../constants/IconMap";
-import { getBudgetData } from "../services/BudgetService"; 
 
 interface Budget {
   id: string;
-  category: string;
-  budget: number;
-  spent: number;
-  overspent: number;
+  expense_type: string;
+  monthly_limit: string | number;
+  current_spending: string | number;
+  month: string;
 }
 
-export default function BudgetCard() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
+interface BudgetCardProps {
+  budgets: Budget[]; 
+}
 
-  useEffect(() => {
-    async function fetchBudgets() {
-      try {
-        const data = await getBudgetData(); // Fetch from API
-        setBudgets(data);
-      } catch (error) {
-        console.error("Error fetching budgets:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchBudgets();
-  }, []);
-
-  if (loading) return <Text>Loading...</Text>;
-
+const BudgetCard: React.FC<BudgetCardProps> = ({ budgets }) => {
   return (
     <FlatList
       data={budgets}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => {
-        const leftAmount = item.budget - item.spent;
+        const monthlyLimit = parseFloat(item.monthly_limit as string);
+        const currentSpending = parseFloat(item.current_spending as string);
+        const leftAmount = monthlyLimit - currentSpending;
         const overspent = leftAmount < 0;
-        const progress = Math.min(item.spent / item.budget, 1);
+        const progress = Math.min(currentSpending / monthlyLimit, 1);
 
         return (
           <View style={styles.card}>
-            {/* Category Icon and Name */}
             <View style={styles.header}>
               <MaterialCommunityIcons
-                  name={IconMap[item.category.toLowerCase()] || "alert-circle-outline"}
-                  style={styles.icon}
-                  color="#4a4a8e"
+                name={IconMap[item.expense_type.toLowerCase()] || "alert-circle-outline"}
+                style={styles.icon}
+                color="#4a4a8e"
               />
-              <Text style={styles.category}>{item.category}</Text>
+              <Text style={styles.category}>{item.expense_type}</Text>
             </View>
 
-            {/* Amount and Progress Bar */}
             <View style={styles.amountRow}>
-              <Text style={styles.amount}>${item.budget.toFixed(2)}</Text>
+              <Text style={styles.amount}>${currentSpending.toFixed(2)}</Text>
               <Text style={[styles.status, { color: overspent ? "#FF3D00" : "#8A8A8A" }]}>
                 {overspent ? `Overspent $${Math.abs(leftAmount).toFixed(2)}` : `Left $${leftAmount.toFixed(2)}`}
               </Text>
             </View>
 
-            {/* Progress Bar */}
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: overspent ? "#FF3D00" : "#08B80F" }]} />
             </View>
@@ -72,7 +53,7 @@ export default function BudgetCard() {
       }}
     />
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -129,3 +110,4 @@ const styles = StyleSheet.create({
   },
 });
 
+export default BudgetCard;
