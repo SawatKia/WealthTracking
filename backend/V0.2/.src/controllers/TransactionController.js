@@ -429,7 +429,8 @@ class TransactionController extends BaseController {
             logger.debug(`converted body's key to lowercase: ${JSON.stringify(req.body, null, 2)}`);
 
             if (req.body.account_number) {
-                logger.error('account_number is not allowed to be updated, to update the bank account, please use sender or receiver objects');
+                const errorMessage = 'account_number is not allowed to be updated, to update the bank account, please use sender or receiver objects as shown in the sample data object below';
+                logger.error(errorMessage);
                 const sample = {
                     "transaction_datetime": "2021-07-01T00:00:00.000Z",
                     "category": "Expense",
@@ -445,7 +446,7 @@ class TransactionController extends BaseController {
                         "fi_code": "002"
                     }
                 }
-                next(MyAppErrors.badRequest('account_number is not allowed to be updated, to update the bank account, please specified sender or receiver objects example in data field', sample));
+                next(MyAppErrors.badRequest(errorMessage, sample));
             }
 
             const allowedFields = ['transaction_datetime', 'category', 'type', 'amount', 'note', 'sender', 'receiver'];
