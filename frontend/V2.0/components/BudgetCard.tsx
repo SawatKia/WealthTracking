@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { getBudgetData } from "../services/BudgetService"; // Import API function
+import IconMap from "../constants/IconMap";
+import { getBudgetData } from "../services/BudgetService"; 
 
 interface Budget {
   id: string;
@@ -45,9 +46,9 @@ export default function BudgetCard() {
             {/* Category Icon and Name */}
             <View style={styles.header}>
               <MaterialCommunityIcons
-                name={categoryIcons[item.category] || "help-circle-outline"}
-                size={30}
-                color="#4a4a8e"
+                  name={IconMap[item.category.toLowerCase()] || "alert-circle-outline"}
+                  style={styles.icon}
+                  color="#4a4a8e"
               />
               <Text style={styles.category}>{item.category}</Text>
             </View>
@@ -71,16 +72,6 @@ export default function BudgetCard() {
   );
 }
 
-// Category Icons
-const categoryIcons: Record<string, string> = {
-  Food: "food",
-  Groceries: "cart",
-  Entertainment: "movie",
-  Transport: "bus",
-  Bills: "receipt",
-  Shopping: "shopping",
-};
-
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
@@ -92,6 +83,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
+  },
+  icon: {
+    fontSize: 24,
+    borderRadius: 20,
+    marginRight: 10,
   },
   header: {
     flexDirection: "row",
