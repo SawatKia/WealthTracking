@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons} from "@expo/vector-icons"; 
 import IconMap from "../constants/IconMap";
 import { getBudgetData } from "../services/BudgetService"; 
 
@@ -9,6 +10,7 @@ interface Budget {
   category: string;
   budget: number;
   spent: number;
+  overspent: number;
 }
 
 export default function BudgetCard() {

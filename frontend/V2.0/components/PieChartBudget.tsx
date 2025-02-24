@@ -1,6 +1,7 @@
 import React from "react";
 import { VictoryPie, VictoryLabel } from "victory-native";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter } from 'expo-router';
 
 interface PieChartProps {
   spent: number;
@@ -10,7 +11,9 @@ interface PieChartProps {
 
 const PieChartBudget: React.FC<PieChartProps> = ({ spent, total, totalBudget }) => {
   const percentage = total > 0 ? (spent / total) * 100 : 0;
+    const router = useRouter();
 
+    
   return (
     <View style={styles.container}>
       <svg viewBox="0 0 400 300">
@@ -38,6 +41,14 @@ const PieChartBudget: React.FC<PieChartProps> = ({ spent, total, totalBudget }) 
           text={`Total Balance\n$${total}`}
         />
       </svg>
+       <TouchableOpacity
+              style={styles.createBudgetButton}
+              onPress={() => {
+                router.push("/CreateBudget");
+              }}
+            >
+              <Text style={{ margin: 5 }}>Create Budget</Text>
+            </TouchableOpacity>
       <View style={styles.budgetInfo}>
         <View style={styles.budgetItem}>
           <Text style={styles.budgetValue}>${totalBudget}k</Text>
@@ -85,6 +96,14 @@ const styles = StyleSheet.create({
     height: 20,
     backgroundColor: "#ccc",
     marginHorizontal: 10,
+  },
+  createBudgetButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffd358",
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
 });
 
