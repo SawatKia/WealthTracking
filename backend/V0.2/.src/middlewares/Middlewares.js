@@ -503,7 +503,6 @@ class Middlewares {
       "/data/private/.git/config", "/static/content/.git/config",
       "/libs/js/iframe.js" // อาจเป็นการโจมตี iframe injection
     ];
-    logger.debug(`Loaded suspicious patterns: ${JSON.stringify(SUSPICIOUS_PATTERNS)}`);
 
     // Load blacklist from JSON file
     const loadBlacklist = () => {
@@ -655,12 +654,16 @@ class Middlewares {
     next();
   }
 
-  authMiddleware(req, res, next) {
+  async authMiddleware(req, res, next) {
     logger.info("Authenticating user");
+    if (req.formattedResponse) {
+      logger.info('the request was already handled. Skipping authentication');
+      return next();
+    }
 
     const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
 
-    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
+    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 10) + '...' : 'Not present'}`);
 
     if (accessToken) {
       try {
@@ -792,7 +795,7 @@ class Middlewares {
 
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
-        response = formatResponse(500, err.message);
+        response = formatResponse(500, "Internal Server Error");
 
       } else {
         logger.error(`Unhandled error: ${err}`);
@@ -841,6 +844,12 @@ class Middlewares {
     // Combine error headers (if any) with regular headers
     const headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
 
+    // Log response to Google Sheet if service is connected
+    if (GoogleSheetService.isConnected() && req.requestLog) {
+      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+      await GoogleSheetService.appendLog(completeLog);
+    }
+
     // Get security headers
     const securityHeaders = this.logResponse(
       req,
@@ -850,12 +859,6 @@ class Middlewares {
       headers,
       !!req.error // Pass true if error exists
     );
-
-    // Log response to Google Sheet if service is connected
-    if (GoogleSheetService.isConnected() && req.requestLog) {
-      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-      await GoogleSheetService.appendLog(completeLog);
-    }
 
     // Send response with combined headers
     res
