@@ -1,9 +1,10 @@
 const { Logger, formatResponse } = require('../utilities/Utils');
 const MyAppErrors = require('../utilities/MyAppErrors');
 const UserModel = require('../models/UserModel');
-const { log } = require('winston');
 const types = require('../../statics/types.json');
+const AuthUtils = require('../utilities/AuthUtils');
 
+const { verifyToken } = AuthUtils;
 const logger = Logger('BaseController');
 
 class BaseController {
