@@ -11,10 +11,13 @@ import ReportByCategory from '../../components/reportByCategory';
 import { Ionicons} from "@expo/vector-icons"; 
 import { View, Text } from '@/components/Themed';
 import { useTransactions,MonthlySummary } from '@/services/TransactionService'; 
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const {getMonthlySummary, getSummaryExpense, getSummaryIncome,error } = useTransactions(); // Get monthlyData from the hook
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+  const router = useRouter();
+
   useEffect(() => {
       const fetchMonthlySummary = async () => {
         try {
@@ -34,10 +37,16 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Account</Text>
-          <TouchableOpacity style = {styles.summaryButton}>
-            <Ionicons name="pie-chart" size={25} color="#000000" />
-            <Text style = {{margin:5}}>Summary</Text>
-          </TouchableOpacity>
+          <TouchableOpacity 
+  style={styles.summaryButton} 
+  onPress={() => {
+    router.push('/Budget');
+  }}
+>
+  <Ionicons name="pie-chart" size={25} color="#000000" />
+  <Text style={{ margin: 5 }}>Summary</Text>
+</TouchableOpacity>
+
           
 
         </View>

@@ -13,6 +13,7 @@ const ReportByCategory = () => {
         try {
           const data = await getMonthlyExpense();
           if (data) {
+            console.log(data)
             const monthlyExpenses = data.map((expense: any) => ({
               x: expense.type,
               y: expense.totalAmount,
@@ -76,7 +77,7 @@ const ReportByCategory = () => {
         style={{ fontSize: 14 }}
         x={200}
         y={200}
-        text="Expense"
+        // text="Expense"
 
       />
     </View>

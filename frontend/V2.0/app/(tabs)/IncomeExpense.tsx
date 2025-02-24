@@ -69,9 +69,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
   return (
     <View style={styles.container}>
 
-        <AccountCard
+        {/* <AccountCard
           account={bankAccounts}
-        />
+        /> */}
       {/* <GestureHandlerRootView style={styles.accountContainer}>
       </GestureHandlerRootView> */}
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
