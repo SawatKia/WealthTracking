@@ -14,7 +14,7 @@
         {
             "label": "docker-compose down",
             "type": "shell",
-            "command": "docker-compose down --remove-orphans --volumes",
+            "command": "docker-compose down --remove-orphans", // remove all containers that are not defined in the docker-compose.yml file but are part of the project
             "problemMatcher": []
         },
         {
