@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import DateTimePicker from "react-native-ui-datepicker";
@@ -6,50 +6,128 @@ import { useRouter } from "expo-router";
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useDebt } from '../services/DebtService';
+import { useAccount } from '../services/AccountService';
+import { useTransactions } from '../services/TransactionService';
 
-const debtCategories = [
-    { label: "Credit Card Debt", value: "Credit Card Debt", fi_code: "001" },
-    { label: "Mortgage Debt", value: "Mortgage Debt", fi_code: "002" },
-    { label: "Car Loan Debt", value: "Car Loan Debt", fi_code: "003" },
-    { label: "Student Loan Debt", value: "Student Loan Debt", fi_code: "004" },
-    { label: "Other", value: "Other", fi_code: "005" },
-];
+interface Account {
+    display_name: string;
+    fi_code: string;
+    account_number: string;
+}
 
 const AddDebtDetail = () => {
     const [debtName, setDebtName] = useState("");
-    const [category, setCategory] = useState(null);
     const [date, setDate] = useState(dayjs());
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-    const [amount, setAmount] = useState("");
-    const [installmentAmount, setInstallmentAmount] = useState("");
+    const [loanPrinciple, setLoanPrinciple] = useState("");
     const [totalInstallments, setTotalInstallments] = useState("");
+    const [currentInstallment, setCurrentInstallment] = useState("");
+    const [loanBalance, setLoanBalance] = useState("");
     const [paymentChannel, setPaymentChannel] = useState("");
-    const [openCategory, setOpenCategory] = useState(false);
+    const [openPaymentChannel, setOpenPaymentChannel] = useState(false);
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [amountPaid, setAmountPaid] = useState("");
 
-    const { createDebt } = useDebt();  // Access createDebt function
+    const { createDebt } = useDebt();
+    const { getAllAccounts } = useAccount();
+    const { createTransaction } = useTransactions();
+    const [bankAccounts, setBankAccounts] = useState<Account[]>([]);
     const router = useRouter();
 
-    const handleSave = () => {
-        const selectedCategory = debtCategories.find(cat => cat.value === category);
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            const accounts = await getAllAccounts();
+            setBankAccounts(accounts);
+        };
+        fetchAccounts();
+    }, []);
+
+    useEffect(() => {
+        if (loanPrinciple && totalInstallments && currentInstallment) {
+            const principle = parseFloat(loanPrinciple);
+            const totalInstall = parseFloat(totalInstallments);
+            const currentInstall = parseFloat(currentInstallment);
+
+            if (!isNaN(principle) && !isNaN(totalInstall) && !isNaN(currentInstall) && totalInstall !== 0) {
+                const balance = principle - ((principle / totalInstall) * currentInstall);
+                setLoanBalance(balance.toFixed(2));
+
+                // Calculate Amount Paid automatically
+                const paid = principle - balance;
+                setAmountPaid(paid.toFixed(2));
+            }
+        }
+    }, [loanPrinciple, totalInstallments, currentInstallment]);
+
+    const validateInputs = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!debtName.trim()) newErrors.debtName = "Debt Name is required";
+        if (!date) newErrors.date = "Date is required";
+        if (!loanPrinciple.trim()) newErrors.loanPrinciple = "Loan Principle is required";
+        if (!totalInstallments.trim()) newErrors.totalInstallments = "Total Installments is required";
+        if (!currentInstallment.trim()) newErrors.currentInstallment = "Current Installment is required";
+        if (!loanBalance.trim()) newErrors.loanBalance = "Loan Balance is required";
+        if (!paymentChannel) newErrors.paymentChannel = "Payment Channel is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = async () => {
+        if (!validateInputs()) return;
 
         const debtDetails = {
             debt_name: debtName,
-            start_date: dayjs(date).format("YYYY-MM-DD HH:mm"),
-            current_installment: 1,
+            start_date: dayjs(date).format("YYYY-MM-DD"),
+            current_installment: Number(currentInstallment),
             total_installments: Number(totalInstallments),
-            loan_principle: Number(amount),
-            loan_balance: Number(amount),
-            fi_code: selectedCategory ? selectedCategory.fi_code : null,
+            loan_principle: Number(loanPrinciple),
+            loan_balance: Number(loanBalance),
+            fi_code: paymentChannel,
         };
 
         console.log("Saved Debt Details:", debtDetails);
-        createDebt(debtDetails);
+        await createDebt(debtDetails);
+
+        // Create transaction
+        const selectedAccount = bankAccounts.find(account => account.fi_code === paymentChannel);
+        if (selectedAccount) {
+            const transactionDetails = {
+                transaction_datetime: dayjs(date).toString(),
+                category: "Debt Payment",
+                type: "Expense",
+                amount: parseFloat(amountPaid),
+                debt_id: null,
+                note: `Payment for debt: ${debtName}`,
+                sender: {
+                    account_number: selectedAccount.account_number,
+                    fi_code: selectedAccount.fi_code,
+                },
+                receiver: null,
+            };
+
+            await createTransaction(transactionDetails);
+        }
+
         router.push("/(tabs)/Debt");
     };
 
-
     const onChangeDate = (params: any) => {
         setDate(params.date);
+    };
+
+    const handleDebtNameChange = (text: string) => {
+        if (text.length <= 30) {
+            setDebtName(text);
+        }
+    };
+
+    const handleNumberInput = (text: string, setter: (value: string) => void, isDecimal: boolean = false) => {
+        const regex = isDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
+        if (regex.test(text)) {
+            setter(text);
+        }
     };
 
     return (
@@ -64,31 +142,16 @@ const AddDebtDetail = () => {
                         <TextInput
                             style={styles.input}
                             value={debtName}
-                            onChangeText={setDebtName}
+                            onChangeText={handleDebtNameChange}
                             placeholder="Enter Debt Name"
+                            maxLength={30}
                         />
+                        {errors.debtName && <Text style={styles.errorText}>{errors.debtName}</Text>}
                     </View>
 
-                    {/* Category Picker */}
-                    <View style={[styles.inputContainer, { zIndex: 5000 }]}>
-                        <Text style={styles.label}>Category</Text>
-                        <DropDownPicker
-                            open={openCategory}
-                            value={category}
-                            items={debtCategories.map((cat) => ({ label: cat.label, value: cat.value }))}
-                            setOpen={setOpenCategory}
-                            setValue={setCategory}
-                            placeholder="Select Category..."
-                            style={styles.dropdown}
-                            dropDownContainerStyle={styles.dropdownContainer}
-                            zIndex={5000}
-                            zIndexInverse={4000}
-                        />
-                    </View>
-
-                    {/* Date & Time Picker */}
+                    {/* Date Picker */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Date & Time</Text>
+                        <Text style={styles.label}>Date</Text>
                         <TouchableOpacity
                             style={styles.inputButton}
                             onPress={() => setDatePickerVisibility(!isDatePickerVisible)}
@@ -99,72 +162,101 @@ const AddDebtDetail = () => {
                                 style={styles.iconInput}
                                 color="#9AC9F3"
                             />
-                            {date ? <Text>{dayjs(date).format("DD MMM YYYY ")}</Text> : "..."}
-
-                            <Ionicons
-                                name="time"
-                                size={20}
-                                style={styles.iconInput}
-                                color="#9AC9F3"
-                            />
-                            {date ? <Text>{dayjs(date).format("HH:mm")}</Text> : "..."}
-
+                            {date ? <Text>{dayjs(date).format("DD MMM YYYY")}</Text> : "..."}
                         </TouchableOpacity>
                         {isDatePickerVisible && (
                             <DateTimePicker
                                 mode="single"
                                 date={date}
                                 onChange={onChangeDate}
-                                timePicker={true}
+                                timePicker={false}
                             />
                         )}
+                        {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
                     </View>
 
-                    {/* Amount Of Money Input */}
+                    {/* Loan Principle Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Amount Of Money</Text>
+                        <Text style={styles.label}>Loan Principle</Text>
                         <TextInput
                             style={styles.input}
-                            value={amount}
-                            onChangeText={setAmount}
-                            placeholder="Enter Amount"
+                            value={loanPrinciple}
+                            onChangeText={(text) => handleNumberInput(text, setLoanPrinciple, true)}
+                            placeholder="Enter Loan Principle"
                             keyboardType="numeric"
                         />
+                        {errors.loanPrinciple && <Text style={styles.errorText}>{errors.loanPrinciple}</Text>}
                     </View>
 
-                    {/* Amount Per Installment Input */}
+                    {/* Total Installments Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Amount Per Installment</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={installmentAmount}
-                            onChangeText={setInstallmentAmount}
-                            placeholder="Enter Installment Amount"
-                            keyboardType="numeric"
-                        />
-                    </View>
-
-                    {/* Total Number of Installments Input */}
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Total Number of Installments</Text>
+                        <Text style={styles.label}>Total Installments</Text>
                         <TextInput
                             style={styles.input}
                             value={totalInstallments}
-                            onChangeText={setTotalInstallments}
+                            onChangeText={(text) => handleNumberInput(text, setTotalInstallments)}
                             placeholder="Enter Total Installments"
                             keyboardType="numeric"
                         />
+                        {errors.totalInstallments && <Text style={styles.errorText}>{errors.totalInstallments}</Text>}
                     </View>
 
-                    {/* Payment Channel Input */}
+                    {/* Current Installment Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Payment Channel</Text>
+                        <Text style={styles.label}>Current Installment</Text>
                         <TextInput
                             style={styles.input}
-                            value={paymentChannel}
-                            onChangeText={setPaymentChannel}
-                            placeholder="Enter Payment Channel"
+                            value={currentInstallment}
+                            onChangeText={(text) => handleNumberInput(text, setCurrentInstallment)}
+                            placeholder="Enter Current Installment"
+                            keyboardType="numeric"
                         />
+                        {errors.currentInstallment && <Text style={styles.errorText}>{errors.currentInstallment}</Text>}
+                    </View>
+
+                    {/* Amount Paid Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Amount Paid</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={amountPaid}
+                            placeholder="Amount Paid"
+                            keyboardType="numeric"
+                            editable={false} // ทำให้ไม่สามารถแก้ไขได้
+                        />
+                    </View>
+
+                    {/* Loan Balance Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Loan Balance</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={loanBalance}
+                            onChangeText={(text) => handleNumberInput(text, setLoanBalance, true)}
+                            placeholder="Enter Loan Balance"
+                            keyboardType="numeric"
+                            editable={false} // ทำให้ไม่สามารถแก้ไขได้
+                        />
+                        {errors.loanBalance && <Text style={styles.errorText}>{errors.loanBalance}</Text>}
+                    </View>
+
+                    {/* Payment Channel Picker */}
+                    <View style={[styles.inputContainer, { zIndex: 5000 }]}>
+                        <Text style={styles.label}>Payment Channel</Text>
+                        <DropDownPicker
+                            open={openPaymentChannel}
+                            value={paymentChannel}
+                            items={bankAccounts.map(account => ({ label: account.display_name, value: account.fi_code }))}
+                            setOpen={setOpenPaymentChannel}
+                            setValue={setPaymentChannel}
+                            placeholder="Select Payment Channel..."
+                            searchable={true}
+                            style={styles.dropdown}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                            zIndex={5000}
+                            zIndexInverse={4000}
+                        />
+                        {errors.paymentChannel && <Text style={styles.errorText}>{errors.paymentChannel}</Text>}
                     </View>
 
                     {/* Buttons */}
@@ -211,6 +303,11 @@ const styles = StyleSheet.create({
         backgroundColor: "white",
         borderRadius: 5,
         padding: 3,
+    },
+    errorText: {
+        color: "red",
+        fontSize: 12,
+        marginTop: 5,
     },
 });
 
