@@ -6,7 +6,6 @@ class ServerTime {
     /**
      * Initializes a new instance of the ServerTime class, setting the server's start time to the current time.
      */
-
     constructor() {
         this.#startTime = Date.now();
     }
