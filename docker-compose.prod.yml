@@ -28,11 +28,11 @@ services:
     command: |
       sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose\ healthcheck"]
-      interval: 1h
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose%20healthcheck"]
+      interval: 10m
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
     logging:
       driver: "json-file"
       options:
