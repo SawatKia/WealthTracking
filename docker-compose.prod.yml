@@ -25,13 +25,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: |
-      sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
+    command: ["npm", "run", "start"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-prodContainer%20healthcheck:"]
       interval: 10m
-      timeout: 10s
-      retries: 3
+      timeout: 20s
+      retries: 6
       start_period: 60s
     logging:
       driver: "json-file"
