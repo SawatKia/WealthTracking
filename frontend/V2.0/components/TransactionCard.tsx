@@ -21,6 +21,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
   const router = useRouter()
   const { getAllTransactions, loading, error, deleteTransaction } = useTransactions();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [refresh, setRefresh] = useState(false); 
 
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
   // const [selectedType, setSelectedType] = useState<string>('All');
@@ -38,7 +39,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
     };
 
     fetchTransactions();
-  }, []);
+  }, [refresh]);
   const filteredTransactions = transactions.filter((transaction) => {
     if (selected === 'All') {
       return true; // Show all transactions
@@ -46,14 +47,23 @@ export default function TransactionCard({selected }: TransactionCardProps) {
     return transaction.category === selected;
   });
 
-  const handleEdit = (transactionId: string) =>{
+  const handleEdit = async (transactionId: string) =>{
     setSelectedTransaction('')
     router.push(`/EditTransaction/${transactionId}`);
 
   }
-  const handleDelete = (transactionId: string) => {
-    deleteTransaction(transactionId);
+  const handleDelete = async (transactionId: string) => {
+    try {
+      await deleteTransaction(transactionId);
+  
+      // ✅ Trigger a re-render
+      setRefresh(prev => !prev); // Toggle refresh state
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+    }
+    
   };
+
 
     if (error) {
       return (
