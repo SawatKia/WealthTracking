@@ -53,8 +53,7 @@ const ReportByCategory = () => {
         theme={VictoryTheme.clean}
         // innerRadius={68}
         labelRadius={150}
-        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]}
-        // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]}
+        colorScale={['#4957AA', '#7F8CD9', '#9AC9F3', '#FF8C00', '#FF6347']} 
         style={{
           labels: {
             fontSize: 10,

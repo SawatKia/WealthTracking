@@ -51,7 +51,7 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
         startAngle={90}
         endAngle={-90}
         padAngle={3}
-        colorScale={["#E5E5E5", "#6C4AB6"]}
+        colorScale={["#E5E5E5", "#4957AA"]}
         labels={[]} 
       />
       <VictoryLabel
