@@ -97,7 +97,7 @@ export default function SignUpScreen() {
         confirmPassword
       );
       console.log("Sign Up Success", "You can now log in", response);
-      router.push("/Login");
+      
     } catch (error) {
       console.error(error);
     }

@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 // import * as dotenv from 'dotenv';
 // import Cookies from 'js-cookie';
 import api from "./axiosInstance";
+import { router } from 'expo-router';
 
 export const login = async (email: string, password: string) => {
   const requestData = {
@@ -35,11 +36,24 @@ export const signUp = async (nationalId:string, username: string, email:string, 
     "email": email,
     "password": password,
     "confirm_password": confirmPassword,
-    "date_of_birth": "1990-01-01"//not use
-
   }
-  return api.post('/users', requestData);
+
+  try {
+    console.log(requestData)
+    const response =await api.post('/users', requestData);
+    if (response.status === 201) {
+      console.log( response.data.data)
+      router.push('/Login')
+
+      return response.status; 
+    } else {
+      throw new Error('Failed to create account');
+    }
+  } catch (err) {
+    throw new Error(`Failed ${err}`)
+  }
 };
+
 
 export const signUpGoogle = async() =>{
   const response = await api.post('/google/login?action=register&platform=mobile')
