@@ -68,13 +68,13 @@ export default function AccountCard({
         
         <View style={styles.accountContainer}>
           <View style={styles.card}>
-            <Text style={styles.name}>{account[currentIndex].display_name}</Text>
+            <Text style={styles.name}>{account[currentIndex]?.display_name}</Text>
             <Text style={styles.balance}>
-              ฿{account[currentIndex].balance.toLocaleString()}
+              ฿{account[currentIndex]?.balance.toLocaleString()}
             </Text>
-            {/* <Text style={styles.updated}>
-              Last Updated: {account[currentIndex].lastUpdated}
-            </Text> */}
+            <Text style={styles.updated}>
+              Account Number: {account[currentIndex]?.account_number}
+            </Text>
             {/* <Text style={styles.indicator}>{`${
               currentIndex + 1
             } / ${account.length}`}</Text> */}

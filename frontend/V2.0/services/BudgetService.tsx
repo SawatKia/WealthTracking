@@ -7,6 +7,13 @@ interface newBudget {
   expense_type: string;
   monthly_limit: string;
 }
+export interface Budget {
+  id: string;
+  expense_type: string;
+  monthly_limit: string;
+  current_spending: string ;
+  month: string;
+}
 
 export const useBudget =  () => {
     const router = useRouter()
@@ -36,6 +43,7 @@ export const useBudget =  () => {
         try {
           const response = await api.get('/budgets');
           if (response.status === 200) {
+            console.log('budget: ',response.data.data)
             return response.data.data; 
           } else {
             throw new Error('Failed to fetch budgets');

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import AccountCard from "../../components/AccountCard"
 import DropdownButton from "../../components/DropdownButton";
 import TransactionCard from "../../components/TransactionCard";
 import { Ionicons} from "@expo/vector-icons"; 
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 import { Account, useAccount } from "@/services/AccountService"; // นำเข้า useAccount
 
@@ -26,22 +26,34 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-      const fetchDataAccountInEx = async () => {
-        try {
-          // Transform API data into items format for the dropdown
-          const data = await getAllAccounts()
-          setBankAccounts(data)
-          console.log('account bank : ',bankAccounts)
-
-  
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        const accounts = await getAllAccounts();
+        console.log("Fetched Accounts:", accounts);
+        setBankAccounts(accounts);
       };
   
-      fetchDataAccountInEx();
-    }, []);
+      fetchData();
+    }, [])
+  );
+
+  // useEffect(() => {
+  //     const fetchDataAccountInEx = async () => {
+  //       try {
+  //         // Transform API data into items format for the dropdown
+  //         const data = await getAllAccounts()
+  //         setBankAccounts(data)
+  //         console.log('account bank : ',bankAccounts)
+
+  
+  //       } catch (error) {
+  //         console.error("Error fetching data:", error);
+  //       }
+  //     };
+  
+  //     fetchDataAccountInEx();
+  //   }, []);
 
   // const handleSwipe = (direction: 'Left' | 'Right') => {
   //   if (direction === 'Left') {
@@ -69,9 +81,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
   return (
     <View style={styles.container}>
 
-        <AccountCard
-          account={bankAccounts}
-        />
+    {bankAccounts.length > 0 ? (
+          <AccountCard account={bankAccounts} />
+        ) : (
+          <Text>Loading...</Text>
+        )}
+
       {/* <GestureHandlerRootView style={styles.accountContainer}>
       </GestureHandlerRootView> */}
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />

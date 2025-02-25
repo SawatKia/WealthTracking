@@ -2,14 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import IconMap from "../constants/IconMap";
+import { Budget } from "../services/BudgetService"; 
 
-interface Budget {
-  id: string;
-  expense_type: string;
-  monthly_limit: string | number;
-  current_spending: string | number;
-  month: string;
-}
 
 interface BudgetCardProps {
   budgets: Budget[]; 

@@ -189,7 +189,7 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
   const onChangeDate = (params: any) => {
     setDate(params.date);
     // console.log(route.params)
-    console.log(date);
+    console.log('date:' ,date);
     // setDatePickerVisibility(false)
   };
 

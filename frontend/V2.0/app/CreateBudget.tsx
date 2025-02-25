@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useBudget } from "../services/BudgetService"; // Import the custom hook
+import { useBudget } from "../services/BudgetService"; 
 import SelectCategoryModal from "./SelectCategoryModal";
+import { useRouter } from "expo-router";
 
 const CreateBudget = () => {
-  const { createBudget } = useBudget(); // Using the custom hook
+  const { createBudget } = useBudget(); 
   const [selectedCategory, setSelectedCategory] = useState({ type: '', category: '' });
   const [amount, setAmount] = useState('');
+  const router = useRouter()
 
   const handleSelectCategory = (category: string, type: string) => {
     setSelectedCategory({ category, type });
@@ -22,7 +24,6 @@ const CreateBudget = () => {
       return;
     }
 
-    // Prepare the new budget data to send
     const newBudget = {
       expense_type: selectedCategory.category,
       monthly_limit: amount,
@@ -74,7 +75,8 @@ const CreateBudget = () => {
 
       {/* Buttons */}
       <View style={styles.sumbitContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => {/* Add cancel logic */ }} >
+        <TouchableOpacity style={styles.cancelButton} onPress={() => 
+        router.push('/Budget')}>
           <Text>Cancel</Text>
         </TouchableOpacity>
 
@@ -92,16 +94,16 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f9f9f9",
     borderRadius: 8,
-    elevation: 2, // Adds shadow on Android
-    shadowColor: "#000", // Adds shadow on iOS
+    elevation: 2, 
+    shadowColor: "#000", 
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   rowTile: {
-    flexDirection: "row", // Aligns icon and title horizontally
+    flexDirection: "row", 
     alignItems: "center",
-    marginBottom: 8, // Spacing between rows
+    marginBottom: 8,
   },
   iconTitle: {
     backgroundColor: "#4957AA",
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   rowInput: {
-    flexDirection: "row", // Aligns blank space and inputs horizontally
+    flexDirection: "row", 
     alignItems: "center",
   },
   inputButton: {

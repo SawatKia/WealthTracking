@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     margin: 10,
+    backgroundColor: "transparent",
   },
   summaryButton: {
     flexDirection: "row",
