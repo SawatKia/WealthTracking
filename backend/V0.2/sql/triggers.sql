@@ -281,100 +281,6 @@ BEGIN
 END;
 $$;
 
--- Function to update budget spending
-CREATE OR REPLACE FUNCTION update_budget_spending()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    old_budget budgets%ROWTYPE;
-    new_budget budgets%ROWTYPE;
-BEGIN
-    -- For new transactions
-    IF TG_OP = 'INSERT' THEN
-        -- Only check for expense transactions
-        IF NEW.category = 'Expense' THEN
-            -- Check if budget exists for this type and month
-            SELECT * INTO new_budget
-            FROM budgets
-            WHERE national_id = NEW.national_id
-                AND expense_type = NEW.type
-                AND month = DATE_TRUNC('month', NEW.transaction_datetime);
-
-            -- Only update if budget exists (has monthly_limit set)
-            IF FOUND THEN
-                UPDATE budgets
-                SET current_spending = current_spending + NEW.amount
-                WHERE national_id = NEW.national_id
-                    AND expense_type = NEW.type
-                    AND month = DATE_TRUNC('month', NEW.transaction_datetime);
-            END IF;
-        END IF;
-
-    -- For updated transactions
-    ELSIF TG_OP = 'UPDATE' THEN
-        -- Handle old transaction if it was an expense
-        IF OLD.category = 'Expense' THEN
-            -- Check if old budget exists
-            SELECT * INTO old_budget
-            FROM budgets
-            WHERE national_id = OLD.national_id
-                AND expense_type = OLD.type
-                AND month = DATE_TRUNC('month', OLD.transaction_datetime);
-
-            -- Subtract from old budget if it exists
-            IF FOUND THEN
-                UPDATE budgets
-                SET current_spending = current_spending - OLD.amount
-                WHERE national_id = OLD.national_id
-                    AND expense_type = OLD.type
-                    AND month = DATE_TRUNC('month', OLD.transaction_datetime);
-            END IF;
-        END IF;
-
-        -- Handle new transaction if it's an expense
-        IF NEW.category = 'Expense' THEN
-            -- Check if new budget exists
-            SELECT * INTO new_budget
-            FROM budgets
-            WHERE national_id = NEW.national_id
-                AND expense_type = NEW.type
-                AND month = DATE_TRUNC('month', NEW.transaction_datetime);
-
-            -- Add to new budget if it exists
-            IF FOUND THEN
-                UPDATE budgets
-                SET current_spending = current_spending + NEW.amount
-                WHERE national_id = NEW.national_id
-                    AND expense_type = NEW.type
-                    AND month = DATE_TRUNC('month', NEW.transaction_datetime);
-            END IF;
-        END IF;
-
-    -- For deleted transactions
-    ELSIF TG_OP = 'DELETE' THEN
-        -- Only check for expense transactions
-        IF OLD.category = 'Expense' THEN
-            SELECT * INTO old_budget
-            FROM budgets
-            WHERE national_id = OLD.national_id
-                AND expense_type = OLD.type
-                AND month = DATE_TRUNC('month', OLD.transaction_datetime);
-
-            IF FOUND THEN
-                UPDATE budgets
-                SET current_spending = current_spending - OLD.amount
-                WHERE national_id = OLD.national_id
-                    AND expense_type = OLD.type
-                    AND month = DATE_TRUNC('month', OLD.transaction_datetime);
-            END IF;
-        END IF;
-    END IF;
-
-    RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION update_budget_spending()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -519,8 +425,3 @@ CREATE OR REPLACE TRIGGER after_transaction_budget_update
     AFTER INSERT OR UPDATE OR DELETE ON transactions
     FOR EACH ROW
     EXECUTE FUNCTION update_budget_spending(); 
-
-CREATE OR REPLACE TRIGGER trigger_update_budget_spending
-    AFTER INSERT OR UPDATE OR DELETE ON transactions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_budget_spending();
