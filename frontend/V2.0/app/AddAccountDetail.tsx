@@ -42,6 +42,11 @@ const AddAccountDetail = () => {
             newErrors.display_name = "Display Name must be no more than 30 characters";
         }
 
+        // New validation for account_name - only letters and spaces allowed
+        if (!/^[a-zA-Z\s]+$/.test(account_name)) {
+            newErrors.account_name = "Account Name must contain only letters and spaces";
+        }
+
         if (!/^\d{10}$/.test(account_number)) {
             newErrors.account_number = "Account Number must be exactly 10 digits";
         }

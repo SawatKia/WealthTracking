@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import DateTimePicker from "react-native-ui-datepicker";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useDebt } from "../services/DebtService";
+import { useTransactions } from "../services/TransactionService";
+import { useAccount } from "../services/AccountService";
+import DropDownPicker from "react-native-dropdown-picker";
 
 const UpdateDebtPayment = () => {
     const { debtId } = useLocalSearchParams<{ debtId: string }>();
@@ -12,11 +15,35 @@ const UpdateDebtPayment = () => {
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState("");
     const [detail, setDetail] = useState("");
-    const [category, setCategory] = useState("Expense : Debt Payment"); // เพิ่ม state สำหรับ category
+    const [category, setCategory] = useState("Expense : Debt Payment");
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [paymentChannel, setPaymentChannel] = useState<string | null>(null);
+    const [accountItems, setAccountItems] = useState<{ label: string; value: string }[]>([]);
+    const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
 
     const router = useRouter();
-    const { updateDebtPayment } = useDebt();
+    const { updateDebtPayment, getAllDebts } = useDebt();
+    const { createTransaction } = useTransactions();
+    const { getAllAccounts } = useAccount();
+
+    useEffect(() => {
+        const fetchDebtAndAccounts = async () => {
+            const debts = await getAllDebts();
+            const selectedDebt = debts.find(debt => debt.debt_id === debtId);
+            if (selectedDebt) {
+                setPaymentChannel(selectedDebt.fi_code);
+            }
+
+            const accounts = await getAllAccounts();
+            const accountItems = accounts.map(account => ({
+                label: account.display_name,
+                value: JSON.stringify({ account_number: account.account_number, fi_code: account.fi_code }),
+            }));
+            setAccountItems(accountItems);
+        };
+
+        fetchDebtAndAccounts();
+    }, [debtId]);
 
     const validateInputs = () => {
         const newErrors: { [key: string]: string } = {};
@@ -40,6 +67,23 @@ const UpdateDebtPayment = () => {
 
         try {
             await updateDebtPayment(debtId, paymentDetails);
+
+            const selectedAccount = JSON.parse(paymentChannel || "{}");
+            const transactionDetails = {
+                transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                category: "Expense",
+                type: "Debt Payment",
+                amount: Number(paymentAmount),
+                note: detail,
+                debt_id: debtId,
+                sender: {
+                    account_number: selectedAccount.account_number,
+                    fi_code: selectedAccount.fi_code,
+                },
+            };
+
+            await createTransaction(transactionDetails);
+
             Alert.alert("Success", "Debt payment updated successfully");
             router.push("/(tabs)/Debt");
         } catch (error) {
@@ -71,7 +115,7 @@ const UpdateDebtPayment = () => {
                         <TextInput
                             style={styles.input}
                             value={category}
-                            editable={false} // ไม่สามารถแก้ไขได้
+                            editable={false}
                         />
                     </View>
 
@@ -112,6 +156,22 @@ const UpdateDebtPayment = () => {
                             keyboardType="numeric"
                         />
                         {errors.paymentAmount && <Text style={styles.errorText}>{errors.paymentAmount}</Text>}
+                    </View>
+
+                    {/* Payment Channel Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Payment Channel</Text>
+                        <DropDownPicker
+                            open={isAccountPickerVisible}
+                            value={paymentChannel}
+                            items={accountItems}
+                            setOpen={setAccountPickerVisibility}
+                            setValue={setPaymentChannel}
+                            setItems={setAccountItems}
+                            placeholder="Select Payment Channel"
+                            style={styles.inputButton}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                        />
                     </View>
 
                     {/* Detail Input */}
@@ -176,6 +236,11 @@ const styles = StyleSheet.create({
     redLabel: {
         color: "red",
         fontSize: 12,
+    },
+    dropdownContainer: {
+        borderRadius: 8,
+        backgroundColor: "#BEC2E0",
+        borderWidth: 0,
     },
 });
 

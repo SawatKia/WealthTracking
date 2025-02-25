@@ -36,6 +36,16 @@ interface UpdateDebtPaymentParams {
     detail: string;
 }
 
+interface UpdateDebtParams {
+    fi_code?: string;
+    debt_name?: string;
+    start_date?: string;
+    current_installment?: number;
+    total_installments?: number;
+    loan_principle?: number;
+    loan_balance?: number;
+}
+
 export const useDebt = () => {
     const [Debt, setDebt] = useState<Debt[]>([]);
     const [fi_codes, setFi_codes] = useState<fi_code[]>([]);
@@ -156,6 +166,30 @@ export const useDebt = () => {
         }
     };
 
+    // ฟังก์ชันอัปเดตข้อมูลหนี้
+    const updateDebt = async (debtId: string, debtDetails: UpdateDebtParams): Promise<boolean> => {
+        try {
+            // ส่งคำขอ PATCH เพื่ออัปเดตข้อมูลหนี้
+            const response = await api.patch(`/debts/${debtId}`, debtDetails);
+
+            if (response.status === 200) {
+                console.log('Debt updated successfully');
+
+                // อัปเดต state ด้วยข้อมูลล่าสุด
+                await getAllDebts();
+
+                return true;
+            } else {
+                setError('Failed to update debt.');
+                return false;
+            }
+        } catch (err) {
+            setError('Failed to update debt.');
+            console.error('Error updating debt:', err);
+            return false;
+        }
+    };
+
     return {
         loading,
         error,
@@ -166,5 +200,6 @@ export const useDebt = () => {
         getAllDebts,
         deleteDebt,
         updateDebtPayment,
+        updateDebt, // เพิ่มฟังก์ชัน updateDebt ใน return object
     };
 };

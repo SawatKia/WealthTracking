@@ -62,7 +62,7 @@ export default function BankAccountScreen() {
         <View style={styles.container}>
             {/* ปุ่มย้อนกลับ */}
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={24} color="#333" />
+                <Ionicons name="chevron-back-outline" size={25} color="#000000" />
             </TouchableOpacity>
 
             {/* เนื้อหาหลัก */}
