@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
     volumes:
       # no needs to oaccess from host machine, the app access inside constainer only.
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
@@ -28,7 +28,7 @@ services:
     command: |
       sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose%20healthcheck"]
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
       interval: 10m
       timeout: 10s
       retries: 3
