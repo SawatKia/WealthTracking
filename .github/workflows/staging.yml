@@ -16,8 +16,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: verify server port connectivity
+        run: |
+          nc -zv ${{ secrets.STAGING_SERVERS_IP }} 22 80 443
+
       - name: Setup SSH Connection
-        continue-on-error: true
         run: |
           echo "Setting up SSH connection..."
           mkdir -p ~/.ssh
@@ -30,7 +33,6 @@ jobs:
 
       - name: Build and Deploy on Server
         id: deploy
-        continue-on-error: true
         run: |
           set -o pipefail
           echo "Starting build and deployment process on the server..."
@@ -69,9 +71,9 @@ jobs:
 
             Deployment completed successfully.
           include-details: "true"
-          color-success: "#28a745" # Green for success
-          color-failure: "#d73a49" # Red for failure
-          color-cancelled: "#ffc107" # Yellow for cancelled
+          color-success: "#28a745" # Green for running the job success
+          color-failure: "#8a0d04" # Dark Red for running the job failure
+          color-cancelled: "#ffc107" # Yellow for running the job cancelled
 
       - name: Notify Discord on Failure
         if: failure()
@@ -88,13 +90,13 @@ jobs:
             📦 **Job** ran: `${{ github.job }}`
             ❌ **Action Status**: `${{ job.status }}`
 
-            **Failure Reason:** ${{ env.reason }}
+            **Failure Reason:** ${{ env.reason || 'Unknown reason. Please check the logs.' }}
 
-            Please check the logs for more details.
+            Please check the logs for  more details.
           include-details: "true"
-          color-success: "#28a745" # Green for success
-          color-failure: "#d73a49" # Red for failure
-          color-cancelled: "#ffc107" # Yellow for cancelled
+          color-success: "#d73a49" # Green for running the job success
+          color-failure: "#8a0d04" # Dark Red for running the job failure
+          color-cancelled: "#ffc107" # Yellow for running the job cancelled
 
       - name: Delete SSH Key
         if: always()

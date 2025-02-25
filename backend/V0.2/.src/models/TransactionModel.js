@@ -476,7 +476,19 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
   async list(nationalId) {
     try {
       logger.info('Listing transactions');
-      const result = await super.list(nationalId);
+      // const result = await super.list(nationalId);
+      const query = `
+        SELECT
+          *
+        FROM
+          transactions
+        WHERE
+          national_id = $1
+        ORDER BY
+          transaction_datetime DESC`;
+      let result = await super.executeQuery(query, [nationalId], { silent: true });
+      result = result.rows;
+      result = result.length > 500 ? `${result.slice(0, 497)}... [truncated]` : result;
       logger.debug(`result: ${JSON.stringify(result)}`);
 
       // Fix: Use Promise.all with map to handle async operations
@@ -488,7 +500,9 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
         })
       );
 
-      logger.debug(`transactions: ${JSON.stringify(transactions)}`);
+      const transactionString = JSON.stringify(transactions);
+      const truncatedString = transactionString.length > 500 ? `${transactionString.slice(0, 497)}... [truncated]` : transactionString;
+      logger.debug(`transactions: ${truncatedString}`);
       return transactions;
     } catch (error) {
       logger.error(`Error listing transactions: ${error.message}`);

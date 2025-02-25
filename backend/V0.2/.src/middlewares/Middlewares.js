@@ -10,6 +10,7 @@ const appConfigs = require("../configs/AppConfigs");
 const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
+const app = require('../app.js');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -109,17 +110,31 @@ class Middlewares {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
 
-    // Add CORS configuration
+    // CORS configuration
     this.corsOptions = {
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, Postman)
-        if (!origin) {
-          return callback(null, true);
-        }
+        // Development environment
+        if (appConfigs.environment === 'development') {
+          const devAllowedOrigins = [
+            // Allow any localhost port
+            /^http:\/\/localhost:\d+$/,
+            // Allow Expo development client
+            /^exp:\/\/[\w\-]+\.[\w\-]+\.exp\.direct:\d+$/,
+            // Allow Expo Go app
+            /^exp:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+            // Allow local network IP for Expo
+            /^exp:\/\/[\w\-]+\.local:\d+$/,
+            // Allow Expo web development
+            /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/
+          ];
+
+          // Allow requests with no origin (like mobile apps, Postman)
+          if (!origin) {
+            return callback(null, true);
+          }
 
         const allowedOrigins = [
           // Add your allowed origins here
-          'http://localhost:8081',          // Development
           'http://localhost:3000',          // Development
           'exp://localhost:19000',          // Expo development server
           'exp://192.168.x.x:19000', // Local network IP for mobile device testing
@@ -140,12 +155,12 @@ class Middlewares {
         'Content-Type',
         'Authorization',
         'X-Requested-With',
-        'X-Refresh-Token', // For refresh token
+        'X-Refresh-Token',
         'Accept',
       ],
-      credentials: true, // Allow credentials (cookies)
-      maxAge: 86400, // Cache preflight requests for 24 hours
-      exposedHeaders: ['Content-Length', 'X-Rate-Limit'] // Headers that can be exposed to the client
+      credentials: true,
+      maxAge: 86400,
+      exposedHeaders: ['Content-Length', 'X-Rate-Limit']
     };
 
     // Create CORS middleware
@@ -460,7 +475,6 @@ class Middlewares {
       "/data/private/.git/config", "/static/content/.git/config",
       "/libs/js/iframe.js" // อาจเป็นการโจมตี iframe injection
     ];
-    logger.debug(`Loaded suspicious patterns: ${JSON.stringify(SUSPICIOUS_PATTERNS)}`);
 
     // Load blacklist from JSON file
     const loadBlacklist = () => {
@@ -470,7 +484,7 @@ class Middlewares {
         logger.debug(`Loaded blacklist: ${JSON.stringify(data.blocked_ips)}`);
         return new Set(data.blocked_ips || []);
       } catch (err) {
-        logger.error("Error loading blacklist:", err);
+        logger.error(`Error loading blacklist: ${err}`);
         return new Set();
       }
     };
@@ -503,8 +517,10 @@ class Middlewares {
     if (suspicious) {
       logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
 
-      blacklist.add(clientIp);
-      logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+      if (!blacklist.has(clientIp)) {
+        blacklist.add(clientIp);
+        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+      }
       saveBlacklist(blacklist);
 
       return next(MyAppErrors.forbidden());
@@ -610,12 +626,16 @@ class Middlewares {
     next();
   }
 
-  authMiddleware(req, res, next) {
+  async authMiddleware(req, res, next) {
     logger.info("Authenticating user");
+    if (req.formattedResponse) {
+      logger.info('the request was already handled. Skipping authentication');
+      return next();
+    }
 
     const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
 
-    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 20) + '...' : 'Not present'}`);
+    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 10) + '...' : 'Not present'}`);
 
     if (accessToken) {
       try {
@@ -747,7 +767,7 @@ class Middlewares {
 
       } else if (err instanceof Error) {
         logger.error(`Error: ${err.message}`);
-        response = formatResponse(500, err.message);
+        response = formatResponse(500, "Internal Server Error");
 
       } else {
         logger.error(`Unhandled error: ${err}`);
@@ -796,6 +816,12 @@ class Middlewares {
     // Combine error headers (if any) with regular headers
     const headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
 
+    // Log response to Google Sheet if service is connected
+    if (GoogleSheetService.isConnected() && req.requestLog) {
+      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+      await GoogleSheetService.appendLog(completeLog);
+    }
+
     // Get security headers
     const securityHeaders = this.logResponse(
       req,
@@ -805,12 +831,6 @@ class Middlewares {
       headers,
       !!req.error // Pass true if error exists
     );
-
-    // Log response to Google Sheet if service is connected
-    if (GoogleSheetService.isConnected() && req.requestLog) {
-      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-      await GoogleSheetService.appendLog(completeLog);
-    }
 
     // Send response with combined headers
     res
