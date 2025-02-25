@@ -1,0 +1,8 @@
+sequenceDiagram
+  participant User
+  participant PercentDebt
+  participant View
+
+  User->>PercentDebt: Provide text, percent, amount
+  PercentDebt->>View: Render text and formatted amount with percent
+  View->>User: Display formatted output

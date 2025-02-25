@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant User
+    participant Tabs
+    participant TabBarIcon
+    participant MaterialCommunityIcons
+
+    User->>Tabs: Opens the app
+    activate Tabs
+
+    Tabs->>Tabs: Renders tab navigation
+    Tabs->>TabBarIcon: Renders tab icons for each screen
+    activate TabBarIcon
+    TabBarIcon->>MaterialCommunityIcons: Passes icon name and color
+    activate MaterialCommunityIcons
+    MaterialCommunityIcons-->>TabBarIcon: Returns icon component
+    deactivate MaterialCommunityIcons
+    TabBarIcon-->>Tabs: Returns rendered icon
+    deactivate TabBarIcon
+
+    loop User Interaction Loop
+        User->>Tabs: Switches between tabs
+        Tabs->>Tabs: Updates active tab state
+        Tabs->>TabBarIcon: Re-renders active tab icon with active color
+        activate TabBarIcon
+        TabBarIcon->>MaterialCommunityIcons: Passes updated color
+        activate MaterialCommunityIcons
+        MaterialCommunityIcons-->>TabBarIcon: Returns updated icon
+        deactivate MaterialCommunityIcons
+        TabBarIcon-->>Tabs: Returns updated icon
+        deactivate TabBarIcon
+    end
+
+    Tabs-->>User: Displays active tab content
+    deactivate Tabs

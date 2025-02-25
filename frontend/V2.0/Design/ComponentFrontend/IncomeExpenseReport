@@ -1,0 +1,9 @@
+sequenceDiagram
+  participant User
+  participant IncomeExpensesReport
+  participant VictoryChart
+
+  User->>IncomeExpensesReport: Component Mounts
+  IncomeExpensesReport->>VictoryChart: Render Bar Chart (Income/Expenses)
+  IncomeExpensesReport->>VictoryChart: Render Line Chart (Average)
+  VictoryChart->>User: Display Report

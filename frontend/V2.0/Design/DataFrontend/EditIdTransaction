@@ -1,0 +1,60 @@
+sequenceDiagram
+    participant User
+    participant EditTransaction
+    participant TransactionService
+    participant AccountService
+    participant API
+    participant SelectCategoryModal
+    participant DateTimePicker
+    participant DropDownPicker
+
+    User->>EditTransaction: Opens EditTransaction screen
+    activate EditTransaction
+
+    EditTransaction->>TransactionService: getTransactionById(id)
+    activate TransactionService
+    TransactionService->>API: GET /transactions/{id}
+    API-->>TransactionService: Returns transaction data
+    TransactionService-->>EditTransaction: Returns transactionData
+    deactivate TransactionService
+
+    EditTransaction->>AccountService: getAllAccounts()
+    activate AccountService
+    AccountService->>API: GET /accounts
+    API-->>AccountService: Returns accounts data
+    AccountService-->>EditTransaction: Returns accountsList
+    deactivate AccountService
+
+    loop User Interaction Loop
+        User->>EditTransaction: Interacts with UI
+        EditTransaction->>DateTimePicker: Open date picker
+        DateTimePicker-->>User: Show date picker
+        User->>DateTimePicker: Select new date/time
+        DateTimePicker-->>EditTransaction: Update date state
+
+        User->>EditTransaction: Click category field
+        EditTransaction->>SelectCategoryModal: Open modal
+        SelectCategoryModal-->>User: Show category options
+        User->>SelectCategoryModal: Select category/type
+        SelectCategoryModal-->>EditTransaction: Update category state
+
+        User->>EditTransaction: Select account (sender/receiver)
+        EditTransaction->>DropDownPicker: Open account dropdown
+        DropDownPicker-->>User: Show account options
+        User->>DropDownPicker: Select account
+        DropDownPicker-->>EditTransaction: Update account state
+
+        User->>EditTransaction: Enter amount/note
+        EditTransaction->>EditTransaction: Update amount/note state
+    end
+
+    User->>EditTransaction: Click Save button
+    EditTransaction->>TransactionService: updateTransaction(id, data)
+    activate TransactionService
+    TransactionService->>API: PUT/PATCH /transactions/{id}
+    API-->>TransactionService: Return updated transaction
+    TransactionService-->>EditTransaction: Confirm update
+    deactivate TransactionService
+
+    EditTransaction->>User: Navigate back to previous screen
+    deactivate EditTransaction

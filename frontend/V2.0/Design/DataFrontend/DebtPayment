@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant User
+    participant CreateTransaction
+    participant DateTimePicker
+    participant SelectCategoryModal
+    participant DropDownPicker
+
+    User ->> CreateTransaction: Open Screen
+    CreateTransaction ->> CreateTransaction: Fetch bank accounts
+    CreateTransaction ->> DateTimePicker: Select Date & Time
+    DateTimePicker ->> CreateTransaction: Return selected date
+    CreateTransaction ->> SelectCategoryModal: Select Category
+    SelectCategoryModal ->> CreateTransaction: Return selected category
+    CreateTransaction ->> DropDownPicker: Select Debt ID
+    DropDownPicker ->> CreateTransaction: Return selected account
+    User ->> CreateTransaction: Enter Amount & Details
+    User ->> CreateTransaction: Save Transaction
+    CreateTransaction ->> CreateTransaction: Process & Validate Data
+    CreateTransaction ->> User: Show Success/Failure

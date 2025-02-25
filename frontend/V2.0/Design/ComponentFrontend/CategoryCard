@@ -1,0 +1,9 @@
+sequenceDiagram
+  participant User
+  participant CategoryCard
+  participant UI
+
+  User->>CategoryCard: Tap on Category
+  CategoryCard->>CategoryCard: Identify Icon & Selection State
+  CategoryCard->>UI: Update Button Style & Icon
+  UI-->>User: Display Updated CategoryCard

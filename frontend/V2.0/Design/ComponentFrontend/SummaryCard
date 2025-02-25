@@ -1,0 +1,6 @@
+sequenceDiagram
+  participant User
+  participant SummaryAccountCard
+
+  User->>SummaryAccountCard: Access SummaryAccountCard component
+  SummaryAccountCard->>User: Display typeAccount, balance, and totalAccounts
