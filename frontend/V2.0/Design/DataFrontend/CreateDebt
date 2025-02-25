@@ -1,0 +1,40 @@
+sequenceDiagram
+    participant User
+    participant AddDebtDetail
+    participant useDebt
+    participant useAccount
+    participant useTransactions
+    participant DateTimePicker
+    participant DropDownPicker
+
+    User->>AddDebtDetail: Opens screen
+    activate AddDebtDetail
+
+    AddDebtDetail->>useAccount: getAllAccounts()
+    activate useAccount
+    useAccount-->>AddDebtDetail: Returns bank accounts
+    deactivate useAccount
+
+    loop User Interaction
+        User->>AddDebtDetail: Fills form (debt name, date, loan details, etc.)
+        AddDebtDetail->>AddDebtDetail: Validates inputs
+        alt Inputs valid
+            User->>AddDebtDetail: Clicks "Save"
+            AddDebtDetail->>useDebt: createDebt(debtDetails)
+            activate useDebt
+            useDebt-->>AddDebtDetail: Saves debt
+            deactivate useDebt
+
+            AddDebtDetail->>useTransactions: createTransaction(transactionDetails)
+            activate useTransactions
+            useTransactions-->>AddDebtDetail: Creates transaction
+            deactivate useTransactions
+
+            AddDebtDetail->>Router: Navigates to /Debt
+        else Inputs invalid
+            AddDebtDetail->>AddDebtDetail: Shows errors
+        end
+    end
+
+    AddDebtDetail-->>User: Displays updated UI
+    deactivate AddDebtDetail

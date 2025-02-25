@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant User
+    participant CreateTransaction
+    participant useTransactions
+    participant useAccount
+    participant DateTimePicker
+    participant DropDownPicker
+    participant Modal
+
+    User->>CreateTransaction: Opens screen
+    activate CreateTransaction
+
+    CreateTransaction->>useAccount: getAllAccounts()
+    activate useAccount
+    useAccount-->>CreateTransaction: Returns accounts
+    deactivate useAccount
+
+    loop User Interaction
+        User->>CreateTransaction: Selects date/time
+        CreateTransaction->>DateTimePicker: Opens date picker
+        DateTimePicker-->>CreateTransaction: Returns selected date
+        User->>CreateTransaction: Selects category
+        CreateTransaction->>Modal: Opens category modal
+        Modal-->>CreateTransaction: Returns selected category
+        User->>CreateTransaction: Selects account (sender/receiver)
+        CreateTransaction->>DropDownPicker: Opens account dropdown
+        DropDownPicker-->>CreateTransaction: Returns selected account
+        User->>CreateTransaction: Enters amount and note
+    end
+
+    User->>CreateTransaction: Clicks "Save"
+    CreateTransaction->>useTransactions: createTransaction(requestBody)
+    activate useTransactions
+    useTransactions-->>CreateTransaction: Saves transaction
+    deactivate useTransactions
+
+    CreateTransaction-->>User: Navigates to /IncomeExpense
+    deactivate CreateTransaction

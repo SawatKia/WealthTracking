@@ -1,0 +1,14 @@
+sequenceDiagram
+  participant User
+  participant EditScreenInfo
+  participant UI
+  participant ExternalLink
+
+  User->>EditScreenInfo: Open Screen
+  EditScreenInfo->>UI: Display Path & Instructions
+
+  User->>EditScreenInfo: Modify Code & Save
+  EditScreenInfo->>UI: Automatically Update App
+
+  User->>ExternalLink: Tap Help Link
+  ExternalLink->>User: Redirect to Expo Docs

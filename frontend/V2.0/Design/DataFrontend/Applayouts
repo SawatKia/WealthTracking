@@ -1,0 +1,67 @@
+sequenceDiagram
+    participant User
+    participant RootLayout
+    participant AuthProvider
+    participant RootLayoutNav
+    participant ThemeProvider
+    participant Stack
+    participant useAuth
+    participant useRouter
+    participant SplashScreen
+
+    User->>RootLayout: Opens the app
+    activate RootLayout
+
+    RootLayout->>SplashScreen: preventAutoHideAsync()
+    activate SplashScreen
+    SplashScreen-->>RootLayout: Prevents splash screen from hiding
+    deactivate SplashScreen
+
+    RootLayout->>RootLayout: Loads fonts (useFonts)
+    RootLayout->>RootLayout: Checks for errors
+    alt Fonts loaded successfully
+        RootLayout->>SplashScreen: hideAsync()
+        activate SplashScreen
+        SplashScreen-->>RootLayout: Hides splash screen
+        deactivate SplashScreen
+        RootLayout->>AuthProvider: Wraps RootLayoutNav
+        activate AuthProvider
+        AuthProvider->>RootLayoutNav: Renders RootLayoutNav
+        deactivate AuthProvider
+    else Fonts fail to load
+        RootLayout->>RootLayout: Throws error
+    end
+
+    activate RootLayoutNav
+    RootLayoutNav->>useAuth: Checks authentication state
+    activate useAuth
+    useAuth-->>RootLayoutNav: Returns isAuthenticated
+    deactivate useAuth
+
+    RootLayoutNav->>useRouter: Initializes router
+    activate useRouter
+    useRouter-->>RootLayoutNav: Returns router instance
+    deactivate useRouter
+
+    alt User is authenticated
+        RootLayoutNav->>ThemeProvider: Wraps Stack with theme
+        activate ThemeProvider
+        ThemeProvider->>Stack: Renders Stack
+        activate Stack
+        Stack->>Stack: Renders authenticated screens (tabs, CreateTransaction, modal)
+        Stack-->>ThemeProvider: Returns rendered screens
+        deactivate Stack
+        ThemeProvider-->>RootLayoutNav: Returns themed Stack
+        deactivate ThemeProvider
+    else User is not authenticated
+        RootLayoutNav->>useRouter: Redirects to /Login
+        activate useRouter
+        useRouter->>Stack: Renders Login/Signup screens
+        Stack-->>useRouter: Returns rendered screens
+        deactivate useRouter
+    end
+
+    RootLayoutNav-->>RootLayout: Returns navigation layout
+    deactivate RootLayoutNav
+    RootLayout-->>User: Displays app content
+    deactivate RootLayout

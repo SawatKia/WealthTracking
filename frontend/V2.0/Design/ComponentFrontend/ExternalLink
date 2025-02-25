@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant User
+  participant ExternalLink
+  participant WebBrowser
+
+  User->>ExternalLink: Clicks Link
+  alt Platform is Web
+    ExternalLink->>User: Open in new browser tab
+  else Platform is Native
+    ExternalLink->>WebBrowser: Open in in-app browser
+    WebBrowser->>User: Display External Page
+  end

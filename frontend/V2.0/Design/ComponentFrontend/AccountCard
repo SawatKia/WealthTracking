@@ -1,0 +1,16 @@
+sequenceDiagram
+  participant User
+  participant AccountCard
+  participant GestureHandler
+  participant State
+  participant UI
+
+  User->>AccountCard: Open AccountCard
+  AccountCard->>AccountCard: Calculate Total Balance
+  AccountCard->>UI: Render Total Balance & Account Info
+
+  User->>GestureHandler: Swipe Left/Right
+  GestureHandler->>State: Detect Gesture End
+  State->>AccountCard: Trigger handleSwipe()
+  AccountCard->>AccountCard: Update Current Index
+  AccountCard->>UI: Update Account Display

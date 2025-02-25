@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant User
+    participant ImageUploadScreen
+    participant ImagePicker
+    participant Image
+
+    User->>ImageUploadScreen: Opens screen
+    activate ImageUploadScreen
+
+    User->>ImageUploadScreen: Clicks "Browse"
+    ImageUploadScreen->>ImagePicker: Opens image library
+    activate ImagePicker
+    ImagePicker-->>ImageUploadScreen: Returns selected images
+    deactivate ImagePicker
+
+    loop For each image
+        ImageUploadScreen->>Image: Gets image dimensions
+        activate Image
+        Image-->>ImageUploadScreen: Returns dimensions
+        deactivate Image
+    end
+
+    ImageUploadScreen->>ImageUploadScreen: Updates image previews
+
+    User->>ImageUploadScreen: Clicks "Cancel"
+    ImageUploadScreen->>ImageUploadScreen: Clears selected images
+
+    User->>ImageUploadScreen: Clicks "Next"
+    ImageUploadScreen-->>User: Navigates to next screen
+
+    ImageUploadScreen-->>User: Displays updated UI
+    deactivate ImageUploadScreen
