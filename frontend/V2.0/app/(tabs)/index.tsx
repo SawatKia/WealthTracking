@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import SummaryCard from "../../components/SummaryCard";
 import SummaryBox1 from "../../components/IncomeSummary";
@@ -6,19 +6,22 @@ import SummaryBox2 from "../../components/ExpenseSummary";
 import PercentDebt from "../../components/PercentDebt";
 import CurrentInstallment from "../../components/CurrentInstallment";
 import IncomeExpenseReport from "@/components/IncomeExpenseReport";
-import ReportByCategory from "../../components/reportByCategory";
+import ReportByCategory from "../../components/PieChartExpense";
 
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text } from "@/components/Themed";
 import { useTransactions, MonthlySummary } from "@/services/TransactionService";
-import { useRouter } from "expo-router";
+import { Account, useAccount } from "@/services/AccountService"; 
+import { useRouter, useFocusEffect } from "expo-router";
 
 export default function HomeScreen() {
   const { getMonthlySummary, getSummaryExpense, getSummaryIncome, error } =
     useTransactions(); // Get monthlyData from the hook
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+  const { getAllAccounts } = useAccount();
+  const [bankAccounts, setBankAccounts] = useState<Account[]>([]); 
   const router = useRouter();
-
+  
   useEffect(() => {
     const fetchMonthlySummary = async () => {
       try {
@@ -29,9 +32,25 @@ export default function HomeScreen() {
         console.log(err);
       }
     };
-
     fetchMonthlySummary();
   }, []);
+  
+  useFocusEffect(
+        useCallback(() => {
+          const fetchData = async () => {
+            const accounts = await getAllAccounts();
+            console.log("Fetched Accounts:", accounts);
+            setBankAccounts(accounts);
+            console.log('bankAccounts.length:', bankAccounts.length)
+          };
+          
+          fetchData();
+        }, []), 
+      );
+      
+      const totalBalance = bankAccounts.reduce((total, account) => total + parseFloat(account.balance), 0);
+      console.log('totalBalance:', totalBalance)
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -47,12 +66,16 @@ export default function HomeScreen() {
             <Text style={{ margin: 5 }}>Summary</Text>
           </TouchableOpacity>
         </View>
-        <SummaryCard
-          typeAccount="Total"
-          balance={1000}
-          totalAccounts={5}
-          typeList="accounts"
-        />
+         {bankAccounts.length > 0 ? (
+                   <SummaryCard 
+                   typeAccount="Total"
+                   balance={totalBalance}
+                   totalAccounts={bankAccounts.length}
+                   typeList="accounts"
+                 />
+                ) : (
+                  <Text>Loading...</Text>
+                )}
 
         <View style={styles.rowIncomeExpense}>
           <SummaryBox1
@@ -79,15 +102,6 @@ export default function HomeScreen() {
         </View>
       </View>
     </ScrollView>
-
-    //   {/* <Link to ="/Login">Go to Details</Link> */}
-    //   {/* <Link href="/Login">go to login page</Link> */}
-
-    //   {/* <Link href="/Login" asChild>
-    //   <Pressable>
-    //     <Text style={styles.temp}>go to login page</Text>
-    //   </Pressable>
-    // </Link> */}
   );
 }
 
@@ -111,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   scrollContainer: {
-    flexGrow: 1, // Ensure the content fills the screen height when needed
+    flexGrow: 1, 
     backgroundColor: "#f0f4f8",
   },
   rowIncomeExpense: {
@@ -124,7 +138,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333333",
     textAlign: "left",
-    // marginBottom: 10,
   },
   temp: {
     color: "#7fa1ff",

@@ -1,12 +1,12 @@
 import React, { useState, useEffect,useCallback } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import AccountCard from "../../components/AccountCard"
-import DropdownButton from "../../components/DropdownButton";
+import DropdownButton from "../../components/CategoryDropdown";
 import TransactionCard from "../../components/TransactionCard";
 import { Ionicons} from "@expo/vector-icons"; 
 import { useRouter, useFocusEffect } from 'expo-router';
 
-import { Account, useAccount } from "@/services/AccountService"; // นำเข้า useAccount
+import { Account, useAccount } from "@/services/AccountService"; 
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
