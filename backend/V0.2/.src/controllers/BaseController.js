@@ -94,7 +94,11 @@ class BaseController {
         if (requiredFields && requiredFields.length > 0) {
             logger.debug(`body: ${JSON.stringify(body)}`);
             for (const field of requiredFields) {
-                if (body[field] === undefined || body[field] === null || !body[field]) {
+                if (
+                    body[field] === undefined ||
+                    body[field] === null ||
+                    (typeof body[field] === 'string' && body[field].trim() === '')
+                ) {
                     logger.error(`Missing required field: ${field}`);
                     throw new Error(`Missing required field: ${field}`);
                     // throw MyAppErrors.badRequest(`Missing required field: ${field}`);

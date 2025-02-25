@@ -153,7 +153,7 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
   // const setCategory = params.setCategory as (category: string) => void;
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDataAccount = async () => {
       try {
         // Transform API data into items format for the dropdown
         const data = await getAllAccounts()
@@ -183,13 +183,13 @@ const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<strin
       }
     };
 
-    fetchData();
+    fetchDataAccount();
   }, []);
 
   const onChangeDate = (params: any) => {
     setDate(params.date);
     // console.log(route.params)
-    console.log(date);
+    console.log('date:' ,date);
     // setDatePickerVisibility(false)
   };
 

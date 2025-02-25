@@ -133,49 +133,21 @@ class Middlewares {
             return callback(null, true);
           }
 
-          // Check if origin matches any of the allowed patterns
-          const isAllowed = devAllowedOrigins.some(pattern =>
-            pattern instanceof RegExp ?
-              pattern.test(origin) :
-              pattern === origin
-          );
+        const allowedOrigins = [
+          // Add your allowed origins here
+          'http://localhost:3000',          // Development
+          'exp://localhost:19000',          // Expo development server
+          'exp://192.168.x.x:19000', // Local network IP for mobile device testing
+          // 'https://your-production-domain.com', // Production web client
+          // 'capacitor://localhost',          // Capacitor/Ionic
+          // 'ionic://localhost',              // Ionic specific
+          '*', // Allow all origins
+        ];
 
-          if (isAllowed) {
-            return callback(null, true);
-          }
-
-          // Allow all origins for development
-          return callback(null, true);
-        }
-        // Production environment
-        else {
-          const prodAllowedOrigins = [
-            // Your production web app domain
-            'https://your-production-app.com',
-            // Your production API domain
-            'https://api.your-production-app.com',
-            // Expo production app
-            /^https:\/\/[\w-]+\.expo\.dev$/,
-            // Published Expo app
-            /^exp:\/\/exp\.host\/@your-username\/.*$/
-          ];
-
-          // Allow mobile app requests (no origin)
-          if (!origin) {
-            return callback(null, true);
-          }
-
-          const isAllowed = prodAllowedOrigins.some(pattern =>
-            pattern instanceof RegExp ?
-              pattern.test(origin) :
-              pattern === origin
-          );
-
-          if (isAllowed) {
-            return callback(null, true);
-          }
-
-          return callback(new Error('Not allowed by CORS'));
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
         }
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
