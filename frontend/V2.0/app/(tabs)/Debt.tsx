@@ -225,15 +225,11 @@ const styles = StyleSheet.create({
   chartContainer: {
     marginBottom: 20,
     height: 250,
-    // backgroundColor: '#fff',
     borderRadius: 8,
     padding: 10,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 3,
     elevation: 3,
   },
+
   debtDetailsContainer: {
     marginTop: 16,
   },

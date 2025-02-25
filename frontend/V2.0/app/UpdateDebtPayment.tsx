@@ -32,7 +32,7 @@ const UpdateDebtPayment = () => {
         if (!validateInputs()) return;
 
         const paymentDetails = {
-            date: dayjs(date).format("YYYY-MM-DD"),
+            date: dayjs(date).format("YYYY-MM-DD HH:mm"),
             paymentAmount: Number(paymentAmount),
             detail: detail,
             category: category,
@@ -88,14 +88,14 @@ const UpdateDebtPayment = () => {
                                 style={styles.iconInput}
                                 color="#9AC9F3"
                             />
-                            {date ? <Text>{dayjs(date).format("DD MMM YYYY")}</Text> : "..."}
+                            {date ? <Text>{dayjs(date).format("DD MMM YYYY HH:mm")}</Text> : "..."}
                         </TouchableOpacity>
                         {isDatePickerVisible && (
                             <DateTimePicker
                                 mode="single"
                                 date={date}
                                 onChange={onChangeDate}
-                                timePicker={false}
+                                timePicker={true}
                             />
                         )}
                         {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
