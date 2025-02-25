@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
@@ -23,7 +23,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:${APP_PORT}/health?service=docker-compose\ healthcheck"]
+      test: ["CMD-SHELL", "curl", "-f", "http://localhost:${APP_PORT}/health"]
       interval: 5m # Poll every 5 minutes after the container is healthy
       timeout: 10s # Allow up to 10 seconds for each health check command
       retries: 3 # Retry up to 3 times before considering the container unhealthy
