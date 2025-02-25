@@ -26,11 +26,5 @@ COPY ./sql ./sql
 # Expose the port from env
 EXPOSE ${APP_PORT}
 
-# Default command for starting the app
-CMD if [ "$NODE_ENV" = "production" ]; then \
-    npm run start; \
-    elif [ "$NODE_ENV" = "test" ]; then \
-    npm run test; \
-    else \
-    npm run dev; \
-    fi
+# Default command for starting the app (will be overridden by docker-compose if needed)
+CMD ["npm", "run", "dev"]
