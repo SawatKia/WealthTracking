@@ -109,29 +109,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
+            style={[styles.link, {backgroundColor: '#7F8CD9', borderBottomLeftRadius:8, 
+              borderBottomRightRadius:8 }]} 
             onPress={() => {
               setAddshowAddPopup(false);
               router.push('/UploadSlip')
-              console.log('Navigate to Page 2');
-  
-              // Add your navigation logic here
             }}
           >
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Create Transaction{"\n"}By Slip</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-            style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
-              borderBottomRightRadius:8 }]} 
-              onPress={() => {
-                router.push('/DebtPayment')
-                setAddshowAddPopup(false);
-            }}
-          >
-            <Text style={[styles.linkText, {color: '#ffffff' }]}>Dept Payment</Text>
-          </TouchableOpacity>
-
         </View>
       )}
 
