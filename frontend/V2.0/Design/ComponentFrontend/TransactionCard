@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant User
+  participant TransactionCard
+  participant TransactionService
+  participant Router
+
+  User->>TransactionCard: Select category ("Income", "Expense", "Transfer", "All")
+  TransactionCard->>TransactionService: Fetch all transactions
+  TransactionService->>TransactionCard: Return list of transactions
+  User->>TransactionCard: View filtered transactions
+  User->>TransactionCard: Select transaction to view details
+  TransactionCard->>Router: Navigate to EditTransaction screen
+  User->>TransactionCard: Option to delete transaction
+  TransactionCard->>TransactionService: Delete selected transaction
+  TransactionService->>TransactionCard: Confirmation of deletion

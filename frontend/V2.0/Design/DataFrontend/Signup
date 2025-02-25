@@ -1,0 +1,24 @@
+sequenceDiagram
+  participant User
+  participant SignUpScreen
+  participant AuthService
+  participant Router
+
+  User->>SignUpScreen: Enter username, email, national ID, password
+  User->>SignUpScreen: Click "Sign Up"
+  SignUpScreen->>SignUpScreen: Validate input fields
+  SignUpScreen-->>User: Show errors if invalid
+
+  SignUpScreen->>AuthService: Call signUp API
+  AuthService-->>SignUpScreen: Return success/failure response
+
+  alt Success
+    SignUpScreen->>Router: Navigate to Login screen
+  else Failure
+    SignUpScreen-->>User: Show error message
+  end
+
+  User->>SignUpScreen: Click "Sign in with Google"
+  SignUpScreen->>AuthService: Call signUpGoogle API
+  AuthService-->>SignUpScreen: Return authentication response
+  SignUpScreen->>Router: Navigate based on response

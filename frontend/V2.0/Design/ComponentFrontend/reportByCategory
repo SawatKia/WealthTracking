@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant User
+  participant ReportByCategory
+  participant TransactionService
+
+  User->>ReportByCategory: Access ReportByCategory component
+  ReportByCategory->>TransactionService: Fetch monthly expense data (getMonthlyExpense)
+  TransactionService-->>ReportByCategory: Return monthly expense data
+  ReportByCategory->>User: Display Expense Report with pie chart
+  alt If loading
+    ReportByCategory->>User: Show ActivityIndicator
+  end
+  alt If error
+    ReportByCategory->>User: Show error message
+  end

@@ -1,0 +1,9 @@
+sequenceDiagram
+  participant User
+  participant InputFieldAuth
+  participant TextInput
+
+  User->>InputFieldAuth: Enter Text
+  InputFieldAuth->>TextInput: Update Value
+  TextInput->>InputFieldAuth: Return Updated Text
+  InputFieldAuth->>User: Display Input & Error (if any)

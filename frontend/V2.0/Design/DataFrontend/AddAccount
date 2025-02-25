@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant User
+    participant BankAccountScreen
+    participant useAccount
+    participant Modal
+    participant Router
+
+    User->>BankAccountScreen: Opens screen
+    activate BankAccountScreen
+
+    BankAccountScreen->>useAccount: getAllAccounts()
+    activate useAccount
+    useAccount-->>BankAccountScreen: Returns accounts
+    deactivate useAccount
+
+    alt Accounts loaded
+        BankAccountScreen->>BankAccountScreen: Renders accounts
+    else Loading
+        BankAccountScreen->>BankAccountScreen: Shows spinner
+    end
+
+    loop User Interaction
+        User->>BankAccountScreen: Clicks "Add Account"
+        alt Limit not reached
+            BankAccountScreen->>Router: Navigates to /AddAccountDetail
+        else Limit reached
+            BankAccountScreen->>BankAccountScreen: Disables button
+        end
+
+        User->>BankAccountScreen: Clicks delete
+        BankAccountScreen->>Modal: Opens modal
+        alt User confirms
+            BankAccountScreen->>useAccount: deleteAccount()
+            useAccount-->>BankAccountScreen: Deletes account
+            BankAccountScreen->>BankAccountScreen: Updates list
+        else User cancels
+            BankAccountScreen->>BankAccountScreen: Closes modal
+        end
+    end
+
+    BankAccountScreen-->>User: Displays UI
+    deactivate BankAccountScreen

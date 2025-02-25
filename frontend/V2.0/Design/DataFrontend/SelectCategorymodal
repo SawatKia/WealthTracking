@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant User
+  participant SelectCategoryModal
+  participant ParentComponent
+
+  User->>SelectCategoryModal: Selects Expense/Income/Transfer
+  SelectCategoryModal->>SelectCategoryModal: Update selectedOption state
+  SelectCategoryModal->>CategoryList: Fetch categories based on selectedOption
+
+  User->>SelectCategoryModal: Clicks on a category
+  SelectCategoryModal->>SelectCategoryModal: Update selectedCategory state
+  SelectCategoryModal->>ParentComponent: Call onSelect(category, type)

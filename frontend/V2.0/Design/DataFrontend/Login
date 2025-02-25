@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant User
+  participant LoginScreen
+  participant AuthService
+  participant Router
+  
+  User->>LoginScreen: Enter email & password
+  LoginScreen->>AuthService: Validate credentials
+  AuthService-->>LoginScreen: Success/Failure response
+  
+  alt Success
+    LoginScreen->>AuthService: Save credentials (if "Remember Me")
+    LoginScreen->>Router: Navigate to home screen
+  else Failure
+    LoginScreen->>User: Show error message
+  end
+
+  User->>LoginScreen: Click "Sign in with Google"
+  LoginScreen->>AuthService: Authenticate with Google
+  AuthService-->>LoginScreen: Google auth response
+  LoginScreen->>Router: Navigate to home screen (if success)

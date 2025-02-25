@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant User
+    participant DebtAccountScreen
+    participant DebtService
+    participant Router
+
+    User->>DebtAccountScreen: เปิดหน้า DebtAccountScreen
+    DebtAccountScreen->>DebtService: getAllDebts()
+    DebtService-->>DebtAccountScreen: ส่งข้อมูลหนี้สิน
+    DebtAccountScreen->>DebtService: getAllfi_code()
+    DebtService-->>DebtAccountScreen: ส่งข้อมูลธนาคาร
+
+    User->>DebtAccountScreen: กดปุ่ม "Update Debt"
+    DebtAccountScreen->>Router: เปลี่ยนหน้าไป UpdateDebtPayment
+
+    User->>DebtAccountScreen: กดปุ่ม "Delete Debt"
+    DebtAccountScreen->>DebtService: deleteDebt(debtId)
+    DebtService-->>DebtAccountScreen: ตอบกลับสถานะการลบ
+    DebtAccountScreen->>DebtService: getAllDebts() (โหลดข้อมูลใหม่)
+    DebtService-->>DebtAccountScreen: ส่งข้อมูลหนี้สินอัปเดต
