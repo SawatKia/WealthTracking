@@ -48,7 +48,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
   });
 
   const handleEdit = async (transactionId: string) =>{
-    setSelectedTransaction('')
+    setSelectedTransaction(null)
     router.push(`/EditTransaction/${transactionId}`);
 
   }
@@ -271,11 +271,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // Push elements to the ends
   },
   closeButton: {
-    // position: 'absolute'
-
-    // top: 10,
-    // right: 10,
-
     backgroundColor: 'transparent',
   },
   modalTitle: {

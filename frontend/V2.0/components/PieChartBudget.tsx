@@ -1,25 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { VictoryPie, VictoryLabel } from "victory-native";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
-import { useBudget, Budget } from "../services/BudgetService"; 
-// interface Budget {
-//   id: string;
-//   expense_type: string;
-//   monthly_limit: string | number;
-//   current_spending: string | number;
-//   month: string;
-// }
+import { useRouter } from "expo-router";
+import {Budget } from "../services/BudgetService"; 
 
 interface PieChartProps {
   budgets: Budget[]; 
 }
 
 const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
-  const { getBudgets } = useBudget(); 
-  const [spent, setSpent] = useState(0); 
-  const [totalBudget, setTotalBudget] = useState(0); 
-  const [loading, setLoading] = useState(true); 
 
   const router = useRouter();
 
@@ -34,6 +22,7 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
 
   const percentage = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0; // Calculate percentage spent
   console.log(percentage,totalLimit,totalSpent)
+  const remaining = totalLimit - totalSpent
 
   return (
     <View style={styles.container}>
@@ -59,7 +48,8 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
         style={{ fontSize: 20 }}
         x={200}
         y={200}
-        text={`Total Balance\n${totalLimit}฿`}
+        // text={`Total Balance\n${totalLimit}฿`}
+        text={`Total Spent\n${totalSpent}฿`}
       />
       </svg>
       <TouchableOpacity
@@ -77,8 +67,8 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
         </View>
         <View style={styles.divider} />
         <View style={styles.budgetItem}>
-          <Text style={styles.budgetValue}>{totalSpent}฿</Text>
-          <Text style={styles.budgetLabel}>Total Spent</Text>
+          <Text style={styles.budgetValue}>{remaining}฿</Text>
+          <Text style={styles.budgetLabel}>Remaining</Text>
         </View>
       </View>
     </View>
