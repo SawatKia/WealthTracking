@@ -17,7 +17,7 @@ const OcrMappingService = require('../services/OcrMappingService');
 
 const types = require('../../statics/types.json');
 const appConfigs = require('../configs/AppConfigs');
-const { Logger, formatResponse } = require("../utilities/Utils");
+const { Logger, formatResponse, formatBkkTime } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const { BankAccountUtils } = require("../utilities/BankAccountUtils")
 
@@ -44,6 +44,16 @@ class ApiController {
     this._checkGeminiRateLimit = this._checkGeminiRateLimit.bind(this);
   }
 
+  /**
+   * Check rate limits for a given Gemini model
+   * @param {string} modelName The Gemini model to check
+   * @param {number} estimatedTokens The estimated number of tokens to be used
+   * @returns {Promise<{allowed: boolean, retryAfter?: number, message?: string, headers?: {Retry-After: number}}>
+   *   allowed: true if the request is allowed, false otherwise
+   *   retryAfter: number of seconds to wait before retrying (only if allowed is false)
+   *   message: error message to return to the client (only if allowed is false)
+   *   headers: headers to set in the response (only if allowed is false)
+   */
   async _checkGeminiRateLimit(modelName, estimatedTokens) {
     logger.info('Checking Gemini rate limit');
     const now = new Date();
@@ -407,6 +417,7 @@ class ApiController {
    * @param {function} next - The next middleware function.
    */
   async verifySlip(req, res, next) {
+    //TODO - test with at least 5 different image to check ratelimit
     logger.info("Processing slip verification request");
     try {
       // Validate file input
@@ -450,24 +461,24 @@ class ApiController {
 
       // Check Gemini rate limit before making LLM call
       const modelName = appConfigs.gemini.models.classification; // Default model for classification
-      //FIXME - English 4 characters = 1 token, Thai 1-2 characters = 1 token
-      //FIXME - get the precise token by sending asking to LLM(use countTokens method in GoogleGenerativeAI in LLMService.js)
+      //NOTE - English 4 characters = 1 token, Thai 1-2 characters = 1 token
+      //NOTE - get the precise token by sending asking to LLM(use countTokens method in GoogleGenerativeAI in LLMService.js)
       //NOTE - or after sending prompt to llm. since from these log messages:
       //2025-01-23 20:14:12 [LLMService.js/_generateContentWithMetrics():48] debug: llm[gemini-1.5-pro-002] response in 3078ms: {"category":"Expense","type":"Food","confidence":0.9,"reasoning":"The memo 'บะหมี่ไก่ทอด' (fried chicken noodles) clearly indicates a food purchase."}
       //2025-01-23 20:14:12 [LLMService.js/_generateContentWithMetrics():49] debug: Token usage: {"promptTokenCount":779,"candidatesTokenCount":64,"totalTokenCount":843}
-      const estimatedTokens = Math.ceil(ocrText.length / 4); // Rough estimate of tokens
-      logger.info("checking the request limit quota")
-      const rateLimitCheck = await this._checkGeminiRateLimit(modelName, estimatedTokens);
-
-      if (!rateLimitCheck.allowed) {
-        return res.status(429)
-          .set(rateLimitCheck.headers)
-          .json({
-            status_code: 429,
-            message: rateLimitCheck.message,
-            retry_after: rateLimitCheck.retryAfter
-          });
-      }
+      // const estimatedTokens = Math.ceil(ocrText.length / 4); // Rough estimate of tokens
+      // logger.info("checking the request limit quota")
+      // const rateLimitCheck = await this._checkGeminiRateLimit(modelName, estimatedTokens);
+      // logger.warn(`rateLimitCheck: ${JSON.stringify(rateLimitCheck)}`);
+      // if (!rateLimitCheck.allowed) {
+      //   return res.status(429)
+      //     .set(rateLimitCheck.headers)
+      //     .json({
+      //       status_code: 429,
+      //       message: rateLimitCheck.message,
+      //       retry_after: rateLimitCheck.retryAfter + " seconds"
+      //     });
+      // }
 
       // Get transaction type from LLM
       const { category: transactionCategory, type: transactionType } = await LLMService.classifyTransaction(ocrText);
@@ -539,6 +550,14 @@ class ApiController {
         next(error);
       } else if (error.message.includes("account not found in user's accounts")) {
         next(MyAppErrors.badRequest(error.message));
+      } else if (error.message.includes("Insufficient balance")) {
+        next(MyAppErrors.badRequest(error.message));
+      } else if (error.message.includes("Resource exhausted") ||
+        error.message.includes("Too many requests")) {
+        const errorTime = new Date();
+        const seconds = parseInt(error.response.headers['retry-after']) || 60;
+        const retryAfter = formatBkkTime(errorTime.getTime() / 1000 + seconds);
+        next(MyAppErrors.tooManyRequests(error.message, { retryAfter }, { retryAfter: seconds }));
       } else {
         next(MyAppErrors.internalServerError("Internal server error"));
       }
