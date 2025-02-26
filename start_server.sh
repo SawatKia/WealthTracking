@@ -115,8 +115,24 @@ echo -e "\033[1;32m++++Server is ready to use!++++\033[0m"
 
 # (Optional) Create a cronjob for Ubuntu (staging/production)
 if [ "$(uname -s)" = "Linux" ]; then
-    (crontab -l 2>/dev/null; echo "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
-    (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh") | crontab -
+    # Remove auto-authen script in old path, if it exists
+    if [ -f "/home/sawat/Auto-Authen-KMITL/auto_authen.sh" ]; then
+        echo -e "\033[7;34m>>>\033[0m Removing existing auto-authen script..."
+        rm -f "/home/sawat/Auto-Authen-KMITL/auto_authen.sh"
+    fi
+
+    # First, remove any existing entries to prevent duplicates
+    (crontab -l 2>/dev/null | grep -v "start_server.sh" \
+                           | grep -v "update-nginx-blacklist.sh" \
+                           | grep -v "internet.sh" \
+                           | grep -v "auto-authen.sh" \
+                           | grep -v "/home/sawat/Auto-Authen-KMITL/auto_authen.sh") | crontab -
+
+    # Add all cron jobs at once
+    (crontab -l 2>/dev/null; echo "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'
+*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
+*/20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
+    
     echo -e "\033[7;34m>>>\033[0m cronjob created."
 fi
 echo "Starting server script completed."
