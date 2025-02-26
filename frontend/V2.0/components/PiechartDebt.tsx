@@ -1,46 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { VictoryPie, VictoryTheme } from 'victory-native';
-import { useDebt } from '../services/DebtService'; // เปลี่ยน path ตามโครงสร้างโปรเจค
+import { VictoryPie, VictoryTheme, VictoryLabel } from 'victory-native';
 
-const DebtPieChart = () => {
-    const { getAllDebts, loading, error } = useDebt();
-    const [chartData, setChartData] = useState<{ x: string; y: number }[]>([]);
-    console.log(chartData);
+interface DebtPieChartProps {
+    debts: { debt_name: string; loan_balance: number }[];
+}
+
+const DebtPieChart: React.FC<DebtPieChartProps> = ({ debts }) => {
+    const [chartData, setChartData] = useState<{ x: string; y: number; label: string }[]>([]);
+    const [totalDebt, setTotalDebt] = useState<number>(0);
 
     // ฟังก์ชันสำหรับแปลงข้อมูลหนี้โดยใช้ remaining balance
-    const transformDebtData = (debts: any[]) => {
-        return debts.map((debt) => {
-            // คำนวณ total paid และ remaining balance
-            const totalPaid = debt.current_installment * (debt.loan_principle / debt.total_installments);
-            const remainingBalance = debt.loan_principle - totalPaid;
+    const transformDebtData = (debts: { debt_name: string; loan_balance: number }[]) => {
+        // เรียงลำดับข้อมูลตามยอดหนี้จากมากไปน้อย
+        const sortedDebts = [...debts].sort((a, b) => b.loan_balance - a.loan_balance);
 
+        // คำนวณยอดหนี้รวมทั้งหมด
+        const total = sortedDebts.reduce((sum, debt) => sum + debt.loan_balance, 0);
+        setTotalDebt(total);
+
+        return sortedDebts.map((debt) => {
+            const percentage = ((debt.loan_balance / total) * 100).toFixed(1);
             return {
-                x: debt.debt_name, // แสดงเฉพาะชื่อหนี้
-                y: remainingBalance, // ใช้ remaining balance เป็นค่าสัดส่วน
+                x: debt.debt_name,
+                y: debt.loan_balance,
+                label: `${debt.debt_name}`,
             };
         });
     };
 
-    // ดึงข้อมูลหนี้และแปลงข้อมูล
+    // แปลงข้อมูลหนี้เมื่อได้รับ props
     useEffect(() => {
-        const fetchDebts = async () => {
-            try {
-                const debts = await getAllDebts();
-                if (debts) {
-                    const transformedData = transformDebtData(debts);
-                    setChartData(transformedData);
-                }
-            } catch (err) {
-                console.error('Error fetching debts:', err);
-            }
-        };
-
-        fetchDebts();
-    }, []);
+        if (debts && debts.length > 0) {
+            const transformedData = transformDebtData(debts);
+            setChartData(transformedData);
+        }
+    }, [debts]);
 
     // แสดง Loading Indicator ขณะรอข้อมูล
-    if (loading) {
+    if (!debts || debts.length === 0) {
         return (
             <View style={styles.container}>
                 <ActivityIndicator size="large" color="#4957AA" />
@@ -48,29 +46,53 @@ const DebtPieChart = () => {
         );
     }
 
-    // แสดงข้อความผิดพลาดหากมี
-    if (error) {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.errorText}>Error: {error}</Text>
-            </View>
-        );
-    }
-
-    // แสดง Pie Chart
+    // แสดง Pie Chart พร้อมข้อมูลเพิ่มเติม
     return (
         <View style={styles.container}>
-            {/* ลบหัวข้อ Debt by Category ออกแล้ว */}
+
             <VictoryPie
                 data={chartData}
                 theme={VictoryTheme.material}
-                colorScale={['#4957AA', '#7F8CD9', '#9AC9F3', '#FF8C00', '#FF6347']} // กำหนดสีสำหรับแต่ละหมวดหมู่
-                labelRadius={160} // ระยะห่างของป้ายชื่อ
-                labels={({ datum }) => `${datum.x}`} // แสดงเฉพาะชื่อหนี้ ไม่แสดงจำนวนเงิน
+                colorScale={['#4957AA', '#7F8CD9', '#9AC9F3', '#FF8C00', '#FF6347']}
+                labelRadius={({ datum }) => 130 + datum.y / 20} // ปรับระยะห่างของป้ายชื่อตามขนาดของส่วน
+                labels={({ datum }) => datum.label}
                 style={{
-                    labels: { fontSize: 12, fill: '#000' }, // สไตล์ของป้ายชื่อ
+                    labels: {
+                        fontSize: 12,
+                        fill: '#000',
+                        lineHeight: 1.5
+                    },
+                    data: {
+                        fillOpacity: 0.9,
+                        stroke: "#fff",
+                        strokeWidth: 1
+                    }
                 }}
+                animate={{
+                    duration: 1000,
+                    easing: "bounce"
+                }}
+                sortKey="y"
+                sortOrder="descending"
             />
+
+            <View style={styles.legendContainer}>
+                {chartData.map((item, index) => (
+                    <View key={index} style={styles.legendItem}>
+                        <View
+                            style={[
+                                styles.legendColor,
+                                {
+                                    backgroundColor: ['#4957AA', '#7F8CD9', '#9AC9F3', '#FF8C00', '#FF6347'][index % 5]
+                                }
+                            ]}
+                        />
+                        <Text style={styles.legendText}>
+                            {item.x}: {item.y.toLocaleString()} บาท
+                        </Text>
+                    </View>
+                ))}
+            </View>
         </View>
     );
 };
@@ -83,12 +105,41 @@ const styles = StyleSheet.create({
         padding: 16,
         backgroundColor: '#F0F6FF',
     },
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: '#333',
+    },
+    subtitle: {
+        fontSize: 14,
+        marginBottom: 16,
+        color: '#666',
+    },
     errorText: {
         fontSize: 16,
         color: 'red',
         textAlign: 'center',
     },
-    // ลบ title style ที่ไม่ได้ใช้แล้ว
+    legendContainer: {
+        marginTop: 20,
+        alignSelf: 'stretch',
+    },
+    legendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    legendColor: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        marginRight: 8,
+    },
+    legendText: {
+        fontSize: 12,
+        color: '#333',
+    },
 });
 
 export default DebtPieChart;
