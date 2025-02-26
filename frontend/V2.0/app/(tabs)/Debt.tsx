@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Debt, useDebt } from '../../services/DebtService';
 import DebtPieChart from '../../components/PiechartDebt';
-import DebtYearlyPaymentsChart from '../../components/DebtYearlyPaymentsChart';
 
 export default function DebtAccountScreen() {
   const [expandedDebt, setExpandedDebt] = useState<string | null>(null);
@@ -39,7 +38,7 @@ export default function DebtAccountScreen() {
 
   const handleUpdateDebt = (debtId: string) => {
     router.push({
-      pathname: '/UpdateDebtPayment',
+      pathname: '/DebtPayment',
       params: { debtId },
     });
   };
@@ -97,21 +96,17 @@ export default function DebtAccountScreen() {
         </View>
 
         <View style={styles.pieChartContainer}>
-          <DebtPieChart />
-        </View>
-
-        {/* Yearly Debt Payments Chart */}
-        <View style={styles.chartContainer}>
-          <DebtYearlyPaymentsChart />
+          <DebtPieChart debts={debtDetails} />
         </View>
 
         <View style={styles.debtDetailsContainer}>
           <Text style={styles.sectionTitle}>Debt Details</Text>
           {debtDetails.map((debt, index) => {
-            const totalPaid = debt.current_installment * (debt.loan_principle / debt.total_installments);
-            const remainingBalance = debt.loan_principle - totalPaid;
-            const progressPercentage = (debt.current_installment / debt.total_installments) * 100;
+            const remainingBalance = debt.loan_balance; // Get remaining balance directly from API
+            const totalPaid = debt.loan_principle - remainingBalance; // Calculate totalPaid based on remainingBalance
+            const progressPercentage = (totalPaid / debt.loan_principle) * 100;
             const monthlyPayment = debt.loan_principle / debt.total_installments;
+
 
             return (
               <View key={index} style={styles.debtDetail}>
@@ -222,14 +217,6 @@ const styles = StyleSheet.create({
   pieChartContainer: {
     marginBottom: 20,
   },
-  chartContainer: {
-    marginBottom: 20,
-    height: 250,
-    borderRadius: 8,
-    padding: 10,
-    elevation: 3,
-  },
-
   debtDetailsContainer: {
     marginTop: 16,
   },

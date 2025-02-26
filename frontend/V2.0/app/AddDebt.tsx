@@ -220,7 +220,7 @@ const AddDebtDetail = () => {
 
                     {/* Loan Balance Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Loan Balance</Text>
+                        <Text style={styles.label}>Remaining Balance</Text>
                         <TextInput
                             style={styles.input}
                             value={loanBalance}

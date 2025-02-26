@@ -1,126 +1,167 @@
-//DebtPayment.tsx Original From Dao
-import { StatusBar } from "expo-status-bar";
-import {
-    View,
-    Text,
-    TextInput,
-    StyleSheet,
-    Button,
-    TouchableOpacity,
-    SafeAreaView,
-    Pressable,
-    Modal,
-} from "react-native";
-import { Link } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useState, useEffect } from "react";
-import { useNavigation, useRouter, useLocalSearchParams } from "expo-router";
-
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import DateTimePicker from "react-native-ui-datepicker";
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import dayjs from "dayjs";
+import { Ionicons } from "@expo/vector-icons";
+import { useDebt } from "../services/DebtService";
+import { useTransactions } from "../services/TransactionService";
+import { useAccount } from "../services/AccountService";
 import DropDownPicker from "react-native-dropdown-picker";
 
-import dayjs, { Dayjs } from "dayjs";
-
-import { RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../constants/NavigateType";
-import SelectCategoryModal from "./SelectCategoryModal";
-
-type CreateTransactionRouteProp = RouteProp<
-    RootStackParamList,
-    "CreateTransaction"
->;
-
-const options = {
-    bank_accounts: [
-        {
-            account_number: "1234567890",
-            fi_code: "001",
-            national_id: "1234567890123",
-            display_name: "Main Account",
-            account_name: "John Doe",
-            balance: 50000.0,
-        },
-        {
-            account_number: "9876543210",
-            fi_code: "002",
-            national_id: "1234567890123",
-            display_name: "Savings",
-            account_name: "John Doe",
-            balance: 100000.0,
-        },
-        {
-            account_number: "5555555555",
-            fi_code: "001",
-            national_id: "9876543210123",
-            display_name: "Personal Account",
-            account_name: "Jane Smith",
-            balance: 75000.0,
-        },
-    ],
-};
-export default function CreateTransaction({
-    route,
-}: {
-    route: CreateTransactionRouteProp;
-}) {
-    const router = useRouter()
+const UpdateDebtPayment = () => {
+    const { debtId } = useLocalSearchParams<{ debtId: string }>();
+    const [date, setDate] = useState(dayjs());
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState("");
+    const [detail, setDetail] = useState("");
+    const [category, setCategory] = useState("Expense : Debt Payment");
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [paymentChannel, setPaymentChannel] = useState<string | null>(null);
+    const [originalFiCode, setOriginalFiCode] = useState<string | null>(null);
+    const [accountItems, setAccountItems] = useState<{ label: string; value: string }[]>([]);
     const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
-    const [isCategoryPickerVisible, setCategoryPickerVisibility] = useState(false);
-    const [date, setDate] = useState<Dayjs>(dayjs());
-    const [amount, setAmount] = useState("");
+    const [paymentChannelPlaceholder, setPaymentChannelPlaceholder] = useState("Select Payment Channel");
 
-    const [selectedCategory, setSelectedCategory] = useState({
-        category: null as string | null,
-        type: null as string | null,
-    });
-    const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null);
-    const [selectedAccountItem, setSelectedAccountItem] = useState<
-        { label: string; value: string }[]
-    >([]);
-
-    const handleSelectCategory = (category: string, type: string) => {
-        setSelectedCategory({ category, type });
-        setCategoryPickerVisibility(false);
-    };
+    const router = useRouter();
+    const { updateDebtPayment, getAllDebts, updateDebt } = useDebt();
+    const { createTransaction } = useTransactions();
+    const { getAllAccounts } = useAccount();
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const accountItems = options.bank_accounts.map((item) => ({
-                    label: item.display_name,
-                    value: item.display_name,
-                }));
+        const fetchDebtAndAccounts = async () => {
+            const debts = await getAllDebts();
+            const selectedDebt = debts.find(debt => debt.debt_id === debtId);
 
-                setSelectedAccountItem(accountItems);
-            } catch (error) {
-                console.error("Error fetching data:", error);
+            if (selectedDebt) {
+                // Store the original fi_code for reference
+                setOriginalFiCode(selectedDebt.fi_code);
+
+                // Find the matching account to get complete account details
+                const accounts = await getAllAccounts();
+                const matchingAccount = accounts.find(account => account.fi_code === selectedDebt.fi_code);
+
+                if (matchingAccount) {
+                    // Store the complete account info (both fi_code and account_number)
+                    setPaymentChannel(JSON.stringify({
+                        account_number: matchingAccount.account_number,
+                        fi_code: matchingAccount.fi_code
+                    }));
+                    setPaymentChannelPlaceholder(matchingAccount.display_name);
+                } else if (selectedDebt.fi_code) {
+                    // If no matching account but we have fi_code, still set it
+                    setPaymentChannel(JSON.stringify({
+                        account_number: "",
+                        fi_code: selectedDebt.fi_code
+                    }));
+                    setPaymentChannelPlaceholder(selectedDebt.fi_code);
+                }
+
+                // Prepare dropdown items
+                const accountItems = accounts.map(account => ({
+                    label: account.display_name,
+                    value: JSON.stringify({
+                        account_number: account.account_number,
+                        fi_code: account.fi_code
+                    }),
+                }));
+                setAccountItems(accountItems);
             }
         };
 
-        fetchData();
-    }, []);
+        fetchDebtAndAccounts();
+    }, [debtId]);
+
+    const validateInputs = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!date) newErrors.date = "Date is required";
+        if (!paymentAmount.trim()) newErrors.paymentAmount = "Payment Amount is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSave = async () => {
+        if (!validateInputs()) return;
+
+        try {
+            const selectedAccountObj = paymentChannel ? JSON.parse(paymentChannel) : null;
+            const selectedFiCode = selectedAccountObj ? selectedAccountObj.fi_code : originalFiCode;
+
+            // Prepare payment details
+            const paymentDetails: any = {
+                date: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                paymentAmount: Number(paymentAmount),
+                detail: detail
+            };
+
+            // Update debt payment (this doesn't update fi_code)
+            await updateDebtPayment(debtId, paymentDetails);
+
+            // If payment channel has been changed, update the debt with PATCH API
+            if (selectedFiCode !== originalFiCode) {
+                // Update debt's fi_code with PATCH API
+                await updateDebt(debtId, {
+                    fi_code: selectedFiCode
+                });
+                console.log("Updated debt fi_code to:", selectedFiCode);
+            }
+
+            // Create transaction with the selected payment channel
+            const transactionDetails = {
+                transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                category: "Expense",
+                type: "Debt Payment",
+                amount: Number(paymentAmount),
+                note: detail,
+                debt_id: debtId,
+                sender: {
+                    account_number: selectedAccountObj ? selectedAccountObj.account_number : "",
+                    fi_code: selectedFiCode,
+                },
+            };
+
+            await createTransaction(transactionDetails);
+
+            Alert.alert("Success", "Debt payment updated successfully");
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            Alert.alert("Error", "Failed to update debt payment");
+            console.error("Error updating debt payment:", error);
+        }
+    };
 
     const onChangeDate = (params: any) => {
         setDate(params.date);
-        console.log(date);
+    };
+
+    const handleNumberInput = (text: string, setter: (value: string) => void) => {
+        const regex = /^\d*\.?\d*$/;
+        if (regex.test(text)) {
+            setter(text);
+        }
     };
 
     return (
-        <SafeAreaView>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
             <View style={styles.container}>
-                <View style={styles.rowTile}>
-                    <Ionicons
-                        name="calendar-clear"
-                        style={styles.iconTitle}
-                        size={20}
-                        color="#fff"
-                    />
-                    <Text style={styles.title}>Date and time</Text>
-                </View>
+                <View style={styles.inputWrapper}>
+                    <Text style={styles.title}>Update Debt</Text>
 
-                <View style={styles.rowInput}>
-                    <View style={styles.inputsContainer}>
+                    {/* Category Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Category <Text style={styles.redLabel}>(Cannot be edited)</Text></Text>
+                        <TextInput
+                            style={styles.input}
+                            value={category}
+                            editable={false}
+                        />
+                    </View>
+
+                    {/* Date Picker */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Date</Text>
                         <TouchableOpacity
                             style={styles.inputButton}
                             onPress={() => setDatePickerVisibility(!isDatePickerVisible)}
@@ -131,17 +172,8 @@ export default function CreateTransaction({
                                 style={styles.iconInput}
                                 color="#9AC9F3"
                             />
-
-                            {date ? <Text>{dayjs(date).format("DD MMM YYYY ")}</Text> : "..."}
-                            <Ionicons
-                                name="time"
-                                size={20}
-                                style={styles.iconInput}
-                                color="#9AC9F3"
-                            />
-                            {date ? <Text>{dayjs(date).format("HH:mm")}</Text> : "..."}
+                            {date ? <Text>{dayjs(date).format("DD MMM YYYY HH:mm")}</Text> : "..."}
                         </TouchableOpacity>
-
                         {isDatePickerVisible && (
                             <DateTimePicker
                                 mode="single"
@@ -150,171 +182,78 @@ export default function CreateTransaction({
                                 timePicker={true}
                             />
                         )}
+                        {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
                     </View>
-                </View>
-            </View>
 
-            <View style={styles.container}>
-                <View style={styles.rowTile}>
-                    <Ionicons
-                        name="shapes"
-                        style={styles.iconTitle}
-                        size={20}
-                        color="#fff"
-                    />
-                    <Text style={styles.title}>Category</Text>
-                </View>
+                    {/* Payment Amount Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Payment Amount</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={paymentAmount}
+                            onChangeText={(text) => handleNumberInput(text, setPaymentAmount)}
+                            placeholder="Enter Payment Amount"
+                            keyboardType="numeric"
+                        />
+                        {errors.paymentAmount && <Text style={styles.errorText}>{errors.paymentAmount}</Text>}
+                    </View>
 
-                <View style={styles.rowInput}>
-                    <View style={styles.inputsContainer}>
-                        <TouchableOpacity onPress={() => { setCategoryPickerVisibility(false) }} style={styles.inputButton}>
-                            <Text>{`${selectedCategory.type || 'Expense'} : ${selectedCategory.category || 'Debt Payment'}`}</Text>
+                    {/* Payment Channel Input */}
+                    <View style={[styles.inputContainer, { zIndex: 1000 }]}>
+                        <Text style={styles.label}>Payment Channel</Text>
+                        <DropDownPicker
+                            open={isAccountPickerVisible}
+                            value={paymentChannel}
+                            items={accountItems}
+                            setOpen={setAccountPickerVisibility}
+                            setValue={setPaymentChannel}
+                            setItems={setAccountItems}
+                            placeholder={paymentChannelPlaceholder}
+                            searchable={true}
+                            style={[styles.dropdown, { zIndex: 1000 }]}
+                            dropDownContainerStyle={[styles.dropdownContainer, { zIndex: 1000 }]}
+                            zIndex={1000}
+                            zIndexInverse={3000}
+                        />
+                    </View>
 
+                    {/* Detail Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Detail (Optional)</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={detail}
+                            onChangeText={setDetail}
+                            placeholder="Enter Detail"
+                        />
+                    </View>
+
+                    {/* Buttons */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.cancelButtonStyle} onPress={() => router.push("/(tabs)/Debt")}>
+                            <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.buttonText}>Save</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
-
-            <Modal
-                visible={isCategoryPickerVisible}
-                animationType="slide"
-                onRequestClose={() => setCategoryPickerVisibility(false)}
-            >
-                <SelectCategoryModal selected={selectedCategory.category ?? ''} onSelect={handleSelectCategory} />
-            </Modal>
-
-            <View style={styles.container}>
-                <View style={styles.rowTile}>
-                    <Ionicons
-                        name="briefcase"
-                        style={styles.iconTitle}
-                        size={20}
-                        color="#fff"
-                    />
-                    <Text style={styles.title}>Debt ID</Text>
-                </View>
-
-                <View style={styles.rowInput}>
-                    <View
-                        style={[
-                            styles.inputsContainer,
-                            { height: isAccountPickerVisible ? 150 : null },
-                        ]}
-                    >
-                        <DropDownPicker
-                            open={isAccountPickerVisible}
-                            value={selectedAccountValue}
-                            items={selectedAccountItem}
-                            setOpen={setAccountPickerVisibility}
-                            setValue={setSelectedAccountValue}
-                            setItems={setSelectedAccountItem}
-                            placeholder="[Select Debt ID]"
-                            style={styles.inputButton}
-                            disableBorderRadius={true}
-                            textStyle={{ textAlign: "center" }}
-                            dropDownContainerStyle={styles.dropdownContainer}
-                        />
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.container}>
-                <View style={styles.rowTile}>
-                    <Ionicons
-                        name="cash"
-                        style={styles.iconTitle}
-                        size={20}
-                        color="#fff"
-                    />
-                    <Text style={styles.title}>Amount</Text>
-                </View>
-
-                <View style={styles.rowInput}>
-                    <View style={styles.inputsContainer}>
-                        <TextInput
-                            placeholder="0.00"
-                            onChangeText={setAmount}
-                            keyboardType="numeric"
-                            value={amount}
-                            returnKeyType="done"
-                            style={[styles.inputButton, { width: "65%" }]}
-                        />
-
-                        <Text style={styles.textInput}>THB</Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.container}>
-                <View style={styles.rowTile}>
-                    <Ionicons
-                        name="shapes"
-                        style={[styles.iconTitle, { backgroundColor: "#9AC9F3" }]}
-                        size={20}
-                        color="#fff"
-                    />
-                    <Text style={styles.title}>Detail</Text>
-                    <Text style={{ color: "#00000040" }}> *Optional</Text>
-                </View>
-
-                <View style={styles.rowInput}>
-                    <View style={styles.inputsContainer}>
-                        <TextInput
-                            style={[styles.inputButton, { backgroundColor: "#9AC9F357" }]}
-                            returnKeyType="done"
-                        />
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.sumbitContainer}>
-                <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
-
-                <TouchableOpacity style={styles.saveButton}><Text>Save</Text></TouchableOpacity>
-            </View>
-        </SafeAreaView>
+        </ScrollView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-        margin: 10,
-        padding: 16,
-        backgroundColor: "#f9f9f9",
-        borderRadius: 8,
-        elevation: 2,
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-    },
-    rowTile: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    iconTitle: {
-        backgroundColor: "#4957AA",
-        padding: 8,
-        borderRadius: 25,
-        marginRight: 5,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: "600",
-        marginLeft: 5,
-    },
-    rowInput: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-
-    inputsContainer: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        width: "90%",
-        marginLeft: 40,
-    },
+    container: { flex: 1, padding: 20, backgroundColor: "#F0F6FF" },
+    inputWrapper: { backgroundColor: "#fff", borderRadius: 16, padding: 20, shadowOpacity: 0.1, marginTop: 20 },
+    title: { fontSize: 16, fontWeight: "600", textAlign: "center", marginBottom: 20 },
+    inputContainer: { marginBottom: 20 },
+    label: { fontSize: 14, marginBottom: 8 },
+    input: { height: 45, borderColor: "#ccc", borderWidth: 1, borderRadius: 12, paddingLeft: 15, fontSize: 14, justifyContent: "center" },
+    buttonContainer: { flexDirection: "row", justifyContent: "space-between" },
+    cancelButtonStyle: { backgroundColor: "#E2E2E2", paddingVertical: 12, paddingHorizontal: 35, borderRadius: 8 },
+    saveButton: { backgroundColor: "#9AC9F3", paddingVertical: 12, paddingHorizontal: 50, borderRadius: 8 },
+    buttonText: { fontSize: 16, fontWeight: "600" },
     inputButton: {
         flexDirection: "row",
         backgroundColor: "#4957AA40",
@@ -323,18 +262,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-
         width: "100%",
-
         borderWidth: 0,
-    },
-    textInput: {
-        backgroundColor: "#4957AA40",
-        borderRadius: 8,
-        width: "25%",
-        textAlign: "center",
-        paddingVertical: 8,
-        marginLeft: 20,
     },
     iconInput: {
         marginHorizontal: 10,
@@ -342,33 +271,29 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         padding: 3,
     },
+    errorText: {
+        color: "red",
+        fontSize: 12,
+        marginTop: 5,
+    },
+    redLabel: {
+        color: "red",
+        fontSize: 12,
+    },
+    dropdown: {
+        height: 45,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingLeft: 15,
+        fontSize: 14,
+        color: "#333",
+    },
     dropdownContainer: {
-        borderRadius: 8,
-        backgroundColor: "#BEC2E0",
-        borderWidth: 0,
-        zIndex: 1,
-    },
-
-    sumbitContainer: {
-        flexDirection: "row",
-        display: "flex",
-        justifyContent: "space-around",
-        marginTop: 10,
-    },
-
-    cancelButton: {
-        backgroundColor: "#E2E2E2",
-        paddingHorizontal: 30,
-        paddingVertical: 10,
-        borderRadius: 8,
-        fontSize: 16,
-    },
-
-    saveButton: {
-        backgroundColor: "#9AC9F3",
-        paddingHorizontal: 60,
-        paddingVertical: 10,
-        borderRadius: 8,
-        fontSize: 16,
+        borderColor: "#ccc",
+        borderRadius: 12,
+        backgroundColor: "#fff",
     },
 });
+
+export default UpdateDebtPayment;

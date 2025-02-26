@@ -34,6 +34,7 @@ interface UpdateDebtPaymentParams {
     date: string;
     paymentAmount: number;
     detail: string;
+    fi_code?: string; // Optional fi_code parameter
 }
 
 interface UpdateDebtParams {
