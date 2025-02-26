@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
     volumes:
       # no needs to oaccess from host machine, the app access inside constainer only.
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
@@ -25,14 +25,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: |
-      sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
+    command: ["npm", "run", "start"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose\ healthcheck"]
-      interval: 1h
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-prodContainer%20healthcheck:"]
+      interval: 10m
+      timeout: 20s
+      retries: 6
+      start_period: 60s
     logging:
       driver: "json-file"
       options:

@@ -1,0 +1,14 @@
+sequenceDiagram
+  participant User
+  participant DebtPieChart
+  participant DebtService
+  participant View
+
+  User->>DebtPieChart: Load component
+  DebtPieChart->>DebtService: Request getAllDebts()
+  DebtService-->>DebtPieChart: Return debts data
+  DebtPieChart->>DebtPieChart: Transform debt data
+  DebtPieChart->>View: Render Pie Chart with transformed data
+  View->>User: Display Pie Chart
+  DebtPieChart->>View: Show Loading Indicator (if loading)
+  DebtPieChart->>View: Show Error (if error)

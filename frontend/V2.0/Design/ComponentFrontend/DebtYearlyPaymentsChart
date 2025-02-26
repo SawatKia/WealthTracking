@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant User
+  participant DebtYearlyPaymentsChart
+  participant API
+  participant UI
+
+  User->>DebtYearlyPaymentsChart: Load Component
+  DebtYearlyPaymentsChart->>API: Fetch Monthly Debt Payments
+  API-->>DebtYearlyPaymentsChart: Return Data
+  DebtYearlyPaymentsChart->>DebtYearlyPaymentsChart: Process & Format Data
+  DebtYearlyPaymentsChart->>UI: Render Chart
+  UI-->>User: Display Debt Payments Chart

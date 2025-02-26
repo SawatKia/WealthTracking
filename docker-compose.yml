@@ -8,26 +8,35 @@ services:
         - NODE_ENV=${NODE_ENV}
         - APP_PORT=${APP_PORT}
         - APP_DOMAIN=${APP_DOMAIN}
-    container_name: node-container
+    container_name: ${APP_DOMAIN}-devContainer
     env_file: 
       - ./.env
     ports:
-      - "${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}" # Bind to 0.0.0.0 to allow external access
     volumes:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
       - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
+    command: >
+      sh -c "
+        if [ \"$NODE_ENV\" = \"production\" ]; then
+          npm run start;
+        elif [ \"$NODE_ENV\" = \"test\" ]; then
+          npm run test;
+        else
+          npm run dev;
+        fi"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:${APP_PORT}/health?service=docker-compose\ healthcheck"]
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-devContainer%20healthcheck"]
       interval: 5m # Poll every 5 minutes after the container is healthy
-      timeout: 10s # Allow up to 10 seconds for each health check command
-      retries: 3 # Retry up to 3 times before considering the container unhealthy
-      start_period: 30s # Allow up to 120 seconds for initialization before the first check
+      timeout: 20s # Allow up to 20 seconds for each health check command
+      retries: 6 # Retry up to 6 times before considering the container unhealthy
+      start_period: 30s # Allow up to 30 seconds for initialization before the first check
     logging:
       driver: "json-file"
       options:

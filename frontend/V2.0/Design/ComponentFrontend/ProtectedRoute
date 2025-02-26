@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant User
+  participant ProtectedRoute
+  participant AuthContext
+  participant LoginPage
+
+  User->>ProtectedRoute: Access protected route
+  ProtectedRoute->>AuthContext: Check if isAuthenticated
+  AuthContext-->>ProtectedRoute: Return authentication status
+  alt If authenticated
+    ProtectedRoute->>User: Render protected content (Outlet)
+  else If not authenticated
+    ProtectedRoute->>User: Navigate to LoginPage
+    User->>LoginPage: Redirect to /login
+  end

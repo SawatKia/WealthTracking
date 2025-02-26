@@ -1,12 +1,12 @@
 import React, { useState, useEffect,useCallback } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import AccountCard from "../../components/AccountCard"
-import DropdownButton from "../../components/DropdownButton";
+import DropdownButton from "../../components/CategoryDropdown";
 import TransactionCard from "../../components/TransactionCard";
 import { Ionicons} from "@expo/vector-icons"; 
 import { useRouter, useFocusEffect } from 'expo-router';
 
-import { Account, useAccount } from "@/services/AccountService"; // นำเข้า useAccount
+import { Account, useAccount } from "@/services/AccountService"; 
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -109,29 +109,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
+            style={[styles.link, {backgroundColor: '#7F8CD9', borderBottomLeftRadius:8, 
+              borderBottomRightRadius:8 }]} 
             onPress={() => {
               setAddshowAddPopup(false);
               router.push('/UploadSlip')
-              console.log('Navigate to Page 2');
-  
-              // Add your navigation logic here
             }}
           >
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Create Transaction{"\n"}By Slip</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-            style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
-              borderBottomRightRadius:8 }]} 
-              onPress={() => {
-                router.push('/DebtPayment')
-                setAddshowAddPopup(false);
-            }}
-          >
-            <Text style={[styles.linkText, {color: '#ffffff' }]}>Dept Payment</Text>
-          </TouchableOpacity>
-
         </View>
       )}
 

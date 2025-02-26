@@ -1,0 +1,33 @@
+sequenceDiagram
+    actor User
+    participant "ProfileScreen" as PS
+    participant "ProfileService" as PSvc
+
+
+    %% Load User Data
+    User ->> PS: Open Profile Screen
+    PS ->> PSvc: getAllUsers()
+    PSvc -->> PS: Return User Data
+    User ->> PS: Set State (username, email, birthday, profileImage)
+
+    %% Edit Profile
+    User ->> PS: Edit Field (Username, Email, Birthday, Password)
+    PS ->> PS: Update Temporary State
+    User ->> PS: Save Changes
+    User ->> PSvc: editUser(updatedUser)
+    PSvc -->> PS: Return Success or Failure
+    PS ->> Alert: Show Success or Error Message
+
+    %% Upload Profile Image
+    User ->> PS: Tap Edit Photo
+    PS ->> ImagePicker: requestMediaLibraryPermissionsAsync()
+    ImagePicker -->> PS: Permission Granted
+    PS ->> ImagePicker: launchImageLibraryAsync()
+    ImagePicker -->> PS: Return Selected Image
+    PS ->> PS: Update Profile Image State
+
+    %% Logout
+    User ->> PS: Tap Logout
+    PS ->> PS: Show Logout Modal
+    User ->> PS: Confirm Logout
+    PS ->> Router: Navigate to Login Page

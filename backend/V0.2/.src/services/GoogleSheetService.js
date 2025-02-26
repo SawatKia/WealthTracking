@@ -508,7 +508,7 @@ function createGoogleSheetService() {
                     logger.warn("internet connection error, retrying...");
                     // Trigger auto-authentication script
                     // This is executed only once per error even if retries are remaining
-                    exec("nohup python3 /home/kksurin/Documents/auto-authen-kmitl-main/authen.py", (err, stdout, stderr) => {
+                    exec("nohup python3 /home/sawat/Auto-Authen-KMITL/authen.py", (err, stdout, stderr) => {
                         if (err) {
                             logger.error(`Failed to run auto-auth script: ${err.message}`);
                         } else {

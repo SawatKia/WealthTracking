@@ -133,21 +133,22 @@ class Middlewares {
             return callback(null, true);
           }
 
-        const allowedOrigins = [
-          // Add your allowed origins here
-          'http://localhost:3000',          // Development
-          'exp://localhost:19000',          // Expo development server
-          'exp://192.168.x.x:19000', // Local network IP for mobile device testing
-          // 'https://your-production-domain.com', // Production web client
-          // 'capacitor://localhost',          // Capacitor/Ionic
-          // 'ionic://localhost',              // Ionic specific
-          '*', // Allow all origins
-        ];
+          const allowedOrigins = [
+            // Add your allowed origins here
+            'http://localhost:3000',          // Development
+            'exp://localhost:19000',          // Expo development server
+            'exp://192.168.x.x:19000', // Local network IP for mobile device testing
+            // 'https://your-production-domain.com', // Production web client
+            // 'capacitor://localhost',          // Capacitor/Ionic
+            // 'ionic://localhost',              // Ionic specific
+            '*', // Allow all origins
+          ];
 
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
+          if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
         }
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],

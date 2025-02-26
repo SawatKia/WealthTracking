@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant User
+  participant DropdownButton
+  participant UI
+
+  User->>DropdownButton: Click Button
+  DropdownButton->>DropdownButton: Toggle Dropdown Visibility
+  DropdownButton->>UI: Render Dropdown Options
+
+  User->>DropdownButton: Select Option
+  DropdownButton->>DropdownButton: Update Selected Type
+  DropdownButton->>UI: Close Dropdown & Update Button
+  UI-->>User: Display Selected Type

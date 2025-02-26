@@ -1,0 +1,23 @@
+sequenceDiagram
+  participant User
+  participant UpdateDebtScreen
+  participant DebtService
+  participant Router
+
+  User->>UpdateDebtScreen: Enter payment details
+  User->>UpdateDebtScreen: Click "Save"
+  UpdateDebtScreen->>UpdateDebtScreen: Validate input fields
+  UpdateDebtScreen-->>User: Show errors if invalid
+
+  UpdateDebtScreen->>DebtService: Call updateDebtPayment API
+  DebtService-->>UpdateDebtScreen: Return success/failure response
+
+  alt Success
+    UpdateDebtScreen->>Router: Navigate to Debt screen
+    UpdateDebtScreen-->>User: Show success message
+  else Failure
+    UpdateDebtScreen-->>User: Show error message
+  end
+
+  User->>UpdateDebtScreen: Click "Cancel"
+  UpdateDebtScreen->>Router: Navigate to Debt screen
