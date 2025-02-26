@@ -417,7 +417,6 @@ class ApiController {
    * @param {function} next - The next middleware function.
    */
   async verifySlip(req, res, next) {
-    //TODO - test with at least 5 different image to check ratelimit
     logger.info("Processing slip verification request");
     try {
       // Validate file input
