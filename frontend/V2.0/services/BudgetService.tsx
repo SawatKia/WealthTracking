@@ -67,8 +67,10 @@ export const useBudget = () => {
   };
 
   const deleteBudget = async (expenseType: string) => {
+    console.log('delete')
     try {
       const response = await api.delete(`/budgets/${expenseType}`);
+      console.log(response)
       if (response.status === 200) {
         console.log("Budget deleted successfully");
         return true;  // Indicating success

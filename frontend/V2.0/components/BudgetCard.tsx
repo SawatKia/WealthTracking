@@ -16,18 +16,18 @@ import { useBudget } from "../services/BudgetService";
 
 interface BudgetCardProps {
   budgets: Budget[];
+  getBudgets: () => void; 
 }
 
-const BudgetCard: React.FC<BudgetCardProps> = ({ budgets }) => {
+const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
   const router = useRouter();
-  const { getBudgets, deleteBudget, updateBudget } = useBudget();
-  const [selectedTransaction, setSelectedTransaction] = useState<string | null>(
-    null
-  );
+  const { deleteBudget, updateBudget } = useBudget();
   const [modalVisible, setModalVisible] = useState(false);
   const [editAmount, setEditAmount] = useState("");
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
+
+ 
 
   const handleEdit = async (budget: Budget) => {
     setSelectedBudget(budget);
@@ -35,23 +35,36 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets }) => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (budgetId: string) => {
-    Alert.alert("Delete Budget", "Are you sure you want to delete this budget?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          const success = await deleteBudget(budgetId);
-          if (success) {
-            console.log("Budget deleted:", budgetId);
-            setSelectedBudget(null);
-            getBudgets(); // Refresh the budget list
-          } else {
-            Alert.alert("Error", "Failed to delete budget. Please try again.");
-          }
-        },
-      },
-    ]);
+  const handleDelete = async (id: string) => {
+    console.log("Delete button clicked for item with ID:", id);
+    try{
+      const success = await deleteBudget(id);
+      if (success) {
+        console.log("Budget deleted:", id);
+        setSelectedBudget(null);
+        getBudgets(); // Refresh the budget list
+      } 
+
+    }
+    catch (error) {
+      console.error(error, "Failed to delete budget. Please try again.");
+    }
+    // Alert.alert("Delete Budget", "Are you sure you want to delete this budget?", [
+    //   { text: "Cancel", style: "cancel" },
+    //   {
+    //     text: "Delete",
+    //     onPress: async () => {
+    //       const success = await deleteBudget(id);
+    //       if (success) {
+    //         console.log("Budget deleted:", id);
+    //         setSelectedBudget(null);
+    //         getBudgets(); // Refresh the budget list
+    //       } else {
+    //         Alert.alert("Error", "Failed to delete budget. Please try again.");
+    //       }
+    //     },
+    //   },
+    // ]);
   };
   
 
@@ -141,7 +154,10 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets }) => {
               {expandedBudgetId === item.id && (
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
-                    onPress={() => handleDelete(item.id)}
+                    onPress={() => {
+                      console.log("Budget Deleted Item :", item); // Log the item object
+                      handleDelete(item.expense_type);
+                    }}
                     style={styles.deleteButton}
                   >
                     <Text style={styles.buttonText}>Delete</Text>

@@ -280,5 +280,20 @@ export const useTransactions = () => {
     //   }
     // };    
 
-  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId };
+    const getTransactionByAccount = async (acc_num: string, ficode: string) => {
+      try {
+        const response = await api.get(`/transactions/account/${acc_num}/${ficode}`);
+        if (response.status === 200) {
+          return response.data.data.transactions; // Returning the transactions array
+        } else {
+          console.error("Error fetching transactions", response);
+          return [];
+        }
+      } catch (error) {
+        console.error("Error fetching transactions", error);
+        return [];
+      }
+    }
+
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId, getTransactionByAccount };
 };
