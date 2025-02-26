@@ -90,7 +90,7 @@ class AuthUtils {
                 sub: userId,
                 iat: now,
                 nbf: appConfigs.environment != 'production' ? now : now + (10 * 60),
-                exp: now + (7 * 24 * 60 * 60),
+                exp: now + (30 * 24 * 60 * 60),
                 jti: jti,
                 iss: AuthUtils.domain,
             }, appConfigs.refreshTokenSecret, { algorithm: AuthUtils.algorithm });

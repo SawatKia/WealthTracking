@@ -12,7 +12,7 @@ services:
     env_file: 
       - ./.env
     ports:
-      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
+      - "3000:3000"
     volumes:
       # no needs to oaccess from host machine, the app access inside constainer only.
       - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
@@ -39,7 +39,6 @@ services:
         max-file: "5"
     networks:
       - prod_network
-    dns: 8.8.8.8
 
   postgres:
     image: postgres:15-alpine
@@ -90,4 +89,3 @@ volumes:
 networks:
   prod_network:
     driver: bridge
-    # internal: true  # Only internal communication between containers

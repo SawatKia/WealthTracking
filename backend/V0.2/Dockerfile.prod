@@ -3,8 +3,8 @@ FROM node:20-alpine
 
 # Set up the environment variables - these rarely change
 ARG APP_DOMAIN
-ARG APP_PORT
 ARG NODE_ENV
+ARG APP_PORT
 
 # Install system dependencies - rarely changes
 RUN apk update && apk add --no-cache curl
