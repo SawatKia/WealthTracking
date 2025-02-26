@@ -111,7 +111,12 @@ class APIRequestLimitModel extends BaseModel {
     async getRequestLimit(serviceName, date, trackingType = 'daily') {
         try {
             logger.debug(`Getting request limit for ${serviceName} on ${date} (${trackingType})`);
-
+            const listTodayRequest = await super.executeWithTransaction(async (client) => {
+                const queryString = `SELECT * FROM api_request_limits WHERE service_name = $1 AND request_date = CURRENT_DATE`;
+                const result = await super.executeQuery(queryString, [serviceName]);
+                return result.rows;
+            });
+            logger.debug(`listTodayRequest: ${JSON.stringify(listTodayRequest, null, 2)}`);
             const reqLimitCount = await this.findOne({
                 service_name: serviceName,
                 request_date: date,

@@ -217,11 +217,89 @@ class PgClient {
     }
   }
 
-  // Transaction Management Methods
+
+  /**
+   * Verify the current transaction status and commit if no active data-modifying queries
+   * are present.
+   *
+   * @returns {Promise<boolean>} true if transaction was committed, false otherwise
+   */
+  async verifyTransactionStatus() {
+    try {
+      logger.info("Verifying transaction status...");
+      if (!this.client) throw new Error("Database target Client not connected");
+
+      const txidResult = await this.client.query("SELECT txid_current()");
+      const currentTxId = txidResult.rows[0].txid_current;
+
+      if (currentTxId) {
+        // Check for any pending queries
+        const activeQueriesResult = await this.client.query(
+          "SELECT pid, state, query FROM pg_stat_activity WHERE pid = pg_backend_pid()"
+        );
+        const activeQueries = activeQueriesResult.rows;
+
+        // Define system tables and queries that can be committed immediately
+        const isSystemQuery = (query) => {
+          const normalizedQuery = query.toLowerCase().trim();
+
+          // Check if query is system-level or metadata query
+          if (normalizedQuery.includes('pg_') ||
+            normalizedQuery.includes('information_schema') ||
+            normalizedQuery === 'select txid_current()' ||
+            normalizedQuery === 'select txid_status($1)') {
+            return true;
+          }
+
+          // Check if query touches any user data tables
+          const userTables = Object.values(this.tables).map(t => t.toLowerCase());
+          return !userTables.some(table => normalizedQuery.includes(table));
+        };
+
+        logger.debug(`Transaction ID: ${currentTxId}`);
+        logger.debug(`Active queries: ${JSON.stringify(activeQueries)}`);
+
+        // If only system queries are present, commit immediately
+        if (activeQueries.every(q => isSystemQuery(q.query))) {
+          logger.debug("Only system/metadata queries detected, committing immediately...");
+          await this.commit();
+          return true;
+        }
+
+        // Otherwise check transaction status for data-modifying queries
+        const statusResult = await this.client.query("SELECT txid_status($1)", [currentTxId]);
+        const txStatus = statusResult.rows[0].txid_status;
+
+        if (txStatus && activeQueries.every(q => q.state !== 'active' || q.query === 'SELECT txid_status($1)')) {
+          logger.debug("Transaction is valid and no pending queries, committing...");
+          await this.commit();
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      logger.error(`Error verifying transaction status: ${error.message}`);
+      return false;
+    }
+  }
+
+  // Update beginTransaction to use the new verification
   async beginTransaction() {
     try {
+      logger.info("Starting transaction...");
       if (!this.client) throw new Error("Database target Client not connected");
-      if (this.transactionStarted) throw new Error("Transaction already started");
+
+      if (this.transactionStarted) {
+        // Verify and handle existing transaction
+        const wasCommitted = await this.verifyTransactionStatus();
+        if (!wasCommitted) {
+          logger.error("Could not verify transaction status");
+          throw new Error("Existing transaction could not be verified");
+        }
+      }
+
+      this.transactionStarted = false;
+      logger.info("Starting new transaction...");
       await this.client.query("BEGIN");
       this.transactionStarted = true;
       logger.debug("Transaction started");
