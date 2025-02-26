@@ -19,18 +19,13 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application code
-COPY ./.src ./.src
-COPY ./statics ./statics
 COPY ./sql ./sql
+COPY ./statics ./statics
+
+COPY ./.src ./.src
 
 # Expose the port from env
 EXPOSE ${APP_PORT}
 
-# Default command for starting the app
-CMD if [ "$NODE_ENV" = "production" ]; then \
-    npm run start; \
-    elif [ "$NODE_ENV" = "test" ]; then \
-    npm run test; \
-    else \
-    npm run dev; \
-    fi
+# Default command for starting the app (will be overridden by docker-compose if needed)
+CMD ["npm", "run", "dev"]

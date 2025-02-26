@@ -34,6 +34,17 @@ interface UpdateDebtPaymentParams {
     date: string;
     paymentAmount: number;
     detail: string;
+    fi_code?: string; // Optional fi_code parameter
+}
+
+interface UpdateDebtParams {
+    fi_code?: string;
+    debt_name?: string;
+    start_date?: string;
+    current_installment?: number;
+    total_installments?: number;
+    loan_principle?: number;
+    loan_balance?: number;
 }
 
 export const useDebt = () => {
@@ -71,7 +82,9 @@ export const useDebt = () => {
             const response = await api.get('/debts');
             if (response.status === 200) {
                 console.log(response.data.data.debts);
-                return response.data.data.debts || [];  // Ensure it always returns an array
+                const debts = response.data.data.debts || [];
+                setDebt(debts); // ปรับปรุงสถานะใน state
+                return debts;
             } else {
                 setError(response.data.statusText);
                 return [];
@@ -85,87 +98,62 @@ export const useDebt = () => {
     };
 
     // ฟังก์ชันสร้างหนี้สิน
-    const createDebt = async (AddDebtDetail: AddDebtDetail) => {
+    const createDebt = async (debtDetail: AddDebtDetail): Promise<string | null> => {
         try {
-            console.log('create');
-            console.log(AddDebtDetail);
-            const response = await api.post('/debts', AddDebtDetail);
-            console.log('respond create', response.status);
+            console.log('Creating debt:', debtDetail);
+
+            // API call to create debt
+            const response = await api.post('/debts', debtDetail);
+
+            console.log('Debt creation response:', response.status);
+
             if (response.status === 201) {
-                console.log('create Debt successfully');
+                console.log('Debt created successfully');
 
-                // สร้าง Transaction เมื่อบันทึกหนี้สิน
-                const transactionData = {
-                    transaction_datetime: new Date().toISOString(), // วันที่ปัจจุบัน
-                    category: "Expense : Debt Payment", // หมวดหมู่
-                    type: "expense", // ประเภท (รายจ่าย)
-                    amount: AddDebtDetail.loan_principle, // จำนวนเงิน
-                    note: `Payment for debt: ${AddDebtDetail.debt_name}`, // หมายเหตุ
-                    debt_id: response.data.debt_id, // ID ของหนี้สินที่สร้าง
-                    sender: null, // หรือข้อมูลบัญชีผู้ใช้
-                    receiver: null, // หรือข้อมูลบัญชีเจ้าหนี้
-                };
+                // เรียกดึงข้อมูลหนี้ทั้งหมดอีกครั้งเพื่ออัปเดต state
+                await getAllDebts();
 
-                // ส่งข้อมูล Transaction ไปยัง API
-                const transactionResponse = await api.post('/transactions', transactionData);
-                if (transactionResponse.status === 201) {
-                    console.log('Transaction created successfully');
-                } else {
-                    console.error('Failed to create transaction');
-                }
-
-                router.push('/(tabs)/Debt');
+                // ส่งค่า debt_id ที่ได้จาก response กลับไป
+                return response.data.debt_id || null;
             } else {
-                console.log(response.status);
+                console.error('Failed with status:', response.status);
+                return null;
             }
         } catch (err) {
-            setError(`Failed to create Debt. ${err}`);
-            console.log(error);
+            console.error('Error creating debt:', err);
+            setError(`Failed to create Debt: ${err}`);
+            return null;
         }
     };
 
     // ฟังก์ชันลบหนี้สิน
-    const deleteDebt = async (debt_id: string) => {
+    const deleteDebt = async (debt_id: string): Promise<boolean> => {
         try {
             const response = await api.delete(`/debts/${debt_id}`);
             if (response.status === 200) {
+                // อัปเดต state โดยลบหนี้ที่ถูกลบออกไป
                 setDebt((prev) => prev.filter((t) => t.debt_id !== debt_id));
-                return true; // ส่งค่า true เพื่อบอกว่าลบสำเร็จ
+                return true;
             }
+            return false;
         } catch (err) {
             setError('Failed to delete Debt.');
             console.error('Error deleting debt:', err);
-            return false; // ส่งค่า false เพื่อบอกว่าลบไม่สำเร็จ
+            return false;
         }
     };
 
-    // ฟังก์ชันอัปเดตหนี้สิน
-    const updateDebtPayment = async (debtId: string, paymentDetails: UpdateDebtPaymentParams) => {
+    // ฟังก์ชันอัปเดตการชำระหนี้
+    const updateDebtPayment = async (debtId: string, paymentDetails: UpdateDebtPaymentParams): Promise<boolean> => {
         try {
             // อัปเดตการชำระหนี้
             const response = await api.put(`/debts/${debtId}/payment`, paymentDetails);
+
             if (response.status === 200) {
                 console.log('Debt payment updated successfully');
 
-                // สร้างรายการ Transaction
-                const transactionData = {
-                    transaction_datetime: paymentDetails.date,
-                    category: "Expense : Debt Payment",
-                    type: "expense",
-                    amount: paymentDetails.paymentAmount,
-                    note: paymentDetails.detail,
-                    debt_id: debtId,
-                    sender: null, // หรือข้อมูลบัญชีผู้ใช้
-                    receiver: null, // หรือข้อมูลบัญชีเจ้าหนี้
-                };
-
-                // ส่งข้อมูล Transaction ไปยัง API
-                const transactionResponse = await api.post('/transactions', transactionData);
-                if (transactionResponse.status === 201) {
-                    console.log('Transaction created successfully');
-                } else {
-                    console.error('Failed to create transaction');
-                }
+                // อัปเดต state ด้วยข้อมูลล่าสุด
+                await getAllDebts();
 
                 return true;
             } else {
@@ -175,6 +163,30 @@ export const useDebt = () => {
         } catch (err) {
             setError('Failed to update debt payment.');
             console.error('Error updating debt payment:', err);
+            return false;
+        }
+    };
+
+    // ฟังก์ชันอัปเดตข้อมูลหนี้
+    const updateDebt = async (debtId: string, debtDetails: UpdateDebtParams): Promise<boolean> => {
+        try {
+            // ส่งคำขอ PATCH เพื่ออัปเดตข้อมูลหนี้
+            const response = await api.patch(`/debts/${debtId}`, debtDetails);
+
+            if (response.status === 200) {
+                console.log('Debt updated successfully');
+
+                // อัปเดต state ด้วยข้อมูลล่าสุด
+                await getAllDebts();
+
+                return true;
+            } else {
+                setError('Failed to update debt.');
+                return false;
+            }
+        } catch (err) {
+            setError('Failed to update debt.');
+            console.error('Error updating debt:', err);
             return false;
         }
     };
@@ -189,5 +201,6 @@ export const useDebt = () => {
         getAllDebts,
         deleteDebt,
         updateDebtPayment,
+        updateDebt, // เพิ่มฟังก์ชัน updateDebt ใน return object
     };
 };

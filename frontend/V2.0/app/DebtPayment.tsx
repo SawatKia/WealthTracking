@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import DateTimePicker from "react-native-ui-datepicker";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useDebt } from "../services/DebtService";
+import { useTransactions } from "../services/TransactionService";
+import { useAccount } from "../services/AccountService";
+import DropDownPicker from "react-native-dropdown-picker";
 
 const UpdateDebtPayment = () => {
     const { debtId } = useLocalSearchParams<{ debtId: string }>();
@@ -12,11 +15,62 @@ const UpdateDebtPayment = () => {
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState("");
     const [detail, setDetail] = useState("");
-    const [category, setCategory] = useState("Expense : Debt Payment"); // เพิ่ม state สำหรับ category
+    const [category, setCategory] = useState("Expense : Debt Payment");
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [paymentChannel, setPaymentChannel] = useState<string | null>(null);
+    const [originalFiCode, setOriginalFiCode] = useState<string | null>(null);
+    const [accountItems, setAccountItems] = useState<{ label: string; value: string }[]>([]);
+    const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
+    const [paymentChannelPlaceholder, setPaymentChannelPlaceholder] = useState("Select Payment Channel");
 
     const router = useRouter();
-    const { updateDebtPayment } = useDebt();
+    const { updateDebtPayment, getAllDebts, updateDebt } = useDebt();
+    const { createTransaction } = useTransactions();
+    const { getAllAccounts } = useAccount();
+
+    useEffect(() => {
+        const fetchDebtAndAccounts = async () => {
+            const debts = await getAllDebts();
+            const selectedDebt = debts.find(debt => debt.debt_id === debtId);
+
+            if (selectedDebt) {
+                // Store the original fi_code for reference
+                setOriginalFiCode(selectedDebt.fi_code);
+
+                // Find the matching account to get complete account details
+                const accounts = await getAllAccounts();
+                const matchingAccount = accounts.find(account => account.fi_code === selectedDebt.fi_code);
+
+                if (matchingAccount) {
+                    // Store the complete account info (both fi_code and account_number)
+                    setPaymentChannel(JSON.stringify({
+                        account_number: matchingAccount.account_number,
+                        fi_code: matchingAccount.fi_code
+                    }));
+                    setPaymentChannelPlaceholder(matchingAccount.display_name);
+                } else if (selectedDebt.fi_code) {
+                    // If no matching account but we have fi_code, still set it
+                    setPaymentChannel(JSON.stringify({
+                        account_number: "",
+                        fi_code: selectedDebt.fi_code
+                    }));
+                    setPaymentChannelPlaceholder(selectedDebt.fi_code);
+                }
+
+                // Prepare dropdown items
+                const accountItems = accounts.map(account => ({
+                    label: account.display_name,
+                    value: JSON.stringify({
+                        account_number: account.account_number,
+                        fi_code: account.fi_code
+                    }),
+                }));
+                setAccountItems(accountItems);
+            }
+        };
+
+        fetchDebtAndAccounts();
+    }, [debtId]);
 
     const validateInputs = () => {
         const newErrors: { [key: string]: string } = {};
@@ -31,15 +85,45 @@ const UpdateDebtPayment = () => {
     const handleSave = async () => {
         if (!validateInputs()) return;
 
-        const paymentDetails = {
-            date: dayjs(date).format("YYYY-MM-DD"),
-            paymentAmount: Number(paymentAmount),
-            detail: detail,
-            category: category,
-        };
-
         try {
+            const selectedAccountObj = paymentChannel ? JSON.parse(paymentChannel) : null;
+            const selectedFiCode = selectedAccountObj ? selectedAccountObj.fi_code : originalFiCode;
+
+            // Prepare payment details
+            const paymentDetails: any = {
+                date: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                paymentAmount: Number(paymentAmount),
+                detail: detail
+            };
+
+            // Update debt payment (this doesn't update fi_code)
             await updateDebtPayment(debtId, paymentDetails);
+
+            // If payment channel has been changed, update the debt with PATCH API
+            if (selectedFiCode !== originalFiCode) {
+                // Update debt's fi_code with PATCH API
+                await updateDebt(debtId, {
+                    fi_code: selectedFiCode
+                });
+                console.log("Updated debt fi_code to:", selectedFiCode);
+            }
+
+            // Create transaction with the selected payment channel
+            const transactionDetails = {
+                transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                category: "Expense",
+                type: "Debt Payment",
+                amount: Number(paymentAmount),
+                note: detail,
+                debt_id: debtId,
+                sender: {
+                    account_number: selectedAccountObj ? selectedAccountObj.account_number : "",
+                    fi_code: selectedFiCode,
+                },
+            };
+
+            await createTransaction(transactionDetails);
+
             Alert.alert("Success", "Debt payment updated successfully");
             router.push("/(tabs)/Debt");
         } catch (error) {
@@ -71,7 +155,7 @@ const UpdateDebtPayment = () => {
                         <TextInput
                             style={styles.input}
                             value={category}
-                            editable={false} // ไม่สามารถแก้ไขได้
+                            editable={false}
                         />
                     </View>
 
@@ -88,14 +172,14 @@ const UpdateDebtPayment = () => {
                                 style={styles.iconInput}
                                 color="#9AC9F3"
                             />
-                            {date ? <Text>{dayjs(date).format("DD MMM YYYY")}</Text> : "..."}
+                            {date ? <Text>{dayjs(date).format("DD MMM YYYY HH:mm")}</Text> : "..."}
                         </TouchableOpacity>
                         {isDatePickerVisible && (
                             <DateTimePicker
                                 mode="single"
                                 date={date}
                                 onChange={onChangeDate}
-                                timePicker={false}
+                                timePicker={true}
                             />
                         )}
                         {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
@@ -112,6 +196,25 @@ const UpdateDebtPayment = () => {
                             keyboardType="numeric"
                         />
                         {errors.paymentAmount && <Text style={styles.errorText}>{errors.paymentAmount}</Text>}
+                    </View>
+
+                    {/* Payment Channel Input */}
+                    <View style={[styles.inputContainer, { zIndex: 1000 }]}>
+                        <Text style={styles.label}>Payment Channel</Text>
+                        <DropDownPicker
+                            open={isAccountPickerVisible}
+                            value={paymentChannel}
+                            items={accountItems}
+                            setOpen={setAccountPickerVisibility}
+                            setValue={setPaymentChannel}
+                            setItems={setAccountItems}
+                            placeholder={paymentChannelPlaceholder}
+                            searchable={true}
+                            style={[styles.dropdown, { zIndex: 1000 }]}
+                            dropDownContainerStyle={[styles.dropdownContainer, { zIndex: 1000 }]}
+                            zIndex={1000}
+                            zIndexInverse={3000}
+                        />
                     </View>
 
                     {/* Detail Input */}
@@ -176,6 +279,20 @@ const styles = StyleSheet.create({
     redLabel: {
         color: "red",
         fontSize: 12,
+    },
+    dropdown: {
+        height: 45,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingLeft: 15,
+        fontSize: 14,
+        color: "#333",
+    },
+    dropdownContainer: {
+        borderColor: "#ccc",
+        borderRadius: 12,
+        backgroundColor: "#fff",
     },
 });
 

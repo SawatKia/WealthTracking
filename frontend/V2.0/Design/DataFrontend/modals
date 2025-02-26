@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant User
+  participant ModalScreen
+  participant StatusBar
+  participant EditScreenInfo
+
+  User->>ModalScreen: Open Modal
+  ModalScreen->>EditScreenInfo: Load content
+  ModalScreen->>StatusBar: Adjust for iOS
+  ModalScreen-->>User: Display Modal UI
+  User->>ModalScreen: Close Modal

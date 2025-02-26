@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant User
+  participant HomeScreen
+  participant TransactionService
+  participant Components
+
+  User->>HomeScreen: Open HomeScreen
+  HomeScreen->>TransactionService: Fetch Monthly Summary
+  TransactionService-->>HomeScreen: Return Data
+  HomeScreen->>Components: Render SummaryCard, IncomeExpenseReport, ReportByCategory
+  HomeScreen-->>User: Display UI
+  User->>HomeScreen: Tap Summary Button
+  HomeScreen-->>User: Show Summary

@@ -80,9 +80,9 @@ router.patch('/debts/:debt_id', debtController.updateDebt);
 router.delete('/debts/:debt_id', debtController.deleteDebt);
 router.get('/debts/:debt_id/payments', debtController.getAllDebtPayments);
 
+router.get('/fis', fiController.getAllFinancialInstitutions);
 // Cache routes
 if (NODE_ENV !== 'production') {
-    router.get('/fis', fiController.getAllFinancialInstitutions);
     router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks);
     router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 

@@ -77,40 +77,32 @@ const AddDebtDetail = () => {
     const handleSave = async () => {
         if (!validateInputs()) return;
 
-        const debtDetails = {
-            debt_name: debtName,
-            start_date: dayjs(date).format("YYYY-MM-DD"),
-            current_installment: Number(currentInstallment),
-            total_installments: Number(totalInstallments),
-            loan_principle: Number(loanPrinciple),
-            loan_balance: Number(loanBalance),
-            fi_code: paymentChannel,
-        };
-
-        console.log("Saved Debt Details:", debtDetails);
-        await createDebt(debtDetails);
-
-        // Create transaction
-        const selectedAccount = bankAccounts.find(account => account.fi_code === paymentChannel);
-        if (selectedAccount) {
-            const transactionDetails = {
-                transaction_datetime: dayjs(date).toString(),
-                category: "Debt Payment",
-                type: "Expense",
-                amount: parseFloat(amountPaid),
-                debt_id: null,
-                note: `Payment for debt: ${debtName}`,
-                sender: {
-                    account_number: selectedAccount.account_number,
-                    fi_code: selectedAccount.fi_code,
-                },
-                receiver: null,
+        try {
+            // Prepare debt details for API
+            const debtDetails = {
+                debt_name: debtName,
+                start_date: dayjs(date).format("YYYY-MM-DD"),
+                current_installment: Number(currentInstallment),
+                total_installments: Number(totalInstallments),
+                loan_principle: Number(loanPrinciple),
+                loan_balance: Number(loanBalance),
+                fi_code: paymentChannel,
             };
 
-            await createTransaction(transactionDetails);
-        }
+            console.log("Saving Debt Details:", debtDetails);
 
-        router.push("/(tabs)/Debt");
+            // Call the createDebt function directly from DebtService
+            // This will handle both debt creation and transaction creation
+            await createDebt(debtDetails);
+
+            // No need to create transaction here as it's now handled in the DebtService
+
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            console.error("Error saving debt:", error);
+            // Show error to user
+            alert("Failed to save debt. Please try again.");
+        }
     };
 
     const onChangeDate = (params: any) => {
@@ -228,7 +220,7 @@ const AddDebtDetail = () => {
 
                     {/* Loan Balance Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Loan Balance</Text>
+                        <Text style={styles.label}>Remaining Balance</Text>
                         <TextInput
                             style={styles.input}
                             value={loanBalance}

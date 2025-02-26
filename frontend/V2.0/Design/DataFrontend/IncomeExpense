@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant User
+    participant IncomeExpenses Component
+    participant AccountCard
+    participant DropdownButton
+    participant TransactionCard
+    participant Router
+
+    User->>IncomeExpenses Component: เปิดหน้าจอ
+    IncomeExpenses Component->>AccountCard: แสดงข้อมูลบัญชี
+    IncomeExpenses Component->>DropdownButton: แสดง Dropdown เลือกประเภทธุรกรรม
+    User->>DropdownButton: เลือกประเภทธุรกรรม
+    DropdownButton->>IncomeExpenses Component: อัปเดตประเภทธุรกรรม
+    IncomeExpenses Component->>TransactionCard: แสดงรายการธุรกรรมตามประเภทที่เลือก
+
+    User->>Floating Button: กดปุ่ม "+"
+    IncomeExpenses Component->>Popup: แสดงตัวเลือกการสร้างธุรกรรม
+
+    User->>Popup: เลือก "Create Transaction"
+    Popup->>Router: นำทางไปหน้า `/CreateTransaction`

@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User
+    participant CategoryExpenses
+    participant CategoryCard
+    participant Navigation as "Navigation (Link)"
+
+    User->>CategoryExpenses: Opens screen
+    activate CategoryExpenses
+
+    loop User Interaction
+        User->>CategoryExpenses: Selects option (Expense/Income/Transfer)
+        CategoryExpenses->>CategoryExpenses: Updates selected option
+
+        User->>CategoryCard: Clicks a category card
+        activate CategoryCard
+        CategoryCard->>CategoryExpenses: Passes selected category
+        deactivate CategoryCard
+
+        CategoryExpenses->>Navigation: Navigates to /CreateTransaction with category param
+        activate Navigation
+        Navigation-->>CategoryExpenses: Redirects to CreateTransaction
+        deactivate Navigation
+    end
+
+    CategoryExpenses-->>User: Displays updated UI
+    deactivate CategoryExpenses

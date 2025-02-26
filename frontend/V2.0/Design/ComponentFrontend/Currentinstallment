@@ -1,0 +1,9 @@
+sequenceDiagram
+  participant User
+  participant CurrentInstallment
+  participant UI
+
+  User->>CurrentInstallment: View Component
+  CurrentInstallment->>CurrentInstallment: Format Amount
+  CurrentInstallment->>UI: Render Text & Amount
+  UI-->>User: Display Installment Info

@@ -1,0 +1,28 @@
+sequenceDiagram
+actor User
+participant "BankAccountScreen" as Screen
+participant "AccountService" as AccountService
+participant "TransactionService" as TransactionService
+
+User -> Screen: เปิดหน้าบัญชีธนาคาร
+
+activate Screen
+Screen -> AccountService: getAllAccounts()
+activate AccountService
+AccountService --> Screen: ส่งข้อมูลบัญชีทั้งหมด
+
+Screen -> TransactionService: getAllTransactions()
+activate TransactionService
+TransactionService --> Screen: ส่งข้อมูลธุรกรรมล่าสุด
+
+deactivate AccountService
+
+deactivate TransactionService
+
+Screen -> User: แสดงข้อมูลบัญชีและธุรกรรมล่าสุด
+
+User -> Screen: ปัดซ้าย/ขวาเพื่อเปลี่ยนบัญชี
+Screen -> Screen: อัปเดตบัญชีที่แสดงอยู่
+
+User -> Screen: กดปุ่มเพิ่มบัญชี
+Screen -> Screen: นำทางไปยังหน้าสร้างบัญชีใหม่

@@ -1,0 +1,10 @@
+sequenceDiagram
+  participant User
+  participant ExpenseSummary
+  participant UI
+
+  User->>ExpenseSummary: Open Component
+  ExpenseSummary->>UI: Display text_box2 & amount
+
+  User->>ExpenseSummary: Data Fetch (Optional)
+  ExpenseSummary->>UI: Show Updated Expense Amount
