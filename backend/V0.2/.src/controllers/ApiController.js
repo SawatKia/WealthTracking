@@ -497,7 +497,11 @@ class ApiController {
             'daily'
           );
 
-          await this.slipHistoryModel.recordSlipUsage(result.data.payload, result.data.transRef, req.user?.sub);
+        }
+        if (result.data) {
+          logger.info("recording slip usage");
+          const slipUsage = await this.slipHistoryModel.recordSlipUsage(result.data.payload, result.data.transRef, req.user?.sub);
+          logger.debug(`slip usage record: ${JSON.stringify(slipUsage)}`);
         }
 
         // Prepare transaction data
