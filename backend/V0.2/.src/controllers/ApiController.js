@@ -85,7 +85,11 @@ class ApiController {
     // Check minute request limit
     logger.info("============verify RPM=============");
     const minuteUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentMinute, 'minute');
-    logger.warn(`Current minute usage for ${modelName}: ${minuteUsage?.request_count || 0}/${limits.rpm} requests, ${minuteUsage?.token_count || 0}/${limits.tpm} tokens`);
+
+    const minuteRequestCount = minuteUsage ? minuteUsage.request_count : 0;
+    const minuteTokenCount = minuteUsage ? minuteUsage.token_count : 0;
+
+    logger.warn(`Current minute usage for ${modelName}: ${minuteRequestCount}/${limits.rpm} requests, ${minuteTokenCount}/${limits.tpm} tokens`);
 
     if (minuteUsage && minuteUsage.request_count >= limits.rpm) {
       const retryAfter = 60 - now.getSeconds();
@@ -103,8 +107,11 @@ class ApiController {
     // Check daily request limit
     logger.info("============verify RPD=============");
     const dailyUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentDate, 'daily');
-    logger.warn(`Current daily usage for ${modelName}: ${dailyUsage?.request_count || 0}/${limits.rpd} requests, ${dailyUsage?.token_count || 0}/${limits.tpm} tokens`);
-    if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
+    // Get daily usage counts
+    const dailyRequestCount = dailyUsage ? dailyUsage.request_count : 0;
+    const dailyTokenCount = dailyUsage ? dailyUsage.token_count : 0;
+
+    logger.warn(`Current daily usage for ${modelName}: ${dailyRequestCount}/${limits.rpd} requests, ${dailyTokenCount}/${limits.tpm} tokens`); if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
       const tomorrow = new Date(currentDate);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const retryAfter = Math.ceil((tomorrow - now) / 1000);
