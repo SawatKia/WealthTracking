@@ -108,9 +108,12 @@ export const clearCredentials = async () => {
 const TOKEN_KEY = 'authToken';
 
 export const storeToken = async (token: string) => {
+  console.log('storeToken')
   if (Platform.OS === 'web') {
+    console.log('storeToken web')
     localStorage.setItem(TOKEN_KEY, token); // Store token in browser storage
   } else {
+    console.log('storeToken mobile')
     await SecureStore.setItemAsync(TOKEN_KEY, token);
   }
 };

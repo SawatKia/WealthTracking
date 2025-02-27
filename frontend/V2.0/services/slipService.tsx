@@ -14,6 +14,7 @@ export const useSlip = () => {
   const [error, setError] = useState<string | null>(null);
 
   const sendSlip = async (imageUris: ImageUri[]): Promise<any> => {
+    console.log('Sending slip...', imageUris);
     if (!imageUris || imageUris.length === 0) {
       console.error('No images selected.');
       setError('No images selected.');
@@ -23,7 +24,7 @@ export const useSlip = () => {
     const formData = new FormData();
     // Append each image to the FormData
     imageUris.forEach((image, i) => {
-      formData.append('file', {
+      formData.append('imageFile', {
         uri: Platform.OS === 'android' ? image.uri : image.uri.replace('file://', ''),
         name: `slip${Date.now()}.jpg`,
         type: 'image/jpeg', // it may be necessary in Android.
@@ -34,10 +35,11 @@ export const useSlip = () => {
     setError(null); // Reset error state before making the API call
     console.log('Uploading images...', formData);
     try {
-      const response = await api.post('/slip/verify', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        const response = await api.post('slip/verify', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',  // Ensure multipart for file uploads
+            },
+      
       });
 
       // Handle success

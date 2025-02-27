@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal } from "reac
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useBudget } from "../services/BudgetService"; 
-import SelectCategoryModal from "./SelectCategoryModal";
+import SelectExpenseTypeModal from "./SelectExpenseType";
 import { useRouter } from "expo-router";
 
 const CreateBudget = () => {
@@ -50,7 +50,7 @@ const CreateBudget = () => {
       </View>
 
       <Modal visible={isCategoryPickerVisible} animationType="slide" onRequestClose={() => setCategoryPickerVisibility(false)}>
-        <SelectCategoryModal selected={selectedCategory.category} onSelect={handleSelectCategory} />
+        <SelectExpenseTypeModal selected={selectedCategory.category} onSelect={handleSelectCategory} />
       </Modal>
 
       {/* Amount Section */}
