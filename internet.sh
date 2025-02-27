@@ -13,6 +13,11 @@ COLOR_DEBUG="\e[34m"  # Blue for DEBUG
 COLOR_ERROR="\e[31m"  # Red for ERROR
 COLOR_RESET="\e[0m"   # Reset color
 
+# Unicode symbols for log emphasis
+ICON_INFO="✔️"   # U+2705
+ICON_DEBUG="🐞"  # U+1F41E
+ICON_ERROR="❌"  # U+274C
+
 # Function to get timestamp in Bangkok timezone
 timestamp() {
     date +"%d/%m/%Y %H:%M:%S.%N"
@@ -20,18 +25,18 @@ timestamp() {
 
 # Logging functions
 log_info() {
-    echo -e "${COLOR_INFO}[$(timestamp)] [INFO] $1${COLOR_RESET}"
-    echo "[$(timestamp)] [INFO] $1" >> "$LOG_FILE"
+    echo -e "${COLOR_INFO}[$(timestamp)] [INFO] ${ICON_INFO} $1${COLOR_RESET}"
+    echo "[$(timestamp)] [INFO] ${ICON_INFO} $1" >> "$LOG_FILE"
 }
 
 log_debug() {
-    echo -e "${COLOR_DEBUG}[$(timestamp)] [DEBUG] $1${COLOR_RESET}"
-    echo "[$(timestamp)] [DEBUG] $1" >> "$LOG_FILE"
+    echo -e "${COLOR_DEBUG}[$(timestamp)] [DEBUG] ${ICON_DEBUG} $1${COLOR_RESET}"
+    echo "[$(timestamp)] [DEBUG] ${ICON_DEBUG} $1" >> "$LOG_FILE"
 }
 
 log_error() {
-    echo -e "${COLOR_ERROR}[$(timestamp)] [ERROR] $1${COLOR_RESET}"
-    echo "[$(timestamp)] [ERROR] $1" | tee -a "$LOG_FILE" "$ERROR_LOG" >&2
+    echo -e "${COLOR_ERROR}[$(timestamp)] [ERROR] ${ICON_ERROR} $1${COLOR_RESET}"
+    echo "[$(timestamp)] [ERROR] ${ICON_ERROR} $1" | tee -a "$LOG_FILE" "$ERROR_LOG" >&2
 }
 
 # Trap errors and log them
@@ -42,11 +47,11 @@ log_info "Checking if authentication script is already running..."
 
 # Check if the script is already running
 if pgrep -f "python3 $SCRIPT_PATH" > /dev/null; then
-    log_debug "Script is already running."
+    log_debug "Script is already running, exiting..."
     exit 0
 fi
 
-log_info "Checking network connection..."
+log_info "authen.py script isn't running, Checking network connection..."
 
 # Check if the device has an IP assigned (connected to a network)
 if ! ip a | grep 'inet ' | grep -v '127.0.0.1' | grep '192.168.'; then
@@ -58,7 +63,7 @@ log_info "Network detected. Checking internet connectivity..."
 
 # First, try Firefox portal detection
 if curl -s --max-time 5 http://detectportal.firefox.com/success.txt | grep -q "success"; then
-    log_debug "Internet is available. No need to run authentication script."
+    log_debug "Internet is available. No need to run authentication script, exiting..."
     exit 0
 fi
 
