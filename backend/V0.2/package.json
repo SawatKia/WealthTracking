@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "debug": "node --inspect=0.0.0.0:9229 .src/index.js",
     "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage --detectOpenHandles",
     "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
-    "build": "rm -rf dist && babel .src --out-dir dist --copy-files --source-maps",
-    "start": "node dist/index.js",
     "dev": "node .src/index.js",
-    "debug": "node --inspect=0.0.0.0:9229 .src/index.js"
+    "start": "node dist/index.js",
+    "build": "rm -rf dist && npx babel .src --out-dir dist --copy-files --source-maps"
   },
   "keywords": [],
   "author": "",
