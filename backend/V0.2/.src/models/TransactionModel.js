@@ -409,8 +409,6 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
       logger.info('Creating transaction');
       const transaction = await super.create(data, options);
 
-      // Cache the new transaction only if not in test environment
-
       // Get the complete transaction details after creation
       const query = this.getTransactionWithDetailsQuery();
       const result = await this.executeQuery(query, [transaction.transaction_id], { silent: true });
@@ -799,33 +797,59 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
 
       let query;
       let params;
+      let listQuery;
 
       if (type === null) {
-        // Get summary for all types
+        // Get all transactions for all types
         query = `
-          SELECT type, SUM(amount) AS total_amount 
+          SELECT type, SUM(amount) as total_amount
           FROM transactions
           WHERE national_id = $1 
           AND category = 'Expense'
-          AND date_trunc('month', transaction_datetime) = date_trunc('month', $2::date)
+          AND EXTRACT(YEAR FROM transaction_datetime::date) = EXTRACT(YEAR FROM $2::date)
+          AND EXTRACT(MONTH FROM transaction_datetime::date) = EXTRACT(MONTH FROM $2::date)
           GROUP BY type
-          ORDER BY total_amount DESC
+          ORDER BY type
+        `;
+        listQuery = `
+          SELECT *
+          FROM transactions
+          WHERE national_id = $1
+          AND category = 'Expense'
+          AND EXTRACT(YEAR FROM transaction_datetime::date) = EXTRACT(YEAR FROM $2::date)
+          AND EXTRACT(MONTH FROM transaction_datetime::date) = EXTRACT(MONTH FROM $2::date)
         `;
         params = [nationalId, formattedDate];
       } else {
-        // Get summary for specific type
+        // Get all transactions for specific type
         query = `
-          SELECT SUM(amount) AS total_amount 
+          SELECT SUM(amount) as total_amount
           FROM transactions
           WHERE national_id = $1 
           AND type = $2 
           AND category = 'Expense'
-          AND date_trunc('month', transaction_datetime) = date_trunc('month', $3::date)
+          AND EXTRACT(YEAR FROM transaction_datetime::date) = EXTRACT(YEAR FROM $3::date)
+          AND EXTRACT(MONTH FROM transaction_datetime::date) = EXTRACT(MONTH FROM $3::date)
+        `;
+        listQuery = `
+          SELECT *
+          FROM transactions
+          WHERE national_id = $1
+          AND type = $2
+          AND category = 'Expense'
+          AND EXTRACT(YEAR FROM transaction_datetime::date) = EXTRACT(YEAR FROM $3::date)
+          AND EXTRACT(MONTH FROM transaction_datetime::date) = EXTRACT(MONTH FROM $3::date)
         `;
         params = [nationalId, type, formattedDate];
       }
+      logger.info("list all relevant transactions");
+      const listResult = await this.executeQuery(listQuery, params);
+      logger.debug(`List of transactions: ${JSON.stringify(listResult.rows)}`);
 
       const result = await this.executeQuery(query, params);
+
+      // Log the actual transactions found
+      logger.debug(`type ${type} summary on the month ${formattedDate}: ${JSON.stringify(result.rows)}`);
 
       // Format the response based on whether type was specified
       const summary = type === null
