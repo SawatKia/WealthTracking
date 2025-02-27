@@ -123,11 +123,19 @@ class BaseController {
                                 const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
                                 convertedBody[key] = cleanValue === '' ? null : Number(cleanValue);
                                 if (isNaN(convertedBody[key])) {
+                                    logger.error(`Invalid number format for field: ${key}`);
                                     throw new Error(`Invalid number format for field: ${key}`);
                                 }
                                 break;
                             case 'string':
                                 convertedBody[key] = String(value);
+                                break;
+                            case 'date':
+                                convertedBody[key] = new Date(value);
+                                if (isNaN(convertedBody[key])) {
+                                    logger.error(`Invalid date format for field: ${key}`);
+                                    throw new Error(`Invalid date format for field: ${key}`);
+                                }
                                 break;
                             default:
                                 convertedBody[key] = value;
