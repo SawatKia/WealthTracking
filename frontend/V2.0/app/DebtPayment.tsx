@@ -82,6 +82,7 @@ const UpdateDebtPayment = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    // In DebtPayment.tsx
     const handleSave = async () => {
         if (!validateInputs()) return;
 
@@ -89,26 +90,21 @@ const UpdateDebtPayment = () => {
             const selectedAccountObj = paymentChannel ? JSON.parse(paymentChannel) : null;
             const selectedFiCode = selectedAccountObj ? selectedAccountObj.fi_code : originalFiCode;
 
-            // Prepare payment details
             const paymentDetails: any = {
                 date: dayjs(date).format("YYYY-MM-DD HH:mm"),
                 paymentAmount: Number(paymentAmount),
                 detail: detail
             };
 
-            // Update debt payment (this doesn't update fi_code)
             await updateDebtPayment(debtId, paymentDetails);
 
-            // If payment channel has been changed, update the debt with PATCH API
             if (selectedFiCode !== originalFiCode) {
-                // Update debt's fi_code with PATCH API
                 await updateDebt(debtId, {
                     fi_code: selectedFiCode
                 });
                 console.log("Updated debt fi_code to:", selectedFiCode);
             }
 
-            // Create transaction with the selected payment channel
             const transactionDetails = {
                 transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
                 category: "Expense",
@@ -130,7 +126,7 @@ const UpdateDebtPayment = () => {
             Alert.alert("Error", "Failed to update debt payment");
             console.error("Error updating debt payment:", error);
         }
-    };
+    };;
 
     const onChangeDate = (params: any) => {
         setDate(params.date);

@@ -1,3 +1,4 @@
+//เพิ่มหนี้โว้ยยยย
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -28,7 +29,7 @@ const AddDebtDetail = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [amountPaid, setAmountPaid] = useState("");
 
-    const { createDebt } = useDebt();
+    const { createDebt, getAllDebts } = useDebt();
     const { getAllAccounts } = useAccount();
     const { createTransaction } = useTransactions();
     const [bankAccounts, setBankAccounts] = useState<Account[]>([]);
@@ -92,16 +93,29 @@ const AddDebtDetail = () => {
             console.log("Saving Debt Details:", debtDetails);
 
             // Call the createDebt function directly from DebtService
-            // This will handle both debt creation and transaction creation
             await createDebt(debtDetails);
 
-            // No need to create transaction here as it's now handled in the DebtService
+            // ดึงข้อมูลใหม่ก่อนกลับไปหน้า Debt
+            await getAllDebts();
 
+            // กลับไปหน้า Debt
             router.push("/(tabs)/Debt");
         } catch (error) {
             console.error("Error saving debt:", error);
-            // Show error to user
             alert("Failed to save debt. Please try again.");
+        }
+    };
+
+    const handleCancel = async () => {
+        try {
+            // ดึงข้อมูลใหม่ก่อนกลับไปหน้า Debt
+            await getAllDebts();
+
+            // กลับไปหน้า Debt
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            console.error("Error refreshing debts:", error);
+            router.push("/(tabs)/Debt");
         }
     };
 
@@ -253,7 +267,7 @@ const AddDebtDetail = () => {
 
                     {/* Buttons */}
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.cancelButtonStyle} onPress={() => router.push("/(tabs)/Debt")}>
+                        <TouchableOpacity style={styles.cancelButtonStyle} onPress={handleCancel}>
                             <Text style={styles.buttonText}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
