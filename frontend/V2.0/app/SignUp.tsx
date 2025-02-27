@@ -97,17 +97,19 @@ export default function SignUpScreen() {
         confirmPassword
       );
       console.log("Sign Up Success", "You can now log in", response);
-      
     } catch (error) {
       console.error(error);
     }
   };
 
   const handleSignUpGoogle = async () => {
-
-    try{
-      const response = await signUpGoogle()
-      console.log("Sign Up Google Success", "You can now log in", response.data);
+    try {
+      const response = await signUpGoogle();
+      console.log(
+        "Sign Up Google Success",
+        "You can now log in",
+        response.data
+      );
       router.push(response.data);
     } catch (error) {
       console.error(error);
@@ -232,7 +234,10 @@ export default function SignUpScreen() {
         <Text style={styles.orText}>or</Text>
 
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton} onPress={handleSignUpGoogle}>
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleSignUpGoogle}
+        >
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>

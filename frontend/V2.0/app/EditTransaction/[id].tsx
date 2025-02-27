@@ -9,9 +9,9 @@ import {
   SafeAreaView,
   Pressable,
   Modal,
-  FlatList
+  FlatList,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useState, useEffect } from "react";
@@ -26,8 +26,11 @@ import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "@/constants/NavigateType"; // Import the type definition
 import SelectCategoryModal from "../SelectCategoryModal";
 
-import { newSenderReceiver,useTransactions } from '@/services/TransactionService';
-import { useAccount } from '@/services/AccountService';
+import {
+  newSenderReceiver,
+  useTransactions,
+} from "@/services/TransactionService";
+import { useAccount } from "@/services/AccountService";
 import { ScrollView } from "react-native-gesture-handler";
 
 const options = {
@@ -60,41 +63,51 @@ const options = {
 };
 export default function EditTransaction() {
   const id = useLocalSearchParams().id as string;
-  console.log(id, typeof(id))
+  console.log(id, typeof id);
   const { getTransactionbyId, editTransaction } = useTransactions();
   const { getAllAccounts } = useAccount();
-  const router = useRouter()
+  const router = useRouter();
   // const CreateTransaction = ({ route, navigation }: { route: any; navigation: any }) =>{
   const [sizeOption, setsizeOption] = useState(0);
 
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isAccountPickerVisible, setAccountPickerVisibility] = useState(false);
-  const [isAccountTransPickerVisible, setAccountTransPickerVisibility] = useState(false);
-  const [isCategoryPickerVisible, setCategoryPickerVisibility] = useState(false);
+  const [isAccountTransPickerVisible, setAccountTransPickerVisibility] =
+    useState(false);
+  const [isCategoryPickerVisible, setCategoryPickerVisibility] =
+    useState(false);
   // const { category } = route.params ?? {};
   // const [date, setDate]= useState<Dayjs | null>(null);
 
   const [date, setDate] = useState<Dayjs>(dayjs()); // Initialize state as Dayjs object
   const [amount, setAmount] = useState("");
-  
+
   const [selectedCategory, setSelectedCategory] = useState({
     category: null as string | null,
     type: null as string | null,
   });
-  const [selectedAccountItem, setSelectedAccountItem] = useState<string | null>(null);
+  const [selectedAccountItem, setSelectedAccountItem] = useState<string | null>(
+    null
+  );
 
-
-  const [accountItems, setAccountItems] =  useState<
-  { label: string; value: string}[]
->([]);
-const [selectedAccount, setSelectedAccount] = useState<{ account_number: string; fi_code: string } | null>(null);
-const [selectedAccountValue, setSelectedAccountValue] = useState<string | null>(null); // Holds string value for DropDownPicker
-const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<string | null>(null); 
-const [displayname, setdisplayname] = useState("[Select Account]")
+  const [accountItems, setAccountItems] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedAccount, setSelectedAccount] = useState<{
+    account_number: string;
+    fi_code: string;
+  } | null>(null);
+  const [selectedAccountValue, setSelectedAccountValue] = useState<
+    string | null
+  >(null); // Holds string value for DropDownPicker
+  const [selectedAccountTransValue, setSelectedAccountTransValue] = useState<
+    string | null
+  >(null);
+  const [displayname, setdisplayname] = useState("[Select Account]");
 
   const [note, setNote] = useState("");
-  
-  const handleSelectCategory = (category: string,type: string) => {
+
+  const handleSelectCategory = (category: string, type: string) => {
     setSelectedCategory({ category, type });
     setCategoryPickerVisibility(false); // Close the modal
   };
@@ -108,42 +121,38 @@ const [displayname, setdisplayname] = useState("[Select Account]")
   //     "account_number": "1234567890",
   //     "fi_code": "004"
   //   }
-  
+
   // }
   const handleCreateTransaction = async () => {
-    // let senderReceiver: { sender?: any; receiver?: any } = {}; 
-    let sender : newSenderReceiver | null = null;
-    let receiver : newSenderReceiver| null = null;
-    console.log(selectedAccountValue)
-    console.log(selectedAccountTransValue)
+    // let senderReceiver: { sender?: any; receiver?: any } = {};
+    let sender: newSenderReceiver | null = null;
+    let receiver: newSenderReceiver | null = null;
+    console.log(selectedAccountValue);
+    console.log(selectedAccountTransValue);
 
-    
-    if (selectedCategory.type == 'Income') {
-      receiver = JSON.parse(selectedAccountValue || "")
-  }
-    else if(selectedCategory.type == 'Expense'){
-      sender =  JSON.parse(selectedAccountValue || "")
+    if (selectedCategory.type == "Income") {
+      receiver = JSON.parse(selectedAccountValue || "");
+    } else if (selectedCategory.type == "Expense") {
+      sender = JSON.parse(selectedAccountValue || "");
+    } else {
+      sender = JSON.parse(selectedAccountValue || "");
+      receiver = JSON.parse(selectedAccountTransValue || "");
     }
-  else{
-    sender =  JSON.parse(selectedAccountValue || "")
-    receiver = JSON.parse(selectedAccountTransValue || "")
-  }
     const requestBody = {
-      "transaction_datetime": dayjs(date).toString(),
-      "category": selectedCategory.type ?? "" , //for arrai ko mai ru
-      "type": selectedCategory.category ?? "",
-      "amount": parseFloat(parseFloat(amount).toFixed(2)),
-      "debt_id" : null,
-      "note": note,
-    }
-    
+      transaction_datetime: dayjs(date).toString(),
+      category: selectedCategory.type ?? "", //for arrai ko mai ru
+      type: selectedCategory.category ?? "",
+      amount: parseFloat(parseFloat(amount).toFixed(2)),
+      debt_id: null,
+      note: note,
+    };
+
     // console.log(requestBody)
-    const data = editTransaction(id, requestBody)
-    console.log(data)
-    
+    const data = editTransaction(id, requestBody);
+    console.log(data);
 
     // console.log('send data :', respond)
-  }
+  };
 
   // Extract the setCategory function passed as a prop
   // const setCategory = params.setCategory as (category: string) => void;
@@ -154,62 +163,57 @@ const [displayname, setdisplayname] = useState("[Select Account]")
           console.warn("No ID found!");
           return;
         }
-  
+
         // Fetch accounts
         const dataAccount = await getAllAccounts();
         console.log("Accounts: ", dataAccount);
         setsizeOption(dataAccount.length);
-  
+
         const items = dataAccount.map((item) => ({
           label: item.display_name,
-          value: JSON.stringify({ 
-            account_number: item.account_number, 
-            fi_code: item.fi_code 
+          value: JSON.stringify({
+            account_number: item.account_number,
+            fi_code: item.fi_code,
           }), // Store object as string
         }));
-  
+
         setAccountItems(items);
-        console.log('account item',accountItems)
-  
+        console.log("account item", accountItems);
+
         // Fetch transaction data
         const dataTrans = await getTransactionbyId(id);
         console.log("Transaction Data: ", dataTrans);
-  
+
         setDate(dataTrans.transaction_datetime);
         handleSelectCategory(dataTrans.type, dataTrans.category);
-  
+
         // Ensure sender exists before accessing properties
         if (dataTrans.sender) {
-          setdisplayname(dataTrans.sender.display_name)
+          setdisplayname(dataTrans.sender.display_name);
           const sender = JSON.stringify({
             account_number: dataTrans.sender.account_number,
             fi_code: dataTrans.sender.fi_code,
           });
           setSelectedAccountValue(sender); // Set default selection
-  
         }
         if (dataTrans.receiver) {
-          setdisplayname(dataTrans.receiver.display_name)
+          setdisplayname(dataTrans.receiver.display_name);
           const receiver = JSON.stringify({
             account_number: dataTrans.receiver.account_number,
             fi_code: dataTrans.receiver.fi_code,
           });
-          setSelectedAccountValue(receiver); 
-          
+          setSelectedAccountValue(receiver);
         }
-        setAmount(dataTrans.amount)
-        setNote(dataTrans.note)
-        console.log('selectaccount value',selectedAccountValue)
-  
+        setAmount(dataTrans.amount);
+        setNote(dataTrans.note);
+        console.log("selectaccount value", selectedAccountValue);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-  
+
     fetchDataTrans();
   }, [id]);
-  
-  
 
   const onChangeDate = (params: any) => {
     setDate(params.date);
@@ -282,7 +286,7 @@ const [displayname, setdisplayname] = useState("[Select Account]")
                 date={date} // Pass formatted string date to the picker
                 onChange={onChangeDate} // Update state on change
                 timePicker={true}
-              // onChange={(params) => setDate(params.date)}
+                // onChange={(params) => setDate(params.date)}
               />
             )}
           </View>
@@ -315,8 +319,17 @@ const [displayname, setdisplayname] = useState("[Select Account]")
 
             </TouchableOpacity> */}
 
-            <TouchableOpacity  onPress={() =>{setCategoryPickerVisibility(true)}} style={styles.inputButton}>
-              <Text>{selectedCategory.category ? `${selectedCategory.type} : ${selectedCategory.category}` : 'Select Catagory'}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setCategoryPickerVisibility(true);
+              }}
+              style={styles.inputButton}
+            >
+              <Text>
+                {selectedCategory.category
+                  ? `${selectedCategory.type} : ${selectedCategory.category}`
+                  : "Select Catagory"}
+              </Text>
             </TouchableOpacity>
 
             {/* <TouchableOpacity onPress={()=>{}}>
@@ -331,7 +344,10 @@ const [displayname, setdisplayname] = useState("[Select Account]")
         animationType="slide"
         onRequestClose={() => setCategoryPickerVisibility(false)} // Allow modal to close on back press
       >
-        <SelectCategoryModal selected={selectedCategory.category ?? ''} onSelect={handleSelectCategory} />
+        <SelectCategoryModal
+          selected={selectedCategory.category ?? ""}
+          onSelect={handleSelectCategory}
+        />
       </Modal>
 
       <View style={styles.container}>
@@ -340,9 +356,11 @@ const [displayname, setdisplayname] = useState("[Select Account]")
             name="albums"
             style={styles.iconTitle}
             size={20}
-            color="#fff" 
+            color="#fff"
           />
-          <Text style={styles.title}>{selectedCategory.type == 'Transfer' ? 'Sender Account':'Account'}</Text>
+          <Text style={styles.title}>
+            {selectedCategory.type == "Transfer" ? "Sender Account" : "Account"}
+          </Text>
         </View>
 
         <View style={styles.rowInput}>
@@ -352,69 +370,67 @@ const [displayname, setdisplayname] = useState("[Select Account]")
               { height: isAccountPickerVisible ? 50 * sizeOption : null },
             ]}
           >
-       <DropDownPicker
-  open={isAccountPickerVisible}
-  multiple={false}  // Ensure single-select mode
-  value={selectedAccountValue} // Use the stored JSON value
-  items={accountItems}
-  setOpen={setAccountPickerVisibility}
-  setValue={setSelectedAccountValue} // Ensure state updates properly
-  setItems={setAccountItems}
-  placeholder={displayname}
-  style={styles.inputButton}
-  disableBorderRadius={true}
-  textStyle={{ textAlign: "center" }}
-  dropDownContainerStyle={styles.dropdownContainer}
-  disabled={true} 
-/>
-
-
-
+            <DropDownPicker
+              open={isAccountPickerVisible}
+              multiple={false} // Ensure single-select mode
+              value={selectedAccountValue} // Use the stored JSON value
+              items={accountItems}
+              setOpen={setAccountPickerVisibility}
+              setValue={setSelectedAccountValue} // Ensure state updates properly
+              setItems={setAccountItems}
+              placeholder={displayname}
+              style={styles.inputButton}
+              disableBorderRadius={true}
+              textStyle={{ textAlign: "center" }}
+              dropDownContainerStyle={styles.dropdownContainer}
+              disabled={true}
+            />
           </View>
 
           {/* <Text>Select an Option:</Text> */}
         </View>
       </View>
-      {selectedCategory.type == 'Transfer' && 
-      <View style={styles.container}>
-      <View style={styles.rowTile}>
-        <Ionicons
-          name="albums"
-          style={styles.iconTitle}
-          size={20}
-          color="#fff"
-        />
-        <Text style={styles.title}>Reciver Account</Text>
-      </View>
+      {selectedCategory.type == "Transfer" && (
+        <View style={styles.container}>
+          <View style={styles.rowTile}>
+            <Ionicons
+              name="albums"
+              style={styles.iconTitle}
+              size={20}
+              color="#fff"
+            />
+            <Text style={styles.title}>Reciver Account</Text>
+          </View>
 
-      <View style={styles.rowInput}>
-        <View
-          style={[
-            styles.inputsContainer,
-            { height: isAccountTransPickerVisible ? 50 * sizeOption : null },
-          ]}
-        >
-        <DropDownPicker
-  open={isAccountTransPickerVisible}
-  multiple={false}  // Ensure single-select mode
-  value={selectedAccountTransValue} // Use string value
-  items={accountItems}
-  setOpen={setAccountTransPickerVisibility}
-  setValue={setSelectedAccountTransValue}
-  setItems={setAccountItems}
-  placeholder="[Select Account]"
-  style={styles.inputButton}
-  disableBorderRadius={true}
-  textStyle={{ textAlign: "center" }}
-  dropDownContainerStyle={styles.dropdownContainer}
-/>
+          <View style={styles.rowInput}>
+            <View
+              style={[
+                styles.inputsContainer,
+                {
+                  height: isAccountTransPickerVisible ? 50 * sizeOption : null,
+                },
+              ]}
+            >
+              <DropDownPicker
+                open={isAccountTransPickerVisible}
+                multiple={false} // Ensure single-select mode
+                value={selectedAccountTransValue} // Use string value
+                items={accountItems}
+                setOpen={setAccountTransPickerVisibility}
+                setValue={setSelectedAccountTransValue}
+                setItems={setAccountItems}
+                placeholder="[Select Account]"
+                style={styles.inputButton}
+                disableBorderRadius={true}
+                textStyle={{ textAlign: "center" }}
+                dropDownContainerStyle={styles.dropdownContainer}
+              />
+            </View>
+
+            {/* <Text>Select an Option:</Text> */}
+          </View>
         </View>
-
-        {/* <Text>Select an Option:</Text> */}
-      </View>
-    </View>
-
-      }
+      )}
 
       <View style={styles.container}>
         <View style={styles.rowTile}>
@@ -468,9 +484,19 @@ const [displayname, setdisplayname] = useState("[Select Account]")
       </View>
 
       <View style={styles.sumbitContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(tabs)/IncomeExpense')}><Text>Cancel</Text></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => router.push("/(tabs)/IncomeExpense")}
+        >
+          <Text>Cancel</Text>
+        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleCreateTransaction}><Text>Save</Text></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleCreateTransaction}
+        >
+          <Text>Save</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAwareScrollView>
   );

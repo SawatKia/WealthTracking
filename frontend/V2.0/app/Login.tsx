@@ -169,7 +169,10 @@ export default function LoginScreen() {
         <Text style={styles.orText}>or</Text>
 
         {/* Google Login */}
-        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleGoogleLogin}
+        >
           <Ionicons name="logo-google" size={24} color="#4a4a8e" />
           <Text style={styles.googleText}>Sign in With Google</Text>
         </TouchableOpacity>

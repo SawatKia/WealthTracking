@@ -1,16 +1,26 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useBudget } from "../services/BudgetService"; 
+import { useBudget } from "../services/BudgetService";
 import SelectExpenseTypeModal from "./SelectExpenseType";
 import { useRouter } from "expo-router";
 
 const CreateBudget = () => {
-  const { createBudget } = useBudget(); 
-  const [selectedCategory, setSelectedCategory] = useState({ type: '', category: '' });
-  const [amount, setAmount] = useState('');
-  const router = useRouter()
+  const { createBudget } = useBudget();
+  const [selectedCategory, setSelectedCategory] = useState({
+    type: "",
+    category: "",
+  });
+  const [amount, setAmount] = useState("");
+  const router = useRouter();
 
   const handleSelectCategory = (category: string, type: string) => {
     setSelectedCategory({ category, type });
@@ -31,32 +41,57 @@ const CreateBudget = () => {
     await createBudget(newBudget);
   };
 
-  const [isCategoryPickerVisible, setCategoryPickerVisibility] = useState(false);
+  const [isCategoryPickerVisible, setCategoryPickerVisibility] =
+    useState(false);
 
   return (
     <KeyboardAwareScrollView>
       {/* Category Section */}
       <View style={styles.container}>
         <View style={styles.rowTile}>
-          <Ionicons name="shapes" style={styles.iconTitle} size={20} color="#fff" />
+          <Ionicons
+            name="shapes"
+            style={styles.iconTitle}
+            size={20}
+            color="#fff"
+          />
           <Text style={styles.title}>Category</Text>
         </View>
 
         <View style={styles.rowInput}>
-          <TouchableOpacity onPress={() => setCategoryPickerVisibility(true)} style={styles.inputButton}>
-            <Text>{selectedCategory.category ? `${selectedCategory.type} : ${selectedCategory.category}` : 'Select Category'}</Text>
+          <TouchableOpacity
+            onPress={() => setCategoryPickerVisibility(true)}
+            style={styles.inputButton}
+          >
+            <Text>
+              {selectedCategory.category
+                ? `${selectedCategory.type} : ${selectedCategory.category}`
+                : "Select Category"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <Modal visible={isCategoryPickerVisible} animationType="slide" onRequestClose={() => setCategoryPickerVisibility(false)}>
-        <SelectExpenseTypeModal selected={selectedCategory.category} onSelect={handleSelectCategory} />
+      <Modal
+        visible={isCategoryPickerVisible}
+        animationType="slide"
+        onRequestClose={() => setCategoryPickerVisibility(false)}
+      >
+        <SelectExpenseTypeModal
+          selected={selectedCategory.category}
+          onSelect={handleSelectCategory}
+        />
       </Modal>
 
       {/* Amount Section */}
       <View style={styles.container}>
         <View style={styles.rowTile}>
-          <Ionicons name="cash" style={styles.iconTitle} size={20} color="#fff" />
+          <Ionicons
+            name="cash"
+            style={styles.iconTitle}
+            size={20}
+            color="#fff"
+          />
           <Text style={styles.title}>Amount</Text>
         </View>
 
@@ -75,12 +110,17 @@ const CreateBudget = () => {
 
       {/* Buttons */}
       <View style={styles.sumbitContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => 
-        router.push('/Budget')}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => router.push("/Budget")}
+        >
           <Text>Cancel</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleCreateBudget}>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleCreateBudget}
+        >
           <Text>Save</Text>
         </TouchableOpacity>
       </View>
@@ -94,14 +134,14 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f9f9f9",
     borderRadius: 8,
-    elevation: 2, 
-    shadowColor: "#000", 
+    elevation: 2,
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   rowTile: {
-    flexDirection: "row", 
+    flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
@@ -117,7 +157,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   rowInput: {
-    flexDirection: "row", 
+    flexDirection: "row",
     alignItems: "center",
   },
   inputButton: {

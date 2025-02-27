@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, Modal } from "react-native";
-import * as ImagePicker from 'expo-image-picker';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Image,
+  Modal,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import DatePicker from 'react-native-modern-datepicker';
-import { useUsers } from '../../services/ProfileService'; // Import the useUsers hook
+import DatePicker from "react-native-modern-datepicker";
+import { useUsers } from "../../services/ProfileService"; // Import the useUsers hook
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { Users, loading, error, getAllUsers, editUser } = useUsers(); // Get user data and functions
 
-  const [username, setUsername] = useState('');
-  const [birthday, setBirthday] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [email, setEmail] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [editingUsername, setEditingUsername] = useState(false);
@@ -20,11 +29,11 @@ export default function ProfileScreen() {
   const [editingPassword, setEditingPassword] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const [tempUsername, setTempUsername] = useState('');
-  const [tempBirthday, setTempBirthday] = useState('');
-  const [tempEmail, setTempEmail] = useState('');
-  const [tempPassword, setTempPassword] = useState('');
-  const [tempConfirmPassword, setTempConfirmPassword] = useState('');
+  const [tempUsername, setTempUsername] = useState("");
+  const [tempBirthday, setTempBirthday] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
+  const [tempPassword, setTempPassword] = useState("");
+  const [tempConfirmPassword, setTempConfirmPassword] = useState("");
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -48,10 +57,14 @@ export default function ProfileScreen() {
   }, [getAllUsers]);
 
   const handleEditPhoto = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
-      Alert.alert("Permission Required", "You need to allow access to the media library to upload a profile picture.");
+      Alert.alert(
+        "Permission Required",
+        "You need to allow access to the media library to upload a profile picture."
+      );
       return;
     }
 
@@ -73,7 +86,7 @@ export default function ProfileScreen() {
 
   const confirmLogout = () => {
     setShowLogoutModal(false);
-    router.push('/Login');
+    router.push("/Login");
   };
 
   const cancelLogout = () => {
@@ -117,30 +130,39 @@ export default function ProfileScreen() {
 
   const handleCalendarClose = () => {
     setShowCalendar(false);
-    handleSave('birthday');
+    handleSave("birthday");
   };
 
-  const renderDetailItem = ({ icon, title, value, isEditing, setEditing, tempValue, setTempValue, field }: any) => {
+  const renderDetailItem = ({
+    icon,
+    title,
+    value,
+    isEditing,
+    setEditing,
+    tempValue,
+    setTempValue,
+    field,
+  }: any) => {
     return (
       <View style={styles.detailItem}>
         <View style={styles.detailLeft}>
           <Image source={icon} style={styles.itemIcon} />
           <View style={styles.detailTexts}>
             <Text style={styles.detailTitle}>{title}</Text>
-            {isEditing && field !== 'birthday' ? (
+            {isEditing && field !== "birthday" ? (
               <TextInput
-                style={[styles.editInput, { outline: 'none' }]}
+                style={[styles.editInput, { outline: "none" }]}
                 value={tempValue}
                 onChangeText={setTempValue}
-                secureTextEntry={field === 'password'}
+                secureTextEntry={field === "password"}
               />
             ) : (
               <Text style={styles.detailValue}>{value}</Text>
             )}
           </View>
         </View>
-        {field !== 'language' && (
-          isEditing && field !== 'birthday' ? (
+        {field !== "language" &&
+          (isEditing && field !== "birthday" ? (
             <TouchableOpacity
               style={styles.saveButton}
               onPress={() => handleSave(field)}
@@ -148,21 +170,22 @@ export default function ProfileScreen() {
               <Text style={styles.saveButtonText}>Save</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => {
-              if (field === 'birthday') {
-                setShowCalendar(true);
-                setEditingBirthday(true);
-              } else {
-                setEditing(true);
-              }
-            }}>
+            <TouchableOpacity
+              onPress={() => {
+                if (field === "birthday") {
+                  setShowCalendar(true);
+                  setEditingBirthday(true);
+                } else {
+                  setEditing(true);
+                }
+              }}
+            >
               <Image
                 source={require("../../assets/images/Edit-DetailProfile.png")}
                 style={styles.editIconSmall}
               />
             </TouchableOpacity>
-          )
-        )}
+          ))}
       </View>
     );
   };
@@ -204,7 +227,11 @@ export default function ProfileScreen() {
       <View style={styles.profileSection}>
         <View style={styles.profileImageContainer}>
           <Image
-            source={profileImage ? { uri: profileImage } : require("../../assets/images/default-profile.png")}
+            source={
+              profileImage
+                ? { uri: profileImage }
+                : require("../../assets/images/default-profile.png")
+            }
             style={styles.profileImage}
           />
           <TouchableOpacity
@@ -228,7 +255,7 @@ export default function ProfileScreen() {
           setEditing: setEditingUsername,
           tempValue: tempUsername,
           setTempValue: setTempUsername,
-          field: 'username'
+          field: "username",
         })}
         <View style={styles.separator} />
 
@@ -240,7 +267,7 @@ export default function ProfileScreen() {
           setEditing: setEditingBirthday,
           tempValue: tempBirthday,
           setTempValue: setTempBirthday,
-          field: 'birthday'
+          field: "birthday",
         })}
         <View style={styles.separator} />
 
@@ -252,7 +279,7 @@ export default function ProfileScreen() {
           setEditing: setEditingEmail,
           tempValue: tempEmail,
           setTempValue: setTempEmail,
-          field: 'email'
+          field: "email",
         })}
         <View style={styles.separator} />
 
@@ -265,13 +292,16 @@ export default function ProfileScreen() {
           setEditing: setEditingPassword,
           tempValue: tempPassword,
           setTempValue: setTempPassword,
-          field: 'password'
+          field: "password",
         })}
         <View style={styles.separator} />
 
         <TouchableOpacity style={styles.detailItem}>
           <View style={styles.detailLeft}>
-            <Image source={require("../../assets/images/Change-Language.png")} style={styles.itemIcon} />
+            <Image
+              source={require("../../assets/images/Change-Language.png")}
+              style={styles.itemIcon}
+            />
             <Text style={styles.detailTitle}>Change Language</Text>
           </View>
         </TouchableOpacity>
@@ -279,23 +309,39 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.detailItem} onPress={handleLogout}>
           <View style={styles.detailLeft}>
-            <Image source={require("../../assets/images/Logout.png")} style={styles.logoutIcon} />
+            <Image
+              source={require("../../assets/images/Logout.png")}
+              style={styles.logoutIcon}
+            />
             <Text style={[styles.detailTitle, styles.logoutText]}>Logout</Text>
           </View>
         </TouchableOpacity>
       </View>
 
       {/* Logout Modal */}
-      <Modal visible={showLogoutModal} transparent={true} animationType="fade" onRequestClose={cancelLogout}>
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelLogout}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Logout</Text>
-            <Text style={styles.modalMessage}>Are you sure you want to log out?</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to log out?
+            </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={cancelLogout}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={cancelLogout}
+              >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={confirmLogout}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={confirmLogout}
+              >
                 <Text style={styles.modalButtonText}>Log Out</Text>
               </TouchableOpacity>
             </View>
@@ -313,12 +359,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   profileSection: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginVertical: 20,
   },
   profileImageContainer: {
-    position: 'relative',
+    position: "relative",
     width: 120,
     height: 120,
     borderRadius: 60,
@@ -330,8 +376,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 60,
     borderWidth: 5,
     borderColor: "#ffffff",
@@ -361,7 +407,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   detailsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 20,
     shadowColor: "#000",
@@ -371,14 +417,14 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   detailItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 10,
   },
   detailLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   itemIcon: {
@@ -397,36 +443,36 @@ const styles = StyleSheet.create({
   },
   detailTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1A1A1A',
+    fontWeight: "500",
+    color: "#1A1A1A",
   },
   detailValue: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     marginTop: 4,
   },
   separator: {
     height: 0.5,
-    backgroundColor: '#E9E9E9',
+    backgroundColor: "#E9E9E9",
     marginVertical: 4,
   },
   logoutText: {
-    color: '#BB271A',
+    color: "#BB271A",
   },
   editInput: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     borderWidth: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#4957AA',
+    borderBottomColor: "#4957AA",
     borderRadius: 0,
     padding: 4,
     paddingLeft: 0,
     marginTop: 4,
-    outline: 'none',
+    outline: "none",
   },
   saveButton: {
-    backgroundColor: '#4957AA',
+    backgroundColor: "#4957AA",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
@@ -437,15 +483,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
@@ -476,18 +522,18 @@ const styles = StyleSheet.create({
     width: "40%",
   },
   calendarContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
   },
   calendar: {
     borderRadius: 10,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 16,
     paddingHorizontal: 16,
   },
@@ -495,17 +541,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
     paddingVertical: 8,
-    backgroundColor: '#4957AA',
+    backgroundColor: "#4957AA",
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
   closeButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   cancelButton: {
-    backgroundColor: '#666666',
+    backgroundColor: "#666666",
   },
   confirmButton: {
     backgroundColor: "#BB271A",

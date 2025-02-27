@@ -16,7 +16,7 @@ import { useBudget } from "../services/BudgetService";
 
 interface BudgetCardProps {
   budgets: Budget[];
-  getBudgets: () => void; 
+  getBudgets: () => void;
 }
 
 const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
@@ -27,8 +27,6 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
 
- 
-
   const handleEdit = async (budget: Budget) => {
     setSelectedBudget(budget);
     setEditAmount(budget.monthly_limit);
@@ -37,16 +35,14 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
 
   const handleDelete = async (id: string) => {
     console.log("Delete button clicked for item with ID:", id);
-    try{
+    try {
       const success = await deleteBudget(id);
       if (success) {
         console.log("Budget deleted:", id);
         setSelectedBudget(null);
         getBudgets(); // Refresh the budget list
-      } 
-
-    }
-    catch (error) {
+      }
+    } catch (error) {
       console.error(error, "Failed to delete budget. Please try again.");
     }
     // Alert.alert("Delete Budget", "Are you sure you want to delete this budget?", [
@@ -66,7 +62,6 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
     //   },
     // ]);
   };
-  
 
   const handleUpdate = async () => {
     if (!selectedBudget || !editAmount) return;

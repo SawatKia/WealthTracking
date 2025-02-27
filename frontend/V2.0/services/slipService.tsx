@@ -2,12 +2,22 @@ import { useState } from 'react';
 import axios from 'axios';
 import api from "./axiosInstance";
 import { Platform } from 'react-native';
-
+// Add a request interceptor
+axios.interceptors.request.use((request) => {
+  console.log('Request Payload:', request.data);
+  return request;
+});
+const formData = new FormData();
 interface ImageUri {
   uri: string;
   name: string;
   type: string;
 }
+axios.post('http://localhost:3000/api/v0.2/slip/verify', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+});
 
 export const useSlip = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -24,22 +34,23 @@ export const useSlip = () => {
     const formData = new FormData();
     // Append each image to the FormData
     imageUris.forEach((image, i) => {
-      formData.append('imageFile', {
+      const file = {
         uri: Platform.OS === 'android' ? image.uri : image.uri.replace('file://', ''),
-        name: `slip${Date.now()}.jpg`,
-        type: 'image/jpeg', // it may be necessary in Android.
-      }as any);
+        name: image.name || `slip${Date.now()}.jpg`,
+        type: image.type || 'image/jpeg',
+      };
+
+      formData.append('imageFile', file as any);
     });
 
     setLoading(true);
     setError(null); // Reset error state before making the API call
     console.log('Uploading images...', formData);
     try {
-        const response = await api.post('slip/verify', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',  // Ensure multipart for file uploads
-            },
-      
+      const response = await api.post('slip/verify', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',  // Ensure multipart for file uploads
+        },
       });
 
       // Handle success
