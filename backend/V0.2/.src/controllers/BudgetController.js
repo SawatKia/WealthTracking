@@ -22,7 +22,7 @@ class BudgetController extends BaseController {
         // this.deleteBudget = this.deleteBudget.bind(this);
 
         // Bind all methods to the class
-        Object.getOwnPropertyNames(GoogleSheetService.prototype).forEach(key => {
+        Object.getOwnPropertyNames(BudgetController.prototype).forEach(key => {
             if (typeof this[key] === 'function') {
                 this[key] = this[key].bind(this);
             }
