@@ -84,8 +84,9 @@ start_server() {
     sleepWithTimer 5
 
     echo -e "\033[7;34m>>>\033[0m Starting Production server containers from built image..."
-    docker compose up -d --no-build
-
+    # docker compose up -d --no-build
+    docker compose up -d --build
+    
     echo -e "\033[7;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
 
