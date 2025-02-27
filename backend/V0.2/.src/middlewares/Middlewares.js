@@ -430,7 +430,6 @@ class Middlewares {
     const SUSPICIOUS_PATTERNS = [
       "/",         // ป้องกันการสแกนหน้าหลัก
       "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
-      "/lip/verify", // ป้องกันการสแกน LIP API
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
       "wp-login",  // ป้องกันการสแกน WordPress
       "eval(",     // ป้องกัน XSS และ SQL Injection
@@ -484,18 +483,6 @@ class Middlewares {
       JSON.stringify(req.query).includes(pattern) ||
       JSON.stringify(req.body).includes(pattern)
     );
-
-    if (suspicious) {
-      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
-
-      if (!blacklist.has(clientIp)) {
-        blacklist.add(clientIp);
-        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
-      }
-      saveBlacklist(blacklist);
-
-      return next(MyAppErrors.forbidden());
-    } else logger.debug(`/// Request from ${clientIp} is not suspicious`);
 
     next();
   }
