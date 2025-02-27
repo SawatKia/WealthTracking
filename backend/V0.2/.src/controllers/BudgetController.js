@@ -15,11 +15,44 @@ class BudgetController extends BaseController {
         this.BudgetModel = new BudgetModel();
         this.TransactionModel = new TransactionModel();
 
-        this.createBudget = this.createBudget.bind(this);
-        this.getBudget = this.getBudget.bind(this);
-        this.getAllBudgets = this.getAllBudgets.bind(this);
-        this.updateBudget = this.updateBudget.bind(this);
-        this.deleteBudget = this.deleteBudget.bind(this);
+        // this.createBudget = this.createBudget.bind(this);
+        // this.getBudget = this.getBudget.bind(this);
+        // this.getAllBudgets = this.getAllBudgets.bind(this);
+        // this.updateBudget = this.updateBudget.bind(this);
+        // this.deleteBudget = this.deleteBudget.bind(this);
+
+        // Bind all methods to the class
+        Object.getOwnPropertyNames(GoogleSheetService.prototype).forEach(key => {
+            if (typeof this[key] === 'function') {
+                this[key] = this[key].bind(this);
+            }
+        });
+    }
+
+    async checkAndCreateMonthlyBudgets(nationalId) {
+        try {
+            logger.info('Checking if new month budgets need to be created');
+
+            // Get the current month's first day
+            const currentMonth = new Date();
+            currentMonth.setDate(1);
+            currentMonth.setHours(0, 0, 0, 0);
+
+            // Check if any budgets exist for current month
+            const currentBudgets = await this.BudgetModel.list({
+                national_id: nationalId,
+                month: currentMonth
+            });
+            logger.debug(`Current budgets: ${JSON.stringify(currentBudgets)}`);
+
+            if (currentBudgets.length === 0) {
+                logger.info('No budgets found for current month, creating new ones');
+                await this.BudgetModel.createBudgetsForNewMonth(nationalId);
+            }
+        } catch (error) {
+            logger.error(`Error checking monthly budgets: ${error.message}`);
+            throw error;
+        }
     }
 
     async createBudget(req, res, next) {
@@ -34,8 +67,12 @@ class BudgetController extends BaseController {
             const currentUser = await super.getCurrentUser(req);
             logger.debug(`Current user: ${JSON.stringify(currentUser)}`);
 
+            const current_spending = await this.TransactionModel.getSummaryExpenseOnSpecificMonthByType(currentUser.national_id, validatedFields.expense_type);
+            logger.debug(`current_spending: ${JSON.stringify(current_spending)}`);
+
             const data = {
                 ...validatedFields,
+                current_spending: current_spending || 0,
                 national_id: currentUser.national_id,
                 month: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
             }
@@ -61,6 +98,9 @@ class BudgetController extends BaseController {
         try {
             logger.info('Getting budget');
             const currentUser = await super.getCurrentUser(req);
+
+            // Check and create new month's budgets if needed
+            await this.checkAndCreateMonthlyBudgets(currentUser.national_id);
 
             // Use query params instead of path params
             const { expenseType } = req.query;
@@ -119,12 +159,18 @@ class BudgetController extends BaseController {
         try {
             logger.info('Getting all budgets');
             const currentUser = await super.getCurrentUser(req);
+
+            // Check and create new month's budgets if needed
+            await this.checkAndCreateMonthlyBudgets(currentUser.national_id);
+
             const budgets = await this.BudgetModel.list(currentUser.national_id);
-            if (!super.verifyOwnership(currentUser, budgets)) {
+            logger.debug(`Budgets retrieved: ${JSON.stringify(budgets)}`);
+
+            if (budgets.length > 0 && !super.verifyOwnership(currentUser, budgets[0])) {
                 logger.error('User does not own the budget');
                 throw MyAppErrors.unauthorized('You are not authorized to access this budget');
             }
-            logger.debug(`Budgets retrieved: ${JSON.stringify(budgets)}`);
+
             const message = budgets.length > 0 ? `${budgets.length} budgets retrieved successfully` : 'No budgets found';
             req.formattedResponse = formatResponse(200, message, budgets);
             next();
