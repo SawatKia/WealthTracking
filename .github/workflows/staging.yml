@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: verify server port connectivity
+      - name: Verify Server Port Connectivity
         run: |
           nc -zv ${{ secrets.STAGING_SERVERS_IP }} 22 80 443
 
@@ -36,33 +36,27 @@ jobs:
         run: |
           set -o pipefail
           echo "Starting build and deployment process on the server..."
-          # Capture output (both stdout and stderr) in a variable
           output=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
             echo "Navigating to project directory..."
             cd ~/WealthTracking || { echo "Failed to navigate to project directory"; exit 1; }
-            
+
             echo "Granting permissions to bash scripts..."
-            chmod +x deploy.sh || { echo "Failed to grant permissions to deploy script"; exit 1; }
-            chmod +x build.sh || { echo "Failed to grant permissions to build script"; exit 1; }
-            chmod +x start_server.sh || { echo "Failed to grant permissions to start server script"; exit 1; }
-            chmod +x update-nginx-blacklist.sh || { echo "Failed to grant permissions to update-nginx-blacklist script"; exit 1; }
-            chmod +x internet.sh || { echo "Failed to grant permissions to internet script"; exit 1; }
-            
+            chmod +x deploy.sh build.sh start_server.sh update-nginx-blacklist.sh internet.sh || { echo "Failed to grant permissions"; exit 1; }
+
             echo "Executing deploy script..."
             ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} || { echo "Deployment script failed"; exit 1; }
-            
+
             echo "Deployment completed successfully."
           EOF
-          2>&1)
+          )
           exit_code=$?
-          echo "$output"
-          if [ $exit_code -ne 0 ]; then
-            echo "reason=$output" >> $GITHUB_ENV
-            exit $exit_code
-          fi
+          echo "DEPLOY_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "$output" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          exit $exit_code
 
       - name: Notify Discord on Success
-        if: success()
+        if: steps.deploy.outcome == 'success'
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -74,16 +68,14 @@ jobs:
             🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
             🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
             📦 **Job** ran: `${{ github.job }}`
-            🛠️ **Action Status**: `${{ job.status }}`
-
-            Deployment completed successfully.
+            ✅ **Deployment Status**: Success 🎉
           include-details: "true"
           color-success: "#28a745" # Green for running the job success
           color-failure: "#8a0d04" # Dark Red for running the job failure
           color-cancelled: "#ffc107" # Yellow for running the job cancelled
 
       - name: Notify Discord on Failure
-        if: failure()
+        if: steps.deploy.outcome == 'failure'
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -95,11 +87,13 @@ jobs:
             🔔 **Triggered Event**: *`${{ github.event_name }}`* initiated by **@`${{ github.actor }}`**
             🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
             📦 **Job** ran: `${{ github.job }}`
-            ❌ **Action Status**: `${{ job.status }}`
+            ❌ **Deployment Status**: Failed 🚨
 
-            **Failure Reason:** ${{ env.reason || 'Unknown reason. Please check the logs.' }}
-
-            Please check the logs for  more details.
+            **Failure Reason:**  
+            ```
+            ${{ env.DEPLOY_OUTPUT }}
+            ```
+            Please check the logs for more details.
           include-details: "true"
           color-success: "#d73a49" # Green for running the job success
           color-failure: "#8a0d04" # Dark Red for running the job failure
