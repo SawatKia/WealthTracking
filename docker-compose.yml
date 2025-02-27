@@ -18,14 +18,7 @@ services:
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
       - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
     command: >
-      sh -c "
-        if [ \"$NODE_ENV\" = \"production\" ]; then
-          npm run start;
-        elif [ \"$NODE_ENV\" = \"test\" ]; then
-          npm run test;
-        else
-          npm run dev;
-        fi"
+      sh -c "npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
