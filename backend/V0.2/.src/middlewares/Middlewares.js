@@ -112,43 +112,12 @@ class Middlewares {
     // CORS configuration
     this.corsOptions = {
       origin: (origin, callback) => {
-        // Development environment
-        if (appConfigs.environment === 'development') {
-          const devAllowedOrigins = [
-            // Allow any localhost port
-            /^http:\/\/localhost:\d+$/,
-            // Allow Expo development client
-            /^exp:\/\/[\w\-]+\.[\w\-]+\.exp\.direct:\d+$/,
-            // Allow Expo Go app
-            /^exp:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
-            // Allow local network IP for Expo
-            /^exp:\/\/[\w\-]+\.local:\d+$/,
-            // Allow Expo web development
-            /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/
-          ];
-
-          // Allow requests with no origin (like mobile apps, Postman)
-          if (!origin) {
-            return callback(null, true);
-          }
-
-          const allowedOrigins = [
-            // Add your allowed origins here
-            'http://localhost:3000',          // Development
-            'exp://localhost:19000',          // Expo development server
-            'exp://192.168.x.x:19000', // Local network IP for mobile device testing
-            // 'https://your-production-domain.com', // Production web client
-            // 'capacitor://localhost',          // Capacitor/Ionic
-            // 'ionic://localhost',              // Ionic specific
-            '*', // Allow all origins
-          ];
-
-          if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
+        // Allow requests with no origin (like mobile apps, Postman)
+        if (!origin) {
+          return callback(null, true);
         }
+        // For any origin provided, allow it
+        callback(null, true);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: [
@@ -459,7 +428,9 @@ class Middlewares {
     const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
     logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
     const SUSPICIOUS_PATTERNS = [
+      "/",         // ป้องกันการสแกนหน้าหลัก
       "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
+      "/lip/verify", // ป้องกันการสแกน LIP API
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
       "wp-login",  // ป้องกันการสแกน WordPress
       "eval(",     // ป้องกัน XSS และ SQL Injection
