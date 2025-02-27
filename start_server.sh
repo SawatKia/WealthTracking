@@ -18,17 +18,17 @@ healthStatus() {
     fi
 
     echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health?service=cronjob healthStatus()..."
-    serverResponse=$(curl -s http://${ip}:${port}/health?service=cronjob healthStatus)
+    serverResponse=$(curl -v -m 10 http://${ip}:${port}/health?service=cronjob healthStatus)
 
     if [ -z "$serverResponse" ]; then
         echo -e "\033[7;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
         # Check if the container "WealthTrack-prodContainer" is running
         dockerStatus=$(docker ps --filter "name=WealthTrack-prodContainer" --format "{{.Status}}")
-        if [ -n "$dockerStatus" ]; then
+        if [ "$dockerStatus" != "healthy" ]; then
             echo -e "\033[1;36mWealthTrack-prodContainer status: $dockerStatus\033[0m"
             return 0
         else
-            echo -e "\033[1;31mContainer is not running.\033[0m"
+            echo -e "\033[1;31mContainer is not healthy.\033[0m"
             return 1
         fi
     else
@@ -84,7 +84,7 @@ start_server() {
     sleepWithTimer 5
 
     echo -e "\033[7;34m>>>\033[0m Starting Production server containers from built image..."
-    docker compose -f docker-compose.prod.yml up -d --no-build
+    docker compose up -d --no-build
 
     echo -e "\033[7;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
