@@ -1,5 +1,5 @@
-import React from 'react';
-import { TextInput, View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { TextInput, View, Text, StyleSheet } from "react-native";
 
 interface InputFieldAuthProps {
   label: string;
@@ -39,21 +39,21 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 5,
   },
   input: {
     height: 50,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 10,
   },
   errorInput: {
-    borderColor: 'red',
+    borderColor: "red",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 12,
     marginTop: 5,
   },

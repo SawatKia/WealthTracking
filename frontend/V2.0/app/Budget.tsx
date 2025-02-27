@@ -11,17 +11,18 @@ const Budget = () => {
   const [budgets, setBudgets] = useState<any[]>([]);
   const router = useRouter();
 
-  useEffect(() => {
-    async function fetchBudgets() {
-      try {
-        const data = await getBudgets();
-        setBudgets(data);
-      } catch (error) {
-        console.error("Error fetching budgets:", error);
-      }
+  const fetchBudgets = async () => {
+    try {
+      const data = await getBudgets();
+      setBudgets(data);
+    } catch (error) {
+      console.error("Error fetching budgets:", error);
     }
-
-    fetchBudgets();
+  }
+  
+  useEffect(() => {
+    fetchBudgets()
+      
   }, []);
 
   return (
@@ -35,7 +36,7 @@ const Budget = () => {
       </View>
 
       <PieChartBudget budgets={budgets} />
-      <BudgetCard budgets={budgets} />
+      <BudgetCard budgets={budgets} getBudgets={fetchBudgets}/>
       
     </View>
   );

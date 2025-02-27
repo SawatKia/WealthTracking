@@ -388,7 +388,6 @@ export default function Profile() {
           </View>
         )}
       </View>
-
       {/* Email */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>Email</Text>
@@ -442,6 +441,7 @@ export default function Profile() {
           </View>
         )}
       </View>
+
 
       {/* Password - แก้ไขส่วนนี้ */}
       <View style={styles.infoContainer}>
@@ -527,6 +527,7 @@ export default function Profile() {
           <Text style={styles.deleteButtonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
+
 
       {/* Logout Button */}
       <TouchableOpacity

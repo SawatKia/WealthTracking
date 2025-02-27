@@ -18,17 +18,17 @@ healthStatus() {
     fi
 
     echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health?service=cronjob healthStatus()..."
-    serverResponse=$(curl -s http://${ip}:${port}/health?service=cronjob healthStatus)
+    serverResponse=$(curl -v -m 10 http://${ip}:${port}/health?service=cronjob healthStatus)
 
     if [ -z "$serverResponse" ]; then
         echo -e "\033[7;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
         # Check if the container "WealthTrack-prodContainer" is running
         dockerStatus=$(docker ps --filter "name=WealthTrack-prodContainer" --format "{{.Status}}")
-        if [ -n "$dockerStatus" ]; then
+        if [ "$dockerStatus" != "healthy" ]; then
             echo -e "\033[1;36mWealthTrack-prodContainer status: $dockerStatus\033[0m"
             return 0
         else
-            echo -e "\033[1;31mContainer is not running.\033[0m"
+            echo -e "\033[1;31mContainer is not healthy.\033[0m"
             return 1
         fi
     else
@@ -115,8 +115,18 @@ echo -e "\033[1;32m++++Server is ready to use!++++\033[0m"
 
 # (Optional) Create a cronjob for Ubuntu (staging/production)
 if [ "$(uname -s)" = "Linux" ]; then
-    (crontab -l 2>/dev/null; echo "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'") | crontab -
-    (crontab -l 2>/dev/null; echo "*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh") | crontab -
+
+    # First, remove any existing entries to prevent duplicates
+    (crontab -l 2>/dev/null | grep -v "start_server.sh" \
+                           | grep -v "update-nginx-blacklist.sh" \
+                           | grep -v "internet.sh" \
+                           | grep -v "auto-authen.sh") | crontab -
+
+    # Add all cron jobs at once
+    (crontab -l 2>/dev/null; echo "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'
+*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
+*/20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
+    
     echo -e "\033[7;34m>>>\033[0m cronjob created."
 fi
 echo "Starting server script completed."

@@ -19,9 +19,10 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application code
-COPY ./.src ./.src
-COPY ./statics ./statics
 COPY ./sql ./sql
+COPY ./statics ./statics
+
+COPY ./.src ./.src
 
 # Expose the port from env
 EXPOSE ${APP_PORT}
