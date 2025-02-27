@@ -10,7 +10,6 @@ const appConfigs = require("../configs/AppConfigs");
 const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
-const app = require('../app.js');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -579,7 +578,7 @@ class Middlewares {
       if (GoogleSheetService.isConnected()) {
         const requestLog = GoogleSheetService.prepareRequestLog(req);
         req.requestLog = requestLog; // Store for later use in response handler
-      }
+      } else logger.warn('Google Sheet service is not connected');
 
       const ip = getIP(req);
       Object.defineProperty(req, 'ip', {
@@ -821,7 +820,7 @@ class Middlewares {
     if (GoogleSheetService.isConnected() && req.requestLog) {
       const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
       await GoogleSheetService.appendLog(completeLog);
-    }
+    } else logger.warn('Google Sheet service is not connected');
 
     // Get security headers
     const securityHeaders = this.logResponse(
