@@ -1,4 +1,3 @@
-//หนี้โว้ยยยยยยยยยย
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Button, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';

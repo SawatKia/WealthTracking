@@ -1,4 +1,3 @@
-//เพิ่มหนี้โว้ยยยย
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
