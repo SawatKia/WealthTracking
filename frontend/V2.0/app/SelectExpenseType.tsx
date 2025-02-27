@@ -25,16 +25,14 @@ type CategoryScreenNavigationProp = StackNavigationProp<
   "Category"
 >;
 
-export default function SelectCategoryModal({
+export default function SelectCExpenseTypeModal({
   selected,
   onSelect,
 }: {
   selected: string;
   onSelect: (category: string, type: string) => void;
 }) {
-  const [selectedOption, setSelectedOption] = useState<
-    "Expense" | "Income" | "Transfer"
-  >("Expense");
+  const [selectedOption, setSelectedOption] = useState<"Expense">("Expense");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   console.log(selected);
 
@@ -52,7 +50,7 @@ export default function SelectCategoryModal({
         <TouchableOpacity
           style={[
             styles.toggleButton,
-            selectedOption === "Expense" && { backgroundColor: "#FF7D54" },
+            selectedOption === "Expense" && { backgroundColor: "#ffd358" },
           ]}
           onPress={() => setSelectedOption("Expense")}
         >
@@ -62,42 +60,7 @@ export default function SelectCategoryModal({
               selectedOption === "Expense" && styles.selectedText,
             ]}
           >
-            Expense
-          </Text>
-        </TouchableOpacity>
-
-        {/* Income Button */}
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            selectedOption === "Income" && { backgroundColor: "#84FA89" },
-          ]}
-          onPress={() => setSelectedOption("Income")}
-        >
-          <Text
-            style={[
-              styles.toggleText,
-              selectedOption === "Income" && styles.selectedText,
-            ]}
-          >
-            Income
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            selectedOption === "Transfer" && { backgroundColor: "#f8d641" },
-          ]}
-          onPress={() => setSelectedOption("Transfer")}
-        >
-          <Text
-            style={[
-              styles.toggleText,
-              selectedOption === "Transfer" && styles.selectedText,
-            ]}
-          >
-            Transfer
+            Budget
           </Text>
         </TouchableOpacity>
       </View>
@@ -112,8 +75,6 @@ export default function SelectCategoryModal({
           />
         ))}
       </View>
-
-      {/* <CategoryCard title='Food'></CategoryCard> */}
     </ScrollView>
   );
 }
@@ -154,47 +115,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F6FF",
   },
 });
-// import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function CategoryExpenses() {
-//   const router = useRouter();
-//   const params = useLocalSearchParams();
-
-//   // Handle the name parameter
-// const name =
-//   typeof params.name === 'string' // If it's a string, use it directly
-//     ? params.name
-//     : Array.isArray(params.name) // If it's an array, join its elements
-//     ? params.name.join(', ') // Converts array to a comma-separated string
-//     : 'Default Title'; // Fallback if params.name is undefined or not valid
-
-//   return (
-//     <View style={styles.container}>
-//       <Stack.Screen
-//         options={{
-//           title: name, // Dynamically sets the title
-//         }}
-//       />
-//       <Text
-//         style={styles.text}
-//         onPress={() => {
-//           router.setParams({ name: 'Updated' }); // Updates the query parameter
-//         }}>
-//         Update the title
-//       </Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   text: {
-//     fontSize: 18,
-//     color: 'blue',
-//   },
-// });

@@ -8,26 +8,25 @@ const ReportByCategory = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   // const [monthlyExpenses, setMonthlyExpenses] = useState<any>(null);
 
-    useEffect(() => {
-      const fetchMonthlyExpense= async () => {
-        try {
-          const data = await getMonthlyExpense();
-          if (data) {
-            console.log(data)
-            const monthlyExpenses = data.map((expense: any) => ({
-              x: expense.type,
-              y: expense.totalAmount,
-            }));
-            setChartData(monthlyExpenses);
-          }
+  useEffect(() => {
+    const fetchMonthlyExpense = async () => {
+      try {
+        const data = await getMonthlyExpense();
+        if (data) {
+          console.log(data);
+          const monthlyExpenses = data.map((expense: any) => ({
+            x: expense.type,
+            y: expense.totalAmount,
+          }));
+          setChartData(monthlyExpenses);
         }
-        catch(err){
-          console.log(err)
-        }
-      };
-  
-      fetchMonthlyExpense();
-    }, []);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchMonthlyExpense();
+  }, []);
 
   // Log after state update to ensure it's up-to-date
   // useEffect(() => {
@@ -46,15 +45,16 @@ const ReportByCategory = () => {
       >
         Link to budget page
       </Text> */}
-      <Text style={{ fontSize: 20,fontWeight: 'bold', marginTop: 35 }}>Expenses Report</Text>
-      
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 35 }}>
+        Expenses Report
+      </Text>
+
       <VictoryPie
         data={chartData}
         theme={VictoryTheme.clean}
         // innerRadius={68}
         labelRadius={150}
-        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3"]}
-        // colorScale={["#FF8C00", "#FF6347", "#87CEEB"]}
+        colorScale={["#4957AA", "#7F8CD9", "#9AC9F3", "#FF8C00", "#FF6347"]}
         style={{
           labels: {
             fontSize: 10,
@@ -78,7 +78,6 @@ const ReportByCategory = () => {
         x={200}
         y={200}
         // text="Expense"
-
       />
     </View>
   );

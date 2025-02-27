@@ -1,55 +1,227 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import IconMap from "../constants/IconMap";
-import { Budget } from "../services/BudgetService"; 
-
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from "react-native";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import { Budget } from "../services/BudgetService";
+import { useRouter } from "expo-router";
+import { useBudget } from "../services/BudgetService";
 
 interface BudgetCardProps {
-  budgets: Budget[]; 
+  budgets: Budget[];
+  getBudgets: () => void;
 }
 
-const BudgetCard: React.FC<BudgetCardProps> = ({ budgets }) => {
+const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
+  const router = useRouter();
+  const { deleteBudget, updateBudget } = useBudget();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editAmount, setEditAmount] = useState("");
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
+
+  const handleEdit = async (budget: Budget) => {
+    setSelectedBudget(budget);
+    setEditAmount(budget.monthly_limit);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    console.log("Delete button clicked for item with ID:", id);
+    try {
+      const success = await deleteBudget(id);
+      if (success) {
+        console.log("Budget deleted:", id);
+        setSelectedBudget(null);
+        getBudgets(); // Refresh the budget list
+      }
+    } catch (error) {
+      console.error(error, "Failed to delete budget. Please try again.");
+    }
+    // Alert.alert("Delete Budget", "Are you sure you want to delete this budget?", [
+    //   { text: "Cancel", style: "cancel" },
+    //   {
+    //     text: "Delete",
+    //     onPress: async () => {
+    //       const success = await deleteBudget(id);
+    //       if (success) {
+    //         console.log("Budget deleted:", id);
+    //         setSelectedBudget(null);
+    //         getBudgets(); // Refresh the budget list
+    //       } else {
+    //         Alert.alert("Error", "Failed to delete budget. Please try again.");
+    //       }
+    //     },
+    //   },
+    // ]);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedBudget || !editAmount) return;
+
+    try {
+      // Use the updateBudget function from the service
+      await updateBudget(selectedBudget.expense_type, {
+        monthly_limit: editAmount,
+      });
+      setModalVisible(false);
+      getBudgets(); // Refresh the budget list
+    } catch (error) {
+      console.error("Error updating budget:", error);
+      Alert.alert("Error", "Failed to update budget. Please try again.");
+    }
+  };
+
+  const toggleExpand = (budgetId: string) => {
+    setExpandedBudgetId(expandedBudgetId === budgetId ? null : budgetId);
+  };
+
   return (
-    <FlatList
-      data={budgets}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => {
-        const monthlyLimit = parseFloat(item.monthly_limit as string);
-        const currentSpending = parseFloat(item.current_spending as string);
-        const leftAmount = monthlyLimit - currentSpending;
-        const overspent = leftAmount < 0;
-        const progress = Math.min(currentSpending / monthlyLimit, 1);
+    <View style={styles.container}>
+      <FlatList
+        data={budgets}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          const monthlyLimit = parseFloat(item.monthly_limit as string);
+          const currentSpending = parseFloat(item.current_spending as string);
+          const leftAmount = monthlyLimit - currentSpending;
+          const overspent = leftAmount < 0;
+          const progress = Math.min(currentSpending / monthlyLimit, 1);
 
-        return (
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <MaterialCommunityIcons
-                name={IconMap[item.expense_type.toLowerCase()] || "alert-circle-outline"}
-                style={styles.icon}
-                color="#4a4a8e"
+          return (
+            <View style={styles.card}>
+              <View style={styles.header}>
+                <MaterialCommunityIcons
+                  name="currency-usd"
+                  style={styles.icon}
+                  color="#4a4a8e"
+                />
+                <Text style={styles.category}>{item.expense_type}</Text>
+                <TouchableOpacity
+                  onPress={() => toggleExpand(item.id)}
+                  style={styles.expandButton}
+                >
+                  <Ionicons
+                    name={
+                      expandedBudgetId === item.id
+                        ? "chevron-up"
+                        : "chevron-down"
+                    }
+                    size={24}
+                    color="#333"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.amountRow}>
+                <Text style={styles.amount}>${currentSpending.toFixed(2)}</Text>
+                <Text
+                  style={[
+                    styles.status,
+                    { color: overspent ? "#FF3D00" : "#8A8A8A" },
+                  ]}
+                >
+                  {overspent
+                    ? `Overspent $${Math.abs(leftAmount).toFixed(2)}`
+                    : `Left $${leftAmount.toFixed(2)}`}
+                </Text>
+              </View>
+
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${progress * 100}%`,
+                      backgroundColor: overspent ? "#FF3D00" : "#08B80F",
+                    },
+                  ]}
+                />
+              </View>
+
+              {expandedBudgetId === item.id && (
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log("Budget Deleted Item :", item); // Log the item object
+                      handleDelete(item.expense_type);
+                    }}
+                    style={styles.deleteButton}
+                  >
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleEdit(item)}
+                    style={styles.editButton}
+                  >
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          );
+        }}
+      />
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.bottomModalContainer}>
+            <View style={styles.headerModal}>
+              <Text style={styles.modalTitle}>Edit Budget</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close-outline" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalLabel}>Monthly Limit: </Text>
+              <TextInput
+                style={styles.input}
+                value={editAmount}
+                onChangeText={setEditAmount}
+                keyboardType="numeric"
               />
-              <Text style={styles.category}>{item.expense_type}</Text>
             </View>
 
-            <View style={styles.amountRow}>
-              <Text style={styles.amount}>${currentSpending.toFixed(2)}</Text>
-              <Text style={[styles.status, { color: overspent ? "#FF3D00" : "#8A8A8A" }]}>
-                {overspent ? `Overspent $${Math.abs(leftAmount).toFixed(2)}` : `Left $${leftAmount.toFixed(2)}`}
-              </Text>
-            </View>
-
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: overspent ? "#FF3D00" : "#08B80F" }]} />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                onPress={handleUpdate}
+                style={styles.updateButton}
+              >
+                <Text style={styles.buttonText}>Update</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        );
-      }}
-    />
+        </View>
+      </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -76,6 +248,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
     color: "#333",
+    flex: 1,
+  },
+  expandButton: {
+    padding: 5,
   },
   amountRow: {
     flexDirection: "row",
@@ -101,6 +277,90 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 5,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#FF3D00",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+    alignItems: "center",
+  },
+  editButton: {
+    backgroundColor: "#4a4a8e",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  bottomModalContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    width: "100%",
+  },
+  headerModal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalContent: {
+    marginBottom: 10,
+  },
+  modalLabel: {
+    fontWeight: "bold",
+    color: "#333",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    marginTop: 10,
+    borderRadius: 5,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 20,
+  },
+  updateButton: {
+    backgroundColor: "#4a4a8e",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+    alignItems: "center",
+  },
+  closeButton: {
+    backgroundColor: "transparent",
   },
 });
 
