@@ -17,8 +17,6 @@ services:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
       - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
-    command: >
-      sh -c "npm run dev"
     depends_on:
       postgres:
         condition: service_healthy

@@ -77,12 +77,20 @@ class BaseController {
             logger.debug('Invalid request body');
             throw new Error('Invalid request body');
         }
-        logger.info(`received body: ${JSON.stringify(body, null, 2)}`);
+        const boundBody = {};
+        Object.keys(body).forEach(key => {
+            if (key.toLowerCase().includes('password')) {
+                boundBody[key] = '*'.repeat(body[key].length);
+            } else {
+                boundBody[key] = body[key];
+            }
+        });
+        logger.info(`received body: ${JSON.stringify(boundBody, null, 2)}`);
         if (!requiredFields || !Array.isArray(requiredFields)) {
             logger.debug('Invalid required fields');
             throw new Error('Invalid required fields');
         }
-        logger.info(`requiredFields: ${JSON.stringify(requiredFields, null, 2)} is valid`);
+        logger.info(`requiredFields is valid`);
 
         if (model && typeof model !== 'object') {
             logger.warn('Invalid model');
@@ -123,11 +131,19 @@ class BaseController {
                                 const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
                                 convertedBody[key] = cleanValue === '' ? null : Number(cleanValue);
                                 if (isNaN(convertedBody[key])) {
+                                    logger.error(`Invalid number format for field: ${key}`);
                                     throw new Error(`Invalid number format for field: ${key}`);
                                 }
                                 break;
                             case 'string':
                                 convertedBody[key] = String(value);
+                                break;
+                            case 'date':
+                                convertedBody[key] = new Date(value);
+                                if (isNaN(convertedBody[key])) {
+                                    logger.error(`Invalid date format for field: ${key}`);
+                                    throw new Error(`Invalid date format for field: ${key}`);
+                                }
                                 break;
                             default:
                                 convertedBody[key] = value;

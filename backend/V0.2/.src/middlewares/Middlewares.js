@@ -10,7 +10,6 @@ const appConfigs = require("../configs/AppConfigs");
 const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
-const app = require('../app.js');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -113,43 +112,12 @@ class Middlewares {
     // CORS configuration
     this.corsOptions = {
       origin: (origin, callback) => {
-        // Development environment
-        if (appConfigs.environment === 'development') {
-          const devAllowedOrigins = [
-            // Allow any localhost port
-            /^http:\/\/localhost:\d+$/,
-            // Allow Expo development client
-            /^exp:\/\/[\w\-]+\.[\w\-]+\.exp\.direct:\d+$/,
-            // Allow Expo Go app
-            /^exp:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
-            // Allow local network IP for Expo
-            /^exp:\/\/[\w\-]+\.local:\d+$/,
-            // Allow Expo web development
-            /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/
-          ];
-
-          // Allow requests with no origin (like mobile apps, Postman)
-          if (!origin) {
-            return callback(null, true);
-          }
-
-          const allowedOrigins = [
-            // Add your allowed origins here
-            'http://localhost:3000',          // Development
-            'exp://localhost:19000',          // Expo development server
-            'exp://192.168.x.x:19000', // Local network IP for mobile device testing
-            // 'https://your-production-domain.com', // Production web client
-            // 'capacitor://localhost',          // Capacitor/Ionic
-            // 'ionic://localhost',              // Ionic specific
-            '*', // Allow all origins
-          ];
-
-          if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
+        // Allow requests with no origin (like mobile apps, Postman)
+        if (!origin) {
+          return callback(null, true);
         }
+        // For any origin provided, allow it
+        callback(null, true);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: [
@@ -460,6 +428,7 @@ class Middlewares {
     const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
     logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
     const SUSPICIOUS_PATTERNS = [
+      "/",         // ป้องกันการสแกนหน้าหลัก
       "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
       "wp-login",  // ป้องกันการสแกน WordPress
@@ -515,18 +484,6 @@ class Middlewares {
       JSON.stringify(req.body).includes(pattern)
     );
 
-    if (suspicious) {
-      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
-
-      if (!blacklist.has(clientIp)) {
-        blacklist.add(clientIp);
-        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
-      }
-      saveBlacklist(blacklist);
-
-      return next(MyAppErrors.forbidden());
-    } else logger.debug(`/// Request from ${clientIp} is not suspicious`);
-
     next();
   }
 
@@ -579,7 +536,7 @@ class Middlewares {
       if (GoogleSheetService.isConnected()) {
         const requestLog = GoogleSheetService.prepareRequestLog(req);
         req.requestLog = requestLog; // Store for later use in response handler
-      }
+      } else logger.warn('Google Sheet service is not connected');
 
       const ip = getIP(req);
       Object.defineProperty(req, 'ip', {
@@ -821,7 +778,7 @@ class Middlewares {
     if (GoogleSheetService.isConnected() && req.requestLog) {
       const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
       await GoogleSheetService.appendLog(completeLog);
-    }
+    } else logger.warn('Google Sheet service is not connected');
 
     // Get security headers
     const securityHeaders = this.logResponse(

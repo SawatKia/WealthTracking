@@ -193,7 +193,11 @@ class TransactionController extends BaseController {
                 }
             });
             logger.debug(`validatedData: ${JSON.stringify(validatedData, null, 2)}`);
-            if (validatedData.transaction_datetime > new Date()) {
+            // Convert both dates to UTC for proper comparison
+            const transactionDate = new Date(validatedData.transaction_datetime);
+            const currentDate = new Date();
+
+            if (transactionDate > currentDate) {
                 logger.error('Transaction datetime cannot be in the future');
                 throw MyAppErrors.badRequest('Transaction datetime cannot be in the future');
             }
@@ -326,6 +330,8 @@ class TransactionController extends BaseController {
             if (error instanceof MyAppErrors) {
                 next(error);
             } else if (error.message.includes('Invalid number format for field: ')) {
+                next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('Invalid date format for field: ')) {
                 next(MyAppErrors.badRequest(error.message));
             } else if (error.name === 'ValidationError') {
                 next(MyAppErrors.badRequest(error.message));

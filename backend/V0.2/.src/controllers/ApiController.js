@@ -85,7 +85,11 @@ class ApiController {
     // Check minute request limit
     logger.info("============verify RPM=============");
     const minuteUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentMinute, 'minute');
-    logger.warn(`Current minute usage for ${modelName}: ${minuteUsage?.request_count || 0}/${limits.rpm} requests, ${minuteUsage?.token_count || 0}/${limits.tpm} tokens`);
+
+    const minuteRequestCount = minuteUsage ? minuteUsage.request_count : 0;
+    const minuteTokenCount = minuteUsage ? minuteUsage.token_count : 0;
+
+    logger.warn(`Current minute usage for ${modelName}: ${minuteRequestCount}/${limits.rpm} requests, ${minuteTokenCount}/${limits.tpm} tokens`);
 
     if (minuteUsage && minuteUsage.request_count >= limits.rpm) {
       const retryAfter = 60 - now.getSeconds();
@@ -103,8 +107,11 @@ class ApiController {
     // Check daily request limit
     logger.info("============verify RPD=============");
     const dailyUsage = await this.apiRequestLimitModel.getRequestLimit(modelName, currentDate, 'daily');
-    logger.warn(`Current daily usage for ${modelName}: ${dailyUsage?.request_count || 0}/${limits.rpd} requests, ${dailyUsage?.token_count || 0}/${limits.tpm} tokens`);
-    if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
+    // Get daily usage counts
+    const dailyRequestCount = dailyUsage ? dailyUsage.request_count : 0;
+    const dailyTokenCount = dailyUsage ? dailyUsage.token_count : 0;
+
+    logger.warn(`Current daily usage for ${modelName}: ${dailyRequestCount}/${limits.rpd} requests, ${dailyTokenCount}/${limits.tpm} tokens`); if (dailyUsage && dailyUsage.request_count >= limits.rpd) {
       const tomorrow = new Date(currentDate);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const retryAfter = Math.ceil((tomorrow - now) / 1000);
@@ -375,35 +382,35 @@ class ApiController {
     }
   }
 
-  /**
-   * Handles slip verification by using EasySlip API first, and then OCR text mapping if EasySlip API fails.
-   * @param {Object} req - The HTTP request object.
-   * @param {string} ocrText - The OCR text extracted from slip image.
-   * @returns {Promise<Object>} The verification result.
-   */
-  async _handleSlipVerification(req, ocrText) {
+  async _handleSlipVerification(req, ocrText, payload, imageBuffer) {
+    logger.info('Using EasySlip API for verification');
     try {
-      // Use EasySlip API
-      const easySlipResponse = await this.easySlipService.verifySlipByImage(req.file);
-      logger.debug(`easySlipResponse: ${JSON.stringify(easySlipResponse, null, 2)}`);
-
-      // Check EasySlip response status
-      if (!easySlipResponse) {
-        throw new Error("EasySlip verification failed");
+      if (req.file) {
+        result = await this.easySlipService.verifySlipByImage(req.file);
+      } else {
+        result = await this.easySlipService.verifySlipByBase64(req.body.image);
       }
 
+      // Increment EasySlip API usage counter
+      await this.apiRequestLimitModel.incrementRequestCount(
+        "EasySlip",
+        this._getCurrentDate(),
+        'daily'
+      );
+
+      logger.debug(`EasySlip verification result: ${JSON.stringify(result)}`);
       return {
         message: "Slip verification successful by EasySlip Api",
-        data: easySlipResponse
+        data: result
       };
     } catch (error) {
-      logger.error(`Error verifying slip with EasySlip API: ${error.message}`);
-      logger.error("EasySlip verification failed, using OCR text mapping to EasySlip response");
-      const easySlipResponse = await OcrMappingService.mapToEasySlip(ocrText, await QRCodeReader.extractPayloadFromBuffer(req.file.buffer), req.file.buffer);
-
+      logger.error(`EasySlip verification failed: ${error.message}`);
+      logger.info('Falling back to OCR mapping');
+      result = await OcrMappingService.mapToEasySlip(ocrText, payload, imageBuffer);
+      logger.debug(`OCR mapping result: ${JSON.stringify(result)}`);
       return {
         message: "Slip verification successful by OCR text mapping",
-        data: easySlipResponse
+        data: result
       };
     }
   }
@@ -419,47 +426,71 @@ class ApiController {
   async verifySlip(req, res, next) {
     logger.info("Processing slip verification request");
     try {
-      // Validate file input
-      if (!req.file) {
-        logger.error("No image file provided.");
-        throw MyAppErrors.badRequest("No image file provided.");
+      let imageBuffer;
+      let payload;
+
+      // Handle different input types
+      if (req.file) {
+        logger.info("Processing file upload input");
+        if (!this._isValidFile(req.file)) {
+          logger.error("Invalid file format or size");
+          throw MyAppErrors.badRequest("Invalid file format or size limit exceeded");
+        }
+        imageBuffer = req.file.buffer;
+        logger.debug(`File received: ${req.file.originalname}`);
+      } else if (req.body.image) {
+        logger.info("Processing base64 image input");
+        if (!this._isValidBase64Image(req.body.image)) {
+          logger.error("Invalid base64 image format");
+          throw MyAppErrors.badRequest("Invalid base64 image format");
+        }
+
+        // Convert base64 to buffer
+        const base64Data = req.body.image.split(',')[1];
+        imageBuffer = Buffer.from(base64Data, 'base64');
+        logger.debug("Base64 image converted to buffer successfully");
+      } else {
+        logger.error("No image input provided");
+        throw MyAppErrors.badRequest("No image provided");
       }
 
-      if (!this._isValidFile(req.file)) {
-        logger.error("Invalid file format or size.");
-        throw MyAppErrors.badRequest("IThe uploaded file is invalid or exceeds the size limit.");
+      if (!imageBuffer) {
+        logger.error("Invalid image buffer received");
+        throw MyAppErrors.badRequest("Invalid image buffer received");
       }
+      logger.debug(`Image buffer size: ${imageBuffer.byteLength} bytes`);
+      logger.debug(`imageBuffer: ${JSON.stringify(imageBuffer).substring(0, 500)}${JSON.stringify(imageBuffer).length > 500 ? "...[truncated]..." : ""}`);
 
-      const payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
-      logger.info(`payload: ${payload}`);
-
-      // Check EasySlip availability
-      const isQuotaAvailable = await this._checkQuotaAvailability();
-      logger.info(`EasySlip quota available: ${isQuotaAvailable}`);
+      payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
+      if (!payload) {
+        logger.error("Invalid QR code payload extracted");
+        throw MyAppErrors.badRequest("cannot extract payload from QR code");
+      }
+      logger.info(`Extracted QR code payload: ${payload}`);
 
       // check for duplicate slip
       const isDuplicateSlip = await this.slipHistoryModel.checkDuplicateSlip(payload);
       logger.info(`isDuplicateSlip: ${isDuplicateSlip}`);
-
       if (isDuplicateSlip) {
         logger.info('Duplicate slip detected');
         throw MyAppErrors.badRequest("Duplicate slip detected");
       }
 
-      // Extract text using OCR for type classification
-      let ocrText = await this._extractTextFromImage(req.file.buffer);
-      logger.debug(`OCR text result: ${ocrText}`); // Add detailed logging
+      // Check EasySlip availability
+      const isQuotaAvailable = await this._checkQuotaAvailability();
+      logger.info(`EasySlip quota available: ${isQuotaAvailable}`);
 
+      // Extract text using OCR for type classification
+      let ocrText = await this._extractTextFromImage(imageBuffer);
+      logger.debug(`OCR text result: ${ocrText}`); // Add detailed logging
       if (!ocrText || typeof ocrText !== 'string' || ocrText.trim().length === 0) {
         logger.error("Invalid OCR result received");
         throw MyAppErrors.badRequest("Could not properly extract text from image");
       }
-
-      // ocrText = ocrText.trim();
-      logger.warn(`[examining result] Sanitized OCR text: ${ocrText.trim()}`);
+      logger.warn(`Sanitized OCR text: ${ocrText.trim()}`);
 
       // Check Gemini rate limit before making LLM call
-      const modelName = appConfigs.gemini.models.classification; // Default model for classification
+      // const modelName = appConfigs.gemini.models.classification; // Default model for classification
       //NOTE - English 4 characters = 1 token, Thai 1-2 characters = 1 token
       //NOTE - get the precise token by sending asking to LLM(use countTokens method in GoogleGenerativeAI in LLMService.js)
       //NOTE - or after sending prompt to llm. since from these log messages:
@@ -487,63 +518,54 @@ class ApiController {
       // Extract data based on availability
       if (isQuotaAvailable) {
         logger.info('EasySlip available, verifying slip using EasySlip API...');
-        result = await this._handleSlipVerification(req, ocrText);
-
-        // Increment EasySlip API usage counter if EasySlip API was used
-        if (result.message.includes("EasySlip Api")) {
-          await this.apiRequestLimitModel.incrementRequestCount(
-            "EasySlip",
-            this._getCurrentDate(),
-            'daily'
-          );
-
-        }
-        if (result.data) {
-          logger.info("recording slip usage");
-          const slipUsage = await this.slipHistoryModel.recordSlipUsage(result.data.payload, result.data.transRef, req.user?.sub);
-          logger.debug(`slip usage record: ${JSON.stringify(slipUsage)}`);
-        }
-
-        // Prepare transaction data
-        const transactionData = await this._prepareTransactionData(result.data, transactionCategory, transactionType, req);
-        if (transactionData.category === "Expense") {
-          logger.warn("delete receiver field since it is unnecessary fields");
-          delete transactionData.receiver;
-        } else if (transactionData.category === "Income") {
-          logger.warn("delete sender field since it is unnecessary fields");
-          delete transactionData.sender;
-        }
-        logger.debug(`transaction to be create: ${JSON.stringify(transactionData)}`);
-        const transaction = await this.transactionModel.create(transactionData);
-        logger.debug(`transaction created: ${JSON.stringify(transaction)}`);
-
-        // Add transaction to response
-        result = {
-          message: result.message + " and stored as a transaction",
-          data: {
-            transaction
-          }
-        }
+        result = await this._handleSlipVerification(req, ocrText, payload, imageBuffer);
       } else {
-        logger.info('EasySlip is not available, applying OCR mapping to transaction instead...');
-        logger.info('Mapping OCR text to transaction...');
-        logger.debug(`OCR text: ${ocrText}`);
-        // Store mock transaction
-        const easySlipResponse = await OcrMappingService.mapToEasySlip(ocrText, payload, req.file.buffer);
-        logger.debug(`easySlipResponse: ${JSON.stringify(easySlipResponse, null, 2)}`);
-
-        const transactionData = await this._prepareTransactionData(easySlipResponse.data, transactionCategory, transactionType, req);
-        logger.debug(`transaction to be create: ${JSON.stringify(transactionData)} `);
-        const transaction = await this.transactionModel.create(transactionData);
-        logger.debug(`transaction created: ${JSON.stringify(transaction)} `);
-
+        logger.info('EasySlip unavailable, using OCR mapping');
+        result = await OcrMappingService.mapToEasySlip(ocrText, payload, imageBuffer);
         result = {
-          message: 'EasySlip is not available, using OCR text mapping to transaction instead' + " and stored as a transaction",
-          data: {
-            transaction
-          }
+          message: "Slip verification successful by OCR text mapping",
+          data: result
         };
       }
+      logger.debug(`Final slip verification result: ${JSON.stringify(result)}`);
+
+      // Prepare and store transaction
+      const transactionData = await this._prepareTransactionData(
+        result.data,
+        transactionCategory,
+        transactionType,
+        req
+      );
+
+      // Clean up unnecessary fields based on category
+      if (transactionData.category === "Expense") {
+        logger.info("Removing receiver field for Expense transaction");
+        delete transactionData.receiver;
+      } else if (transactionData.category === "Income") {
+        logger.info("Removing sender field for Income transaction");
+        delete transactionData.sender;
+      }
+
+      logger.debug(`Final transaction data: ${JSON.stringify(transactionData)}`);
+      const transaction = await this.transactionModel.create(transactionData);
+      logger.info(`Transaction created with ID: ${transaction.transaction_id}`);
+
+      // Record slip usage
+      if (result.data) {
+        logger.info("Recording slip usage");
+        const slipUsage = await this.slipHistoryModel.recordSlipUsage(
+          result.data.payload,
+          result.data.transRef,
+          req.user?.sub
+        );
+        logger.debug(`Slip usage recorded: ${JSON.stringify(slipUsage)}`);
+      }
+
+      // Format final response
+      result = {
+        message: result.message + " and stored as a transaction",
+        data: { transaction }
+      };
 
       req.formattedResponse = formatResponse(201, result.message, result.data);
       next();
@@ -566,6 +588,7 @@ class ApiController {
       }
     }
   }
+  //TODO - get slip image of specified transaction
 
   /**
    * Verify if a masked account number matches with a stored account number
@@ -575,6 +598,8 @@ class ApiController {
    */
   _verifyAccountNumber(maskedAccount, storedAccount) {
 
+    logger.info("Verifying account numbers");
+    logger.debug(`maskedAccount: ${maskedAccount}, storedAccount: ${storedAccount}`);
     if (!maskedAccount || !storedAccount) return false;
     // Convert both to strings and remove any spaces
     maskedAccount = maskedAccount.toString().replace(/\s/g, '');
@@ -629,7 +654,7 @@ class ApiController {
 
       for (const account of userAccounts) {
         const normalizedAccountNumber = await this.bankAccountUtils.normalizeAccountNumber(account.account_number);
-
+        logger.debug(`Normalized account number: ${normalizedAccountNumber}`);
 
         if (this._verifyAccountNumber(maskedSenderAccount.replace(/-/g, ''), normalizedAccountNumber)) {
           logger.debug(`Sender account found in slip: ${account.account_number}`);

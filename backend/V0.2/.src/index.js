@@ -310,7 +310,6 @@ const initializeServices = async () => {
     await LLMService.init();
     await OcrMappingService.init();
     await GoogleSheetService.init();
-    //TODO - display if any serveice failed to init 
 
     const fi = new FiModel();
     await fi.initializeData();
@@ -323,28 +322,41 @@ const initializeServices = async () => {
 
 const verifyEnvVars = (variables) => {
   try {
-    logger.info("env vars empty verification...");
-    if (typeof variables !== 'object') {
-      logger.error("env vars is not an object");
-      throw new Error("env vars is not an object");
+    logger.info("Verifying environment variables...");
+
+    // Check if variables object exists and is not empty
+    if (!variables || typeof variables !== 'object' || Object.keys(variables).length === 0) {
+      throw new Error("No environment variables found");
     }
 
-    if (Object.keys(variables).length === 0) {
-      logger.error("env vars is empty");
-      throw new Error("env vars is empty");
-    }
+    // Recursively check all nested objects
+    const checkNestedObject = (obj, parentKey = '') => {
+      for (const [key, value] of Object.entries(obj)) {
+        const fullKey = parentKey ? `${parentKey}.${key}` : key;
 
-    for (const [key, value] of Object.entries(variables)) {
-      if (value === undefined || value === null) {
-        logger.warn(`${key} is empty. Please set it in .env file, examine missing key in 🔗  \x1b[38;5;51mhttps://github.com/SawatKia/WealthTracking.git\x1b[0m`);
+        if (typeof value === 'object' && value !== null) {
+          checkNestedObject(value, fullKey);
+        } else if (
+          value === undefined ||
+          value === null ||
+          value === '' ||
+          value === 'undefined' ||
+          value === 'null' ||
+          (typeof value === 'string' && value.trim().length === 0)
+        ) {
+          logger.warn(`⚠️ ${fullKey} is not properly set. Please check your .env file.`);
+          logger.warn(`📝 For configuration details, visit: \x1b[38;5;51mhttps://github.com/SawatKia/WealthTracking/blob/main/.env.example\x1b[0m`);
+        }
       }
-    }
-    logger.info("env vars verification completed");
+    };
+
+    checkNestedObject(variables);
+    logger.info("✅ Environment variables verification completed");
   } catch (error) {
-    logger.error(`Error verifying env vars: ${error.message}`);
+    logger.error(`Error verifying environment variables: ${error.message}`);
     throw error;
   }
-}
+};
 
 /**
  * Function to display the WealthTrack app symbol in ASCII art
