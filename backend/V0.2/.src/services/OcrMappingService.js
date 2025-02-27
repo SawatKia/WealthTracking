@@ -60,7 +60,7 @@ class OcrMappingService {
             logger.debug(`senderBankCode: ${senderBankCode}, receiverBankCode: ${receiverBankCode}`);
 
             // Build response
-            return {
+            const response = {
                 status: 200,
                 data: {
                     payload: payload,
@@ -114,6 +114,7 @@ class OcrMappingService {
                     }
                 }
             };
+            return response.data;
         } catch (error) {
             logger.error(`Error mapping OCR to EasySlip format: ${error.message}`);
             throw error;
