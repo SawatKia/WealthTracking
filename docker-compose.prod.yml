@@ -8,7 +8,7 @@ services:
         - NODE_ENV=${NODE_ENV}
         - APP_PORT=${APP_PORT}
         - APP_DOMAIN=${APP_DOMAIN}
-    container_name: ${APP_DOMAIN}-devContainer
+    container_name: ${APP_DOMAIN}-prodContainer
     env_file: 
       - ./.env
     ports:
@@ -22,11 +22,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    command: >
+      sh -c "npm run dev"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-devContainer%20healthcheck"]
-      interval: 5m # Poll every 5 minutes after the container is healthy
+      interval: 1h # Poll every hour after the container is healthy
       timeout: 20s # Allow up to 20 seconds for each health check command
-      retries: 6 # Retry up to 6 times before considering the container unhealthy
+      retries: 2 # Retry up to 2 times before considering the container unhealthy
       start_period: 30s # Allow up to 30 seconds for initialization before the first check
     logging:
       driver: "json-file"
