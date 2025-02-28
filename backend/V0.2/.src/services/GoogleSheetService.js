@@ -98,18 +98,19 @@ class GoogleSheetService {
      */
     async init() {
         logger.info('GoogleSheetService initializing...');
-        // Wait for IP initialization
-        if (!this.hostIp) {
-            await this.initializeHostIp();
-        }
-
-        // Only initialize if in production environment
-        if (!this._verifyEnvironment()) {
-            logger.warn('GoogleSheetService initialization skipped in non-production environment');
-            return true;
-        }
 
         try {
+            // Wait for IP initialization
+            if (!this.hostIp) {
+                await this.initializeHostIp();
+            }
+
+            // Only initialize if in production environment
+            if (!this._verifyEnvironment()) {
+                logger.warn('GoogleSheetService initialization skipped in non-production environment');
+                return true;
+            }
+
             this.initializeAuth();
             this.initializeLogColumns();
 
@@ -189,9 +190,16 @@ class GoogleSheetService {
         }
     }
 
+    /**
+     * Verifies whether the GoogleSheetService should be enabled by checking 
+     * if the application host matches the server IP. Logs a warning and returns 
+     * false if the service is disabled in a non-production server environment.
+     * 
+     * @returns {boolean} - true if the service is enabled, false otherwise.
+     */
+
     _verifyEnvironment() {
         logger.info('Verifying environment...');
-        //TODO - verify if host == server ip instaed of environment
         if (appConfigs.appHost !== this.hostIp) {
             logger.warn('GoogleSheetService is disabled in non-production server');
             return false;
@@ -200,10 +208,16 @@ class GoogleSheetService {
     }
 
     /**
-     * Checks if the GoogleSheetService is connected to a spreadsheet
-     * @returns {boolean} True if connected, false otherwise
+     * Checks if the GoogleSheetService is connected and initialized.
+     * This will also check if the service is disabled in non-production server.
+     * @returns {boolean} true if the service is connected and initialized, false otherwise.
      */
     isConnected() {
+        if (!this._verifyEnvironment()) {
+            logger.warn("GoogleSheetService is disabled in non-production server");
+            return false;
+        }
+
         return this.connected;
     }
 
