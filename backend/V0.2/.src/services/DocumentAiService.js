@@ -99,14 +99,13 @@ class DocumentAiService {
             // Process the document
             const [result] = await this.documentAiClient.processDocument(request);
             logger.debug(`documentAi RAW result: ${JSON.stringify(result).substring(1, 1000)}${result.length > 1000 ? " ...[truncated]..." : ""}`);
-            const { document } = result;
-
+            let { document } = result;
 
             if (!document || !document.text) {
                 logger.error('No text was extracted from the image');
                 throw new Error('No text was extracted from the image');
             }
-            logger.debug(`document.text: ${document.text.substring(0, 1000)}${document.text.length > 1000 ? " ...[truncated]..." : ""}`);
+            logger.debug(`document.text: ${'\n'} + ${document.text.substring(0, 1000)}${document.text.length > 1000 ? " ...[truncated]..." : ""}`);
 
             // Extract text from all paragraphs
             let extractedText = document.pages
@@ -116,7 +115,7 @@ class DocumentAiService {
                 .trim();
 
             logger.info('Document AI processing completed');
-            logger.debug(`Recognized text: ${extractedText}`);
+            logger.debug(`Recognized text: ${'\n'} + ${extractedText}`);
             return extractedText;
         } catch (error) {
             logger.error(`Error during Document AI processing: ${error.message}`);
