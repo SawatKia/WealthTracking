@@ -125,6 +125,7 @@ class GoogleSheetService {
             if (this.activeSheet) {
                 logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
             }
+            this.connected = true;
 
             logger.info('GoogleSheetService successfully initialized');
             return true;
