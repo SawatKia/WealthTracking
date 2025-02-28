@@ -483,6 +483,7 @@ class Middlewares {
       logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
       return next(MyAppErrors.forbidden());
     }
+    logger.info(`${clientIp} is not in the black list`);
 
     const suspicious = SUSPICIOUS_PATTERNS.some((pattern) =>
       req.url.includes(pattern) ||
@@ -491,18 +492,18 @@ class Middlewares {
     );
 
     if (suspicious) {
-      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
+      logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
       if (this._isValidHost(req) && !blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+        logger.info(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
         saveBlacklist(blacklist);
       }
       return next(MyAppErrors.forbidden());
-    } else {
-      logger.debug(`/// Request from ${clientIp} is not suspicious`);
     }
+
+    logger.info(`${clientIp} => ${req.method} ${req.url} is passed through security middleware`);
 
     next();
   }
