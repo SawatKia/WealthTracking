@@ -16,11 +16,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify Server Port Connectivity
+      - name: Set Default Failure Reason
+        id: set_failure
         run: |
-          nc -zv ${{ secrets.STAGING_SERVERS_IP }} 22 80 443
+          echo "FAILURE_REASON=Unknown error occurred" >> $GITHUB_ENV
+          echo "FAILURE_STEP=None" >> $GITHUB_ENV
+
+      - name: Verify Server Port Connectivity
+        id: check_port
+        continue-on-error: true
+        run: |
+          if ! nc -zv ${{ secrets.STAGING_SERVERS_IP }} 22 80; then
+            echo "FAILURE_REASON=Could not connect to server ports (22, 80). Please check if server is up and ports are open." >> $GITHUB_ENV
+            echo "FAILURE_STEP=Port Connectivity Check" >> $GITHUB_ENV
+            exit 1
+          fi
 
       - name: Setup SSH Connection
+        if: steps.check_port.outcome == 'success'
+        id: setup_ssh
+        continue-on-error: true
         run: |
           echo "Setting up SSH connection..."
           mkdir -p ~/.ssh
@@ -28,11 +43,17 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
-          echo "SSH setup complete. Testing connection..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"
+          echo "Testing connection..."
+          if ! ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} "echo 'SSH connection successful!'"; then
+            echo "FAILURE_REASON=SSH connection failed. Check credentials and server SSH configuration." >> $GITHUB_ENV
+            echo "FAILURE_STEP=SSH Setup" >> $GITHUB_ENV
+            exit 1
+          fi
 
       - name: Build and Deploy on Server
+        if: steps.setup_ssh.outcome == 'success'
         id: deploy
+        continue-on-error: true
         run: |
           set -o pipefail
           echo "Starting build and deployment process on the server..."
@@ -50,13 +71,34 @@ jobs:
           EOF
           )
           exit_code=$?
+
+          # Store the output for both success and failure cases
           echo "DEPLOY_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "$output" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          exit $exit_code
+
+          if [ $exit_code -ne 0 ]; then
+            echo "FAILURE_REASON=Deployment script execution failed on server." >> $GITHUB_ENV
+            echo "FAILURE_STEP=Server Deployment" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Determine Workflow Status
+        id: status
+        if: always()
+        run: |
+          if [ "${{ steps.check_port.outcome }}" != "success" ]; then
+            echo "WORKFLOW_STATUS=failed" >> $GITHUB_ENV
+          elif [ "${{ steps.setup_ssh.outcome }}" != "success" ]; then
+            echo "WORKFLOW_STATUS=failed" >> $GITHUB_ENV
+          elif [ "${{ steps.deploy.outcome }}" != "success" ]; then
+            echo "WORKFLOW_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "WORKFLOW_STATUS=success" >> $GITHUB_ENV
+          fi
 
       - name: Notify Discord on Success
-        if: steps.deploy.outcome == 'success'
+        if: env.WORKFLOW_STATUS == 'success'
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -69,13 +111,18 @@ jobs:
             🔄 Associated **Commit**: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}>
             📦 **Job** ran: `${{ github.job }}`
             ✅ **Deployment Status**: Success 🎉
+
+            **Deployment Output:**  
+            ```bash
+            ${{ env.DEPLOY_OUTPUT }}
+            ```
           include-details: "true"
           color-success: "#28a745" # Green for running the job success
           color-failure: "#8a0d04" # Dark Red for running the job failure
           color-cancelled: "#ffc107" # Yellow for running the job cancelled
 
       - name: Notify Discord on Failure
-        if: steps.deploy.outcome == 'failure'
+        if: env.WORKFLOW_STATUS == 'failed'
         uses: nobrayner/discord-webhook@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -89,15 +136,22 @@ jobs:
             📦 **Job** ran: `${{ github.job }}`
             ❌ **Deployment Status**: Failed 🚨
 
-            **Failure Reason:**  
+            **Failed Step**: `${{ env.FAILURE_STEP }}`
+            **Failure Reason**:  
+            ```
+            ${{ env.FAILURE_REASON }}
+            ```
+
+            **Detailed Output (if available)**:
             ```
             ${{ env.DEPLOY_OUTPUT }}
             ```
-            Please check the logs for more details.
+
+            Please check the GitHub Actions logs for more details.
           include-details: "true"
-          color-success: "#d73a49" # Green for running the job success
-          color-failure: "#8a0d04" # Dark Red for running the job failure
-          color-cancelled: "#ffc107" # Yellow for running the job cancelled
+          color-success: "#28a745" # Green for success
+          color-failure: "#d73a49" # Red for failure
+          color-cancelled: "#ffc107" # Yellow for cancelled
 
       - name: Delete SSH Key
         if: always()
