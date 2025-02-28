@@ -16,12 +16,16 @@ import { Account } from "@/services/AccountService"; // นำเข้า useAc
 
 type AccountCardProps = {
   account: Account[];
+  currentIndex :number,
+  setCurrentIndex : React.Dispatch<React.SetStateAction<number>>,
 };
 
 export default function AccountCard({
   account,
+  currentIndex,
+  setCurrentIndex,
 }: AccountCardProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // const [currentIndex, setCurrentIndex] = useState(0);
   const totalBalance = account.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
   const handleSwipe = (event: GestureHandlerGestureEvent) => {
     const { nativeEvent } = event;

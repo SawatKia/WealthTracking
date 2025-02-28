@@ -13,41 +13,78 @@ import { View, Text } from "@/components/Themed";
 import { useTransactions, MonthlySummary } from "@/services/TransactionService";
 import { Account, useAccount } from "@/services/AccountService"; 
 import { useRouter, useFocusEffect } from "expo-router";
+import { Debt, useDebt } from '../../services/DebtService';
 
 export default function HomeScreen() {
   const { getMonthlySummary, getSummaryExpense, getSummaryIncome, error } =
     useTransactions(); // Get monthlyData from the hook
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
   const { getAllAccounts } = useAccount();
+  const { getAllDebts} = useDebt();
   const [bankAccounts, setBankAccounts] = useState<Account[]>([]); 
+  const [debtDetails, setDebtDetails] = useState<Debt[]>([]);
   const router = useRouter();
   
-  useEffect(() => {
-    const fetchMonthlySummary = async () => {
-      try {
-        const data = await getMonthlySummary();
-        console.log("getMonthlySummary", data);
-        setMonthlyData(data ?? []);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    fetchMonthlySummary();
-  }, []);
+  // useEffect(() => {
+  //   const fetchMonthlySummary = async () => {
+  //     try {
+  //       const data = await getMonthlySummary();
+  //       console.log("getMonthlySummary", data);
+  //       setMonthlyData(data ?? []);
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   };
+  //   fetchMonthlySummary();
+  // }, []);
   
   useFocusEffect(
         useCallback(() => {
-          const fetchData = async () => {
+          const fetchAccount = async () => {
             const accounts = await getAllAccounts();
             console.log("Fetched Accounts:", accounts);
             setBankAccounts(accounts);
             console.log('bankAccounts.length:', bankAccounts.length)
           };
-          
-          fetchData();
+          const fetchMonthlySummary = async () => {
+            try {
+              const data = await getMonthlySummary();
+              console.log("getMonthlySummary", data);
+              setMonthlyData(data ?? []);
+            } catch (err) {
+              console.log(err);
+            }
+          };
+          const fetchDebts = async () => {
+            try {
+              const debts = await getAllDebts();
+              setDebtDetails(debts);
+            } catch (error) {
+              console.error('Error fetching debts:', error);
+            }
+          };
+          fetchMonthlySummary();
+          fetchAccount();
+          fetchDebts();
         }, []), 
       );
-      
+      const totalDebt = debtDetails.reduce((sum, debt) => {
+        const loanPrinciple = parseFloat(String(debt.loan_principle) || '0');
+        return sum + loanPrinciple;
+      }, 0);
+    
+      const totalMonthlyPayment = debtDetails.reduce((sum, debt) => {
+        const loanPrinciple = parseFloat(String(debt.loan_principle) || '0');
+        const totalInstallments = parseFloat(String(debt.total_installments) || '1');
+        return sum + (loanPrinciple / totalInstallments);
+      }, 0);
+
+      const totalPercent = debtDetails.reduce((sum, debt) => {
+        const remainingBalance = debt.loan_balance; // Get remaining balance directly from API
+        const totalPaid = debt.loan_principle - remainingBalance; // Calculate totalPaid based on remainingBalance
+        const progressPercentage = (totalPaid / debt.loan_principle) * 100;
+        return sum + progressPercentage;
+      }, 0);
       const totalBalance = bankAccounts.reduce((total, account) => total + parseFloat(account.balance), 0);
       console.log('totalBalance:', totalBalance)
 
@@ -92,13 +129,13 @@ export default function HomeScreen() {
         <Text style={styles.header}>Debt</Text>
         <SummaryCard
           typeAccount="Total Debt"
-          balance={500}
-          totalAccounts={3}
+          balance={totalDebt}
+          totalAccounts={debtDetails.length}
           typeList="items"
         />
         <View style={styles.rowIncomeExpense}>
-          <PercentDebt text="Paid" amount={30} percent="%" />
-          <CurrentInstallment text="This Installment" amount={1000000.0} />
+          <PercentDebt text="Paid" amount={totalPercent/debtDetails.length} percent="%" />
+          <CurrentInstallment text="Monthly Payment" amount={totalMonthlyPayment} />
         </View>
       </View>
     </ScrollView>

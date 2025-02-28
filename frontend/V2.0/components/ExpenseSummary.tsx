@@ -21,7 +21,7 @@ const ExpenseSummary = ({ text_box2, amount }: ExpenseSummaryProps) => {
     <View style={styles.container}>
       <Text style={styles.text}>{text_box2}</Text>
       <Text style={styles.amount}>
-        -{amount} {/* Display fetched expense */}
+        -{amount} ฿{/* Display fetched expense */}
       </Text>
     </View>
   );

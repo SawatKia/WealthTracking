@@ -39,7 +39,7 @@ const SummaryBox1 = ({ text_box1, text_percent, amount }: IncomeSummaryProps) =>
     <View style={styles.container}>
       <Text style={styles.text}>{text_box1}</Text>
       <Text style={styles.amount}>
-        {amount} 
+        {amount} ฿
       </Text>
     </View>
   );
