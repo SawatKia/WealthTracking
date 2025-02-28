@@ -4,7 +4,6 @@ const axios = require('axios');
 
 const appConfigs = require('../configs/AppConfigs');
 const { Logger, formatBkkTime } = require('../utilities/Utils');
-const creds = require(appConfigs.googleSheet.pathToServiceAccount);
 
 const logger = Logger('GoogleSheetService');
 const MAX_RETRIES = 5;
@@ -33,7 +32,7 @@ class GoogleSheetService {
      * Fetches the server public IP from https://api.ipify.org
      * @returns {Promise<void>}
      * @private
-     */
+    */
     async initializeHostIp() {
         try {
             logger.info('Fetching server public IP...');
@@ -49,6 +48,7 @@ class GoogleSheetService {
     }
 
     initializeAuth() {
+        const creds = require(appConfigs.googleSheet.pathToServiceAccount);
         this.serviceAccount = new JWT({
             email: creds.client_email,
             key: creds.private_key,
@@ -231,6 +231,7 @@ class GoogleSheetService {
             return false;
         }
 
+        logger.debug(`GoogleSheetService connection status: ${this.connected}`);
         return this.connected;
     }
 
@@ -506,9 +507,6 @@ class GoogleSheetService {
     prepareResponseLog(request, response) {
         logger.info('Preparing response log entry...');
         try {
-            if (!this._verifyEnvironment()) {
-                return;
-            }
             // get response time ms
             const responseTimeMs = new Date().getTime();
 
@@ -561,7 +559,6 @@ class GoogleSheetService {
             return;
         }
 
-        logger.info('Appending log entry to sheet...');
         if (!this.connected || !this.activeSheet) {
             logger.warn('GoogleSheetService not connected');
             return;
