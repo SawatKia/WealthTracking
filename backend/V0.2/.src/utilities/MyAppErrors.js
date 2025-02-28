@@ -48,7 +48,7 @@ class MyAppErrors extends Error {
 
     static internalServerError(message, data = null, headers = {}) {
         let preparedMessage = 'Internal Server Error';
-        preparedMessage += ', please try again';
+        preparedMessage += ', please try again later';
         return new MyAppErrors(preparedMessage, 500, data, headers);
     }
 

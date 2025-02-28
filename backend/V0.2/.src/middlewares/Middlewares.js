@@ -134,6 +134,12 @@ class Middlewares {
 
     // Create CORS middleware
     this.corsMiddleware = cors(this.corsOptions);
+    // Bind all methods to the class
+    Object.getOwnPropertyNames(Middlewares.prototype).forEach(key => {
+      if (typeof this[key] === 'function') {
+        this[key] = this[key].bind(this);
+      }
+    });
   }
 
   /**
@@ -476,7 +482,7 @@ class Middlewares {
     };
 
     let blacklist = loadBlacklist();
-    logger.debug(`blacklist:${typeof blacklist} - ${JSON.stringify(blacklist)}`);
+    logger.debug(`blacklist: ${JSON.stringify([...blacklist])}::${typeof blacklist}`);
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
     if (blacklist.has(clientIp)) {
@@ -499,8 +505,8 @@ class Middlewares {
         blacklist.add(clientIp);
         logger.info(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
         saveBlacklist(blacklist);
+        return next(MyAppErrors.forbidden());
       }
-      return next(MyAppErrors.forbidden());
     }
 
     logger.info(`${clientIp} => ${req.method} ${req.url} is passed through security middleware`);
@@ -523,7 +529,7 @@ class Middlewares {
 
       // Clean the host value
       const requestHost = req.headers.host.toLowerCase().trim();
-      const configuredHost = appConfigs.appHost.toLowerCase().trim();
+      const configuredHost = (appConfigs.appHost || "").toLowerCase().trim();
 
       // Check for exact match
       if (requestHost === configuredHost) {
@@ -532,7 +538,7 @@ class Middlewares {
       }
 
       // Log invalid host
-      logger.error(`Unauthorized host detected: ${requestHost}`);
+      logger.warn(`Unauthorized host detected: ${requestHost}`);
       logger.debug(`Expected host: ${configuredHost}`);
       return false;
 
@@ -640,38 +646,42 @@ class Middlewares {
   }
 
   async authMiddleware(req, res, next) {
-    logger.info("Authenticating user");
-    if (req.formattedResponse) {
-      logger.info('the request was already handled. Skipping authentication');
-      return next();
-    }
+    try {
+      logger.info("Authenticating user");
 
-    const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
+      // Skip if response is already formatted
+      if (req.formattedResponse) {
+        logger.info('The request was already handled. Skipping authentication');
+        return next();
+      }
 
-    logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 10) + '...' : 'Not present'}`);
+      const accessToken = req.cookies['access_token'] || req.headers.authorization?.split(' ')[1];
+      logger.debug(`accessToken: ${accessToken ? accessToken.substring(0, 10) + '...' : 'Not present'}`);
 
-    if (accessToken) {
+      // If no access token is provided
+      if (!accessToken) {
+        logger.warn('No access token provided, skipping authentication');
+        return next();
+      }
+
+      // Verify token and set user
       try {
         const user = verifyToken(accessToken, appConfigs.accessTokenSecret);
         req.user = user;
         logger.info(`User authenticated(req.user): ${JSON.stringify(req.user, null, 2)}`);
-        next();
+        return next();
       } catch (err) {
         logger.warn('Invalid access token');
         logger.debug(`error: ${err}`);
-        next(MyAppErrors.unauthorized(
+        return next(MyAppErrors.unauthorized(
           AuthUtils.authenticationError.message,
           null,
           AuthUtils.authenticationError.headers
         ));
       }
-    } else {
-      logger.warn('No access token provided');
-      next(MyAppErrors.unauthorized(
-        AuthUtils.authenticationError.message,
-        null,
-        AuthUtils.authenticationError.headers
-      ));
+    } catch (error) {
+      logger.error(`Unexpected error in auth middleware: ${error.message}`);
+      return next(MyAppErrors.internalServerError('Authentication failed'));
     }
   }
 
@@ -831,7 +841,9 @@ class Middlewares {
 
     // Log response to Google Sheet if service is connected
     if (GoogleSheetService.isConnected() && req.requestLog) {
+      logger.info('Google Sheet service is connected');
       const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+      logger.info('log preparation completed, ready to append')
       await GoogleSheetService.appendLog(completeLog);
     } else logger.warn('Google Sheet service is not connected');
 
