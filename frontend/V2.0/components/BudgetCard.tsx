@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import IconMap from "../constants/IconMap";
 import { Budget } from "../services/BudgetService";
 import { useRouter } from "expo-router";
 import { useBudget } from "../services/BudgetService";
@@ -98,11 +99,13 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
           return (
             <View style={styles.card}>
               <View style={styles.header}>
-                <MaterialCommunityIcons
-                  name="currency-usd"
-                  style={styles.icon}
-                  color="#4a4a8e"
-                />
+              <MaterialCommunityIcons
+                // name={IconMap[item.expense_type.toLowerCase()] || "alert-circle-outline"}
+                name={IconMap[item.expense_type.toLowerCase()] || "alert-circle-outline"}
+
+                style={styles.icon}
+                color="#4a4a8e"
+              />
                 <Text style={styles.category}>{item.expense_type}</Text>
                 <TouchableOpacity
                   onPress={() => toggleExpand(item.id)}

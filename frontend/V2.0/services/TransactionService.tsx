@@ -283,8 +283,10 @@ export const useTransactions = () => {
     const getTransactionByAccount = async (acc_num: string, ficode: string) => {
       try {
         const response = await api.get(`/transactions/account/${acc_num}/${ficode}`);
+        console.log('acc_num from service',acc_num)
         if (response.status === 200) {
-          return response.data.data.transactions; // Returning the transactions array
+          console.log('transaction response: ' ,response.data.data.transactions)
+          return response.data.data.transactions; // Ensure this matches the API response structure
         } else {
           console.error("Error fetching transactions", response);
           return [];
@@ -293,7 +295,7 @@ export const useTransactions = () => {
         console.error("Error fetching transactions", error);
         return [];
       }
-    }
+    };
 
   return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId, getTransactionByAccount };
 };

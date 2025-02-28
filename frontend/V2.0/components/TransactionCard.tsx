@@ -1,14 +1,23 @@
-import React, { useState,useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal,FlatList } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import IconMap from "../constants/IconMap";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-
-import { useTransactions, Transaction } from '../services/TransactionService';
+import { useTransactions, Transaction } from "../services/TransactionService";
+import { Account } from "../services/AccountService";
 import { useRouter } from "expo-router";
 
 interface TransactionCardProps {
   selected: "Income" | "Expense" | "Transfer" | "All";
+  showOnlyThisAccount: boolean;
+  selectedAccount: Account | null;
 }
 
 const colorMap: Record<string, string> = {
@@ -17,146 +26,102 @@ const colorMap: Record<string, string> = {
   Transfer: "#ff9f00",
 };
 
-export default function TransactionCard({selected }: TransactionCardProps) {
-  const router = useRouter()
-  const { getAllTransactions, loading, error, deleteTransaction } = useTransactions();
+export default function TransactionCard({
+  selected,
+  showOnlyThisAccount,
+  selectedAccount,
+}: TransactionCardProps) {
+  const router = useRouter();
+  const {
+    getAllTransactions,
+    loading,
+    error,
+    deleteTransaction,
+    getTransactionByAccount,
+  } = useTransactions();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [refresh, setRefresh] = useState(false); 
-
+  const [refresh, setRefresh] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
-  // const [selectedType, setSelectedType] = useState<string>('All');
-  // const [isExpanded, setIsExpanded] = useState(false);
+
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const data = await getAllTransactions();
-        console.log(data)
+        let data;
+        if (showOnlyThisAccount && selectedAccount) {
+          const accountNumberWithoutHyphens = selectedAccount.account_number.replace(/-/g, "");
+          data = await getTransactionByAccount(accountNumberWithoutHyphens, selectedAccount.fi_code);
+        } else {
+          data = await getAllTransactions();
+        }
         setTransactions(data ?? []);
-      }
-      catch(err){
-        console.log(err)
+        console.log("Fetched Transactions:", data);
+      } catch (err) {
+        console.log("Error fetching transactions:", err);
       }
     };
 
     fetchTransactions();
-  }, [refresh]);
-
-  // for get txn by Acc
-  // const TransactionCard = ({ selectedType, account }) => {
-  //   const [transactions, setTransactions] = useState([]);
-  //   const [loading, setLoading] = useState(true);
-  
-  //   useEffect(() => {
-  //     const fetchTransactions = async () => {
-  //       setLoading(true);
-  //       if (account) {
-  //         const fetchedTransactions = await getTransactionByAccount(account.account_number, account.fi_code);
-  //         setTransactions(fetchedTransactions);
-  //       }
-  //       setLoading(false);
-  //     };
-      
-  //     fetchTransactions();
-  //   }, [selectedType, account]); 
+  }, [refresh, showOnlyThisAccount, selectedAccount]);
 
   const filteredTransactions = transactions.filter((transaction) => {
-    if (selected === 'All') {
-      return true; // Show all transactions
+    if (selected === "All") {
+      return true; 
     }
     return transaction.category === selected;
   });
 
-  const handleEdit = async (transactionId: string) =>{
-    setSelectedTransaction(null)
+  const handleEdit = (transactionId: string) => {
+    setSelectedTransaction(null);
     router.push(`/EditTransaction/${transactionId}`);
+  };
 
-  }
   const handleDelete = async (transactionId: string) => {
     try {
       await deleteTransaction(transactionId);
-  
-      // ✅ Trigger a re-render
-      setRefresh(prev => !prev); // Toggle refresh state
+      setRefresh((prev) => !prev); 
     } catch (error) {
       console.error("Error deleting transaction:", error);
     }
-    
   };
 
+  if (loading) {
+    return <View><Text>Loading...</Text></View>;
+  }
 
-    if (error) {
-      return (
-        <View >
-          <Text>{error}</Text>
-        </View>
-      );
-    }
+  if (error) {
+    return <View><Text>{error}</Text></View>;
+  }
+
+  if (!selectedAccount && showOnlyThisAccount) {
+    return <View><Text>No account selected. Please select an account to view transactions.</Text></View>;
+  }
 
   return (
-    // <View>
-      <FlatList
-      
-        data={filteredTransactions}
-        keyExtractor={(item) => item.transaction_id}
-        renderItem={({ item: transaction }) => (
-        
+    <FlatList
+      data={filteredTransactions}
+      keyExtractor={(item) => item.transaction_id}
+      renderItem={({ item: transaction }) => (
         <View style={styles.card}>
-          <TouchableOpacity
-            onPress={() => setSelectedTransaction(transaction.transaction_id)}
-            style={styles.mainContent}
-          >
-            {/* Image on the left */}
+          <TouchableOpacity onPress={() => setSelectedTransaction(transaction.transaction_id)} style={styles.mainContent}>
             <MaterialCommunityIcons
               name={IconMap[transaction.type.toLowerCase()] || "alert-circle-outline"}
               style={styles.icon}
               color="#4a4a8e"
             />
-
-            {/* Description and Date in the center */}
             <View style={styles.infoContainer}>
               <Text style={styles.description}>{transaction.type}</Text>
               <Text style={styles.date}>
                 {new Date(transaction.transaction_datetime).toLocaleDateString()}
               </Text>
             </View>
-
-            {/* Amount on the right */}
             <View style={styles.rightContainer}>
-              <Text style={[styles.amount, { color : colorMap[transaction.category] }]}>
-                {transaction.category === "Income"
-                  ? "+"
-                  : transaction.category === "Expense"
-                  ? "-"
-                  : ""}
+              <Text style={[styles.amount, { color: colorMap[transaction.category] }]}>
+                {transaction.category === "Income" ? "+" : transaction.category === "Expense" ? "-" : ""}
                 ฿{transaction.amount.toLocaleString()}
               </Text>
-              {/* <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                <Ionicons
-                  name={isExpanded ? "chevron-up-outline" : "chevron-down-outline"}
-                  size={24}
-                  color="#4a4a8e"
-                />
-              </TouchableOpacity> */}
             </View>
           </TouchableOpacity>
 
-          {/* {isExpanded && (
-            <View style={styles.additionalDetails}>
-              {
-              transaction.category === "Expense" && transaction.sender && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>From Account</Text>
-                  <Text style={styles.detailValue}>
-                    {transaction.sender.account_name}
-                  </Text>
-                </View>
-              )}
-
-            </View>
-            
-          )} */}
-
-          {/* Bottom Popup Modal */}
           <Modal
             visible={selectedTransaction === transaction.transaction_id}
             animationType="slide"
@@ -167,10 +132,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
               <View style={styles.bottomModalContainer}>
                 <View style={styles.headerModal}>
                   <Text style={styles.modalTitle}>Transaction Details</Text>
-                  <TouchableOpacity
-                    onPress={() => setSelectedTransaction(null)}
-                    style={styles.closeButton}
-                  >
+                  <TouchableOpacity onPress={() => setSelectedTransaction(null)} style={styles.closeButton}>
                     <Ionicons name="close-outline" size={24} color="#333" />
                   </TouchableOpacity>
                 </View>
@@ -184,13 +146,10 @@ export default function TransactionCard({selected }: TransactionCardProps) {
                 </View>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalLabel}>Amount: </Text>
-                  <Text style={{ color : colorMap[transaction.category] }}>
-                    {transaction.category === "Income" ? "+" : "-"}฿
-                    {transaction.amount.toLocaleString()}
+                  <Text style={{ color: colorMap[transaction.category] }}>
+                    {transaction.category === "Income" ? "+" : "-"}฿{transaction.amount.toLocaleString()}
                   </Text>
                 </View>
-
-                {/* Actions */}
                 <View style={styles.modalActions}>
                   <TouchableOpacity onPress={() => handleDelete(transaction.transaction_id)}>
                     <Text>Delete</Text>
@@ -203,12 +162,10 @@ export default function TransactionCard({selected }: TransactionCardProps) {
             </View>
           </Modal>
         </View>
-        )}
-      />
-
+      )}
+    />
   );
 }
-
 
 const styles = StyleSheet.create({
   card: {
@@ -251,46 +208,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "semibold",
   },
-  additionalDetails: {
-    marginTop: 10,
-    marginLeft: 50,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: "#555",
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: "#333",
-    flex: 1,
-    textAlign: "right",
-  },
-
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   bottomModalContainer: {
-    
     backgroundColor: "#fff",
     padding: 20,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     width: "100%",
   },
-  headerModal :{
-    flexDirection: 'row', // Align elements horizontally
-    justifyContent: 'space-between', // Push elements to the ends
+  headerModal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   closeButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   modalTitle: {
     fontSize: 18,
@@ -308,15 +243,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 20,
-  },
-  modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#4a4a8e",
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    color: "#fff",
-    fontSize: 16,
   },
 });

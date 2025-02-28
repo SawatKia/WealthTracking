@@ -10,7 +10,7 @@ const CurrentInstallment = ({ text, amount }: CurrentInstallmentProps) => (
   <View style={styles.container}>
     <Text style={styles.text}>{text}</Text>
     <Text style={styles.amount}>
-      {amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+      {amount.toLocaleString("en-US", { minimumFractionDigits: 2 })} ฿
     </Text>
   </View>
 );
