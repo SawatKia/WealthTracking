@@ -38,7 +38,7 @@ class GoogleSheetService {
         try {
             logger.info('Fetching server public IP...');
             const response = await axios.get('https://api.ipify.org?format=json');
-            this.hostIp = response.data.ip;
+            this.hostIp = String(response.data.ip);
             logger.info(`Server public IP: ${this.hostIp}`);
         } catch (error) {
             logger.error('Failed to fetch server public IP:', error);
@@ -125,6 +125,7 @@ class GoogleSheetService {
             if (this.activeSheet) {
                 logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
             }
+            this.connected = true;
 
             logger.info('GoogleSheetService successfully initialized');
             return true;
@@ -197,13 +198,14 @@ class GoogleSheetService {
      * 
      * @returns {boolean} - true if the service is enabled, false otherwise.
      */
-
     _verifyEnvironment() {
         logger.info('Verifying environment...');
-        if (appConfigs.appHost !== this.hostIp) {
-            logger.warn('GoogleSheetService is disabled in non-production server');
+        if (appConfigs.appHost != this.hostIp) {
+            logger.warn(`expect confiured host(${appConfigs.appHost}) to equal current host(${this.hostIp})`);
+            logger.warn('GoogleSheetService disabled in non-production environment');
             return false;
         }
+        logger.info('GoogleSheetService enabled');
         return true;
     }
 
