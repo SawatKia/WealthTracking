@@ -1,43 +1,67 @@
 #!/bin/bash
 
+source ./logging.sh
+# Function to log messages with timestamps and proper formatting for GitHub Actions
+# log() {
+#     local level=$1
+#     local message=$2
+#     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+#     case $level in
+#         "INFO")
+#             echo "::info::$timestamp - $message"
+#             ;;
+#         "WARNING")
+#             echo "::warning::$timestamp - $message"
+#             ;;
+#         "ERROR")
+#             echo "::error::$timestamp - $message"
+#             ;;
+#         *)
+#             echo "$timestamp - $message"
+#             ;;
+#     esac
+# }
+
+# Modified sleep timer with GitHub Actions friendly output
 sleepWithTimer() {
     for i in $(seq $1 -1 1); do
-        printf "\r\033[34mCountdown: %2d\033[0m   " "$i"
+        echo "::debug::Countdown: $i seconds remaining"
         sleep 1
     done
-    echo -e "\n"
+    echo ""
 }
 
-echo -e "\033[7;34m>>>\033[0m verifying the current directory..."
+# Modified script with GitHub Actions logging
+log "INFO" "Verifying the current directory..."
 if [ "${PWD##*/}" != "WealthTracking" ]; then
-  echo -e "\033[1;31mPlease run this script from the WealthTracking directory.\033[0m"
-  exit 1
+    log "ERROR" "Please run this script from the WealthTracking directory."
+    exit 1
 fi
 
-echo -e "\033[7;34m>>>\033[0m Pulling git repo..."
+log "INFO" "Pulling git repo..."
 git restore .
-echo -e "\033[1;32m++++ Git repo restored! ++++\033[0m"
+log "INFO" "Git repo restored!"
 git pull origin main --recurse-submodules
 if [ $? -ne 0 ]; then
-  echo -e "\033[1;31mFailed to pull git repo. Exiting...\033[0m"
-  exit 1
+    log "ERROR" "Failed to pull git repo."
+    exit 1
 fi
 sleepWithTimer 3
 
 if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
-  echo -e "\033[5;31mFiles installing.sh and start_server.sh do not exist. Exiting...\033[0m"
-  exit 1
+    log "ERROR" "Files installing.sh and start_server.sh do not exist."
+    exit 1
 fi
 
-echo -e "\033[7;34m>>>\033[0m installing dependencies..."
+log "INFO" "Installing dependencies..."
 ./installing.sh
 if [ $? -ne 0 ]; then
-  echo -e "\033[5;31mFailed to install dependencies. Exiting...\033[0m"
-  exit 1
+    log "ERROR" "Failed to install dependencies."
+    exit 1
 fi
 
-echo -e "\033[1;32m++++ Installed dependencies process complete! ++++\033[0m"
+log "INFO" "Installed dependencies process complete!"
 
-echo -e "\033[7;34m>>>\033[0m Starting server containers process..."
-
+log "INFO" "Starting server containers process..."
 ./start_server.sh $1 $2
