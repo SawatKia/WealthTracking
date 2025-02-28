@@ -1,57 +1,84 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, Modal } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useProfile } from '../../services/ProfileService';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from "expo-router";
-import DatePicker from 'react-native-modern-datepicker';
-import { useUsers } from '../../services/ProfileService'; // Import the useUsers hook
+import DateTimePicker from 'react-native-ui-datepicker';
+import dayjs, { Dayjs } from 'dayjs';
+import { MaterialIcons } from '@expo/vector-icons';
 
-export default function ProfileScreen() {
+// Type definitions - Updated to match ProfileService
+interface UpdateProfileData {
+  username?: string;
+  email?: string;
+  date_of_birth?: string;
+  newPassword?: string;
+  newConfirmPassword?: string; // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
+  password?: string;
+  profilePicture?: File;
+}
+
+export default function Profile() {
   const router = useRouter();
-  const { Users, loading, error, getAllUsers, editUser } = useUsers(); // Get user data and functions
+  const { profile, loading, error, getUserProfile, updateUserProfile, deleteUserAccount } = useProfile();
 
-  const [username, setUsername] = useState('');
-  const [birthday, setBirthday] = useState('');
-  const [email, setEmail] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // State for user data with proper typing
+  const [username, setUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [dateOfBirth, setDateOfBirth] = useState<Dayjs | null>(null);
+  const [profilePicture, setProfilePicture] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
 
+  // State for edit modes
   const [editingUsername, setEditingUsername] = useState(false);
-  const [editingBirthday, setEditingBirthday] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
+  const [editingDateOfBirth, setEditingDateOfBirth] = useState(false);
   const [editingPassword, setEditingPassword] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
 
-  const [tempUsername, setTempUsername] = useState('');
-  const [tempBirthday, setTempBirthday] = useState('');
-  const [tempEmail, setTempEmail] = useState('');
-  const [tempPassword, setTempPassword] = useState('');
-  const [tempConfirmPassword, setTempConfirmPassword] = useState('');
+  // State for password changes
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setnewConfirmPassword] = useState('');
 
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  // State for date picker
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
-  // Load user data on component mount
+  // State for delete account modal
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+
   useEffect(() => {
-    const fetchData = async () => {
-      const users = await getAllUsers();
-      if (users.length > 0) {
-        const user = users[0]; // Assuming you want to use the first user
-        setUsername(user.username);
-        setBirthday(user.date_of_birth);
-        setEmail(user.email);
-        setProfileImage(user.profile_picture_url);
-        setTempUsername(user.username);
-        setTempBirthday(user.date_of_birth);
-        setTempEmail(user.email);
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const userData = await getUserProfile();
+      if (userData) {
+        setUsername(userData.username);
+        setEmail(userData.email);
+
+        // Convert date string to dayjs object if it exists
+        if (userData.date_of_birth) {
+          setDateOfBirth(dayjs(userData.date_of_birth));
+        }
+
+        // จัดการ URL รูปโปรไฟล์ที่ได้จาก API
+        if (userData.profile_picture_url) {
+          setProfilePictureUrl(userData.profile_picture_url);
+        }
       }
-    };
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      Alert.alert('Error', 'Failed to load profile data');
+    }
+  };
 
-    fetchData();
-  }, [getAllUsers]);
-
-  const handleEditPhoto = async () => {
+  const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permissionResult.granted) {
-      Alert.alert("Permission Required", "You need to allow access to the media library to upload a profile picture.");
+    if (permissionResult.granted === false) {
+      Alert.alert('Permission Required', 'You need to grant access to your photos to change your profile picture.');
       return;
     }
 
@@ -59,460 +86,742 @@ export default function ProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.8,
     });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      // Set local state for preview
+      setProfilePicture(result.assets[0]);
+
+      // แสดงตัวโหลดเพื่อให้ผู้ใช้ทราบว่ากำลังอัปโหลด
+      Alert.alert('Uploading', 'Uploading your profile picture...');
+
+      // Create file object for upload
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const fileToUpload = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
+
+      try {
+        const updateData: UpdateProfileData = {
+          password: currentPassword,
+          profilePicture: fileToUpload,
+        };
+
+        const updatedProfile = await updateUserProfile(updateData);
+
+        if (updatedProfile && updatedProfile.profile_picture_url) {
+          // อัปเดต URL ของรูปภาพจาก response
+          setProfilePictureUrl(updatedProfile.profile_picture_url);
+
+          // แจ้งเตือนผู้ใช้
+          Alert.alert('Success', 'Profile picture updated successfully.');
+
+          // รีเซ็ตค่ารหัสผ่าน
+          setCurrentPassword('');
+        } else {
+          Alert.alert('Error', 'Failed to update profile picture. Please try again.');
+        }
+      } catch (err) {
+        Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+        console.error('Upload error:', err);
+      }
+    }
+  };
+
+  // แก้ไขฟังก์ชัน handleUpdateProfile
+  const handleUpdateProfile = async (data: UpdateProfileData) => {
+    if (!currentPassword && !data.profilePicture) {
+      Alert.alert('Password Required', 'Please enter your current password to update your profile.');
+      return;
+    }
+
+    try {
+      const updateData: UpdateProfileData = {
+        ...data,
+        password: currentPassword,
+      };
+
+      // แก้ไขการจัดการกับวันเกิด - convert Dayjs to string if present
+      if (data.date_of_birth && typeof data.date_of_birth !== 'string') {
+        updateData.date_of_birth = dayjs(data.date_of_birth).format('YYYY-MM-DD');
+      }
+
+      // แก้ไขการตรวจสอบรหัสผ่านใหม่
+      if (data.newPassword) {
+        if (data.newPassword !== data.newConfirmPassword) { // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
+          Alert.alert('Error', 'New passwords do not match.');
+          return;
+        }
+      }
+
+      console.log('Sending update data:', updateData);
+      const updatedProfile = await updateUserProfile(updateData);
+
+      if (updatedProfile) {
+        Alert.alert('Success', 'Your profile has been updated successfully.');
+
+        // Reset all edit modes and passwords
+        setEditingUsername(false);
+        setEditingEmail(false);
+        setEditingDateOfBirth(false);
+        setEditingPassword(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setnewConfirmPassword('');
+
+        // Reload user data
+        loadUserProfile();
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
+  };
+
+  // แก้ไขฟังก์ชัน onChangeDate
+  const onChangeDate = (selectedDate: any) => {
+    console.log('Selected date:', selectedDate); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ได้รับ
+
+    // แก้ไขวิธีรับค่าจาก DateTimePicker
+    if (selectedDate && selectedDate.date) {
+      const newDate = dayjs(selectedDate.date);
+      console.log('Converted to dayjs:', newDate.format('YYYY-MM-DD'));
+      setDateOfBirth(newDate);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      Alert.alert('Password Required', 'Please enter your current password to delete your account.');
+      return;
+    }
+
+    try {
+      const success = await deleteUserAccount(deletePassword);
+
+      if (success) {
+        setDeleteModalVisible(false); // ปิด modal ก่อนที่จะไปหน้า Login
+        Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+        router.push('/Login');
+      } else {
+        Alert.alert('Error', 'Failed to delete account. Please check your password and try again.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'An error occurred while deleting your account.');
     }
   };
 
   const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
+    // Implement your logout logic here
+    // For example, clear any auth tokens from storage
+    // AsyncStorage.removeItem('authToken');
 
-  const confirmLogout = () => {
-    setShowLogoutModal(false);
     router.push('/Login');
   };
 
-  const cancelLogout = () => {
-    setShowLogoutModal(false);
-  };
-
-  const handleSave = (field: string) => {
-    if (field === "password" && tempPassword !== tempConfirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
+  // ฟังก์ชันเพื่อกำหนดแหล่งที่มาของรูปภาพโปรไฟล์
+  const getProfileImageSource = () => {
+    // ลำดับความสำคัญ: 1. รูปภาพที่เพิ่งอัปโหลด, 2. URL จากเซิร์ฟเวอร์, 3. ภาพ placeholder
+    if (profilePicture && profilePicture.uri) {
+      return { uri: profilePicture.uri };
+    } else if (profilePictureUrl) {
+      return { uri: profilePictureUrl };
+    } else {
+      return null; // จะแสดงไอคอนแทน
     }
-
-    const updatedUser = {
-      national_id: "sample_id", // You should get this dynamically (perhaps from the fetched user data)
-      username: tempUsername,
-      email: tempEmail,
-      password: tempPassword,
-      confirm_password: tempConfirmPassword, // Assuming it's the same as password
-      date_of_birth: tempBirthday,
-    };
-
-    // Call the editUser function to update the user
-    editUser(updatedUser).then((success) => {
-      if (success) {
-        setUsername(tempUsername);
-        setBirthday(tempBirthday);
-        setEmail(tempEmail);
-        setEditingUsername(false);
-        setEditingBirthday(false);
-        setEditingEmail(false);
-        setEditingPassword(false);
-      } else {
-        Alert.alert("Error", "Failed to update the user information.");
-      }
-    });
   };
 
-  const handleDateSelect = (selectedDate: string) => {
-    setTempBirthday(selectedDate);
-  };
+  const profileImageSource = getProfileImageSource();
 
-  const handleCalendarClose = () => {
-    setShowCalendar(false);
-    handleSave('birthday');
-  };
-
-  const renderDetailItem = ({ icon, title, value, isEditing, setEditing, tempValue, setTempValue, field }: any) => {
+  if (loading) {
     return (
-      <View style={styles.detailItem}>
-        <View style={styles.detailLeft}>
-          <Image source={icon} style={styles.itemIcon} />
-          <View style={styles.detailTexts}>
-            <Text style={styles.detailTitle}>{title}</Text>
-            {isEditing && field !== 'birthday' ? (
-              <TextInput
-                style={[styles.editInput, { outline: 'none' }]}
-                value={tempValue}
-                onChangeText={setTempValue}
-                secureTextEntry={field === 'password'}
-              />
-            ) : (
-              <Text style={styles.detailValue}>{value}</Text>
-            )}
-          </View>
-        </View>
-        {field !== 'language' && (
-          isEditing && field !== 'birthday' ? (
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={() => handleSave(field)}
-            >
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => {
-              if (field === 'birthday') {
-                setShowCalendar(true);
-                setEditingBirthday(true);
-              } else {
-                setEditing(true);
-              }
-            }}>
-              <Image
-                source={require("../../assets/images/Edit-DetailProfile.png")}
-                style={styles.editIconSmall}
-              />
-            </TouchableOpacity>
-          )
-        )}
+      <View style={styles.loadingContainer}>
+        <Text>Loading profile...</Text>
       </View>
     );
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      {/* Modal for Calendar */}
-      <Modal visible={showCalendar} transparent={true} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.calendarContainer}>
-            <DatePicker
-              mode="calendar"
-              onSelectedChange={handleDateSelect}
-              selected={tempBirthday}
-              style={styles.calendar}
+    <ScrollView style={styles.container}>
+
+      {/* Profile Picture */}
+      <View style={styles.pictureContainer}>
+        <TouchableOpacity onPress={pickImage}>
+          {profileImageSource ? (
+            <Image
+              source={profileImageSource}
+              style={styles.profilePicture}
             />
-            <View style={styles.buttonContainer}>
+          ) : (
+            <View style={styles.placeholderImage}>
+              <MaterialIcons name="person" size={60} color="#ccc" />
+            </View>
+          )}
+          <View style={styles.editIconContainer}>
+            <MaterialIcons name="edit" size={20} color="white" />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Username */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>Username</Text>
+        {editingUsername ? (
+          <View style={styles.editContainer}>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>Current Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                placeholder="Required to update"
+              />
+            </View>
+            <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleCalendarClose}
-              >
-                <Text style={styles.closeButtonText}>Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.closeButton, styles.cancelButton]}
+                style={[styles.button, styles.cancelButton]}
                 onPress={() => {
-                  setShowCalendar(false);
-                  setEditingBirthday(false);
-                  setTempBirthday(birthday);
+                  setEditingUsername(false);
+                  setCurrentPassword('');
+                  loadUserProfile(); // Reset to original value
                 }}
               >
-                <Text style={styles.closeButtonText}>Cancel</Text>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={() => handleUpdateProfile({ username })}
+              >
+                <Text style={styles.buttonText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        ) : (
+          <View style={styles.valueContainer}>
+            <Text style={styles.value}>{username}</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setEditingUsername(true)}
+            >
+              <MaterialIcons name="edit" size={20} color="#8A8A8A" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
-      <View style={styles.profileSection}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={profileImage ? { uri: profileImage } : require("../../assets/images/default-profile.png")}
-            style={styles.profileImage}
-          />
-          <TouchableOpacity
-            onPress={handleEditPhoto}
-            style={styles.editIconContainer}
-          >
-            <Image
-              source={require("../../assets/images/Edit-ImageProfile.png")}
-              style={styles.editIconImage}
+      {/* Birthday - แก้ไขส่วนนี้ */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>Birthday</Text>
+        {editingDateOfBirth ? (
+          <View style={styles.editContainer}>
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => setDatePickerVisibility(!isDatePickerVisible)}
+            >
+              <Text>{dateOfBirth ? dateOfBirth.format('DD MMM YYYY') : 'Select Date'}</Text>
+              <MaterialIcons name="calendar-today" size={20} color="#8A8A8A" />
+            </TouchableOpacity>
+
+            {isDatePickerVisible && (
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  mode="single"
+                  date={dateOfBirth ? dateOfBirth.toDate() : new Date()}
+                  onChange={(params) => onChangeDate(params)}
+                />
+              </View>
+            )}
+
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>Current Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                placeholder="Required to update"
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => {
+                  setEditingDateOfBirth(false);
+                  setDatePickerVisibility(false);
+                  setCurrentPassword('');
+                  loadUserProfile(); // Reset to original value
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={() => {
+                  // Convert Dayjs to string before sending to API
+                  const formattedDate = dateOfBirth ? dateOfBirth.format('YYYY-MM-DD') : undefined;
+                  handleUpdateProfile({ date_of_birth: formattedDate });
+                }}
+              >
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.valueContainer}>
+            <Text style={styles.value}>
+              {dateOfBirth ? dateOfBirth.format('DD MMM YYYY') : ''}
+            </Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setEditingDateOfBirth(true)}
+            >
+              <MaterialIcons name="edit" size={20} color="#8A8A8A" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+      {/* Email */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>Email</Text>
+        {editingEmail ? (
+          <View style={styles.editContainer}>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
-          </TouchableOpacity>
-        </View>
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>Current Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                placeholder="Required to update"
+              />
+            </View>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => {
+                  setEditingEmail(false);
+                  setCurrentPassword('');
+                  loadUserProfile(); // Reset to original value
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={() => handleUpdateProfile({ email })}
+              >
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.valueContainer}>
+            <Text style={styles.value}>{email}</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setEditingEmail(true)}
+            >
+              <MaterialIcons name="edit" size={20} color="#8A8A8A" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      <View style={styles.detailsContainer}>
-        {renderDetailItem({
-          icon: require("../../assets/images/Edit-Username.png"),
-          title: "Username",
-          value: username,
-          isEditing: editingUsername,
-          setEditing: setEditingUsername,
-          tempValue: tempUsername,
-          setTempValue: setTempUsername,
-          field: 'username'
-        })}
-        <View style={styles.separator} />
 
-        {renderDetailItem({
-          icon: require("../../assets/images/Edit-Birthday.png"),
-          title: "Birthday",
-          value: birthday,
-          isEditing: editingBirthday,
-          setEditing: setEditingBirthday,
-          tempValue: tempBirthday,
-          setTempValue: setTempBirthday,
-          field: 'birthday'
-        })}
-        <View style={styles.separator} />
+      {/* Password - แก้ไขส่วนนี้ */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>Password</Text>
+        {editingPassword ? (
+          <View style={styles.editContainer}>
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>Current Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                placeholder="Enter current password"
+              />
+            </View>
 
-        {renderDetailItem({
-          icon: require("../../assets/images/Change-Email.png"),
-          title: "Email",
-          value: email,
-          isEditing: editingEmail,
-          setEditing: setEditingEmail,
-          tempValue: tempEmail,
-          setTempValue: setTempEmail,
-          field: 'email'
-        })}
-        <View style={styles.separator} />
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>New Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                placeholder="Enter new password"
+              />
+            </View>
 
-        {/* Password Update */}
-        {renderDetailItem({
-          icon: require("../../assets/images/Change-Password.png"),
-          title: "Password",
-          value: "********",
-          isEditing: editingPassword,
-          setEditing: setEditingPassword,
-          tempValue: tempPassword,
-          setTempValue: setTempPassword,
-          field: 'password'
-        })}
-        <View style={styles.separator} />
+            <View style={styles.passwordContainer}>
+              <Text style={styles.passwordLabel}>Confirm New Password:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={confirmNewPassword}
+                onChangeText={setnewConfirmPassword}
+                secureTextEntry
+                placeholder="Confirm new password"
+              />
+            </View>
 
-        <TouchableOpacity style={styles.detailItem}>
-          <View style={styles.detailLeft}>
-            <Image source={require("../../assets/images/Change-Language.png")} style={styles.itemIcon} />
-            <Text style={styles.detailTitle}>Change Language</Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => {
+                  setEditingPassword(false);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setnewConfirmPassword('');
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={() => handleUpdateProfile({
+                  newPassword: newPassword,
+                  newConfirmPassword: confirmNewPassword // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
+                })}
+              >
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </TouchableOpacity>
-        <View style={styles.separator} />
-
-        <TouchableOpacity style={styles.detailItem} onPress={handleLogout}>
-          <View style={styles.detailLeft}>
-            <Image source={require("../../assets/images/Logout.png")} style={styles.logoutIcon} />
-            <Text style={[styles.detailTitle, styles.logoutText]}>Logout</Text>
+        ) : (
+          <View style={styles.valueContainer}>
+            <Text style={styles.value}>••••••••</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setEditingPassword(true)}
+            >
+              <MaterialIcons name="edit" size={20} color="#8A8A8A" />
+            </TouchableOpacity>
           </View>
+        )}
+      </View>
+
+      {/* Delete Account */}
+      <View style={styles.dangerZone}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => setDeleteModalVisible(true)}
+        >
+          <MaterialIcons name="delete" size={20} color="white" />
+          <Text style={styles.deleteButtonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Logout Modal */}
-      <Modal visible={showLogoutModal} transparent={true} animationType="fade" onRequestClose={cancelLogout}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Confirm Logout</Text>
-            <Text style={styles.modalMessage}>Are you sure you want to log out?</Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={cancelLogout}>
+
+      {/* Logout Button */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        <MaterialIcons name="logout" size={20} color="white" />
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
+
+      {/* Delete Account Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalText}>
+              Are you sure you want to delete your account? This action cannot be undone.
+            </Text>
+
+            <Text style={styles.passwordLabel}>Enter your password to confirm:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              secureTextEntry
+              placeholder="Current password"
+            />
+
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelModalButton]}
+                onPress={() => {
+                  setDeleteModalVisible(false);
+                  setDeletePassword('');
+                }}
+              >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={confirmLogout}>
-                <Text style={styles.modalButtonText}>Log Out</Text>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.deleteModalButton]}
+                onPress={handleDeleteAccount}
+              >
+                <Text style={styles.modalButtonText}>Delete</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F6FF",
-    padding: 16,
+    backgroundColor: '#F0F6FF',
   },
-  profileSection: {
-    width: '100%',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
   },
-  profileImageContainer: {
-    position: 'relative',
+  header: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  pictureContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  profilePicture: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 8,
   },
-  profileImage: {
-    width: '100%',
-    height: '100%',
+  placeholderImage: {
+    width: 120,
+    height: 120,
     borderRadius: 60,
-    borderWidth: 5,
-    borderColor: "#ffffff",
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'white',
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   editIconContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: "#ffffff",
-    width: 35,
-    height: 35,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  editIconImage: {
-    width: 25,
-    height: 25,
-  },
-  editIconSmall: {
-    width: 20,
-    height: 20,
-  },
-  detailsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  detailLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  itemIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-  },
-  logoutIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-    marginTop: 3,
-  },
-  detailTexts: {
-    flex: 1,
-  },
-  detailTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1A1A1A',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 4,
-  },
-  separator: {
-    height: 0.5,
-    backgroundColor: '#E9E9E9',
-    marginVertical: 4,
-  },
-  logoutText: {
-    color: '#BB271A',
-  },
-  editInput: {
-    fontSize: 14,
-    color: '#666666',
-    borderWidth: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4957AA',
-    borderRadius: 0,
-    padding: 4,
-    paddingLeft: 0,
-    marginTop: 4,
-    outline: 'none',
-  },
-  saveButton: {
     backgroundColor: '#4957AA',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+  },
+  infoContainer: {
+    backgroundColor: 'white',
+    marginHorizontal: 15,
+    marginVertical: 8,
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  saveButtonText: {
-    color: '#FFFFFF',
+  label: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#666',
+    marginBottom: 5,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    borderRadius: 8,
-    width: "80%",
-    maxWidth: 350,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  modalMessage: {
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    width: "40%",
-  },
-  calendarContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    width: '90%',
-    maxWidth: 400,
-  },
-  calendar: {
-    borderRadius: 10,
-  },
-  buttonContainer: {
+  valueContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingHorizontal: 16,
-  },
-  closeButton: {
-    flex: 1,
-    marginHorizontal: 8,
-    paddingVertical: 8,
-    backgroundColor: '#4957AA',
-    borderRadius: 6,
     alignItems: 'center',
   },
-  closeButtonText: {
-    color: '#FFFFFF',
+  value: {
     fontSize: 16,
     fontWeight: '500',
   },
-  cancelButton: {
-    backgroundColor: '#666666',
+  editButton: {
+    padding: 5,
   },
-  confirmButton: {
-    backgroundColor: "#BB271A",
+  editContainer: {
+    marginTop: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+  },
+  datePickerButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  datePickerContainer: {
+    marginTop: 10,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  passwordContainer: {
+    marginTop: 15,
+  },
+  passwordLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  button: {
+    borderRadius: 5,
+    padding: 10,
+    width: '48%',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#E2E2E2',
+  },
+  saveButton: {
+    backgroundColor: '#9AC9F3',
+  },
+  buttonText: {
+    fontWeight: '500',
+  },
+  dangerZone: {
+    borderRadius: 5,
+    marginHorizontal: 15,
+    marginVertical: 10,
+  },
+  deleteButton: {
+    backgroundColor: '#d9534f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  logoutButton: {
+    backgroundColor: '#555',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 5,
+    marginHorizontal: 15,
+    marginVertical: 10,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#d9534f',
+  },
+  modalText: {
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    marginVertical: 10,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  modalButton: {
+    borderRadius: 5,
+    padding: 10,
+    width: '48%',
+    alignItems: 'center',
+  },
+  cancelModalButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  deleteModalButton: {
+    backgroundColor: '#d9534f',
   },
   modalButtonText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-    fontWeight: "bold",
+    fontWeight: '500',
+    color: '#fff',
   },
 });

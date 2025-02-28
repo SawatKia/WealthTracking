@@ -40,6 +40,25 @@ export default function TransactionCard({selected }: TransactionCardProps) {
 
     fetchTransactions();
   }, [refresh]);
+
+  // for get txn by Acc
+  // const TransactionCard = ({ selectedType, account }) => {
+  //   const [transactions, setTransactions] = useState([]);
+  //   const [loading, setLoading] = useState(true);
+  
+  //   useEffect(() => {
+  //     const fetchTransactions = async () => {
+  //       setLoading(true);
+  //       if (account) {
+  //         const fetchedTransactions = await getTransactionByAccount(account.account_number, account.fi_code);
+  //         setTransactions(fetchedTransactions);
+  //       }
+  //       setLoading(false);
+  //     };
+      
+  //     fetchTransactions();
+  //   }, [selectedType, account]); 
+
   const filteredTransactions = transactions.filter((transaction) => {
     if (selected === 'All') {
       return true; // Show all transactions
@@ -48,7 +67,7 @@ export default function TransactionCard({selected }: TransactionCardProps) {
   });
 
   const handleEdit = async (transactionId: string) =>{
-    setSelectedTransaction('')
+    setSelectedTransaction(null)
     router.push(`/EditTransaction/${transactionId}`);
 
   }
@@ -271,11 +290,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // Push elements to the ends
   },
   closeButton: {
-    // position: 'absolute'
-
-    // top: 10,
-    // right: 10,
-
     backgroundColor: 'transparent',
   },
   modalTitle: {

@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,76 +8,86 @@ import {
   Image,
   ScrollView,
 } from "react-native";
-
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useSlip } from "../services/slipService"; // Import the custom hook
+import { useRouter } from "expo-router";
 
-export default function ImageUploadScreen() {
-  const [imageUris, setImageUris] = useState<{ uri: string; name: string; type: string }[]>([]);
-  const API_URL = 'http://localhost:3000/slip/'; // Update to your backend URL
-  const AUTH_TOKEN = 'your-auth-token-here'; // Replace with your actual token
+interface ImageUri {
+  uri: string;
+  name: string;
+  type: string;
+}
 
+const ImageUploadScreen = () => {
+  const [imageUris, setImageUris] = useState<ImageUri[]>([]);
+  const { sendSlip, loading, error } = useSlip(); // Use the hook
+  const router = useRouter();
   // Function to pick images
   const pickImages = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 1,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      const imageList = result.assets.map((asset) => ({
-        uri: asset.uri,
-        name: `slip${Date.now()}.jpg`, // Unique name
-        type: 'image/jpeg',
-      }));
+      if (!result.canceled) {
+        const imageList = result.assets.map((asset) => ({
+          uri: asset.uri,
+          name: `slip${Date.now()}.jpg`,
+          type: "image/jpeg",
+        }));
 
-      setImageUris(imageList);
+        setImageUris(imageList);
+      }
+    } catch (error) {
+      console.error("Error picking images:", error);
     }
   };
 
-  // Function to upload images
-  const uploadImages = async () => {
+  // Function to handle uploading images
+  const handleUpload = async () => {
     if (imageUris.length === 0) {
-      Alert.alert('No image selected', 'Please select an image first.');
+      Alert.alert("No image selected", "Please select an image first.");
       return;
     }
-    console.log(imageUris)
-    
-    const formData = new FormData();
-    imageUris.forEach((image, index) => {
-      formData.append('imageFile', {
-        uri: image.uri,
-        name: image.name,
-        type: image.type,
-      } as any); // `as any` is required for React Native FormData
-    });
-    console.log(formData)
 
-    // try {
-    //   const response = await axios.post(API_URL, formData, {
-    //     headers: {
-    //       'Accept': 'application/json',
-    //       'Authorization': `Bearer ${AUTH_TOKEN}`,
-    //       'Content-Type': 'multipart/form-data',
-    //     },
-    //   });
-
-    //   Alert.alert('Upload Successful', `Response: ${JSON.stringify(response.data)}`);
-    // } catch (error) {
-    //   Alert.alert('Upload Failed', `Error: ${error.message}`);
-  // }
+    try {
+      const response = await sendSlip(imageUris);
+      console.log('response:', response);
+      router.push('/(tabs)/IncomeExpense');
+      // if (response) {
+      //   Alert.alert(
+      //     "Upload Successful",
+      //     `Response: ${JSON.stringify(response)}`
+      //   );
+      // }
+    } catch (error) {
+      Alert.alert("Upload Failed", `Error: ${error}`);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.rowTile}>
-        <Ionicons name="cloud-upload-outline" style={styles.iconTitle} size={20} color="#fff" />
+        <Ionicons
+          name="cloud-upload-outline"
+          style={styles.iconTitle}
+          size={20}
+          color="#fff"
+        />
         <Text style={styles.title}>Select Slip</Text>
       </View>
 
       <View style={styles.rowInput}>
         <TouchableOpacity style={styles.uploadBox} onPress={pickImages}>
-          <Ionicons name="image" style={styles.iconTitle} size={20} color="#fff" />
+          <Ionicons
+            name="image"
+            style={styles.iconTitle}
+            size={20}
+            color="#fff"
+          />
           <Text style={styles.browseText}>Browse</Text>
         </TouchableOpacity>
       </View>
@@ -101,20 +109,34 @@ export default function ImageUploadScreen() {
       )}
 
       <View style={styles.submitContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => setImageUris([])}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => {
+            setImageUris([])
+            router.push('/(tabs)/IncomeExpense');
+          }
+          }
+        >
           <Text>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={uploadImages}>
-          <Text>Next</Text>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleUpload}
+          disabled={loading} // Disable button while uploading
+        >
+          <Text>{loading ? "Uploading..." : "Next"}</Text>
         </TouchableOpacity>
       </View>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     margin: 10,
+    marginTop: 50,
     padding: 16,
     backgroundColor: "#f9f9f9",
     borderRadius: 8,
@@ -148,17 +170,17 @@ const styles = StyleSheet.create({
     width: 300,
     height: 200,
     borderRadius: 10,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#e0e0e0",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   browseText: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   submitContainer: {
     flexDirection: "row",
@@ -180,8 +202,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   previewContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginTop: 10,
   },
   previewImage: {
@@ -194,5 +216,45 @@ const styles = StyleSheet.create({
     maxHeight: 250, // ✅ Ensures scrollable area is not too large
     marginTop: 10,
   },
+  errorText: {
+    color: "red",
+    marginTop: 10,
+    textAlign: "center",
+  },
 });
 
+export default ImageUploadScreen;
+// import { launchCamera, launchImageLibrary, ImagePickerResponse, ImageLibraryOptions } from 'react-native-image-picker';
+
+// // Correcting the options structure
+// const options: ImageLibraryOptions = {
+//   selectionLimit: 0,
+//   mediaType: 'photo',
+//   includeBase64: false,
+// };
+
+// const uploadSlip = (): JSX.Element => {
+//   const openGallery = async (): Promise<void> => {
+//     try {
+//       const result: ImagePickerResponse = await launchImageLibrary(options);
+      
+//       if (result.didCancel) {
+//         console.log('User cancelled image picker');
+//       } else if (result.errorCode) {
+//         console.error('Error: ', result.errorMessage);
+//       } else {
+//         console.log('Image selected: ', result.assets?.[0].uri);
+//       }
+//     } catch (error) {
+//       console.error('Failed to open gallery: ', error);
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <button onClick={openGallery}>Upload Slip</button>
+//     </div>
+//   );
+// };
+
+// export default uploadSlip;
