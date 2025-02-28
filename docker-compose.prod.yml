@@ -58,7 +58,6 @@ services:
     networks:
       - app_network
 
-
   redis:
     image: redis:alpine
     container_name: redis_container
