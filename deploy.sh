@@ -29,14 +29,14 @@ if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
   exit 1
 fi
 
-echo -e "\033[7;34m>>>\033[0m Building source code and Docker image process..."
+echo -e "\033[7;34m>>>\033[0m installing dependencies..."
 ./installing.sh
 if [ $? -ne 0 ]; then
-  echo -e "\033[5;31mFailed to build source code. Exiting...\033[0m"
+  echo -e "\033[5;31mFailed to install dependencies. Exiting...\033[0m"
   exit 1
 fi
 
-echo -e "\033[1;32m++++ Build process complete! ++++\033[0m"
+echo -e "\033[1;32m++++ Installed dependencies process complete! ++++\033[0m"
 
 echo -e "\033[7;34m>>>\033[0m Starting server containers process..."
 
