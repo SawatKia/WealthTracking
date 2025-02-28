@@ -85,7 +85,7 @@ start_server() {
 
     echo -e "\033[7;34m>>>\033[0m Starting Production server containers from built image..."
     # docker compose up -d --no-build
-    docker compose up -d --build
+    docker compose -f docker-compose.prod.yml up -d --build
     
     echo -e "\033[7;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
