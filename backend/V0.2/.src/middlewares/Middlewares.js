@@ -428,18 +428,24 @@ class Middlewares {
     const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
     logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
     const SUSPICIOUS_PATTERNS = [
-      "/",         // ป้องกันการสแกนหน้าหลัก
-      "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
+      "/php-cgi/", // ป้อdงกัน RCE ผ่าน PHP-CGI
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
       "wp-login",  // ป้องกันการสแกน WordPress
       "eval(",     // ป้องกัน XSS และ SQL Injection
-      "cgi-bin",   // ป้องกัน CGI-based attack
+      "rm -rf",    // ป้องกัน RCE
+      "wget",      // ป้องกันการดาวน์โหลดไฟล์
+      "curl",      // ป้องกันการดาวน์โหลดไฟล์
+      "sh",        // ป้องกันการรัน shell command
+      "bash", "cmd", "powershell", "php", "python", "node", "npm", "yarn", "go",
+      ".txt", ".json", ".log", ".bak",   // ป้องกันการอ่านไฟล์ .txt
+      "telescope", // ป้องกันการสแกน Laravel Telescope
+      "cgi",   // ป้องกัน CGI-based attack
       "passwd",    // ป้องกันการพยายามอ่านไฟล์ passwd
       "union select", // ป้องกัน SQL Injection
       "exec(", "system(", "passthru(", "shell_exec(", // ป้องกัน RCE
       ".git/config", // พยายามเข้าถึง Git repo
-      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", // พยายามอ่านไฟล์ .env
-      "/prod/.env", "/production/.git/config", "/www/.git/config", // พยายามดึง environment configs
+      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", ".env", // พยายามอ่านไฟล์ .env
+      "/prod/.env", "/production/.git/config", "/www/.git/config", ".git", // พยายามดึง environment configs
       "/modules/utils/.git/config", "/templates/.git/config", "/user_area/.git/config",
       "/test_configs/.git/config", "/images/.git/config", "/core/config/.git/config",
       "/data/private/.git/config", "/static/content/.git/config",
@@ -484,7 +490,55 @@ class Middlewares {
       JSON.stringify(req.body).includes(pattern)
     );
 
+    if (suspicious) {
+      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
+
+      // Only add to blacklist if the request is request to a valid host and not already in the blacklist
+      if (this._isValidHost(req) && !blacklist.has(clientIp)) {
+        blacklist.add(clientIp);
+        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+        saveBlacklist(blacklist);
+      }
+      return next(MyAppErrors.forbidden());
+    } else {
+      logger.debug(`/// Request from ${clientIp} is not suspicious`);
+    }
+
     next();
+  }
+
+  /**
+  * Validates if the request is requesting to an authorized host server
+  * @param {Object} req - Express request object
+  * @returns {boolean} - Returns true if the request is request to a valid host, false otherwise
+  */
+  _isValidHost(req) {
+    try {
+      // Check if host header exists
+      if (!req.headers.host) {
+        logger.error('No host header present in request');
+        return false;
+      }
+
+      // Clean the host value
+      const requestHost = req.headers.host.toLowerCase().trim();
+      const configuredHost = appConfigs.appHost.toLowerCase().trim();
+
+      // Check for exact match
+      if (requestHost === configuredHost) {
+        logger.debug(`Valid host: ${requestHost}`);
+        return true;
+      }
+
+      // Log invalid host
+      logger.error(`Unauthorized host detected: ${requestHost}`);
+      logger.debug(`Expected host: ${configuredHost}`);
+      return false;
+
+    } catch (error) {
+      logger.error(`Error in host validation: ${error.message}`);
+      return false;
+    }
   }
 
   healthCheck(req, res, next) {
@@ -639,8 +693,8 @@ class Middlewares {
   }
 
   /**
- * Helper method to log response details
- */
+  * Helper method to log response details
+  */
   logResponse = (req, status_code, message, data, headers = {}, isError = false, fileResponse = null) => {
     const securityHeaders = {
       'X-Content-Type-Options': 'nosniff',
