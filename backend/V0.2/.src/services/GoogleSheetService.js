@@ -40,6 +40,8 @@ class GoogleSheetService {
             const response = await axios.get('https://api.ipify.org?format=json');
             this.hostIp = String(response.data.ip);
             logger.info(`Server public IP: ${this.hostIp}`);
+            logger.debug(`the server public IP is ${this.hostIp} type of ${typeof this.hostIp}`);
+            logger.debug(`the appConfigs.appHost is ${appConfigs.appHost} type of ${typeof appConfigs.appHost}`);
         } catch (error) {
             logger.error('Failed to fetch server public IP:', error);
             this.hostIp = null;
@@ -57,6 +59,8 @@ class GoogleSheetService {
     initializeLogColumns() {
         // Define log columns with clear mapping to request/response fields
         this.logColumns = [
+            'server-host-ip',
+            'running-environment',
             'request-timestamp',
             'request-ip',
             'request-method',
@@ -74,6 +78,8 @@ class GoogleSheetService {
         ];
 
         this.columnMapping = {
+            'server-host-ip': 'serverHostIp',
+            'running-environment': 'runningEnvironment',
             'request-timestamp': 'requestTimestamp',
             'request-ip': 'requestIp',
             'request-method': 'requestMethod',
@@ -98,6 +104,7 @@ class GoogleSheetService {
      */
     async init() {
         logger.info('GoogleSheetService initializing...');
+        this.connected = false;
 
         try {
             // Wait for IP initialization
@@ -108,6 +115,7 @@ class GoogleSheetService {
             // Only initialize if in production environment
             if (!this._verifyEnvironment()) {
                 logger.warn('GoogleSheetService initialization skipped in non-production environment');
+                this.connected = false;
                 return true;
             }
 
@@ -116,17 +124,21 @@ class GoogleSheetService {
 
             if (!this.serviceAccount) {
                 logger.warn('GoogleSheet authentication not initialized');
+                this.connected = false;
                 return false;
             }
 
             await this._initializeSpreadsheet();
             await this.setActiveSheet();
-            this.targetSheetid = this.activeSheet?.sheetId;
-            if (this.activeSheet) {
-                logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
+            if (!this.activeSheet) {
+                logger.error('Failed to set active sheet');
+                this.connected = false;
+                return false;
             }
-            this.connected = true;
 
+            this.targetSheetid = this.activeSheet?.sheetId;
+            logger.debug(`metadata: ${JSON.stringify(await this.metadata())}`);
+            this.connected = true;
             logger.info('GoogleSheetService successfully initialized');
             return true;
         } catch (error) {
@@ -192,16 +204,15 @@ class GoogleSheetService {
     }
 
     /**
-     * Verifies whether the GoogleSheetService should be enabled by checking 
-     * if the application host matches the server IP. Logs a warning and returns 
-     * false if the service is disabled in a non-production server environment.
-     * 
-     * @returns {boolean} - true if the service is enabled, false otherwise.
+     * Verifies if the GoogleSheetService should be enabled based on the current environment.
+     * Logs appropriate information and warnings if the host IP does not match the configured app host.
+     * Returns true if the environment allows the service to be enabled, false otherwise.
+     * @returns {boolean} - True if the environment is verified as production, false otherwise.
      */
     _verifyEnvironment() {
         logger.info('Verifying environment...');
+        logger.debug(`expect confiured host(${appConfigs.appHost}::${typeof appConfigs.appHost}) to equal current host(${this.hostIp}::${typeof this.hostIp})`);
         if (appConfigs.appHost != this.hostIp) {
-            logger.warn(`expect confiured host(${appConfigs.appHost}) to equal current host(${this.hostIp})`);
             logger.warn('GoogleSheetService disabled in non-production environment');
             return false;
         }
@@ -236,6 +247,7 @@ class GoogleSheetService {
     async setActiveSheet(sheetName = "logs") {
         try {
             logger.info(`Setting active sheet: ${sheetName}`);
+            this.connected = false;
 
             this.activeSheet = await this._findSheet(sheetName);
             logger.debug(`current active sheet: ${this.activeSheet?.title || 'null'}`);
@@ -260,8 +272,12 @@ class GoogleSheetService {
             await this._validateSheetStructure();
             logger.info(`Active sheet set to: ${this.activeSheet.title}`);
             await this.displayFirst10Rows();
-            this.connected = true;
-            return true;
+
+            if (this.activeSheet) {
+                this.connected = true;
+                return true;
+            }
+            return false;
         } catch (error) {
             logger.error('Error setting active sheet:', error);
             this.connected = false;
@@ -304,13 +320,26 @@ class GoogleSheetService {
         }
     }
 
+    /**
+     * Validates and initializes headers in the active Google Spreadsheet.
+     * 
+     * This function fetches the first row from the active sheet to determine the current headers.
+     * It compares them against the required headers defined in `logColumns`. If any headers are
+     * missing, it calculates the correct positions for these headers based on the required order
+     * and inserts them into the sheet. The function ensures that all required headers are present
+     * and in the correct order. It logs relevant information and errors during the process.
+     * 
+     * @async
+     * @throws {Error} Throws an error if the validation or insertion process fails.
+     */
+
     async validateAndInitializeHeaders() {
         logger.info("Validating headers...");
         try {
             const headerRow = await this.retryWithExponentialBackoff(async () => {
-                //TODO - get the first row manually
                 return await this.getSheetRows(1, 1);
             });
+
             // Extract header values from the first row
             const currentHeaders = headerRow.length > 0 ?
                 Object.keys(headerRow[0].toObject()) : [];
@@ -319,22 +348,112 @@ class GoogleSheetService {
 
             const currentHeaderSet = new Set(currentHeaders);
             const requiredHeaders = this.logColumns;
-
             const missingHeaders = requiredHeaders.filter(header => !currentHeaderSet.has(header));
 
             if (missingHeaders.length > 0) {
-                logger.debug(`missing headers: ${missingHeaders.join(', ')}`);
+                logger.debug(`Missing headers to add: ${missingHeaders.join(', ')}`);
 
-                if (!Array.isArray(requiredHeaders)) {
-                    logger.error('requiredHeaders is not an array');
-                    throw new Error("requiredHeaders is not an array");
-                }
-
-                await this.retryWithExponentialBackoff(async () => {
-                    await this.activeSheet.setHeaderRow(requiredHeaders, 1);
+                // Create a map of column positions for existing headers
+                const currentHeaderPositions = new Map();
+                currentHeaders.forEach((header, index) => {
+                    currentHeaderPositions.set(header, index);
                 });
 
+                // For each missing header, find its correct position based on logColumns order
+                const insertOperations = missingHeaders.map(header => {
+                    const targetIndex = this.logColumns.indexOf(header);
+                    const prevHeader = this.logColumns[targetIndex - 1];
+                    const nextHeader = this.logColumns[targetIndex + 1];
+
+                    // Find where to insert based on surrounding headers
+                    let insertPosition;
+                    if (prevHeader && currentHeaderPositions.has(prevHeader)) {
+                        insertPosition = currentHeaderPositions.get(prevHeader) + 1;
+                    } else if (nextHeader && currentHeaderPositions.has(nextHeader)) {
+                        insertPosition = currentHeaderPositions.get(nextHeader);
+                    } else {
+                        insertPosition = targetIndex;
+                    }
+
+                    return {
+                        header,
+                        position: insertPosition
+                    };
+                });
+                logger.debug(`Insert operations: ${JSON.stringify(insertOperations)}`);
+
+                // Sort operations by position (descending) to maintain correct order when inserting
+                insertOperations.sort((a, b) => b.position - a.position);
+                logger.debug(`Sorted insert operations: ${JSON.stringify(insertOperations)}`);
+
+                // Insert each column in the correct position
+                for (const operation of insertOperations) {
+                    await this.retryWithExponentialBackoff(async () => {
+                        // Set inheritFromBefore to false when inserting at position 0
+                        const inheritFromBefore = operation.position > 0;
+
+                        await this.activeSheet.insertDimension('COLUMNS', {
+                            startIndex: operation.position,
+                            endIndex: operation.position + 1
+                        }, inheritFromBefore);
+
+                        logger.info(`Inserted column at position ${operation.position}`);
+                        this.setActiveSheet(); // to refresh loading new columns
+
+                        // Update the header cell
+                        await this.activeSheet.loadCells({
+                            startRowIndex: 0,
+                            endRowIndex: 1,
+                            startColumnIndex: operation.position,
+                            endColumnIndex: operation.position + 1
+                        });
+
+                        const cell = this.activeSheet.getCell(0, operation.position);
+                        cell.value = operation.header;
+                        await this.activeSheet.saveUpdatedCells();
+                    });
+
+                    // Update positions map for subsequent insertions
+                    currentHeaderPositions.forEach((pos, key) => {
+                        if (pos >= operation.position) {
+                            currentHeaderPositions.set(key, pos + 1);
+                        }
+                    });
+                    currentHeaderPositions.set(operation.header, operation.position);
+                }
+
+
+                // Verify the final header order
+                const updatedHeaderRow = await this.retryWithExponentialBackoff(async () => {
+                    return await this.getSheetRows(1, 1);
+                });
+
+                const finalHeaders = updatedHeaderRow.length > 0 ?
+                    Object.keys(updatedHeaderRow[0].toObject()) : [];
+
+                logger.debug(`Final headers: ${finalHeaders.join(', ')}`);
+
+                // Validate final header order
+                const isCorrectOrder = finalHeaders.every((header, index) =>
+                    this.logColumns[index] === header);
+
+                if (!isCorrectOrder) {
+                    logger.warn('Headers are not in the correct order');
+                    logger.debug(`Expected order: ${this.logColumns.join(', ')}`);
+                    logger.debug(`Actual order: ${finalHeaders.join(', ')}`);
+
+                    logger.info("fallback to just set headers");
+
+                    if (!Array.isArray(this.logColumns) && this.logColumns.length <= 0) {
+                        logger.error("logColumns is not an array or empty");
+                        throw new Error("logColumns is not an array or empty");
+                    }
+                    await this.retryWithExponentialBackoff(async () => {
+                        await this.activeSheet.setHeaderRow(this.logColumns, 1);
+                    });
+                }
                 logger.info('Headers updated successfully');
+                !isCorrectOrder && logger.warn('please move the others log to its column respectively')
             }
         } catch (error) {
             logger.error(`Error validating headers: ${error.message}`);
@@ -358,6 +477,8 @@ class GoogleSheetService {
             request.requestTimeMs = now.getTime();
 
             const requestLog = {
+                serverHostIp: request.headers.host || 'unknown host',      // Add this line
+                runningEnvironment: appConfigs.environment || 'default env', // Add this line
                 requestTimestamp,
                 requestIp: request.ip,
                 requestMethod: request.method,
@@ -435,13 +556,13 @@ class GoogleSheetService {
      */
     async appendLog(logEntry) {
         logger.info('Appending log entry to sheet...');
-        if (this._verifyEnvironment()) {
+        if (!this._verifyEnvironment()) {
             logger.warn('Log append skipped in non-production environment');
             return;
         }
 
         logger.info('Appending log entry to sheet...');
-        if (!this.connected) {
+        if (!this.connected || !this.activeSheet) {
             logger.warn('GoogleSheetService not connected');
             return;
         }
@@ -469,6 +590,7 @@ class GoogleSheetService {
             return row;
         } catch (error) {
             logger.error(`Failed to append log entry: ${error.message}`);
+            this.connected = false;
             throw error;
         }
     }
