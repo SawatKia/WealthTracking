@@ -101,6 +101,8 @@ class LLMService {
         try {
             logger.info('Classifying transaction from text');
             const { data: jsonResponse } = await this._generateContentWithMetrics(this.classificationModel, text);
+            logger.debug(`Raw response: ${JSON.stringify(jsonResponse)}`);
+
             // Validate and process response
             if (!jsonResponse.category || !jsonResponse.type || jsonResponse.confidence === undefined) {
                 throw new Error('Invalid response format from LLM');
@@ -114,7 +116,8 @@ class LLMService {
                 jsonResponse.confidence < 0.6) {
                 jsonResponse.type = 'Other';
             }
-            logger.debug(`verified response: ${JSON.stringify(jsonResponse)}`);
+
+            logger.debug(`verified response: ${JSON.stringify(jsonResponse, null, 2)}`);
             return jsonResponse;
         } catch (error) {
             logger.error(`Error classifying transaction: ${error.message}`);
