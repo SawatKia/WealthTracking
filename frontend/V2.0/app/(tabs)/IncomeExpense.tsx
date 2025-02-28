@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import AccountCard from "../../components/AccountCard";
 import DropdownButton from "../../components/CategoryDropdown";
@@ -50,7 +51,8 @@ export default function IncomeExpenses() {
       {bankAccounts.length > 0 ? (
         <AccountCard account={bankAccounts} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} />
       ) : (
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#0000ff" />
+         
       )}
 
       <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />

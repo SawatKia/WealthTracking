@@ -43,7 +43,7 @@ const Budget = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#F0F6FF" },
+  container: { flex: 1, padding: 20,marginTop: 25, backgroundColor: "#F0F6FF" },
   title: {
     fontSize: 20,
     fontWeight: "bold",
