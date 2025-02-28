@@ -17,8 +17,8 @@ healthStatus() {
         return 0
     fi
 
-    echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health?service=cronjob healthStatus()..."
-    serverResponse=$(curl -v -m 10 http://${ip}:${port}/health?service=cronjob healthStatus)
+    echo -e "\033[7;34m>>>\033[0m Checking server health status on http://${ip}:${port}/health?service=bash-scropt healthStatus()..."
+    serverResponse=$(curl -v -m 10 http://${ip}:${port}/health?service=bash-scropt healthStatus)
 
     if [ -z "$serverResponse" ]; then
         echo -e "\033[7;34m>>>\033[0m No response from /health endpoint, falling back to docker ps check..."
@@ -80,12 +80,13 @@ start_server() {
         exit 1
     fi
     echo -e "\033[7;34m>>>\033[0m Stopping existing containers..."
-    docker compose down
+    docker compose down --remove-orphans
     sleepWithTimer 5
 
     echo -e "\033[7;34m>>>\033[0m Starting Production server containers from built image..."
-    docker compose -f docker-compose.prod.yml up -d --no-build
-
+    # docker compose up -d --no-build
+    docker compose -f docker-compose.prod.yml up -d --build
+    
     echo -e "\033[7;34m>>>\033[0m Waiting for server to fully start..."
     sleepWithTimer 10
 

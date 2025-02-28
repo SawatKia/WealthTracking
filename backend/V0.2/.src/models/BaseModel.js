@@ -100,8 +100,8 @@ class BaseModel {
         const result = await this.pgClient.query(sql, params, options, pgClientToUse);
 
         if (!options.silent) {
-          logger.debug(`Executed SQL query: ${sql}`);
-          logger.debug(`Query params: ${params}, typeof: ${typeof params}`);
+          logger.silly(`Executed SQL query: ${sql}`);
+          logger.silly(`Query params: ${params}, typeof: ${typeof params}`);
 
           const resultString = JSON.stringify(result);
           const maxLength = 500;

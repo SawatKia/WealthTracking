@@ -101,8 +101,9 @@ const UpdateDebtPayment = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
-    if (!validateInputs()) return;
+    // In DebtPayment.tsx
+    const handleSave = async () => {
+        if (!validateInputs()) return;
 
     try {
       const selectedAccountObj = paymentChannel
@@ -112,50 +113,43 @@ const UpdateDebtPayment = () => {
         ? selectedAccountObj.fi_code
         : originalFiCode;
 
-      // Prepare payment details
-      const paymentDetails: any = {
-        date: dayjs(date).format("YYYY-MM-DD HH:mm"),
-        paymentAmount: Number(paymentAmount),
-        detail: detail,
-      };
+            const paymentDetails: any = {
+                date: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                paymentAmount: Number(paymentAmount),
+                detail: detail
+            };
 
-      // Update debt payment (this doesn't update fi_code)
-      await updateDebtPayment(debtId, paymentDetails);
+            await updateDebtPayment(debtId, paymentDetails);
 
-      // If payment channel has been changed, update the debt with PATCH API
-      if (selectedFiCode !== originalFiCode) {
-        // Update debt's fi_code with PATCH API
-        await updateDebt(debtId, {
-          fi_code: selectedFiCode,
-        });
-        console.log("Updated debt fi_code to:", selectedFiCode);
-      }
+            if (selectedFiCode !== originalFiCode) {
+                await updateDebt(debtId, {
+                    fi_code: selectedFiCode
+                });
+                console.log("Updated debt fi_code to:", selectedFiCode);
+            }
 
-      // Create transaction with the selected payment channel
-      const transactionDetails = {
-        transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
-        category: "Expense",
-        type: "Debt Payment",
-        amount: Number(paymentAmount),
-        note: detail,
-        debt_id: debtId,
-        sender: {
-          account_number: selectedAccountObj
-            ? selectedAccountObj.account_number
-            : "",
-          fi_code: selectedFiCode,
-        },
-      };
+            const transactionDetails = {
+                transaction_datetime: dayjs(date).format("YYYY-MM-DD HH:mm"),
+                category: "Expense",
+                type: "Debt Payment",
+                amount: Number(paymentAmount),
+                note: detail,
+                debt_id: debtId,
+                sender: {
+                    account_number: selectedAccountObj ? selectedAccountObj.account_number : "",
+                    fi_code: selectedFiCode,
+                },
+            };
 
       await createTransaction(transactionDetails);
 
-      Alert.alert("Success", "Debt payment updated successfully");
-      router.push("/(tabs)/Debt");
-    } catch (error) {
-      Alert.alert("Error", "Failed to update debt payment");
-      console.error("Error updating debt payment:", error);
-    }
-  };
+            Alert.alert("Success", "Debt payment updated successfully");
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            Alert.alert("Error", "Failed to update debt payment");
+            console.error("Error updating debt payment:", error);
+        }
+    };;
 
   const onChangeDate = (params: any) => {
     setDate(params.date);

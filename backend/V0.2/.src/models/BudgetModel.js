@@ -101,6 +101,58 @@ class BudgetModel extends BaseModel {
             throw error;
         }
     }
+
+    async createBudgetsForNewMonth(nationalId) {
+        try {
+            logger.info('Creating budgets for new month');
+
+            // Get previous month's budgets
+            const lastMonth = new Date();
+            lastMonth.setMonth(lastMonth.getMonth() - 1);
+            lastMonth.setDate(1); // First day of last month
+
+            const sql = `
+                SELECT expense_type, monthly_limit
+                FROM budgets
+                WHERE national_id = $1
+                AND month = $2
+            `;
+
+            const params = [nationalId, lastMonth];
+            logger.debug(`Fetching last month's budgets with params: ${JSON.stringify(params)}`);
+
+            const result = await this.pgClient.query(sql, params);
+            const previousBudgets = result.rows;
+
+            if (previousBudgets.length === 0) {
+                logger.info('No previous budgets found');
+                return [];
+            }
+
+            // Current month date
+            const currentMonth = new Date();
+            currentMonth.setDate(1); // First day of current month
+
+            // Create new budgets based on previous month's data
+            const newBudgets = [];
+            for (const budget of previousBudgets) {
+                const newBudget = await this.createBudget({
+                    national_id: nationalId,
+                    expense_type: budget.expense_type,
+                    monthly_limit: budget.monthly_limit,
+                    current_spending: 0,
+                    month: currentMonth
+                });
+                newBudgets.push(newBudget);
+            }
+
+            logger.info(`Created ${newBudgets.length} budgets for new month`);
+            return newBudgets;
+        } catch (error) {
+            logger.error(`Error creating budgets for new month: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = BudgetModel;

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Button, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Debt, useDebt } from '../../services/DebtService';
 import DebtPieChart from '../../components/PiechartDebt';
@@ -27,6 +27,16 @@ export default function DebtAccountScreen() {
     fetchDebts();
     getAllfi_code();
   }, []);
+
+  // เพิ่ม useFocusEffect ตรงนี้เพื่อให้โหลดข้อมูลใหม่เมื่อกลับมาที่หน้านี้
+  useFocusEffect(
+    useCallback(() => {
+      fetchDebts();
+      return () => {
+        // ส่วนของ cleanup ถ้าจำเป็น
+      };
+    }, [])
+  );
 
   const toggleExpand = (name: string) => {
     setExpandedDebt(expandedDebt === name ? null : name);
@@ -96,7 +106,7 @@ export default function DebtAccountScreen() {
         </View>
 
         <View style={styles.pieChartContainer}>
-          <DebtPieChart debts={debtDetails} />
+          <DebtPieChart />
         </View>
 
         <View style={styles.debtDetailsContainer}>
@@ -106,7 +116,6 @@ export default function DebtAccountScreen() {
             const totalPaid = debt.loan_principle - remainingBalance; // Calculate totalPaid based on remainingBalance
             const progressPercentage = (totalPaid / debt.loan_principle) * 100;
             const monthlyPayment = debt.loan_principle / debt.total_installments;
-
 
             return (
               <View key={index} style={styles.debtDetail}>

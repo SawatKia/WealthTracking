@@ -10,7 +10,6 @@ const appConfigs = require("../configs/AppConfigs");
 const GoogleSheetService = require("../services/GoogleSheetService.js");
 
 const AuthUtils = require('../utilities/AuthUtils');
-const app = require('../app.js');
 const { verifyToken } = AuthUtils;
 const logger = Logger("Middlewares");
 const NODE_ENV = appConfigs.environment;
@@ -113,43 +112,12 @@ class Middlewares {
     // CORS configuration
     this.corsOptions = {
       origin: (origin, callback) => {
-        // Development environment
-        if (appConfigs.environment === 'development') {
-          const devAllowedOrigins = [
-            // Allow any localhost port
-            /^http:\/\/localhost:\d+$/,
-            // Allow Expo development client
-            /^exp:\/\/[\w\-]+\.[\w\-]+\.exp\.direct:\d+$/,
-            // Allow Expo Go app
-            /^exp:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
-            // Allow local network IP for Expo
-            /^exp:\/\/[\w\-]+\.local:\d+$/,
-            // Allow Expo web development
-            /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/
-          ];
-
-          // Allow requests with no origin (like mobile apps, Postman)
-          if (!origin) {
-            return callback(null, true);
-          }
-
-          const allowedOrigins = [
-            // Add your allowed origins here
-            'http://localhost:3000',          // Development
-            'exp://localhost:19000',          // Expo development server
-            'exp://192.168.x.x:19000', // Local network IP for mobile device testing
-            // 'https://your-production-domain.com', // Production web client
-            // 'capacitor://localhost',          // Capacitor/Ionic
-            // 'ionic://localhost',              // Ionic specific
-            '*', // Allow all origins
-          ];
-
-          if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
+        // Allow requests with no origin (like mobile apps, Postman)
+        if (!origin) {
+          return callback(null, true);
         }
+        // For any origin provided, allow it
+        callback(null, true);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: [
@@ -460,17 +428,24 @@ class Middlewares {
     const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
     logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
     const SUSPICIOUS_PATTERNS = [
-      "/php-cgi/", // ป้องกัน RCE ผ่าน PHP-CGI
+      "/php-cgi/", // ป้อdงกัน RCE ผ่าน PHP-CGI
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
       "wp-login",  // ป้องกันการสแกน WordPress
       "eval(",     // ป้องกัน XSS และ SQL Injection
-      "cgi-bin",   // ป้องกัน CGI-based attack
+      "rm -rf",    // ป้องกัน RCE
+      "wget",      // ป้องกันการดาวน์โหลดไฟล์
+      "curl",      // ป้องกันการดาวน์โหลดไฟล์
+      "sh",        // ป้องกันการรัน shell command
+      "bash", "cmd", "powershell", "php", "python", "node", "npm", "yarn", "go",
+      ".txt", ".json", ".log", ".bak",   // ป้องกันการอ่านไฟล์ .txt
+      "telescope", // ป้องกันการสแกน Laravel Telescope
+      "cgi",   // ป้องกัน CGI-based attack
       "passwd",    // ป้องกันการพยายามอ่านไฟล์ passwd
       "union select", // ป้องกัน SQL Injection
       "exec(", "system(", "passthru(", "shell_exec(", // ป้องกัน RCE
       ".git/config", // พยายามเข้าถึง Git repo
-      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", // พยายามอ่านไฟล์ .env
-      "/prod/.env", "/production/.git/config", "/www/.git/config", // พยายามดึง environment configs
+      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", ".env", // พยายามอ่านไฟล์ .env
+      "/prod/.env", "/production/.git/config", "/www/.git/config", ".git", // พยายามดึง environment configs
       "/modules/utils/.git/config", "/templates/.git/config", "/user_area/.git/config",
       "/test_configs/.git/config", "/images/.git/config", "/core/config/.git/config",
       "/data/private/.git/config", "/static/content/.git/config",
@@ -508,6 +483,7 @@ class Middlewares {
       logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
       return next(MyAppErrors.forbidden());
     }
+    logger.info(`${clientIp} is not in the black list`);
 
     const suspicious = SUSPICIOUS_PATTERNS.some((pattern) =>
       req.url.includes(pattern) ||
@@ -516,18 +492,54 @@ class Middlewares {
     );
 
     if (suspicious) {
-      logger.warn(`Suspicious request detected from ${clientIp}: ${req.method} ${req.url}`);
+      logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
-      if (!blacklist.has(clientIp)) {
+      // Only add to blacklist if the request is request to a valid host and not already in the blacklist
+      if (this._isValidHost(req) && !blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.debug(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+        logger.info(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+        saveBlacklist(blacklist);
       }
-      saveBlacklist(blacklist);
-
       return next(MyAppErrors.forbidden());
-    } else logger.debug(`/// Request from ${clientIp} is not suspicious`);
+    }
+
+    logger.info(`${clientIp} => ${req.method} ${req.url} is passed through security middleware`);
 
     next();
+  }
+
+  /**
+  * Validates if the request is requesting to an authorized host server
+  * @param {Object} req - Express request object
+  * @returns {boolean} - Returns true if the request is request to a valid host, false otherwise
+  */
+  _isValidHost(req) {
+    try {
+      // Check if host header exists
+      if (!req.headers.host) {
+        logger.error('No host header present in request');
+        return false;
+      }
+
+      // Clean the host value
+      const requestHost = req.headers.host.toLowerCase().trim();
+      const configuredHost = appConfigs.appHost.toLowerCase().trim();
+
+      // Check for exact match
+      if (requestHost === configuredHost) {
+        logger.debug(`Valid host: ${requestHost}`);
+        return true;
+      }
+
+      // Log invalid host
+      logger.error(`Unauthorized host detected: ${requestHost}`);
+      logger.debug(`Expected host: ${configuredHost}`);
+      return false;
+
+    } catch (error) {
+      logger.error(`Error in host validation: ${error.message}`);
+      return false;
+    }
   }
 
   healthCheck(req, res, next) {
@@ -579,7 +591,7 @@ class Middlewares {
       if (GoogleSheetService.isConnected()) {
         const requestLog = GoogleSheetService.prepareRequestLog(req);
         req.requestLog = requestLog; // Store for later use in response handler
-      }
+      } else logger.warn('Google Sheet service is not connected');
 
       const ip = getIP(req);
       Object.defineProperty(req, 'ip', {
@@ -682,8 +694,8 @@ class Middlewares {
   }
 
   /**
- * Helper method to log response details
- */
+  * Helper method to log response details
+  */
   logResponse = (req, status_code, message, data, headers = {}, isError = false, fileResponse = null) => {
     const securityHeaders = {
       'X-Content-Type-Options': 'nosniff',
@@ -821,7 +833,7 @@ class Middlewares {
     if (GoogleSheetService.isConnected() && req.requestLog) {
       const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
       await GoogleSheetService.appendLog(completeLog);
-    }
+    } else logger.warn('Google Sheet service is not connected');
 
     // Get security headers
     const securityHeaders = this.logResponse(

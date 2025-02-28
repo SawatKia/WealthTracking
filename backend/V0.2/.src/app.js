@@ -64,7 +64,7 @@ app.options('*', mdw.corsMiddleware);
 
 // Middleware to parse JSON and set the limit for JSON and URL-encoded requests
 // JSON parser with error handling
-app.use(express.json({ limit: "10mb" }), mdw.errorHandler);
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
 // Request logger middleware

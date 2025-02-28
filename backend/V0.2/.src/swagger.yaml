@@ -986,7 +986,12 @@ paths:
       summary: Verify slip data
       tags:
         - Slip
-      description: Verifies slip data from an image file and creates a transaction record.
+      description: |
+        Verifies slip data from either an image file upload or base64 encoded image.
+        IMPORTANT: You must provide exactly one of:
+        - imageFile (as multipart/form-data)
+        - image (as base64 string in JSON body)
+        Providing both or neither will result in a 400 error.
       security:
         - cookieAuth: []
         - bearerAuth: []
@@ -996,16 +1001,23 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - imageFile
               properties:
                 imageFile:
                   type: string
                   format: binary
-                  description: Image file of the slip (jpg, jpeg, png, gif, max 5MB)
+                  description: Image file of the slip (jpg, jpeg, png, max 5MB)
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: base64
+                  description: Base64 encoded image string (must include data URI scheme)
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
       responses:
-        "200":
-          description: Successful verification
+        "201":
+          description: Successful verification and transaction created
           content:
             application/json:
               schema:
@@ -1016,6 +1028,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                noInput:
+                  value:
+                    status_code: 400
+                    message: "No image input provided. Please provide either an image file or base64 encoded image"
+                bothInputs:
+                  value:
+                    status_code: 400
+                    message: "Please provide either an image file or base64 encoded image, not both"
+                invalidFormat:
+                  value:
+                    status_code: 400
+                    message: "Invalid file format or size limit exceeded. Supported formats: jpg, jpeg, png. Max size: 5MB"
+                invalidBase64:
+                  value:
+                    status_code: 400
+                    message: "Invalid base64 image format. Must be a valid base64 encoded image with proper MIME type"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "429":
           description: Too many requests
           content:
@@ -2125,6 +2156,13 @@ paths:
       security:
         - cookieAuth: []
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: expense_type
+          required: true
+          schema:
+            type: string
+          description: Type of expense to delete
       responses:
         "200":
           description: Budget deleted successfully

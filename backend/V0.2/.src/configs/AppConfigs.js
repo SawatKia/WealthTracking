@@ -14,6 +14,7 @@ const RELOAD_MOCK_DATA = process.env.RELOAD_MOCK_DATA === 'true';
 
 const config = {
     environment: NODE_ENV,
+    appHost: String(process.env.APP_HOST) || 'localhost',
     appPort: process.env.APP_PORT || 3000,
     saltRounds: parseInt(process.env.SALT_ROUNDS, 10) || 10,
     postgres: {

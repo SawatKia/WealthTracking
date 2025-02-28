@@ -35,11 +35,11 @@ const AddDebtDetail = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [amountPaid, setAmountPaid] = useState("");
 
-  const { createDebt } = useDebt();
-  const { getAllAccounts } = useAccount();
-  const { createTransaction } = useTransactions();
-  const [bankAccounts, setBankAccounts] = useState<Account[]>([]);
-  const router = useRouter();
+    const { createDebt, getAllDebts } = useDebt();
+    const { getAllAccounts } = useAccount();
+    const { createTransaction } = useTransactions();
+    const [bankAccounts, setBankAccounts] = useState<Account[]>([]);
+    const router = useRouter();
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -107,23 +107,36 @@ const AddDebtDetail = () => {
 
       console.log("Saving Debt Details:", debtDetails);
 
-      // Call the createDebt function directly from DebtService
-      // This will handle both debt creation and transaction creation
-      await createDebt(debtDetails);
+            // Call the createDebt function directly from DebtService
+            await createDebt(debtDetails);
 
-      // No need to create transaction here as it's now handled in the DebtService
+            // ดึงข้อมูลใหม่ก่อนกลับไปหน้า Debt
+            await getAllDebts();
 
-      router.push("/(tabs)/Debt");
-    } catch (error) {
-      console.error("Error saving debt:", error);
-      // Show error to user
-      alert("Failed to save debt. Please try again.");
-    }
-  };
+            // กลับไปหน้า Debt
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            console.error("Error saving debt:", error);
+            alert("Failed to save debt. Please try again.");
+        }
+    };
 
-  const onChangeDate = (params: any) => {
-    setDate(params.date);
-  };
+    const handleCancel = async () => {
+        try {
+            // ดึงข้อมูลใหม่ก่อนกลับไปหน้า Debt
+            await getAllDebts();
+
+            // กลับไปหน้า Debt
+            router.push("/(tabs)/Debt");
+        } catch (error) {
+            console.error("Error refreshing debts:", error);
+            router.push("/(tabs)/Debt");
+        }
+    };
+
+    const onChangeDate = (params: any) => {
+        setDate(params.date);
+    };
 
   const handleDebtNameChange = (text: string) => {
     if (text.length <= 30) {
@@ -297,22 +310,19 @@ const AddDebtDetail = () => {
             )}
           </View>
 
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.cancelButtonStyle}
-              onPress={() => router.push("/(tabs)/Debt")}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.buttonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
+                    {/* Buttons */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity style={styles.cancelButtonStyle} onPress={handleCancel}>
+                            <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                            <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </ScrollView>
+    );
 };
 
 const styles = StyleSheet.create({

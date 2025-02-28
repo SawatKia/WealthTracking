@@ -17,13 +17,13 @@ services:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
       - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
-    command: >
-      sh -c "npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    command: >
+      sh -c "npm run dev"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-devContainer%20healthcheck"]
       interval: 5m # Poll every 5 minutes after the container is healthy
