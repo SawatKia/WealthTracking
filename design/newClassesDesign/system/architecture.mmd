@@ -1,0 +1,50 @@
+%%{init: {"theme":"neutral"}}%%
+
+flowchart TD
+    %% External Client
+    subgraph External [External Layer]
+        A[External Client]
+    end
+
+    %% Presentation Layer
+    subgraph Presentation [Presentation Layer]
+        NP[NGINX<br/>deny some IPs, allow all]
+        R[Router]
+    end
+
+    %% Business Logic Layer
+    subgraph Business [Business logic layer]
+        MW[Middlewares]
+        CTRL[Controllers]
+    end
+
+    subgraph Service [Service Layer]
+        S[Services]
+    end
+
+    %% Data Access Layer
+    subgraph DataAccess [Data Access Layer]
+        M[Models]
+    end
+
+    %% Databases / Caches
+    subgraph Databases [Databases / Caches]
+        DB[(Postgres Database)]
+        RC[(Redis Cache)]
+    end
+
+    %% External Systems
+    subgraph ExternalSystems [External Systems API]
+        API[External API]
+    end
+
+    %% Flow arrows
+    A --> NP
+    NP --> R
+    R --> MW
+    MW --> CTRL
+    CTRL --> S
+    CTRL --> M
+    M --> DB
+    M --> RC
+    S --> API
