@@ -1,0 +1,67 @@
+%%{
+    init: {
+        "theme":"neutral",
+        "themeVariables": {
+            'labelBoxBorderColor': '#FFA500'
+        },
+        "sequence": { 
+            "wrap": true, 
+            "width": 200 
+        } 
+    }
+}%%
+
+sequenceDiagram
+    participant Client
+    participant Router
+    participant Middlewares
+    participant Controller
+    participant Model
+    participant Database
+    participant Api
+
+    Client->>+Router: Send request
+    Router->>+Middlewares: Authorization
+    opt forbidden
+        Middlewares-->>Router: Return forbidden response
+        Router-->>Client: Send forbidden response with error message
+    end
+    Middlewares-->>-Router: Authorized
+    Router->>+Controller: Pass authorized request
+    Controller->>Controller: Verify fields
+    opt invalid fields
+        Controller-->>Router: Return bad request response
+        Router-->>Client: Send bad request response with error message
+    end
+    Controller->>Controller: get current user
+    opt call the api
+        Controller->>+Api: request to the api
+        Api-->>-Controller: return the result
+    end
+    alt Create operation
+        Controller->>Controller: Verify input data
+        Controller->>+Model: Request create operation
+        Model->>+Database: Perform create operation
+        Database-->>-Model: Create operation result
+        Model-->>-Controller: Return create result
+    else Read operation
+        Controller->>+Model: Request read operation
+        Model->>+Database: Perform read operation
+        Database-->>-Model: Read operation result
+        Model-->>-Controller: Return read result
+        Controller->>Controller: Verify ownership
+    else Update operation
+        Controller->>Controller: Verify ownership
+        Controller->>+Model: Request update operation
+        Model->>+Database: Perform update operation
+        Database-->>-Model: Update operation result
+        Model-->>-Controller: Return update result
+    else Delete operation
+        Controller->>Controller: Verify ownership
+        Controller->>+Model: Request delete operation
+        Model->>+Database: Perform delete operation
+        Database-->>-Model: Delete operation result
+        Model-->>-Controller: Return delete result
+    end
+    Controller-->>-Router: Return result
+    Router-->>-Client: Send response with result and error message
