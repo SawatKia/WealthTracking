@@ -1,6 +1,6 @@
 %%{
     init: {
-        "theme":"base",
+        "theme":"neutral",
         "themeVariables": {
             'labelBoxBorderColor': '#ff0000'
         },
@@ -13,7 +13,7 @@
 sequenceDiagram
     participant Client
     participant Sec as Security
-    participant Router as BankRouter
+    participant Router
     box orange Controller
         participant BaseCont as BaseController
         participant Cont as TransactionController extends BaseController
@@ -152,118 +152,9 @@ sequenceDiagram
     end
     Model-->>-Cont: pass result
 
-    %% Note over Cont, BankAccountModel: cascading update balance if need
-    %% Note over Cont, ContainsModel: add relation ship for 2 tables if need
-
     Cont->>+PGClient: commit()
     PGClient-->>-Cont: transaction committed
 
     Cont->>Cont: formatResponse(201, 'create Transaction successful', createTransactionId)
     Cont-->>-Router: return formatted response
     Router-->>-Client: 🟢201, { status: 201, message: "Transaction created successfully", data: {createTransactionId} }
-
-    %% Note over Cont, BankAccountModel: cascading update balance
-    %% alt transaction type is "income"
-    %%     Cont->>+BankAccountModel: updateBalance(userEmail, receiverBankAccount, +amount)
-    %%     BankAccountModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt update failure
-    %%         BaseModel-->>BankAccountModel: throw error
-    %%         BankAccountModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to update receiver balance'))
-    %%         Router-->>Client: 🔴500, "Failed to update receiver balance"
-    %%     end
-    %%     BaseModel-->>-BankAccountModel: return updated BankAccount object (staged)
-    %%     BankAccountModel-->>-Cont: pass result
-    %% else transaction type is "expense"
-    %%     Cont->>+BankAccountModel: updateBalance(userEmail, senderBankAccount, -amount)
-    %%     BankAccountModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt update failure
-    %%         BaseModel-->>BankAccountModel: throw error
-    %%         BankAccountModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to update sender balance'))
-    %%         Router-->>Client: 🔴500, "Failed to update sender balance"
-    %%     end
-    %%     BaseModel-->>-BankAccountModel: return updated BankAccount object (staged)
-    %%     BankAccountModel-->>-Cont: pass result
-    %%     opt debt payment
-    %%         Cont->>+DebtModel: updateLoanBalance(userEmail, debtKey, -amount)
-    %%         DebtModel->>+BaseModel: query(sql, params)
-    %%         Note over BaseModel: query with prepare Statements
-    %%         opt update failure
-    %%             BaseModel-->>DebtModel: throw error
-    %%             DebtModel-->>Cont: throw error
-    %%             Cont->>+PGClient: rollback()
-    %%             PGClient-->>-Cont: transaction rolled back
-    %%             Cont-->>Router: next(new Error('Failed to update debt'))
-    %%             Router-->>Client: 🔴500, "Failed to update debt"
-    %%         end
-    %%         BaseModel-->>-DebtModel: return updated Loan object (staged)
-    %%         DebtModel-->>-Cont: pass result
-    %%     end
-    %% end
-
-    %% Note over Cont, ContainsModel: add relation ship for 2 tables
-    %% alt transaction type is "income"
-    %%     Cont->>+ContainsModel: addContains(receiverBankAccount, transactionUUID, 'receiver')
-    %%     ContainsModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt added failure
-    %%         BaseModel-->>ContainsModel: throw error
-    %%         ContainsModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to store contains'))
-    %%         Router-->>Client: 🔴500, "Failed to store contains"
-    %%     end
-    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
-    %%     ContainsModel-->>-Cont: pass result
-    %% else transaction type is "expense"
-    %%     Cont->>+ContainsModel: addContains(senderBankAccount, transactionUUID, 'sender')
-    %%     ContainsModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt added failure
-    %%         BaseModel-->>ContainsModel: throw error
-    %%         ContainsModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to store contains'))
-    %%         Router-->>Client: 🔴500, "Failed to store contains"
-    %%     end
-    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
-    %%     ContainsModel-->>-Cont: pass result
-    %% else transaction type is "internal_transfer"
-    %%     Cont->>+ContainsModel: addContains(receiverBankAccount, transactionUUID, 'receiver')
-    %%     ContainsModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt added failure
-    %%         BaseModel-->>ContainsModel: throw error
-    %%         ContainsModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to store contains'))
-    %%         Router-->>Client: 🔴500, "Failed to store contains"
-    %%     end
-    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
-    %%     ContainsModel-->>-Cont: pass result
-    %%     Cont->>+ContainsModel: addContains(senderBankAccount, transactionUUID, 'sender')
-    %%     ContainsModel->>+BaseModel: query(sql, params)
-    %%     Note over BaseModel: query with prepare Statements
-    %%     opt added failure
-    %%         BaseModel-->>ContainsModel: throw error
-    %%         ContainsModel-->>Cont: throw error
-    %%         Cont->>+PGClient: rollback()
-    %%         PGClient-->>-Cont: transaction rolled back
-    %%         Cont-->>Router: next(new Error('Failed to store contains'))
-    %%         Router-->>Client: 🔴500, "Failed to store contains"
-    %%     end
-    %%     BaseModel-->>-ContainsModel: return addedContains object (staged)
-    %%     ContainsModel-->>-Cont: pass result
-    %% end
-
-    
