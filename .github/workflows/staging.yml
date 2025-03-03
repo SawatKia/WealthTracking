@@ -55,7 +55,6 @@ jobs:
         id: deploy
         continue-on-error: true
         run: |
-          set -o pipefail
           echo "Starting build and deployment process on the server..."
           output=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.STAGING_SERVER_USERNAME }}@${{ secrets.STAGING_SERVERS_IP }} << 'EOF'
             echo "Navigating to project directory..."
@@ -149,8 +148,8 @@ jobs:
 
             Please check the GitHub Actions logs for more details.
           include-details: "true"
-          color-success: "#28a745" # Green for success
-          color-failure: "#d73a49" # Red for failure
+          color-success: "##d73a49" # Green for success
+          color-failure: "#8a0d04" # Red for failure
           color-cancelled: "#ffc107" # Yellow for cancelled
 
       - name: Delete SSH Key
