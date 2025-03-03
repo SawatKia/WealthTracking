@@ -436,7 +436,7 @@ class Middlewares {
     const SUSPICIOUS_PATTERNS = [
       "/php-cgi/", // ป้อdงกัน RCE ผ่าน PHP-CGI
       "/admin/",   // ป้องกัน brute force ไปที่ /admin
-      "wp-login",  // ป้องกันการสแกน WordPress
+      "wp",        // ป้องกันการสแกน WordPress
       "eval(",     // ป้องกัน XSS และ SQL Injection
       "rm -rf",    // ป้องกัน RCE
       "wget",      // ป้องกันการดาวน์โหลดไฟล์
@@ -474,8 +474,17 @@ class Middlewares {
     // Save blacklist to JSON file
     const saveBlacklist = (blacklist) => {
       try {
+        // Create directory if it doesn't exist
+        const dir = path.dirname(BLACKLIST_FILE);
+        logger.info('verifying directory existing');
+        logger.debug(`dir: ${dir}`);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+          logger.debug(`Created directory for blacklist at ${dir}`);
+        }
+
         fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({ blocked_ips: [...blacklist] }, null, 2));
-        logger.debug(`Saved blacklist: ${JSON.stringify([...blacklist])}`);
+        logger.debug(`Added IP to blacklist: ${JSON.stringify([...blacklist])}`);
       } catch (err) {
         logger.error("Error saving blacklist:", err);
       }
@@ -503,10 +512,10 @@ class Middlewares {
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
       if (this._isValidHost(req) && !blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.info(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
+        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
         saveBlacklist(blacklist);
         return next(MyAppErrors.forbidden());
-      }
+      } else logger.info(`${clientIp} is exist in the black list, not need to add again`);
     }
 
     logger.info(`${clientIp} => ${req.method} ${req.url} is passed through security middleware`);
