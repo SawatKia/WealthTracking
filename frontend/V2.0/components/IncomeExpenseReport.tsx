@@ -23,7 +23,7 @@ const IncomeExpensesReport = ({
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 35 }}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10 }}>
         Income/Expenses Report
       </Text>
       <VictoryChart domainPadding={{ x: 30 }} theme={customTheme}>
