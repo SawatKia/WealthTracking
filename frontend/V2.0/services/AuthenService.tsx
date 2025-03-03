@@ -63,8 +63,8 @@ export const signUpGoogle = async() =>{
 export const loginGoogle = async() =>{
   const response = await api.post('/google/login?action=login&platform=mobile')
   console.log(response.data.data)
-  const responseGoogle = await api.get(response.data.data)
-  console.log(responseGoogle)
+  // const responseGoogle = await api.get(response.data.data)
+  // console.log(responseGoogle)
   return response.data
 }
 
