@@ -155,7 +155,7 @@ if [ "$(uname -s)" = "Linux" ]; then
                            | grep -v "auto-authen.sh") | crontab -
 
     # Add all cron jobs at once
-    (crontab -l 2>/dev/null; echo "15 */1 * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'
+    (crontab -l 2>/dev/null; echo "*/15 * * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'
 */5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
 */20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
     
