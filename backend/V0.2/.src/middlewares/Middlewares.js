@@ -500,11 +500,29 @@ class Middlewares {
     }
     logger.info(`${clientIp} is not in the black list`);
 
-    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) =>
-      req.url.includes(pattern) ||
-      JSON.stringify(req.query).includes(pattern) ||
-      JSON.stringify(req.body).includes(pattern)
-    );
+    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) => {
+      // Check URL
+      if (req.url.includes(pattern)) {
+        logger.warn(`Suspicious pattern "${pattern}" found in URL: ${req.url}`);
+        return true;
+      }
+      // Check query parameters
+      if (JSON.stringify(req.query).includes(pattern)) {
+        logger.warn(`Suspicious pattern "${pattern}" found in query params: ${JSON.stringify(req.query)}`);
+        return true;
+      }
+      // Check request body
+      if (JSON.stringify(req.body).includes(pattern)) {
+        logger.warn(`Suspicious pattern "${pattern}" found in request body: ${JSON.stringify(req.body)}`);
+        return true;
+      }
+      return false;
+    });
+
+    if (suspicious) {
+      logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
+      // ... rest of the code ...
+    }
 
     if (suspicious) {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
