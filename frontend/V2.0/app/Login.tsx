@@ -31,6 +31,11 @@ export default function LoginScreen() {
   const [isChecked, setIsChecked] = useState(false); // State for the checkbox
 
   const [rememberMe, setRememberMe] = useState(false);
+  const [err, setErr] = useState({
+    email: "",
+    password: "",
+    checkLogin: "",
+  }); //(nationalId, username, email, password, confirmPassword)
 
   // const [error, setError] = useState({ email: '', password: '' });
 
@@ -71,21 +76,77 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
+    if (!validateInput()) return; // Ensure input validation passes before proceeding
+  
     try {
+      // Reset previous errors
+      setErr({ email: "", password: "", checkLogin: "" });
+  
+      // Call the login function and handle response
       const response = await login(email, password);
-      console.log("Login Success", `Welcome, ${response}`);
-      if (response && rememberMe) {
-        // Save credentials if "Remember Me" is checked
-        await saveCredentials(email, password);
+  
+      if (response === true) {
+        console.log('Login Success', `Welcome, ${email}`);
+  
+        // Handle "Remember Me" functionality
+        if (rememberMe) {
+          await saveCredentials(email, password); // Save credentials if "Remember Me" is checked
+        } else {
+          await clearCredentials(); // Clear credentials if "Remember Me" is not selected
+        }
+  
+        // Navigate to the next screen after login success (uncomment when using a router)
+        // router.push('/(tabs)');
+  
       } else {
-        // Clear credentials if login fails or "Remember Me" is not selected
-        await clearCredentials();
+        // Handle failure response (display error message)
+        setErr({
+          email: "",
+          password: "",
+          checkLogin: `Login Failed: ${response}`, // Using template literal here
+        });
       }
-      // router.push('/(tabs)')
+  
     } catch (error) {
-      console.error(error);
+      console.error('Error during login:', error);
+      setErr({
+        email: "",
+        password: "",
+        checkLogin: `Error during login: ${error}`, // Using template literal and checking error message
+      });
     }
   };
+  
+  
+   const validateInput = (): boolean => {
+     let isValid = true;
+     const newError = {
+       email: "",
+       password: "",
+       checkLogin: "",
+     };
+ 
+     if (!email.trim()) {
+       newError.email = "Email is required";
+       isValid = false;
+     } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+       newError.email = "Invalid email format";
+       isValid = false;
+     }
+ 
+ 
+     if (!password.trim()) {
+       newError.password = "Password is required";
+       isValid = false;
+     }
+ 
+ 
+     setErr(newError);
+     return isValid;
+   };
+ 
+  
+
   const handleGoogleLogin = async () => {
     await loginWithGoogle();
   };
@@ -159,7 +220,19 @@ export default function LoginScreen() {
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity> */}
         </View>
-
+          {
+                  err.email ||
+                  err.password ||
+                  err.checkLogin  ? (
+                    <View style={styles.errorInput}>
+                      <Ionicons name="alert-circle" size={24} color="red" />
+                      <View style={styles.errorTextContainer}>
+                        <Text style={styles.errorText}>{err.email}</Text>
+                        <Text style={styles.errorText}>{err.password}</Text>
+                        <Text style={styles.errorText}>{err.checkLogin}</Text>
+                      </View>
+                    </View>
+                  ) : null}
         {/* Login Button */}
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Log In</Text>
@@ -346,4 +419,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textDecorationLine: "underline",
   },
+
+  errorInput: {
+    width: "90%",
+    backgroundColor: "rgb(253, 212, 212)",
+    borderColor: "red",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
+
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorTextContainer: {
+    justifyContent: "center",
+  },
+  errorText: { color: "red", marginLeft: 14 },
 });

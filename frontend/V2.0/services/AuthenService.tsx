@@ -13,20 +13,25 @@ export const login = async (email: string, password: string) => {
     "password": password,
   }
   try {
-    const response = await api.post('/login?platform=mobile', requestData);
-    console.log('login',response.data.data.tokens.access_token)
-    const token = response.data.data.tokens.access_token
+    const data = await api.post('/login?platform=mobile', requestData);
+    console.log('login',data.data.data)
     // const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMTExMTExIiwiaWF0IjoxNzM4NjgxNTgyLCJuYmYiOjE3Mzg2ODE1ODIsImV4cCI6MTczODc2Nzk4MiwiaXNzIjoiV2VhbHRoVHJhY2sifQ.TdvJPp2DdQeT6He1p3_F-8j2Y0djWVQAYtySouzjMo4"
-    if (token) {
+    if (data.status === 200) {
+      const token = data.data.data.tokens.access_token
       await storeToken(token); // Store the token securely
+      
       return true;
+    }else {
+      // If the status is not 200, show an error
+      const errorMessage = data.data?.message || 'Login failed, please try again.';
+      return errorMessage;
     }
+
   }
-  catch(error) {
+  catch (error) {
     console.error('Login error:', error);
-    return false
+    return "Incorrect email or password";
   }
-  return false;
 };
 
 export const signUp = async (nationalId:string, username: string, email:string, password: string, confirmPassword:string) => {
