@@ -11,12 +11,14 @@ TZ="Asia/Bangkok"
 COLOR_INFO="\e[32m"   # Green for INFO
 COLOR_DEBUG="\e[34m"  # Blue for DEBUG
 COLOR_ERROR="\e[31m"  # Red for ERROR
+COLOR_WHITE="\e[97m"  # White for output
 COLOR_RESET="\e[0m"   # Reset color
 
 # Unicode symbols for log emphasis
 ICON_INFO="✔️"   # U+2705
 ICON_DEBUG="🐞"  # U+1F41E
 ICON_ERROR="❌"  # U+274C
+
 
 # Function to get timestamp in Bangkok timezone
 timestamp() {
@@ -47,30 +49,50 @@ log_info "Checking if authentication script is already running..."
 
 # Check if the script is already running
 if pgrep -f "python3 $SCRIPT_PATH" > /dev/null; then
-    log_debug "Script is already running, exiting..."
+    log_debug "Command: pgrep -f \"python3 $SCRIPT_PATH\" => Script is already running. Exiting."
     exit 0
 fi
 
-log_info "authen.py script isn't running, Checking network connection..."
+log_info "authen.py script isn't running. Checking network connection..."
 
-# Check if the device has an IP assigned (connected to a network)
-if ! ip a | grep 'inet ' | grep -v '127.0.0.1' | grep '192.168.'; then
+# Check network connection and log output
+NETWORK_CHECK=$(ip a | grep 'inet ' | grep -v '127.0.0.1' | grep '192.168.')
+log_debug "Command: ip a | grep 'inet ' | grep -v '127.0.0.1' | grep '192.168.' => Output: ${COLOR_WHITE}${NETWORK_CHECK}${COLOR_RESET}"
+
+if [ -z "$NETWORK_CHECK" ]; then
     log_error "No network connection detected. Cannot determine internet access."
     exit 1
 fi
 
-log_info "Network detected. Checking internet connectivity..."
+log_info "First, trying Firefox portal detection..."
 
-# First, try Firefox portal detection
-if curl -s --max-time 5 http://detectportal.firefox.com/success.txt | grep -q "success"; then
-    log_info "Internet is available. No need to run authentication script, exiting..."
-    exit 0
+# Perform curl and log output
+CURL_OUTPUT=$(curl -s --max-time 5 http://detectportal.firefox.com/success.txt)
+log_debug "Command: curl -s --max-time 5 http://detectportal.firefox.com/success.txt => Output: ${COLOR_WHITE}${CURL_OUTPUT}${COLOR_RESET}"
+
+if echo "$CURL_OUTPUT" | grep -q "success"; then
+    log_debug "Internet is available. Checking for potential redirection..."
+    REDIRECT_CHECK=$(curl -s -L http://detectportal.firefox.com/success.txt | grep -i "<title>.*Authentication.*</title>")
+    log_debug "Command: curl -s -L http://detectportal.firefox.com/success.txt | grep -i \"<title>.*Authentication.*</title>\" => Output: ${COLOR_WHITE}${REDIRECT_CHECK}${COLOR_RESET}"
+    
+    if [ -n "$REDIRECT_CHECK" ]; then
+        log_error "Redirected to an authentication page. Captive portal detected. Proceeding with authentication."
+    else
+        log_debug "No redirection detected. No need to authenticate. Exiting..."
+        exit 0
+    fi
+else
+    log_error "No success found in curl output. Output was: ${COLOR_WHITE}${CURL_OUTPUT}${COLOR_RESET}"
 fi
 
 # If Firefox check fails, try pinging an external IP
-if ping -c 2 8.8.8.8 > /dev/null 2>&1; then
+PING_TEST=$(ping -c 2 8.8.8.8 2>&1)
+log_debug "Command: ping -c 2 8.8.8.8 => Output: ${COLOR_WHITE}${PING_TEST}${COLOR_RESET}"
+
+if echo "$PING_TEST" | grep -q "bytes from"; then
     log_info "Network connection detected but no internet access. Likely a captive portal. Running authentication script..."
-    if nohup python3 "$SCRIPT_PATH" >> "$NOHUP_OUT" 2>> "$ERROR_LOG" & then
+    nohup python3 "$SCRIPT_PATH" >> "$NOHUP_OUT" 2>> "$ERROR_LOG" &
+    if [ $? -eq 0 ]; then
         log_info "Auto-authentication script started successfully."
     else
         log_error "Failed to start authentication script."
