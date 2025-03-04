@@ -69,9 +69,9 @@ export const useTransactions = () => {
   // }, []);
   const getAllTransactions = async () => {
     try {
-      const response = await api.get('/transactions');
-      console.log(response.status)
-      const data  = response;
+      const data = await api.get('/transactions');
+      // console.log(response.status)
+      // const data  = response;
       // const data  = {  "status_code": 200,
       //   "message": "Retrieved 2 transactions successfully",
       //   "data": {
