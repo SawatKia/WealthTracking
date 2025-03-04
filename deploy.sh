@@ -1,27 +1,26 @@
 #!/bin/bash
 
-source ./logging.sh
-# Function to log messages with timestamps and proper formatting for GitHub Actions
-# log() {
-#     local level=$1
-#     local message=$2
-#     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-#     case $level in
-#         "INFO")
-#             echo "::info::$timestamp - $message"
-#             ;;
-#         "WARNING")
-#             echo "::warning::$timestamp - $message"
-#             ;;
-#         "ERROR")
-#             echo "::error::$timestamp - $message"
-#             ;;
-#         *)
-#             echo "$timestamp - $message"
-#             ;;
-#     esac
-# }
+Function to log messages with timestamps and proper formatting for GitHub Actions
+log() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  
+    case $level in
+        "INFO")
+            echo "::info::$timestamp - $message"
+            ;;
+         "WARNING")
+            echo "::warning::$timestamp - $message"
+            ;;
+        "ERROR")
+            echo "::error::$timestamp - $message"
+            ;;
+        *)
+            echo "$timestamp - $message"
+            ;;
+    esac
+}
 
 # Modified sleep timer with GitHub Actions friendly output
 sleepWithTimer() {
@@ -55,7 +54,7 @@ if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
 fi
 
 log "INFO" "Installing dependencies..."
-./installing.sh
+sh ./installing.sh
 if [ $? -ne 0 ]; then
     log "ERROR" "Failed to install dependencies."
     exit 1
@@ -64,4 +63,4 @@ fi
 log "INFO" "Installed dependencies process complete!"
 
 log "INFO" "Starting server containers process..."
-./start_server.sh $1 $2
+sh ./start_server.sh $1 $2

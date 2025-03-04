@@ -8,6 +8,7 @@ const appConfigs = require('../configs/AppConfigs');
 const logger = Logger('UserModel');
 
 class UserModel extends BaseModel {
+
     constructor() {
         const userSchema = Joi.object({
             national_id: Joi.string()
@@ -41,17 +42,6 @@ class UserModel extends BaseModel {
                     'string.pattern.name': 'Invalid email',
                     'any.required': 'Email is required for this operation.',
                 }),
-
-            // national_id_or_email: Joi.alternatives().try(
-            //     Joi.ref('national_id'),
-            //     Joi.ref('email'),
-            // ).when(Joi.ref('$operation'), {
-            //     is: 'read',
-            //     then: Joi.required(),
-            //     otherwise: Joi.optional(),
-            // }).messages({
-            //     'any.required': 'At least one of national_id or email must be provided when reading a user.',
-            // }),
 
             username: Joi.string()
                 .pattern(/^[a-zA-Z0-9_. -]*$/)

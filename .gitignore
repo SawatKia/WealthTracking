@@ -24,7 +24,7 @@ dist/
 *.vsix
 
 # Logs
-log/*
+**/logs/*
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -163,6 +163,7 @@ dist
 
 # data
 data/
+blacklist.json
 
 frontend/V2.0/package-lock.json
 frontend/V2.0/package.json

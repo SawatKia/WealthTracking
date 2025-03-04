@@ -60,11 +60,15 @@ jobs:
             echo "Navigating to project directory..."
             cd ~/WealthTracking || { echo "Failed to navigate to project directory"; exit 1; }
 
-            echo "Granting permissions to bash scripts..."
-            chmod +x deploy.sh installing.sh start_server.sh update-nginx-blacklist.sh internet.sh || { echo "Failed to grant permissions"; exit 1; }
-
+            echo "Pulling latest changes from the repository..."
+            git restore . || { echo "Failed to restore git repo"; exit 1; }
+            
             echo "Executing deploy script..."
             ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} || { echo "Deployment script failed"; exit 1; }
+            
+            echo "Granting permissions to bash scripts..."
+            chmod +x deploy.sh installing.sh start_server.sh internet.sh || { echo "Failed to grant permissions"; exit 1; }
+            chmod 700 update-nginx-blacklist.sh || { echo "Failed to grant permissions"; exit 1; }
 
             echo "Deployment completed successfully."
           EOF

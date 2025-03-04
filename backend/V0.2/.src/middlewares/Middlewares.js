@@ -432,36 +432,88 @@ class Middlewares {
 
   securityMiddleware(req, res, next) {
     const BLACKLIST_FILE = path.join(__dirname, "../../statics/", "blacklist.json");
-    logger.info(`Loading blacklist from: ${BLACKLIST_FILE}`);
+    logger.info(`set blacklist file path: ${BLACKLIST_FILE}`);
+
     const SUSPICIOUS_PATTERNS = [
-      "/php-cgi/", // ป้อdงกัน RCE ผ่าน PHP-CGI
-      "/admin/",   // ป้องกัน brute force ไปที่ /admin
-      "wp",        // ป้องกันการสแกน WordPress
-      "eval(",     // ป้องกัน XSS และ SQL Injection
-      "rm -rf",    // ป้องกัน RCE
-      "wget",      // ป้องกันการดาวน์โหลดไฟล์
-      "curl",      // ป้องกันการดาวน์โหลดไฟล์
-      "sh",        // ป้องกันการรัน shell command
-      "bash", "cmd", "powershell", "php", "python", "node", "npm", "yarn", "go",
-      ".txt", ".json", ".log", ".bak",   // ป้องกันการอ่านไฟล์ .txt
-      "telescope", // ป้องกันการสแกน Laravel Telescope
-      "cgi",   // ป้องกัน CGI-based attack
-      "passwd",    // ป้องกันการพยายามอ่านไฟล์ passwd
-      "union select", // ป้องกัน SQL Injection
-      "exec(", "system(", "passthru(", "shell_exec(", // ป้องกัน RCE
-      ".git/config", // พยายามเข้าถึง Git repo
-      ".env", ".env.local", ".env.tmp", ".env.development.local", ".env.prod.local", ".env", // พยายามอ่านไฟล์ .env
-      "/prod/.env", "/production/.git/config", "/www/.git/config", ".git", // พยายามดึง environment configs
-      "/modules/utils/.git/config", "/templates/.git/config", "/user_area/.git/config",
-      "/test_configs/.git/config", "/images/.git/config", "/core/config/.git/config",
-      "/data/private/.git/config", "/static/content/.git/config",
-      "/libs/js/iframe.js" // อาจเป็นการโจมตี iframe injection
+      "^/php-cgi/",      // Match exact path prefix
+      "^/admin/",        // Match exact path prefix
+      "^wp-",            // WordPress specific prefix
+      "\\beval\\(",      // Ensure eval is a complete word
+      "\\brm -rf\\b",    // Ensure rm -rf is a complete command
+      "\\bwget\\b",      // Complete word boundaries
+      "\\bcurl\\b",      // Complete word boundaries
+      "\\b(?<!refre)sh\\b", // Match sh but not when part of refresh
+      "\\bbash\\b", "\\bcmd\\b", "\\bpowershell\\b", "\\bphp\\b", "\\bpython\\b",
+      "\\bnode\\b", "\\bnpm\\b", "\\byarn\\b", "\\bgo\\b",
+      "\\.txt$", "\\.json$", "\\.log$", "\\.bak$",  // File extensions at end only
+      "\\btelescope\\b",
+      "\\bcgi\\b",
+      "passwd",
+      "union\\s+select",
+      "\\bexec\\(", "\\bsystem\\(", "\\bpassthru\\(", "\\bshell_exec\\(",
+      "\\.git/config",
+      "\\.env(?:\\.local|\\.tmp|\\.development\\.local|\\.prod\\.local)?$",
+      "/prod/\\.env", "/production/\\.git/config", "/www/\\.git/config",
+      "/modules/utils/\\.git/config", "/templates/\\.git/config",
+      "/user_area/\\.git/config", "/test_configs/\\.git/config",
+      "/images/\\.git/config", "/core/config/\\.git/config",
+      "/data/private/\\.git/config", "/static/content/\\.git/config",
+      "/libs/js/iframe\\.js"
     ];
+
+    // Define whitelisted paths from allowedMethods
+    const WHITELISTED_PATHS = [
+      '/health',
+      '/favicon.ico',
+      '/api',
+      '/api/v0.2/',
+      '/api/v0.2/users',
+      '/api/v0.2/banks',
+      '/api/v0.2/banks/:account_number/:fi_code',
+      '/api/v0.2/debts',
+      '/api/v0.2/debts/:debt_id',
+      '/api/v0.2/debts/:debt_id/payments',
+      '/api/v0.2/slip/quota',
+      '/api/v0.2/slip',
+      '/api/v0.2/slip/verify',
+      '/api/v0.2/cache',
+      '/api/v0.2/cache/:key',
+      '/api/v0.2/login',
+      '/api/v0.2/refresh',
+      '/api/v0.2/logout',
+      '/api/v0.2/google/login',
+      '/api/v0.2/google/callback',
+      '/api/v0.2/transactions',
+      '/api/v0.2/transactions/list/types',
+      '/api/v0.2/transactions/summary/monthly',
+      '/api/v0.2/transactions/summary/month-expenses',
+      '/api/v0.2/transactions/account/:account_number/:fi_code',
+      '/api/v0.2/transactions/:transaction_id',
+      '/api/v0.2/budgets',
+      '/api/v0.2/budget/types',
+      '/api/v0.2/budgets/history',
+      '/api/v0.2/budgets/:expenseType'
+    ];
+
+    // Helper function to check if a path matches whitelist pattern
+    const isPathWhitelisted = (requestPath) => {
+      logger.info(`Checking if ${requestPath} is a whitelisted path`);
+      return WHITELISTED_PATHS.some(pattern => {
+        // Convert route pattern to regex
+        const regexPattern = pattern
+          .replace(/:[^/]+/g, '[^/]+') // Replace :params with regex
+          .replace(/\//g, '\\/') // Escape forward slashes
+          .replace(/\//g, '\\/?'); // Make trailing slash optional
+        const regex = new RegExp(`^${regexPattern}$`);
+        return regex.test(requestPath);
+      });
+    };
 
     // Load blacklist from JSON file
     const loadBlacklist = () => {
       try {
         if (!fs.existsSync(BLACKLIST_FILE)) return new Set();
+        logger.info(`Loading blacklist from ${BLACKLIST_FILE}`);
         const data = JSON.parse(fs.readFileSync(BLACKLIST_FILE, "utf-8"));
         logger.debug(`Loaded blacklist: ${JSON.stringify(data.blocked_ips)}`);
         return new Set(data.blocked_ips || []);
@@ -484,11 +536,17 @@ class Middlewares {
         }
 
         fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({ blocked_ips: [...blacklist] }, null, 2));
-        logger.debug(`Added IP to blacklist: ${JSON.stringify([...blacklist])}`);
+        logger.warn(`Added IP to blacklist: ${JSON.stringify([...blacklist])}`);
       } catch (err) {
         logger.error("Error saving blacklist:", err);
       }
     };
+
+    // Check if the path is whitelisted
+    if (isPathWhitelisted(req.path)) {
+      logger.info(`${requestPath} is a whitelisted path, skipping security checks`);
+      return next();
+    }
 
     let blacklist = loadBlacklist();
     logger.debug(`blacklist: ${JSON.stringify([...blacklist])}::${typeof blacklist}`);
@@ -500,11 +558,25 @@ class Middlewares {
     }
     logger.info(`${clientIp} is not in the black list`);
 
-    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) =>
-      req.url.includes(pattern) ||
-      JSON.stringify(req.query).includes(pattern) ||
-      JSON.stringify(req.body).includes(pattern)
-    );
+    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) => {
+      const regex = new RegExp(pattern, 'i');
+      // Check URL
+      if (regex.test(req.url)) {
+        logger.warn(`Suspicious pattern "${pattern}" found in URL: ${req.url}`);
+        return true;
+      }
+      // Check query parameters
+      if (regex.test(JSON.stringify(req.query))) {
+        logger.warn(`Suspicious pattern "${pattern}" found in query params: ${JSON.stringify(req.query)}`);
+        return true;
+      }
+      // Check request body
+      if (req.body && regex.test(JSON.stringify(req.body))) {
+        logger.warn(`Suspicious pattern "${pattern}" found in request body: ${JSON.stringify(req.body)}`);
+        return true;
+      }
+      return false;
+    });
 
     if (suspicious) {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
@@ -820,58 +892,62 @@ class Middlewares {
 
   // Response Handler - Central place for sending all responses
   responseHandler = async (req, res, next) => {
-    logger.info("Handling response");
+    let status_code = 500;
+    let message = "Internal Server Error";
+    let data = null;
+    let headers = {};
 
-    // Handle Swagger UI requests specifically
-    if (req.url.startsWith('/api/v0.2/docs')) {
-      logger.debug('Skipping response handler for Swagger UI request');
-      return next();
+    try {
+      logger.info("Handling response");
+
+      if (req.url.startsWith('/api/v0.2/docs')) {
+        logger.debug('Skipping response handler for Swagger UI request');
+        return next();
+      }
+
+      if (req.fileResponse) {
+        logger.info("Sending file response");
+        headers = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
+        return res.set(headers).status(200).sendFile(req.fileResponse);
+      }
+
+      if (!req.formattedResponse) {
+        logger.warn('Response not formatted in req.formattedResponse');
+        logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
+        logger.warn('Sending an empty response');
+        status_code = 200;
+        message = "OK";
+      } else {
+        status_code = req.formattedResponse.status_code;
+        message = req.formattedResponse.message;
+        data = req.formattedResponse.data;
+        headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
+      }
+
+      if (GoogleSheetService.isConnected() && req.requestLog) {
+        logger.info('Google Sheet service is connected');
+        const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+        logger.info('Log preparation completed, ready to append');
+        const appendingResult = await GoogleSheetService.appendLog(completeLog);
+        if (!appendingResult) {
+          logger.warn('Failed to append log to Google Sheet');
+        }
+      } else {
+        logger.warn('Google Sheet service is not connected');
+      }
+    } catch (error) {
+      logger.error(`Error in response handler: ${error.message}`);
+    } finally {
+      if (!res.headersSent) {
+        const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
+        res
+          .set({ ...securityHeaders, ...headers })
+          .status(status_code)
+          .json(formatResponse(status_code, message, data));
+      }
     }
+  };
 
-    // Handle file responses
-    if (req.fileResponse) {
-      logger.info("Sending file response");
-      const securityHeaders = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
-      return res.set(securityHeaders).status(200).sendFile(req.fileResponse);
-    }
-
-    // If no formatted response exists, log warning and send empty response
-    if (!req.formattedResponse) {
-      logger.warn('Response not formatted in req.formattedResponse');
-      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
-      logger.warn('Sending an empty response');
-      return res.send();
-    }
-
-    const { status_code, message, data } = req.formattedResponse;
-
-    // Combine error headers (if any) with regular headers
-    const headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
-
-    // Log response to Google Sheet if service is connected
-    if (GoogleSheetService.isConnected() && req.requestLog) {
-      logger.info('Google Sheet service is connected');
-      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-      logger.info('log preparation completed, ready to append')
-      await GoogleSheetService.appendLog(completeLog);
-    } else logger.warn('Google Sheet service is not connected');
-
-    // Get security headers
-    const securityHeaders = this.logResponse(
-      req,
-      status_code,
-      message,
-      data,
-      headers,
-      !!req.error // Pass true if error exists
-    );
-
-    // Send response with combined headers
-    res
-      .set({ ...securityHeaders, ...headers })
-      .status(status_code)
-      .json(formatResponse(status_code, message, data));
-  }
 
   /**
    * Format uptime given in seconds to a human readable format.
