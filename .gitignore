@@ -163,6 +163,7 @@ dist
 
 # data
 data/
+blacklist.json
 
 frontend/V2.0/package-lock.json
 frontend/V2.0/package.json
