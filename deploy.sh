@@ -54,7 +54,7 @@ if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
 fi
 
 log "INFO" "Installing dependencies..."
-ah ./installing.sh
+sh ./installing.sh
 if [ $? -ne 0 ]; then
     log "ERROR" "Failed to install dependencies."
     exit 1
