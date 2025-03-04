@@ -54,7 +54,7 @@ if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
 fi
 
 log "INFO" "Installing dependencies..."
-./installing.sh
+ah ./installing.sh
 if [ $? -ne 0 ]; then
     log "ERROR" "Failed to install dependencies."
     exit 1
@@ -63,4 +63,4 @@ fi
 log "INFO" "Installed dependencies process complete!"
 
 log "INFO" "Starting server containers process..."
-./start_server.sh $1 $2
+sh ./start_server.sh $1 $2
