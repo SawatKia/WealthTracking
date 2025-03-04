@@ -820,58 +820,62 @@ class Middlewares {
 
   // Response Handler - Central place for sending all responses
   responseHandler = async (req, res, next) => {
-    logger.info("Handling response");
+    let status_code = 500;
+    let message = "Internal Server Error";
+    let data = null;
+    let headers = {};
 
-    // Handle Swagger UI requests specifically
-    if (req.url.startsWith('/api/v0.2/docs')) {
-      logger.debug('Skipping response handler for Swagger UI request');
-      return next();
+    try {
+      logger.info("Handling response");
+
+      if (req.url.startsWith('/api/v0.2/docs')) {
+        logger.debug('Skipping response handler for Swagger UI request');
+        return next();
+      }
+
+      if (req.fileResponse) {
+        logger.info("Sending file response");
+        headers = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
+        return res.set(headers).status(200).sendFile(req.fileResponse);
+      }
+
+      if (!req.formattedResponse) {
+        logger.warn('Response not formatted in req.formattedResponse');
+        logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
+        logger.warn('Sending an empty response');
+        status_code = 200;
+        message = "OK";
+      } else {
+        status_code = req.formattedResponse.status_code;
+        message = req.formattedResponse.message;
+        data = req.formattedResponse.data;
+        headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
+      }
+
+      if (GoogleSheetService.isConnected() && req.requestLog) {
+        logger.info('Google Sheet service is connected');
+        const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+        logger.info('Log preparation completed, ready to append');
+        const appendingResult = await GoogleSheetService.appendLog(completeLog);
+        if (!appendingResult) {
+          logger.warn('Failed to append log to Google Sheet');
+        }
+      } else {
+        logger.warn('Google Sheet service is not connected');
+      }
+    } catch (error) {
+      logger.error(`Error in response handler: ${error.message}`);
+    } finally {
+      if (!res.headersSent) {
+        const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
+        res
+          .set({ ...securityHeaders, ...headers })
+          .status(status_code)
+          .json(formatResponse(status_code, message, data));
+      }
     }
+  };
 
-    // Handle file responses
-    if (req.fileResponse) {
-      logger.info("Sending file response");
-      const securityHeaders = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
-      return res.set(securityHeaders).status(200).sendFile(req.fileResponse);
-    }
-
-    // If no formatted response exists, log warning and send empty response
-    if (!req.formattedResponse) {
-      logger.warn('Response not formatted in req.formattedResponse');
-      logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
-      logger.warn('Sending an empty response');
-      return res.send();
-    }
-
-    const { status_code, message, data } = req.formattedResponse;
-
-    // Combine error headers (if any) with regular headers
-    const headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
-
-    // Log response to Google Sheet if service is connected
-    if (GoogleSheetService.isConnected() && req.requestLog) {
-      logger.info('Google Sheet service is connected');
-      const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-      logger.info('log preparation completed, ready to append')
-      await GoogleSheetService.appendLog(completeLog);
-    } else logger.warn('Google Sheet service is not connected');
-
-    // Get security headers
-    const securityHeaders = this.logResponse(
-      req,
-      status_code,
-      message,
-      data,
-      headers,
-      !!req.error // Pass true if error exists
-    );
-
-    // Send response with combined headers
-    res
-      .set({ ...securityHeaders, ...headers })
-      .status(status_code)
-      .json(formatResponse(status_code, message, data));
-  }
 
   /**
    * Format uptime given in seconds to a human readable format.

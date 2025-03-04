@@ -1,27 +1,26 @@
 #!/bin/bash
 
-source ./logging.sh
-# Function to log messages with timestamps and proper formatting for GitHub Actions
-# log() {
-#     local level=$1
-#     local message=$2
-#     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-#     case $level in
-#         "INFO")
-#             echo "::info::$timestamp - $message"
-#             ;;
-#         "WARNING")
-#             echo "::warning::$timestamp - $message"
-#             ;;
-#         "ERROR")
-#             echo "::error::$timestamp - $message"
-#             ;;
-#         *)
-#             echo "$timestamp - $message"
-#             ;;
-#     esac
-# }
+Function to log messages with timestamps and proper formatting for GitHub Actions
+log() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  
+    case $level in
+        "INFO")
+            echo "::info::$timestamp - $message"
+            ;;
+         "WARNING")
+            echo "::warning::$timestamp - $message"
+            ;;
+        "ERROR")
+            echo "::error::$timestamp - $message"
+            ;;
+        *)
+            echo "$timestamp - $message"
+            ;;
+    esac
+}
 
 # Modified sleep timer with GitHub Actions friendly output
 sleepWithTimer() {

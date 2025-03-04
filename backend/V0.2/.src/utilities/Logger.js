@@ -48,8 +48,9 @@ class Logger {
         const isDevelopment = NODE_ENV === 'development' || NODE_ENV === 'test';
 
         const testLogDir = path.join(
-            __dirname,
-            '../logs/'
+            appConfigs.environment === 'production'
+                ? '/usr/src/' + process.env.APP_DOMAIN + '/logs'
+                : path.join(__dirname, '../logs/')
         );
 
         const commonRotateOptions = {

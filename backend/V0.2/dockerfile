@@ -15,6 +15,15 @@ WORKDIR /usr/src/${APP_DOMAIN}
 # Copy the package.json and package-lock.json
 COPY package*.json ./
 
+# Create logs directory
+RUN mkdir -p /usr/src/${APP_DOMAIN}/logs
+
+# # Set permissions
+# RUN chown -R node:node /usr/src/${APP_DOMAIN}/logs
+
+# # Switch to non-root user
+# USER node
+
 # Install dependencies
 RUN npm install
 

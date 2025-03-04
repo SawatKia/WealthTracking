@@ -17,6 +17,7 @@ services:
       - /usr/src/${APP_DOMAIN}/node_modules
       - ./backend/V0.2/uploads:/usr/src/${APP_DOMAIN}/uploads
       - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
+      - ./backend/V0.2/logs:/usr/src/${APP_DOMAIN}/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,7 +36,7 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-    restart: no
+    restart: on-failure
     networks:
       - app_network
 
