@@ -63,7 +63,7 @@ log_info "Network detected. Checking internet connectivity..."
 
 # First, try Firefox portal detection
 if curl -s --max-time 5 http://detectportal.firefox.com/success.txt | grep -q "success"; then
-    log_debug "Internet is available. No need to run authentication script, exiting..."
+    log_info "Internet is available. No need to run authentication script, exiting..."
     exit 0
 fi
 
