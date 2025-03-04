@@ -235,6 +235,38 @@ class GoogleSheetService {
         return this.connected;
     }
 
+    /**
+     * Handles specific Google API errors and provides appropriate recovery actions
+     * @param {Error} error - The error object to handle
+     * @returns {boolean} - True if the error is recoverable, false otherwise
+     */
+    _handleGoogleApiError(error) {
+        if (!error) return false;
+
+        // Extract status code and message
+        const statusCode = error.response?.status || error.code;
+        const message = error.response?.data?.error?.message || error.message;
+
+        logger.error(`Google API Error - [${statusCode}] ${message}`);
+
+        switch (statusCode) {
+            case 503:  // Service Unavailable
+                logger.warn('Google Sheets API temporarily unavailable');
+                this.connected = false;
+                return true;  // Recoverable error
+            case 429:  // Rate Limit
+                logger.warn('Rate limit exceeded');
+                return true;  // Recoverable error
+            case 401:  // Unauthorized
+            case 403:  // Forbidden
+                logger.error('Authentication/Authorization error');
+                this.connected = false;
+                return false;
+            default:
+                logger.error(`Unhandled API error: ${message}`);
+                return false;
+        }
+    }
 
     /**
      * Sets the active sheet within the Google Spreadsheet, using the provided sheet name.
@@ -554,29 +586,36 @@ class GoogleSheetService {
      */
     async appendLog(logEntry) {
         logger.info('Appending log entry to sheet...');
+
         if (!this._verifyEnvironment()) {
             logger.warn('Log append skipped in non-production environment');
             return;
         }
 
-        if (!this.connected || !this.activeSheet) {
-            logger.warn('GoogleSheetService not connected');
-            return;
-        }
-
         try {
+            // If not connected, try to reconnect
+            if (!this.connected) {
+                logger.warn('Service disconnected, attempting to reconnect...');
+                await this.init();
+
+                if (!this.connected) {
+                    logger.error('Failed to reconnect to Google Sheets');
+                    return;
+                }
+            }
+
             if (!this.activeSheet) {
                 await this.setActiveSheet();
             }
 
             const formattedData = await this._formatRowData(logEntry);
 
-            // Ensure the sheet is loaded with the latest data with retry
+            // Ensure the sheet is loaded with the latest data
             await this.retryWithExponentialBackoff(async () => {
                 await this.activeSheet.loadCells();
             });
 
-            // Add the row and save with retry
+            // Add the row and save
             const row = await this.retryWithExponentialBackoff(async () => {
                 const newRow = await this.activeSheet.addRow(formattedData);
                 await this.activeSheet.saveUpdatedCells();
@@ -585,12 +624,15 @@ class GoogleSheetService {
 
             logger.info(`Log entry successfully added to sheet with row ID: ${row._rowNumber}`);
             return row;
+
         } catch (error) {
             logger.error(`Failed to append log entry: ${error.message}`);
             this.connected = false;
-            throw error;
+
+            return null;
         }
     }
+
 
     /**
      * Tries to execute the given operation with exponential backoff on failure if the
@@ -607,18 +649,26 @@ class GoogleSheetService {
         try {
             return await operation();
         } catch (error) {
-            if (error.code === 429 && retryCount < MAX_RETRIES) {
+            const isRecoverable = this._handleGoogleApiError(error);
+
+            if (isRecoverable && retryCount < MAX_RETRIES) {
                 const waitTime = Math.min(
                     (Math.pow(2, retryCount) * INITIAL_BACKOFF_MS) + Math.random() * 1000,
                     MAX_BACKOFF_MS
                 );
 
-                logger.warn(`Rate limit exceeded. Retrying in ${waitTime}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                logger.warn(`Operation failed. Retrying in ${waitTime}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
 
-                return retryWithExponentialBackoff(operation, retryCount + 1);
+                return this.retryWithExponentialBackoff(operation, retryCount + 1);
             }
-            throw error;
+
+            // If we've exhausted retries or error is not recoverable
+            if (retryCount >= MAX_RETRIES) {
+                logger.error(`Failed after ${MAX_RETRIES} retries`);
+            }
+
+            throw new Error(`Google Sheets operation failed: ${error.message}`);
         }
     }
 
