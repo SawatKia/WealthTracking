@@ -6,6 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs, { Dayjs } from 'dayjs';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import '../../components/i18next/i18n';
 
 // Type definitions - Updated to match ProfileService
 interface UpdateProfileData {
@@ -114,15 +116,15 @@ export default function Profile() {
           setProfilePictureUrl(updatedProfile.profile_picture_url);
 
           // แจ้งเตือนผู้ใช้
-          Alert.alert('Success', 'Profile picture updated successfully.');
+          Alert.alert('Success', t('profile.success.update'));
 
           // รีเซ็ตค่ารหัสผ่าน
           setCurrentPassword('');
         } else {
-          Alert.alert('Error', 'Failed to update profile picture. Please try again.');
+          Alert.alert('Error', t('profile.error.update'));
         }
       } catch (err) {
-        Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+        Alert.alert('Error', t('profile.error.update'));
         console.error('Upload error:', err);
       }
     }
@@ -149,7 +151,7 @@ export default function Profile() {
       // แก้ไขการตรวจสอบรหัสผ่านใหม่
       if (data.newPassword) {
         if (data.newPassword !== data.newConfirmPassword) { // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
-          Alert.alert('Error', 'New passwords do not match.');
+          Alert.alert('Error', t('profile.error.password'));
           return;
         }
       }
@@ -158,7 +160,7 @@ export default function Profile() {
       const updatedProfile = await updateUserProfile(updateData);
 
       if (updatedProfile) {
-        Alert.alert('Success', 'Your profile has been updated successfully.');
+        Alert.alert('Success', t('profile.success.update'));
 
         // Reset all edit modes and passwords
         setEditingUsername(false);
@@ -174,8 +176,16 @@ export default function Profile() {
       }
     } catch (err) {
       console.error('Update error:', err);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert('Error', t('profile.error.update'));
     }
+  };
+  const { t, i18n } = useTranslation();
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
+
+  const toggleLanguage = () => {
+    const newLang = currentLanguage === 'en' ? 'th' : 'en';
+    i18n.changeLanguage(newLang);
+    setCurrentLanguage(newLang);
   };
 
   // แก้ไขฟังก์ชัน onChangeDate
@@ -201,10 +211,10 @@ export default function Profile() {
 
       if (success) {
         setDeleteModalVisible(false); // ปิด modal ก่อนที่จะไปหน้า Login
-        Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+        Alert.alert('Success', t('profile.success.delete'));
         router.push('/Login');
       } else {
-        Alert.alert('Error', 'Failed to delete account. Please check your password and try again.');
+        Alert.alert('Error', t('profile.error.delete'));
       }
     } catch (err) {
       Alert.alert('Error', 'An error occurred while deleting your account.');
@@ -261,11 +271,20 @@ export default function Profile() {
             <MaterialIcons name="edit" size={20} color="white" />
           </View>
         </TouchableOpacity>
+        {/* Language Toggle Button */}
+        <TouchableOpacity
+          style={styles.languageButton}
+          onPress={toggleLanguage}
+        >
+          <Text style={styles.languageButtonText}>
+            {currentLanguage === 'en' ? 'TH' : 'EN'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Username */}
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>Username</Text>
+      <Text style={styles.label}>{t('profile.username')}</Text>
         {editingUsername ? (
           <View style={styles.editContainer}>
             <TextInput
@@ -275,13 +294,13 @@ export default function Profile() {
               autoCapitalize="none"
             />
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>Current Password:</Text>
+            <Text style={styles.passwordLabel}>{t('profile.currentPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 secureTextEntry
-                placeholder="Required to update"
+                placeholder={t('profile.required')}
               />
             </View>
             <View style={styles.buttonRow}>
@@ -293,13 +312,13 @@ export default function Profile() {
                   loadUserProfile(); // Reset to original value
                 }}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+               <Text style={styles.buttonText}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.saveButton]}
                 onPress={() => handleUpdateProfile({ username })}
               >
-                <Text style={styles.buttonText}>Save</Text>
+                <Text style={styles.buttonText}>{t('profile.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -318,14 +337,14 @@ export default function Profile() {
 
       {/* Birthday - แก้ไขส่วนนี้ */}
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>Birthday</Text>
+      <Text style={styles.label}>{t('profile.birthday')}</Text>
         {editingDateOfBirth ? (
           <View style={styles.editContainer}>
             <TouchableOpacity
               style={styles.datePickerButton}
               onPress={() => setDatePickerVisibility(!isDatePickerVisible)}
             >
-              <Text>{dateOfBirth ? dateOfBirth.format('DD MMM YYYY') : 'Select Date'}</Text>
+              <Text>{dateOfBirth ? dateOfBirth.format('DD MMM YYYY') : t('profile.selectDate')}</Text>
               <MaterialIcons name="calendar-today" size={20} color="#8A8A8A" />
             </TouchableOpacity>
 
@@ -340,13 +359,13 @@ export default function Profile() {
             )}
 
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>Current Password:</Text>
+            <Text style={styles.passwordLabel}>{t('profile.currentPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 secureTextEntry
-                placeholder="Required to update"
+                placeholder={t('profile.required')}
               />
             </View>
 
@@ -360,7 +379,7 @@ export default function Profile() {
                   loadUserProfile(); // Reset to original value
                 }}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.saveButton]}
@@ -370,7 +389,7 @@ export default function Profile() {
                   handleUpdateProfile({ date_of_birth: formattedDate });
                 }}
               >
-                <Text style={styles.buttonText}>Save</Text>
+                <Text style={styles.buttonText}>{t('profile.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -390,7 +409,7 @@ export default function Profile() {
       </View>
       {/* Email */}
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>Email</Text>
+      <Text style={styles.label}>{t('profile.email')}</Text>
         {editingEmail ? (
           <View style={styles.editContainer}>
             <TextInput
@@ -401,13 +420,13 @@ export default function Profile() {
               keyboardType="email-address"
             />
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>Current Password:</Text>
+            <Text style={styles.passwordLabel}>{t('profile.currentPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 secureTextEntry
-                placeholder="Required to update"
+                placeholder={t('profile.required')}
               />
             </View>
             <View style={styles.buttonRow}>
@@ -419,13 +438,13 @@ export default function Profile() {
                   loadUserProfile(); // Reset to original value
                 }}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.saveButton]}
                 onPress={() => handleUpdateProfile({ email })}
               >
-                <Text style={styles.buttonText}>Save</Text>
+                <Text style={styles.buttonText}>{t('profile.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -445,11 +464,11 @@ export default function Profile() {
 
       {/* Password - แก้ไขส่วนนี้ */}
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>Password</Text>
+      <Text style={styles.label}>{t('profile.password')}</Text>
         {editingPassword ? (
           <View style={styles.editContainer}>
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>Current Password:</Text>
+            <Text style={styles.passwordLabel}>{t('profile.currentPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={currentPassword}
@@ -460,7 +479,7 @@ export default function Profile() {
             </View>
 
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>New Password:</Text>
+              <Text style={styles.passwordLabel}>{t('profile.newPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={newPassword}
@@ -471,7 +490,7 @@ export default function Profile() {
             </View>
 
             <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>Confirm New Password:</Text>
+              <Text style={styles.passwordLabel}>{t('profile.confirmNewPassword')}</Text>
               <TextInput
                 style={styles.passwordInput}
                 value={confirmNewPassword}
@@ -491,7 +510,7 @@ export default function Profile() {
                   setnewConfirmPassword('');
                 }}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.saveButton]}
@@ -500,10 +519,11 @@ export default function Profile() {
                   newConfirmPassword: confirmNewPassword // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
                 })}
               >
-                <Text style={styles.buttonText}>Save</Text>
+                <Text style={styles.buttonText}>{t('profile.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
+          
         ) : (
           <View style={styles.valueContainer}>
             <Text style={styles.value}>••••••••</Text>
@@ -524,18 +544,17 @@ export default function Profile() {
           onPress={() => setDeleteModalVisible(true)}
         >
           <MaterialIcons name="delete" size={20} color="white" />
-          <Text style={styles.deleteButtonText}>Delete Account</Text>
+          <Text style={styles.deleteButtonText}>{t('profile.delete')}</Text>
         </TouchableOpacity>
       </View>
-
-
+      
       {/* Logout Button */}
       <TouchableOpacity
         style={styles.logoutButton}
         onPress={handleLogout}
       >
         <MaterialIcons name="logout" size={20} color="white" />
-        <Text style={styles.logoutButtonText}>Logout</Text>
+        <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
       </TouchableOpacity>
 
       {/* Delete Account Modal */}
@@ -547,12 +566,11 @@ export default function Profile() {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalTitle}>{t('profile.deleteAccount')}</Text>
             <Text style={styles.modalText}>
-              Are you sure you want to delete your account? This action cannot be undone.
+              {t('profile.deleteConfirm')}
             </Text>
-
-            <Text style={styles.passwordLabel}>Enter your password to confirm:</Text>
+            <Text style={styles.passwordLabel}>{t('profile.enterPassword')}</Text>
             <TextInput
               style={styles.modalInput}
               value={deletePassword}
@@ -569,14 +587,14 @@ export default function Profile() {
                   setDeletePassword('');
                 }}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t('profile.cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.deleteModalButton]}
                 onPress={handleDeleteAccount}
               >
-                <Text style={styles.modalButtonText}>Delete</Text>
+                <Text style={styles.modalButtonText}>{t('Delete')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -824,4 +842,31 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#fff',
   },
+  headerContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 20,
+  position: 'relative',
+},
+languageButton: {
+  position: 'absolute',
+  right: 20,
+  top: 20,
+  backgroundColor: '#4957AA',
+  paddingHorizontal: 15,
+  paddingVertical: 8,
+  borderRadius: 20,
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 3.84,
+},
+languageButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 14,
+},
+
 });
