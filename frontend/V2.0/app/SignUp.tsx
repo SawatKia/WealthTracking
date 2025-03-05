@@ -230,18 +230,6 @@ export default function SignUpScreen() {
           <Text style={styles.loginText}>Sign Up</Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <Text style={styles.orText}>or</Text>
-
-        {/* Google Login */}
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={handleSignUpGoogle}
-        >
-          <Ionicons name="logo-google" size={24} color="#4a4a8e" />
-          <Text style={styles.googleText}>Sign in With Google</Text>
-        </TouchableOpacity>
-
         {/* Sign Up Link */}
         <Text style={styles.signupText}>
           Already have an account?
