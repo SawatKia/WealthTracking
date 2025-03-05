@@ -498,15 +498,34 @@ class Middlewares {
     // Helper function to check if a path matches whitelist pattern
     const isPathWhitelisted = (requestPath) => {
       logger.info(`Checking if ${requestPath} is a whitelisted path`);
-      return WHITELISTED_PATHS.some(pattern => {
+      const isWhitelisted = WHITELISTED_PATHS.some(pattern => {
+        // Define base whitelisted paths
+        const BASE_PATHS = ['/health', '/favicon.ico', '/api'];
+
+        // Check base paths first
+        if (BASE_PATHS.includes(requestPath)) {
+          logger.debug(`Path ${requestPath} matches base whitelist`);
+          return true;
+        }
+
+        // Check if path starts with /api/v0.2
+        if (requestPath.startsWith('/api/v0.2')) {
+          logger.debug(`Path ${requestPath} matches API v0.2 prefix`);
+          return true;
+        }
+
         // Convert route pattern to regex
         const regexPattern = pattern
           .replace(/:[^/]+/g, '[^/]+') // Replace :params with regex
           .replace(/\//g, '\\/') // Escape forward slashes
           .replace(/\//g, '\\/?'); // Make trailing slash optional
         const regex = new RegExp(`^${regexPattern}$`);
-        return regex.test(requestPath);
+        logger.debug(`testing path ${requestPath} against regex: ${regex}`);
+        const result = regex.test(requestPath);
+        return result;
       });
+      logger.debug(`the path ${requestPath} is ${isWhitelisted ? 'whitelisted' : 'not whitelisted'}`);
+      return isWhitelisted;
     };
 
     // Load blacklist from JSON file
@@ -515,7 +534,6 @@ class Middlewares {
         if (!fs.existsSync(BLACKLIST_FILE)) return new Set();
         logger.info(`Loading blacklist from ${BLACKLIST_FILE}`);
         const data = JSON.parse(fs.readFileSync(BLACKLIST_FILE, "utf-8"));
-        logger.debug(`Loaded blacklist: ${JSON.stringify(data.blocked_ips)}`);
         return new Set(data.blocked_ips || []);
       } catch (err) {
         logger.error(`Error loading blacklist: ${err}`);
@@ -542,9 +560,34 @@ class Middlewares {
       }
     };
 
+    // Function to check all possible input sources
+    const checkSuspiciousPatterns = (input, source) => {
+      logger.info(`Checking for suspicious patterns in ${source}`);
+      if (!input) return false;
+
+      return SUSPICIOUS_PATTERNS.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        if (typeof input === 'string') {
+          logger.debug(`testing input ${input} against regex: ${regex}`);
+          if (regex.test(input)) {
+            logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${input}`);
+            return true;
+          }
+        } else if (typeof input === 'object') {
+          const stringified = JSON.stringify(input);
+          logger.debug(`testing input ${stringified} against regex: ${regex}`);
+          if (regex.test(stringified)) {
+            logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${stringified}`);
+            return true;
+          }
+        }
+        return false;
+      });
+    };
+
     // Check if the path is whitelisted
     if (isPathWhitelisted(req.path)) {
-      logger.info(`${requestPath} is a whitelisted path, skipping security checks`);
+      logger.info(`${req.path} is a whitelisted path, skipping security checks`);
       return next();
     }
 
@@ -558,27 +601,22 @@ class Middlewares {
     }
     logger.info(`${clientIp} is not in the black list`);
 
-    const suspicious = SUSPICIOUS_PATTERNS.some((pattern) => {
-      const regex = new RegExp(pattern, 'i');
-      // Check URL
-      if (regex.test(req.url)) {
-        logger.warn(`Suspicious pattern "${pattern}" found in URL: ${req.url}`);
-        return true;
-      }
-      // Check query parameters
-      if (regex.test(JSON.stringify(req.query))) {
-        logger.warn(`Suspicious pattern "${pattern}" found in query params: ${JSON.stringify(req.query)}`);
-        return true;
-      }
-      // Check request body
-      if (req.body && regex.test(JSON.stringify(req.body))) {
-        logger.warn(`Suspicious pattern "${pattern}" found in request body: ${JSON.stringify(req.body)}`);
-        return true;
-      }
-      return false;
-    });
+    // Check all possible input sources
+    const isSuspicious = (
+      checkSuspiciousPatterns(req.url, 'URL') ||
+      checkSuspiciousPatterns(req.path, 'Path') ||
+      checkSuspiciousPatterns(req.query, 'Query Parameters') ||
+      checkSuspiciousPatterns(req.params, 'URL Parameters') ||
+      checkSuspiciousPatterns(req.body, 'Request Body') ||
+      checkSuspiciousPatterns(req.headers, 'Headers') ||
+      checkSuspiciousPatterns(req.cookies, 'Cookies') ||
+      (req.files && checkSuspiciousPatterns(
+        req.files.map(f => f.originalname).join(','),
+        'File Names'
+      ))
+    );
 
-    if (suspicious) {
+    if (isSuspicious) {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
@@ -586,11 +624,12 @@ class Middlewares {
         blacklist.add(clientIp);
         logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
         saveBlacklist(blacklist);
+
         return next(MyAppErrors.forbidden());
       } else logger.info(`${clientIp} is exist in the black list, not need to add again`);
     }
 
-    logger.info(`${clientIp} => ${req.method} ${req.url} is passed through security middleware`);
+    logger.info(`${clientIp} => ${req.method} ${req.url} passed through security check`);
 
     next();
   }
@@ -900,21 +939,28 @@ class Middlewares {
     try {
       logger.info("Handling response");
 
+      // Skip for Swagger UI requests
       if (req.url.startsWith('/api/v0.2/docs')) {
         logger.debug('Skipping response handler for Swagger UI request');
         return next();
       }
 
+      // Handle file responses
       if (req.fileResponse) {
         logger.info("Sending file response");
         headers = this.logResponse(req, 200, "none", null, {}, false, req.fileResponse);
-        return res.set(headers).status(200).sendFile(req.fileResponse);
+        // Add return to prevent further execution
+        return res.set(headers).status(200).sendFile(req.fileResponse, (err) => {
+          if (err) {
+            // Log error but don't send another response
+            logger.error(`Error sending file: ${err.message}`);
+          }
+        });
       }
 
+      // Handle formatted responses
       if (!req.formattedResponse) {
         logger.warn('Response not formatted in req.formattedResponse');
-        logger.debug(`${req.method} ${req.path} => ${res.statusCode || 'Unknown'} ${res.statusMessage || 'Unknown message'} => ${req.ip}`);
-        logger.warn('Sending an empty response');
         status_code = 200;
         message = "OK";
       } else {
@@ -924,6 +970,7 @@ class Middlewares {
         headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
       }
 
+      // Handle Google Sheet logging
       if (GoogleSheetService.isConnected() && req.requestLog) {
         logger.info('Google Sheet service is connected');
         const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
@@ -935,15 +982,24 @@ class Middlewares {
       } else {
         logger.warn('Google Sheet service is not connected');
       }
-    } catch (error) {
-      logger.error(`Error in response handler: ${error.message}`);
-    } finally {
+
+      // Only send response if headers haven't been sent
       if (!res.headersSent) {
         const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
-        res
+        return res
           .set({ ...securityHeaders, ...headers })
           .status(status_code)
           .json(formatResponse(status_code, message, data));
+      }
+    } catch (error) {
+      logger.error(`Error in response handler: ${error.message}`);
+      // Only send error response if headers haven't been sent
+      if (!res.headersSent) {
+        const securityHeaders = this.logResponse(req, 500, "Internal Server Error", null, {}, true);
+        return res
+          .set(securityHeaders)
+          .status(500)
+          .json(formatResponse(500, "Internal Server Error", null));
       }
     }
   };
