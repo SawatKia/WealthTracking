@@ -325,6 +325,7 @@ class AuthController extends BaseController {
         }
     }
 
+    //NOTE - should be googleAuth
     async googleLogin(req, res, next) {
         try {
             logger.info('Google login requested');
@@ -395,18 +396,23 @@ class AuthController extends BaseController {
 
             // Check if user exists in our database
             const existingUserEmail = await this.userModel.findOne({ email: googleUser.email });
+            logger.debug(`Existing user with email: ${JSON.stringify(existingUserEmail, null, 2)}`);
+
             const existingUserNationalId = await this.userModel.findOne({ national_id: googleUser.sub });
+            logger.debug(`Existing user with google sub: ${JSON.stringify(existingUserNationalId, null, 2)}`);
 
             if (action === 'register') {
                 logger.info(`Registering user with email: ${googleUser.email}`);
 
                 if (existingUserEmail) {
                     logger.warn(`User with email ${googleUser.email} already exists`);
+                    //NOTE - or "The user already exists. You cannot register with the same existing credentials."
                     throw MyAppErrors.badRequest('User already exists. Please login instead.');
                 }
 
                 if (existingUserNationalId) {
                     logger.warn(`User with national_id ${googleUser.sub} already exists`);
+                    //NOTE - or "The user already exists. You cannot register with the same existing credentials."
                     throw MyAppErrors.badRequest('User already exists. Please login instead.');
                 }
 
@@ -440,7 +446,7 @@ class AuthController extends BaseController {
                 logger.info(`Logging in user with email: ${googleUser.email}`);
                 const existingUser = existingUserEmail || existingUserNationalId;
                 if (!existingUser || existingUserEmail.national_id !== googleUser.sub) {
-                    logger.warn(`No user found with email ${googleUser.email} or national_id ${googleUser.sub}`);
+                    logger.warn(`existing user national_id is not match the logging in with google id, so it's different user`);
                     throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
                 }
                 logger.debug(`User ${existingUser.national_id} found`);

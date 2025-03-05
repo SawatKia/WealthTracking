@@ -1,34 +1,32 @@
 #!/bin/bash
 
-# Common logging function for GitHub Actions
+# Common logging function that works in both GitHub Actions and shell
 log() {
     local level=$1
     local message=$2
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    case $level in
-        "INFO")
-            echo "::info::$timestamp - $message"
-            ;;
-        "WARNING")
-            echo "::warning::$timestamp - $message"
-            ;;
-        "ERROR")
-            echo "::error::$timestamp - $message"
-            ;;
-        "DEBUG")
-            echo "::debug::$timestamp - $message"
-            ;;
-        "GROUP")
-            echo "::group::$timestamp - $message"
-            ;;
-        "ENDGROUP")
-            echo "::endgroup::"
-            ;;
-        *)
-            echo "$timestamp - $message"
-            ;;
-    esac
+    # If running in GitHub Actions
+    if [ -n "$GITHUB_ACTIONS" ]; then
+        case $level in
+            "INFO")    echo "::info::$timestamp - $message" ;;
+            "WARNING") echo "::warning::$timestamp - $message" ;;
+            "ERROR")   echo "::error::$timestamp - $message" ;;
+            "DEBUG")   echo "::debug::$timestamp - $message" ;;
+            "GROUP")   echo "::group::$timestamp - $message" ;;
+            "ENDGROUP") echo "::endgroup::" ;;
+            *)        echo "$timestamp - $message" ;;
+        esac
+    else
+        # Regular shell output with colors
+        case $level in
+            "INFO")    echo -e "\033[0;32m$timestamp - INFO - $message\033[0m" ;;
+            "WARNING") echo -e "\033[0;33m$timestamp - WARNING - $message\033[0m" ;;
+            "ERROR")   echo -e "\033[0;31m$timestamp - ERROR - $message\033[0m" ;;
+            "DEBUG")   echo -e "\033[0;34m$timestamp - DEBUG - $message\033[0m" ;;
+            *)        echo -e "$timestamp - $message" ;;
+        esac
+    fi
 }
 
 sleepWithTimer() {
@@ -43,31 +41,40 @@ healthStatus() {
     port=${2:-3000}
 
     if [ -z "$ip" ]; then
-        log "INFO" "No IP provided, assuming healthy."
-        return 0
+        log "WARNING" "No IP provided, checking localhost"
+        ip="localhost"
     fi
 
     log "INFO" "Checking server health status on http://${ip}:${port}/health"
-    serverResponse=$(curl -s -m 10 http://${ip}:${port}/health?service=bash-script)
+    serverResponse=$(curl -s -m 10 http://${ip}:${port}/health?service=bash-script%20healthStatus())
 
     if [ -z "$serverResponse" ]; then
-        log "WARNING" "No response from /health endpoint, falling back to docker ps check"
+        log "WARNING" "No response from /health endpoint, checking container status"
         dockerStatus=$(docker ps --filter "name=WealthTrack-prodContainer" --format "{{.Status}}")
-        if [ "$dockerStatus" != "healthy" ]; then
-            log "INFO" "WealthTrack-prodContainer status: $dockerStatus"
+        
+        if [ -z "$dockerStatus" ]; then
+            log "ERROR" "Container not found"
+            return 1
+        fi
+        
+        if echo "$dockerStatus" | grep -q "healthy"; then
+            log "INFO" "Container is healthy: $dockerStatus"
             return 0
         else
-            log "ERROR" "Container is not healthy"
+            log "ERROR" "Container is not healthy: $dockerStatus"
             return 1
         fi
     else
-        log "INFO" "Server health response: $serverResponse"
-        log "DEBUG" "$serverResponse" | grep -q '"status":"healthy"'
-        return $?
+        log "DEBUG" "Server response: $serverResponse"
+        if echo "$serverResponse" | grep -q '"status":"healthy"'; then
+            log "INFO" "Server is healthy"
+            return 0
+        else
+            log "ERROR" "Server is not healthy: $serverResponse"
+            return 1
+        fi
     fi
 }
-
-# ...rest of the file using log function instead of echo -e...
 
 restartDockerDaemon() {
     if [ "$(uname -s)" = "Linux" ]; then
@@ -141,25 +148,50 @@ start_server() {
     log "INFO" "\033[1;36mServer is healthy!\033[0m"
 }
 
-start_server
-log "INFO" "\a"
-log "INFO" "\033[1;32m++++Server is ready to use!++++\033[0m"
-
-# (Optional) Create a cronjob for Ubuntu (staging/production)
-if [ "$(uname -s)" = "Linux" ]; then
-
+setup_cronjobs() {
     # First, remove any existing entries to prevent duplicates
     (crontab -l 2>/dev/null | grep -v "start_server.sh" \
                            | grep -v "update-nginx-blacklist.sh" \
                            | grep -v "internet.sh" \
                            | grep -v "auto-authen.sh") | crontab -
 
-    # Add all cron jobs at once
-    (crontab -l 2>/dev/null; echo "*/15 * * * * /bin/sh -c 'if ! /bin/sh $(pwd)/start_server.sh healthStatus; then /bin/sh $(pwd)/start_server.sh; fi'
+    # Add all cron jobs with better error handling
+    (crontab -l 2>/dev/null; echo "*/15 * * * * /bin/sh -c 'cd $(pwd) && if ! /bin/sh start_server.sh health; then /bin/sh start_server.sh start; fi'
 */5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
 */20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
     
     log "INFO" "\033[7;34m>>>\033[0m cronjob created."
-fi
-log "INFO" "Starting server script completed."
-exit 0
+}
+
+# Main script execution
+main() {
+    case "$1" in
+        "health")
+            shift  # Remove first argument
+            healthStatus "$@"  # Pass remaining arguments to healthStatus
+            exit $?
+            ;;
+        "restart")
+            restartDockerDaemon
+            exit $?
+            ;;
+        "start" | "")
+            start_server
+            log "INFO" "\a"
+            log "INFO" "\033[1;32m++++Server is ready to use!++++\033[0m"
+            
+            # Setup cron jobs only on Linux
+            if [ "$(uname -s)" = "Linux" ]; then
+                setup_cronjobs
+            fi
+            ;;
+        *)
+            log "ERROR" "Unknown command: $1"
+            log "INFO" "Usage: $0 [healthStatus|restart|start]"
+            exit 1
+            ;;
+    esac
+}
+
+# Call main with all arguments
+main "$@"
