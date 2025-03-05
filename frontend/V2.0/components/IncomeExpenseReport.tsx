@@ -16,7 +16,6 @@
     const averageY =
       monthlyData.reduce((sum, item) => sum + item.y, 0) / monthlyData.length ||
       0;
-    console.log("monthlyData:", monthlyData);
 
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

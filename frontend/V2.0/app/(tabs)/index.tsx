@@ -25,34 +25,18 @@ export default function HomeScreen() {
   const [debtDetails, setDebtDetails] = useState<Debt[]>([]);
   const router = useRouter();
   
-  // useEffect(() => {
-  //   const fetchMonthlySummary = async () => {
-  //     try {
-  //       const data = await getMonthlySummary();
-  //       console.log("getMonthlySummary", data);
-  //       setMonthlyData(data ?? []);
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   };
-  //   fetchMonthlySummary();
-  // }, []);
-  
   useFocusEffect(
         useCallback(() => {
           const fetchAccount = async () => {
             const accounts = await getAllAccounts();
-            console.log("Fetched Accounts:", accounts);
             setBankAccounts(accounts);
-            console.log('bankAccounts.length:', bankAccounts.length)
           };
           const fetchMonthlySummary = async () => {
             try {
               const data = await getMonthlySummary();
-              console.log("getMonthlySummary", data);
               setMonthlyData(data ?? []);
             } catch (err) {
-              console.log(err);
+              console.log('Error fetching MonthlySummary:' ,err);
             }
           };
           const fetchDebts = async () => {
@@ -86,7 +70,6 @@ export default function HomeScreen() {
         return sum + progressPercentage;
       }, 0);
       const totalBalance = bankAccounts.reduce((total, account) => total + parseFloat(account.balance), 0);
-      console.log('totalBalance:', totalBalance)
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
