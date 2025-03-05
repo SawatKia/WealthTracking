@@ -66,10 +66,6 @@ jobs:
             echo "Executing deploy script..."
             ./deploy.sh ${{ secrets.STAGING_SERVERS_IP }} || { echo "Deployment script failed"; exit 1; }
             
-            echo "Granting permissions to bash scripts..."
-            chmod +x deploy.sh installing.sh start_server.sh internet.sh || { echo "Failed to grant permissions"; exit 1; }
-            chmod 700 update-nginx-blacklist.sh || { echo "Failed to grant permissions"; exit 1; }
-
             echo "Deployment completed successfully."
           EOF
           )
