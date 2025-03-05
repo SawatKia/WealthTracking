@@ -40,7 +40,6 @@ export default function AccountCard({
       }
     }, 300); // 300ms delay before changing the index
   };
-  console.log(account[currentIndex])
   return (
     // <GestureDetector gesture={swipeGesture}>
 
