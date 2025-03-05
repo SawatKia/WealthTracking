@@ -69,7 +69,7 @@ export default function SignUpScreen() {
     if (!password.trim()) {
       newError.password = "Password is required";
       isValid = false;
-    } else if (password.length < 6) {
+    } else if (password.length < 8) {
       newError.password = "Password must be at least 6 characters";
       isValid = false;
     }

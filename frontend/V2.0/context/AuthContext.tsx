@@ -52,13 +52,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
 
   const login = async (email: string, password: string) => {
-    const success = await apiLogin(email, password);
-    if (success) {
+    const response = await apiLogin(email, password);
+    if (response === true) {
       setIsAuthenticated(true);
       router.push("/(tabs)");
       return true;
     }
-    return false;
+    return response;
   };
 
   const loginWithGoogle = async () => {
