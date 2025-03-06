@@ -20,14 +20,9 @@ class FinancialInstitutionController extends BaseController {
     async getAllFinancialInstitutions(req, res, next) {
         logger.info(`getAllFinancialInstitutions`);
         try {
-            if (appConfigs.environment === 'production') {
-                throw MyAppErrors.forbidden('This endpoint is not available in production');
-            }
-
             const institutions = await this.model.list();
             req.formattedResponse = formatResponse(200,
-                '[DEV ONLY] Financial institutions fetched successfully', {
-                warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                'Financial institutions fetched successfully', {
                 data: institutions
             }
             );
@@ -41,16 +36,11 @@ class FinancialInstitutionController extends BaseController {
     async getFinancialInstitutionByCode(req, res, next) {
         logger.info(`getFinancialInstitutionByCode: ${req.params}`);
         try {
-            if (appConfigs.environment === 'production') {
-                throw MyAppErrors.forbidden('This endpoint is not available in production');
-            }
-
             const { fi_code } = req.params;
             const institution = await this.model.findOne({ fi_code });
             if (institution) {
                 req.formattedResponse = formatResponse(200,
-                    '[DEV ONLY] Financial institution fetched successfully', {
-                    warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                    'Financial institution fetched successfully', {
                     data: institution
                 }
                 );
@@ -67,10 +57,6 @@ class FinancialInstitutionController extends BaseController {
     async getOperatingThaiCommercialBanks(req, res, next) {
         logger.info(`getOperatingThaiCommercialBanks`);
         try {
-            if (appConfigs.environment === 'production') {
-                throw MyAppErrors.forbidden('This endpoint is not available in production');
-            }
-
             const operatingThaiCommercialBankCodes = [
                 '002', '004', '006', '011', '014', '017', '018', '020', '022',
                 '024', '025', '029', '030', '031', '032', '033', '034', '039',
@@ -83,8 +69,7 @@ class FinancialInstitutionController extends BaseController {
             if (institutions.length > 0) {
                 const referenceLink = 'https://apiportal.kasikornbank.com/bucket/SiteCollectionDocuments/assets/page/apiproducts/corporate-fund-transfer/BankCode-CorpAPI.pdf';
                 req.formattedResponse = formatResponse(200,
-                    '[DEV ONLY] Operating Thai commercial banks fetched successfully', {
-                    warning: '⚠️ This endpoint is for development purposes only. Do not use in production.',
+                    'Operating Thai commercial banks fetched successfully', {
                     reference: referenceLink,
                     data: institutions
                 }
