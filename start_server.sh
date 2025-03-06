@@ -46,7 +46,8 @@ healthStatus() {
     fi
 
     log "INFO" "Checking server health status on http://${ip}:${port}/health"
-    serverResponse=$(curl -s -m 10 http://${ip}:${port}/health?service=bash-script%20healthStatus())
+    serverResponse=$(curl -s -m 10 "http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29")
+    log "DEBUG" "health check response: ${serverResponse}"
 
     if [ -z "$serverResponse" ]; then
         log "WARNING" "No response from /health endpoint, checking container status"
@@ -65,7 +66,6 @@ healthStatus() {
             return 1
         fi
     else
-        log "DEBUG" "Server response: $serverResponse"
         if echo "$serverResponse" | grep -q '"status":"healthy"'; then
             log "INFO" "Server is healthy"
             return 0
@@ -126,7 +126,7 @@ start_server() {
     docker compose -f docker-compose.prod.yml up -d --build
     
     log "INFO" "\033[7;34m>>>\033[0m Waiting for server to fully start..."
-    sleepWithTimer 10
+    sleepWithTimer 20
 
     retry_count=0
     max_retries=3
@@ -156,7 +156,7 @@ setup_cronjobs() {
                            | grep -v "auto-authen.sh") | crontab -
 
     # Add all cron jobs with better error handling
-    (crontab -l 2>/dev/null; echo "*/15 * * * * /bin/sh -c 'cd $(pwd) && if ! /bin/sh start_server.sh health; then /bin/sh start_server.sh start; fi'
+    (crontab -l 2>/dev/null; echo "*/30 * * * * /bin/sh -c 'cd $(pwd) && if ! /bin/sh start_server.sh health; then /bin/sh start_server.sh start; fi'
 */5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
 */20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
     

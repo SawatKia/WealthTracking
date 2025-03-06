@@ -66,6 +66,11 @@ class BudgetModel extends BaseModel {
             logger.info('Getting budget history');
             const { national_id, expense_type, month } = query;
 
+            if (!national_id) {
+                logger.error('National ID is required');
+                throw new Error('National ID is required');
+            }
+
             // Base query
             let sql = `
                 SELECT 
@@ -78,26 +83,82 @@ class BudgetModel extends BaseModel {
             `;
 
             const params = [national_id];
+            let paramCount = 1;
 
-            // Add optional filters
+            // Add optional expense_type filter
             if (expense_type) {
-                sql += ' AND expense_type = $2';
+                paramCount++;
+                sql += ` AND expense_type = $${paramCount}`;
                 params.push(expense_type);
             }
 
+            // Add optional month filter
             if (month) {
-                sql += ' AND EXTRACT(MONTH FROM month) = $' + (params.length + 1);
-                params.push(month);
+                paramCount++;
+                // Handle different date formats
+                let parsedMonth;
+                try {
+                    parsedMonth = new Date(month);
+                    if (isNaN(parsedMonth.getTime())) {
+                        throw new Error('Invalid date format');
+                    }
+                } catch (error) {
+                    logger.error(`Invalid month format: ${month}`);
+                    throw new Error('Invalid month format. Expected ISO date string or Date object');
+                }
+
+                sql += ` AND DATE_TRUNC('month', month) = DATE_TRUNC('month', $${paramCount}::timestamp)`;
+                params.push(parsedMonth);
             }
 
+            // Add sorting
             sql += ' ORDER BY month DESC';
 
             logger.debug(`Executing query: ${sql} with params: ${JSON.stringify(params)}`);
             const result = await this.pgClient.query(sql, params);
+            logger.debug(`Found ${result.rows.length} budget history records`);
 
             return result.rows;
         } catch (error) {
             logger.error(`Error in getBudgetHistory: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get budgets for a specific month and national ID
+     * @param {Object} params - Query parameters
+     * @param {string} params.national_id - User's national ID
+     * @param {Date} params.month - Month to query budgets for
+     * @returns {Promise<Array>} List of budgets
+     */
+    async getMonthlyBudgets({ national_id, month }) {
+        try {
+            logger.info('Getting monthly budgets');
+            logger.debug(`Parameters - national_id: ${national_id}, month: ${month}`);
+
+            if (!national_id || typeof national_id !== 'string') {
+                throw new Error('National ID is required and must be a string');
+            }
+
+            if (!(month instanceof Date)) {
+                throw new Error('Month must be a valid Date object');
+            }
+
+            const sql = `
+                SELECT *
+                FROM budgets
+                WHERE national_id = $1
+                AND DATE_TRUNC('month', month) = DATE_TRUNC('month', $2::timestamp)
+                ORDER BY expense_type
+            `;
+
+            const result = await this.pgClient.query(sql, [national_id, month]);
+            logger.debug(`Found ${result.rows.length} budgets for ${month.toISOString()}`);
+
+            return result.rows;
+        } catch (error) {
+            logger.error(`Error getting monthly budgets: ${error.message}`);
             throw error;
         }
     }

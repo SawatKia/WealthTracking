@@ -103,7 +103,7 @@ const allowedMethods = {
   '/api/v0.2/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
   '/api/v0.2/budgets': ['GET', 'POST'],
   '/api/v0.2/budget/types': ['GET'],
-  '/api/v0.2/budgets/history': ['GET'],
+  '/api/v0.2/budget/history': ['GET'],
   '/api/v0.2/budgets/:expenseType': ['PATCH', 'DELETE'],
 }
 if (NODE_ENV != 'production') {
