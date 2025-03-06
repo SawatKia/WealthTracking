@@ -45,7 +45,7 @@ healthStatus() {
         ip="localhost"
     fi
 
-    log "INFO" "Checking server health status on http://${ip}:${port}/health"
+    log "INFO" "Checking server health status on http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29"
     serverResponse=$(curl -s -m 10 "http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29")
     log "DEBUG" "health check response: ${serverResponse}"
 
