@@ -124,7 +124,7 @@ const ImageUploadScreen = () => {
           onPress={handleUpload}
           disabled={loading} // Disable button while uploading
         >
-          <Text>{loading ? "Uploading..." : "Next"}</Text>
+          <Text>{loading ? "Uploading..." : "Save"}</Text>
         </TouchableOpacity>
       </View>
 
