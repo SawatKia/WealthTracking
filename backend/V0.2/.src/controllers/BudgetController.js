@@ -39,7 +39,7 @@ class BudgetController extends BaseController {
             currentMonth.setHours(0, 0, 0, 0);
 
             // Check if any budgets exist for current month
-            const currentBudgets = await this.BudgetModel.list({
+            const currentBudgets = await this.BudgetModel.getMonthlyBudgets({
                 national_id: nationalId,
                 month: currentMonth
             });
@@ -196,13 +196,40 @@ class BudgetController extends BaseController {
         try {
             logger.info('Getting budget history');
             const currentUser = await super.getCurrentUser(req);
-            const validatedFields = await super.verifyField(req.query, ['national_id', 'expenseType', 'month'], this.BudgetModel);
-            super.verifyType('Expense', validatedFields.expenseType);
-            const history = await this.BudgetModel.getBudgetHistory({
+
+            // Create merged data object with correct national_id
+            const dataToValidate = {
                 national_id: currentUser.national_id,
-                expense_type: validatedFields.expenseType,
-                month: validatedFields.month
-            });
+                ...req.query  // Add query parameters after to not override national_id
+            };
+
+            logger.debug(`Data to validate: ${JSON.stringify(dataToValidate)}`);
+
+            // Validate fields
+            const validatedFields = await super.verifyField(
+                dataToValidate,
+                ['national_id'],
+                this.BudgetModel
+            );
+
+            // Verify expense type
+            if (validatedFields.expenseType) {
+                super.verifyType('Expense', validatedFields.expenseType);
+            }
+
+            // Format query parameters
+            const queryParams = {
+                national_id: validatedFields.national_id,
+                expense_type: validatedFields.expenseType || undefined,
+                month: validatedFields.month ? new Date(validatedFields.month) : undefined
+            };
+
+            // Remove undefined values
+            Object.keys(queryParams).forEach(key =>
+                queryParams[key] === undefined && delete queryParams[key]
+            );
+
+            const history = await this.BudgetModel.getBudgetHistory(queryParams);
 
             const message = history.length > 0
                 ? 'Budget history retrieved successfully'
@@ -214,6 +241,8 @@ class BudgetController extends BaseController {
             logger.error(`Error getting budget history: ${error.message}`);
             if (error instanceof MyAppErrors) {
                 next(error);
+            } else if (error.message.includes("Missing required field")) {
+                next(MyAppErrors.badRequest(error.message));
             } else {
                 next(MyAppErrors.internalServerError(error.message));
             }

@@ -1,25 +1,32 @@
 #!/bin/bash
 
-Function to log messages with timestamps and proper formatting for GitHub Actions
+# Common logging function that works in both GitHub Actions and shell
 log() {
     local level=$1
     local message=$2
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-  
-    case $level in
-        "INFO")
-            echo "::info::$timestamp - $message"
-            ;;
-         "WARNING")
-            echo "::warning::$timestamp - $message"
-            ;;
-        "ERROR")
-            echo "::error::$timestamp - $message"
-            ;;
-        *)
-            echo "$timestamp - $message"
-            ;;
-    esac
+    
+    # If running in GitHub Actions
+    if [ -n "$GITHUB_ACTIONS" ]; then
+        case $level in
+            "INFO")    echo "::info::$timestamp - $message" ;;
+            "WARNING") echo "::warning::$timestamp - $message" ;;
+            "ERROR")   echo "::error::$timestamp - $message" ;;
+            "DEBUG")   echo "::debug::$timestamp - $message" ;;
+            "GROUP")   echo "::group::$timestamp - $message" ;;
+            "ENDGROUP") echo "::endgroup::" ;;
+            *)        echo "$timestamp - $message" ;;
+        esac
+    else
+        # Regular shell output with colors
+        case $level in
+            "INFO")    echo -e "\033[0;32m$timestamp - INFO - $message\033[0m" ;;
+            "WARNING") echo -e "\033[0;33m$timestamp - WARNING - $message\033[0m" ;;
+            "ERROR")   echo -e "\033[0;31m$timestamp - ERROR - $message\033[0m" ;;
+            "DEBUG")   echo -e "\033[0;34m$timestamp - DEBUG - $message\033[0m" ;;
+            *)        echo -e "$timestamp - $message" ;;
+        esac
+    fi
 }
 
 # Modified sleep timer with GitHub Actions friendly output
