@@ -3,21 +3,12 @@ import axios from 'axios';
 import api from "./axiosInstance";
 import { Platform } from 'react-native';
 // Add a request interceptor
-axios.interceptors.request.use((request) => {
-  console.log('Request Payload:', request.data);
-  return request;
-});
 const formData = new FormData();
 interface ImageUri {
   uri: string;
   name: string;
   type: string;
 }
-axios.post('http://localhost:3000/api/v0.2/slip/verify', formData, {
-  headers: {
-    'Content-Type': 'multipart/form-data',
-  },
-});
 
 export const useSlip = () => {
   const [loading, setLoading] = useState<boolean>(false);

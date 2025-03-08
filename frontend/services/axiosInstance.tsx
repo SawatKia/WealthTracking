@@ -1,11 +1,9 @@
 // src/api/axiosInstance.ts
 import axios from "axios";
-import { storeToken, getToken, deleteToken } from "./AuthenService"; // Utility functions for token management
-// http://161.246.5.86
-// http://localhost:3000
+import { storeToken, getToken, deleteToken } from "./AuthenService"; 
 
 const api = axios.create({
-  baseURL: "http://161.246.5.86/api/v0.2", // Replace with your backend URL
+  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

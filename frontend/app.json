@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "V2.0",
-    "slug": "V2.0",
+    "slug": "Wealth-Track",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,7 +20,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.daown.WealthTrack"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +34,16 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "REACT_APP_API_BASE_URL": "http://161.246.5.86/api/v0.2",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d6b522ce-abf0-4086-be82-515d556cb2b4"
+      }
+    },
+    "owner": "daown"
   }
 }
