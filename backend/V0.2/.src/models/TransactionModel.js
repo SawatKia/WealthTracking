@@ -197,6 +197,20 @@ class TransactionModel extends BaseModel {
 
     super('transactions', transactionSchema);
 
+    this.yearSchema = Joi.object({
+      year: Joi.number()
+        .integer()
+        .min(1900)
+        .max(new Date().getFullYear())
+        .default(new Date().getFullYear())
+        .messages({
+          'number.base': 'Year must be a number',
+          'number.integer': 'Year must be an integer',
+          'number.min': 'Year cannot be earlier than 1900',
+          'number.max': 'Year cannot be later than current year'
+        })
+    });
+
     if (appConfigs.environment !== 'test') {
       Redis.connect();
     }
@@ -863,6 +877,67 @@ FULL OUTER JOIN transaction_receiver tr ON ts.transaction_id = tr.transaction_id
       return summary;
     } catch (error) {
       logger.error(`Error getting summary on specific month by type: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getYearIncomeSummary(nationalId, year) {
+    try {
+      logger.info('Getting yearly income summary by type');
+      logger.debug(`Parameters: nationalId=${nationalId}, year=${year}`);
+
+      if (!nationalId) {
+        logger.error('nationalId is required for getting year income summary')
+        throw new Error('National ID is required');
+      }
+
+      const { error, value } = this.yearSchema.validate({ year });
+      if (error) {
+        logger.error(`Year validation error: ${error.message}`);
+        throw new Error(error.message);
+      }
+      const validatedYear = value.year;
+      logger.debug(`Validated year: ${validatedYear}::${typeof validatedYear}`);
+
+      const query = `
+        WITH income_types AS (
+          SELECT unnest($3::text[]) as type_name
+        ),
+        yearly_income AS (
+          SELECT 
+            type,
+            SUM(amount) as total_amount,
+            COUNT(*) as transaction_count
+          FROM transactions
+          WHERE 
+            national_id = $1
+            AND category = 'Income'
+            AND EXTRACT(YEAR FROM transaction_datetime) = $2
+          GROUP BY type
+        )
+        SELECT 
+          it.type_name,
+          COALESCE(yi.total_amount, 0) as total_amount,
+          COALESCE(yi.transaction_count, 0) as transaction_count
+        FROM income_types it
+        LEFT JOIN yearly_income yi ON yi.type = it.type_name
+        ORDER BY 
+          CAST(SUBSTRING(it.type_name FROM '40\\((\\d+)\\).*') AS INTEGER);
+      `;
+
+      // Get all income types from types.json
+      const incomeTypes = types.Income;
+      const result = await this.executeQuery(query, [nationalId, validatedYear, incomeTypes]);
+      logger.debug(`Processing ${incomeTypes.length} income types`);
+      logger.debug(`Result: ${JSON.stringify(result)}`);
+
+      return result.rows.map(row => ({
+        type_name: row.type_name,
+        total_amount: parseFloat(row.total_amount),
+        transaction_count: parseInt(row.transaction_count)
+      }));
+    } catch (error) {
+      logger.error(`Error getting yearly income summary: ${error.message}`);
       throw error;
     }
   }

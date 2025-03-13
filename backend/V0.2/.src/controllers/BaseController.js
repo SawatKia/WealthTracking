@@ -14,10 +14,12 @@ class BaseController {
             // Initialize userModel in constructor
             logger.info('Initializing BaseController');
 
-            // Bind methods to preserve 'this' context
-            this.verifyField = this.verifyField.bind(this);
-            this.verifyOwnership = this.verifyOwnership.bind(this);
-            this.getCurrentUser = this.getCurrentUser.bind(this);
+            // Bind all methods to the class
+            Object.getOwnPropertyNames(BaseController.prototype).forEach(key => {
+                if (typeof this[key] === 'function') {
+                    this[key] = this[key].bind(this);
+                }
+            });
             logger.info('BaseController initialized');
         } catch (error) {
             logger.error(`BaseController initialization failed: ${error.stack}`);
@@ -129,6 +131,7 @@ class BaseController {
                             case 'number':
                                 // Remove commas from number strings before conversion
                                 const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
+                                logger.info('converting to number type');
                                 convertedBody[key] = cleanValue === '' ? null : Number(cleanValue);
                                 if (isNaN(convertedBody[key])) {
                                     logger.error(`Invalid number format for field: ${key}`);
@@ -136,9 +139,11 @@ class BaseController {
                                 }
                                 break;
                             case 'string':
+                                logger.info('converting to string type');
                                 convertedBody[key] = String(value);
                                 break;
                             case 'date':
+                                logger.info('converting to date type');
                                 convertedBody[key] = new Date(value);
                                 if (isNaN(convertedBody[key])) {
                                     logger.error(`Invalid date format for field: ${key}`);
@@ -147,6 +152,7 @@ class BaseController {
                                 break;
                             default:
                                 convertedBody[key] = value;
+                                logger.debug(`convertedBody[${key}]: ${convertedBody[key]}::${typeof convertedBody[key]}`);
                                 break;
                         }
                     } catch (error) {
@@ -155,13 +161,16 @@ class BaseController {
                     }
                 } else {
                     // If the field is not in the schema, keep it as is
+                    logger.debug(`field not in schema: ${key}, value: ${value}. keep it as is`);
                     convertedBody[key] = value;
                 }
+                logger.debug(`convertedBody[${key}]: ${convertedBody[key]}::${typeof convertedBody[key]}`);
             }
             logger.info(`type conversion complete: ${JSON.stringify(convertedBody, null, 2)}`);
             return convertedBody;
         }
-
+        logger.debug('this should not happen');
+        logger.debug(`body: ${JSON.stringify(body)}`);
         // If no model is provided, return the original body
         return body;
     }

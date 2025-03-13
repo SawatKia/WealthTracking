@@ -1944,6 +1944,99 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /transactions/summary/year-incomes:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get yearly income summary by type
+      description: Retrieves total income amounts grouped by income type for a specified year
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2100
+          description: Year to get summary for (defaults to current year)
+          example: 2024
+      responses:
+        "200":
+          description: Income summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Income summary for year 2024 retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type_name:
+                              type: string
+                              example: "40(1)Salary"
+                            total_amount:
+                              type: number
+                              format: float
+                              example: 50000.00
+                            transaction_count:
+                              type: integer
+                              example: 12
+                      metadata:
+                        type: object
+                        properties:
+                          year:
+                            type: integer
+                            example: 2024
+                          total_income:
+                            type: number
+                            format: float
+                            example: 65000.00
+                          type_count:
+                            type: integer
+                            example: 2
+              example:
+                status_code: 200
+                message: "Income summary for year 2024 retrieved successfully"
+                data:
+                  summary:
+                    - type_name: "40(1)Salary"
+                      total_amount: 50000.00
+                      transaction_count: 12
+                    - type_name: "40(2)Freelance"
+                      total_amount: 15000.00
+                      transaction_count: 5
+                  metadata:
+                    year: 2024
+                    total_income: 65000.00
+                    type_count: 2
+        "400":
+          description: Bad request - invalid year
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 400
+                message: "Year must be between 1900 and current year"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /transactions/list/types:
     get:
       tags:

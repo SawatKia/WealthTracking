@@ -3,6 +3,7 @@ const serverTime = require('./utilities/StartTime');
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const swaggerUi = require('swagger-ui-express');
+const compression = require('compression');
 const fs = require("fs")
 const YAML = require('yaml')
 const path = require('path');
@@ -70,6 +71,17 @@ app.use(cookieParser());
 // Request logger middleware
 app.use(mdw.requestLogger);
 
+app.use(compression({
+  filter: (req, res) => {
+    if (!req.headers['x-no-compression']) {
+      return compression.filter(req, res);
+    }
+
+    // not compress if 'x-no-compression' header is present
+    return false;
+  }
+}))
+
 app.use(mdw.securityMiddleware);
 
 const allowedMethods = {
@@ -79,6 +91,7 @@ const allowedMethods = {
   '/api': ['GET'],
   //routes.js
   '/api/v0.2/': ['GET'],
+  '/api/v0.2/docs': ['GET'],
   '/api/v0.2/users': ['GET', 'POST', 'PATCH', 'DELETE'],
   '/api/v0.2/banks': ['POST', 'GET'],
   '/api/v0.2/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
@@ -99,18 +112,19 @@ const allowedMethods = {
   '/api/v0.2/transactions/list/types': ['GET'],
   '/api/v0.2/transactions/summary/monthly': ['GET'],
   '/api/v0.2/transactions/summary/month-expenses': ['GET'],
+  '/api/v0.2/transactions/summary/year-incomes': ['GET'],
   '/api/v0.2/transactions/account/:account_number/:fi_code': ['GET'],
   '/api/v0.2/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
   '/api/v0.2/budgets': ['GET', 'POST'],
   '/api/v0.2/budget/types': ['GET'],
   '/api/v0.2/budget/history': ['GET'],
   '/api/v0.2/budgets/:expenseType': ['PATCH', 'DELETE'],
+  '/api/v0.2/fis': ['GET'],
+  '/api/v0.2/fi/:fi_code': ['GET'],
+  '/api/v0.2/fis/operating-banks': ['GET'],
 }
 if (NODE_ENV != 'production') {
   allowedMethods['/api/test-timeout'] = ['GET'];
-  allowedMethods['/api/v0.2/fis'] = ['GET'];
-  allowedMethods['/api/v0.2/fi/:fi_code'] = ['GET'];
-  allowedMethods['/api/v0.2/fis/operating-banks'] = ['GET'];
   allowedMethods['/api/v0.2/cache'] = ['GET', 'POST'];
   allowedMethods['/api/v0.2/cache/:key'] = ['GET', 'DELETE'];
 }
@@ -129,8 +143,8 @@ app.use(async (req, res, next) => {
 
 // Apply rate limiter in production
 if (!isDev) {
-  // 3reqs per 5secs
-  app.use(mdw.rateLimiter(5 * 1000, 3));
+  // 100reqs per minute
+  app.use(mdw.rateLimiter(60 * 1000, 100));
 }
 
 // Health check endpoint (before other routes)
@@ -144,13 +158,13 @@ app.get('/favicon.ico', (req, res, next) => {
 
 // API Routes
 // Modify the routes setup:
-try {
-  app.use("/api/v0.2", routes);
-} catch (error) {
-  logger.error(`Failed to setup API routes: ${error.message}`);
-  logger.error(`Stack trace: ${error.stack}`);
-  process.exit(1);
-}
+app.use("/api/v0.2", (req, res, next) => {
+  if (mdw.isSwaggerRequest(req.path)) {
+    return next();
+  }
+  return routes(req, res, next);
+});
+
 app.get("/api", (req, res, next) => {
   req.formattedResponse = formatResponse(
     200,
@@ -162,7 +176,7 @@ app.get("/api", (req, res, next) => {
 
 // Set connection timeout to 3 seconds
 app.use((req, res, next) => {
-  res.setTimeout(3000, () => {
+  res.setTimeout(10000, () => {
     req.formattedResponse = formatResponse(408, "Request timeout", null);
   });
   next();

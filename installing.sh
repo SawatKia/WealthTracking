@@ -35,6 +35,13 @@ if [ "${PWD##*/}" != "WealthTracking" ]; then
 fi
 
 cd ./backend/V0.2/
+
+# Check if npm is installed
+if ! command -v npm &> /dev/null; then
+    log "ERROR" "\033[1;31mnpm is not installed. Please install npm and try again.\033[0m"
+    exit 1
+fi
+
 log "INFO" "\033[7;34m>>>\033[0m installing backend dependencies..."
 npm install
 if [ $? -ne 0 ]; then

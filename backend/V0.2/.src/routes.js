@@ -85,7 +85,6 @@ router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks)
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 // Cache routes
 if (NODE_ENV !== 'production') {
-
     router.post('/cache', cacheController.set);
     router.get('/cache', cacheController.getAll);
     router.get('/cache/:key', cacheController.get);
@@ -101,6 +100,7 @@ router.get('/transactions', transactionController.getAllTransactions);
 router.get('/transactions/list/types', transactionController.getAllTypes);
 router.get('/transactions/summary/monthly', transactionController.getMonthlySummary);
 router.get('/transactions/summary/month-expenses', transactionController.getSummaryExpenseOnSpecificMonthByType);
+router.get('/transactions/summary/year-incomes', transactionController.getYearIncomeSummary);
 router.get('/transactions/account/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);

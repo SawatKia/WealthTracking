@@ -108,6 +108,9 @@ class Middlewares {
   constructor() {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
+    this.blacklist = new Set();
+    this.blacklistLastLoad = 0;
+    this.blacklistRefreshInterval = 5 * 60 * 1000; // 5 minutes
 
     // CORS configuration
     this.corsOptions = {
@@ -134,6 +137,7 @@ class Middlewares {
 
     // Create CORS middleware
     this.corsMiddleware = cors(this.corsOptions);
+
     // Bind all methods to the class
     Object.getOwnPropertyNames(Middlewares.prototype).forEach(key => {
       if (typeof this[key] === 'function') {
@@ -336,7 +340,12 @@ class Middlewares {
     return (req, res, next) => {
       try {
         const method = String(req.method || "").toUpperCase().trim();
+        // Normalize the path by removing trailing slash and ensuring leading slash
         let path = String(req.path || "").trim();
+        path = path.replace(/\/+$/, ''); // Remove trailing slashes
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
 
         logger.debug(`Validating request: Method=${method}, Path=${path}`);
 
@@ -367,9 +376,23 @@ class Middlewares {
 
         // Helper function to match dynamic paths
         const matchPath = (incomingPath) => {
+          // Remove trailing slashes from incoming path
+          incomingPath = incomingPath.replace(/\/+$/, '');
+
           for (const allowedPath in allowedMethods) {
+            // Normalize allowed path as well
+            const normalizedAllowedPath = allowedPath
+              .replace(/\/+$/, '')  // Remove trailing slashes
+              .startsWith('/') ? allowedPath : '/' + allowedPath; // Add leading slash  
+
+            // For exact matches (non-parameterized routes)
+            if (incomingPath === normalizedAllowedPath) {
+              return allowedPath;
+            }
+
+            // For parameterized routes
             const pathRegex = new RegExp(
-              `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
+              `^${normalizedAllowedPath.replace(/:[^/]+/g, "[^/]+")}$`
             );
             if (pathRegex.test(incomingPath)) {
               return allowedPath;
@@ -560,6 +583,18 @@ class Middlewares {
       }
     };
 
+    const loadBlacklistIfNeeded = () => {
+      logger.info('Loading blacklist if needed');
+      const now = Date.now();
+      if (now - this.blacklistLastLoad > this.blacklistRefreshInterval) {
+        logger.debug('Refreshing blacklist');
+        this.blacklist = loadBlacklist();
+        this.blacklistLastLoad = now;
+      }
+      logger.debug(`Blacklist: ${JSON.stringify([...this.blacklist])}`);
+      return this.blacklist;
+    };
+
     // Function to check all possible input sources
     const checkSuspiciousPatterns = (input, source) => {
       logger.info(`Checking for suspicious patterns in ${source}`);
@@ -591,11 +626,11 @@ class Middlewares {
       return next();
     }
 
-    let blacklist = loadBlacklist();
-    logger.debug(`blacklist: ${JSON.stringify([...blacklist])}::${typeof blacklist}`);
+    loadBlacklistIfNeeded();
+    logger.debug(`blacklist: ${JSON.stringify([...this.blacklist])}::${typeof this.blacklist}`);
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    if (blacklist.has(clientIp)) {
+    if (this.blacklist.has(clientIp)) {
       logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
       return next(MyAppErrors.forbidden());
     }
@@ -620,10 +655,10 @@ class Middlewares {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
-      if (this._isValidHost(req) && !blacklist.has(clientIp)) {
+      if (this._isValidHost(req) && !this.blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
-        saveBlacklist(blacklist);
+        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(this.blacklist)}`);
+        saveBlacklist(this.blacklist);
 
         return next(MyAppErrors.forbidden());
       } else logger.info(`${clientIp} is exist in the black list, not need to add again`);
@@ -668,6 +703,31 @@ class Middlewares {
     }
   }
 
+  /**
+     * Checks if the given path is a Swagger UI related request
+     * @param {string} path - The request path to check
+     * @returns {boolean} - True if the path is Swagger related, false otherwise
+     */
+  isSwaggerRequest(path) {
+    logger.info(`Checking if path ${path} is a Swagger request`);
+    const isSwagger = path.startsWith('/api/v0.2/docs') ||
+      path.includes('swagger-ui') ||
+      path.includes('api-docs');
+    logger.debug(`Is Swagger request: ${isSwagger}`);
+    return isSwagger;
+  }
+
+  /**
+   * Bypasses the middleware for swagger requests
+   */
+  swaggerBypass = (req, res, next) => {
+    if (this.isSwaggerRequest(req.path)) {
+      logger.debug(`Bypassing middleware for Swagger request: ${req.path}`);
+      return next();
+    }
+    return next();
+  };
+
   healthCheck(req, res, next) {
     const currentTime = new Date().getTime();
     const currentBkkTime = formatBkkTime(currentTime);
@@ -688,6 +748,14 @@ class Middlewares {
 
   requestLogger(req, res, next) {
     logger.info(`\u2193 \u2193 \u2193 ---entering the routing for ${req.method} ${req.url}`);
+    // Add debug log for all requests, including Swagger
+    logger.debug(`Incoming request: ${req.method} ${req.url}`);
+
+    // Special handling for Swagger requests
+    if (this.isSwaggerRequest(req.path)) {
+      logger.info(`Swagger UI request detected: ${req.method} ${req.url}`);
+      return next();
+    }
 
     const getIP = (req) => {
       const conRemoteAddress = req.connection?.remoteAddress;
@@ -938,6 +1006,22 @@ class Middlewares {
 
     try {
       logger.info("Handling response");
+
+      // Add cache headers for GET requests
+      if (req.method === 'GET') {
+        const cacheEndpoints = ['/transactions/list/types'];
+        const cachePrefix = ['/fi'];
+
+        // Check if the request path matches any cache endpoint or prefix
+        const shouldCache = cacheEndpoints.includes(req.path) || cachePrefix.some(prefix => req.path.startsWith(prefix));
+
+        if (shouldCache) {
+          logger.info('Adding cache headers max-age=1800');
+          res.set('Cache-Control', 'public, max-age=1800'); // Cache for 30 minutes
+        } else {
+          res.set('Cache-Control', 'public, max-age=120'); // No cache
+        }
+      }
 
       // Skip for Swagger UI requests
       if (req.url.startsWith('/api/v0.2/docs')) {

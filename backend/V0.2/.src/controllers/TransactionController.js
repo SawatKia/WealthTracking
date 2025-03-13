@@ -16,24 +16,24 @@ const logger = Logger('TransactionController');
 
 class TransactionController extends BaseController {
     constructor() {
+        // Call the parent constructor first
         super();
+
+        // Initialize models after calling super()
         this.transactionModel = new TransactionModel();
         this.bankAccountModel = new BankAccountModel();
         this.BankAccountUtils = new BankAccountUtils();
         this.debtModel = new DebtModel();
 
-        this.createTransaction = this.createTransaction.bind(this);
-        this.getAllTransactions = this.getAllTransactions.bind(this);
-        this.getOneTransaction = this.getOneTransaction.bind(this);
-        this.updateTransaction = this.updateTransaction.bind(this);
-        this.deleteTransaction = this.deleteTransaction.bind(this);
-        this.getTransactionsByAccount = this.getTransactionsByAccount.bind(this);
-        this.getAllTypes = this.getAllTypes.bind(this);
-        this.getMonthlySummary = this.getMonthlySummary.bind(this);
-        this.getSummaryExpenseOnSpecificMonthByType = this.getSummaryExpenseOnSpecificMonthByType.bind(this);
+        // Bind all methods to the class
+        Object.getOwnPropertyNames(TransactionController.prototype).forEach(key => {
+            if (typeof this[key] === 'function') {
+                this[key] = this[key].bind(this);
+            }
+        });
 
-        this.validateBankAccounts = this.validateBankAccounts.bind(this);
-        this.validateBankAccountBalance = this.validateBankAccountBalance.bind(this);
+        // Log successful initialization
+        logger.info('TransactionController initialized');
     }
 
     async validateBankAccounts(sender, receiver) {
@@ -807,6 +807,74 @@ class TransactionController extends BaseController {
         } catch (error) {
             logger.error(`Error getting current month expenses by type: ${error.message}`);
             next(error);
+        }
+    }
+
+    async getYearIncomeSummary(req, res, next) {
+        try {
+            logger.info('Getting yearly income summary');
+
+            // Get current year in Bangkok timezone
+            const bangkokTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' });
+            const defaultYear = new Date(bangkokTime).getFullYear();
+
+            // Extract and validate year from query
+            let targetYear;
+            if (req.query.year) {
+                targetYear = parseInt(req.query.year);
+                if (isNaN(targetYear)) {
+                    throw MyAppErrors.badRequest('Year must be a valid number');
+                }
+                if (targetYear < 1900 || targetYear > defaultYear) {
+                    throw MyAppErrors.badRequest(`Year must be between 1900 and ${defaultYear}`);
+                }
+            } else {
+                targetYear = defaultYear;
+            }
+
+            logger.debug(`Target year: ${targetYear}`);
+
+            // Get current user and fetch summary
+            const user = await super.getCurrentUser(req);
+            const summary = await this.transactionModel.getYearIncomeSummary(
+                user.national_id,
+                targetYear
+            );
+
+            // Handle empty summary
+            if (!summary || summary.length === 0) {
+                req.formattedResponse = formatResponse(
+                    200,
+                    `No income transactions found for year ${targetYear}`,
+                    { summary: [] }
+                );
+                return next();
+            }
+
+            // Calculate summary metadata
+            const totalIncome = summary.reduce((acc, curr) => acc + curr.total_amount, 0);
+            const response = {
+                metadata: {
+                    year: targetYear,
+                    total_income: totalIncome,
+                    type_count: summary.length
+                },
+                summary
+            };
+
+            req.formattedResponse = formatResponse(
+                200,
+                `Income summary for year ${targetYear} retrieved successfully`,
+                response
+            );
+            next();
+        } catch (error) {
+            logger.error(`Error getting yearly income summary: ${error.message}`);
+            if (error instanceof MyAppErrors) {
+                next(error);
+            } else {
+                next(MyAppErrors.internalServerError('Failed to retrieve income summary'));
+            }
         }
     }
 }
