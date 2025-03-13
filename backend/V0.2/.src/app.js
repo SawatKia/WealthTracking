@@ -79,6 +79,7 @@ const allowedMethods = {
   '/api': ['GET'],
   //routes.js
   '/api/v0.2/': ['GET'],
+  '/api/v0.2/docs': ['GET'],
   '/api/v0.2/users': ['GET', 'POST', 'PATCH', 'DELETE'],
   '/api/v0.2/banks': ['POST', 'GET'],
   '/api/v0.2/banks/:account_number/:fi_code': ['GET', 'PATCH', 'DELETE'],
@@ -99,18 +100,19 @@ const allowedMethods = {
   '/api/v0.2/transactions/list/types': ['GET'],
   '/api/v0.2/transactions/summary/monthly': ['GET'],
   '/api/v0.2/transactions/summary/month-expenses': ['GET'],
+  '/api/v0.2/transactions/summary/year-incomes': ['GET'],
   '/api/v0.2/transactions/account/:account_number/:fi_code': ['GET'],
   '/api/v0.2/transactions/:transaction_id': ['GET', 'PATCH', 'DELETE'],
   '/api/v0.2/budgets': ['GET', 'POST'],
   '/api/v0.2/budget/types': ['GET'],
   '/api/v0.2/budget/history': ['GET'],
   '/api/v0.2/budgets/:expenseType': ['PATCH', 'DELETE'],
+  '/api/v0.2/fis': ['GET'],
+  '/api/v0.2/fi/:fi_code': ['GET'],
+  '/api/v0.2/fis/operating-banks': ['GET'],
 }
 if (NODE_ENV != 'production') {
   allowedMethods['/api/test-timeout'] = ['GET'];
-  allowedMethods['/api/v0.2/fis'] = ['GET'];
-  allowedMethods['/api/v0.2/fi/:fi_code'] = ['GET'];
-  allowedMethods['/api/v0.2/fis/operating-banks'] = ['GET'];
   allowedMethods['/api/v0.2/cache'] = ['GET', 'POST'];
   allowedMethods['/api/v0.2/cache/:key'] = ['GET', 'DELETE'];
 }
@@ -144,13 +146,13 @@ app.get('/favicon.ico', (req, res, next) => {
 
 // API Routes
 // Modify the routes setup:
-try {
-  app.use("/api/v0.2", routes);
-} catch (error) {
-  logger.error(`Failed to setup API routes: ${error.message}`);
-  logger.error(`Stack trace: ${error.stack}`);
-  process.exit(1);
-}
+app.use("/api/v0.2", (req, res, next) => {
+  if (mdw.isSwaggerRequest(req.path)) {
+    return next();
+  }
+  return routes(req, res, next);
+});
+
 app.get("/api", (req, res, next) => {
   req.formattedResponse = formatResponse(
     200,
