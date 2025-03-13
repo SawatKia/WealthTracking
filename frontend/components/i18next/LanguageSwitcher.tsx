@@ -14,6 +14,4 @@ const LanguageSwitcher: React.FC = () => {
       <Button title={t('changeLanguage')} onPress={() => changeLanguage(i18n.language === 'en' ? 'th' : 'en')} />
     </View>
   );
-};
-
-export default LanguageSwitcher;
+}
