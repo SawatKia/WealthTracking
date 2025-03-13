@@ -4,46 +4,26 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Docker: Attach to Node (no rebuild)",
+            "name": "Debug Backend",
             "remoteRoot": "/usr/src/Wealthtrack-app",
             "port": 9229,
             "address": "localhost",
             "localRoot": "${workspaceFolder}/backend/V0.2",
             "protocol": "inspector",
             "restart": true,
-            "preLaunchTask": "docker-compose up"
+            "preLaunchTask": "docker-compose up backend"
         },
         {
             "type": "node",
             "request": "attach",
-            "name": "Docker: Attach to Node (docker, React rebuild)",
+            "name": "Debug Backend (rebuild)",
             "remoteRoot": "/usr/src/Wealthtrack-app",
             "port": 9229,
             "address": "localhost",
             "localRoot": "${workspaceFolder}/backend/V0.2",
             "protocol": "inspector",
             "restart": true,
-            "preLaunchTask": "docker-compose up with full-rebuild"
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Docker: Attach to Node (with docker-rebuild only)",
-            "remoteRoot": "/usr/src/Wealthtrack-app",
-            "port": 9229,
-            "address": "localhost",
-            "localRoot": "${workspaceFolder}/backend/V0.2",
-            "protocol": "inspector",
-            "restart": true,
-            "preLaunchTask": "docker-compose up with docker-rebuild"
-        },
-        {
-            "type": "pwa-chrome",
-            "request": "launch",
-            "name": "Launch React App",
-            "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/frontend",
-            "preLaunchTask": "npm: start"
+            "preLaunchTask": "docker-compose rebuild backend"
         }
     ]
 }

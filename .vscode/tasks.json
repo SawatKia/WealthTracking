@@ -2,55 +2,28 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build-react",
-            "type": "npm",
-            "script": "build",
-            "path": "frontend/",
-            "group": "build",
-            "problemMatcher": [
-                "$tsc"
-            ]
-        },
-        {
             "label": "docker-compose down",
             "type": "shell",
-            "command": "docker-compose down --remove-orphans", // remove all containers that are not defined in the docker-compose.yml file but are part of the project
+            "command": "docker-compose down --remove-orphans",
             "problemMatcher": []
         },
         {
-            "label": "docker-compose up",
+            "label": "docker-compose up backend",
             "type": "shell",
-            "command": "docker compose up -d",
+            "command": "docker compose up -d node-server postgres redis",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down"
             ]
         },
         {
-            "label": "docker-compose up with docker-rebuild",
+            "label": "docker-compose rebuild backend",
             "type": "shell",
-            "command": "docker compose up -d --build",
+            "command": "docker compose up -d --build node-server postgres redis",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down"
             ]
-        },
-        {
-            "label": "docker-compose up with full-rebuild",
-            "type": "shell",
-            "command": "docker compose up -d --build",
-            "problemMatcher": [],
-            "dependsOn": [
-                "docker-compose down",
-                "build-react"
-            ]
-        },
-        {
-            "label": "npm: start",
-            "type": "npm",
-            "script": "start",
-            "path": "frontend/",
-            "problemMatcher": []
         }
     ]
 }
