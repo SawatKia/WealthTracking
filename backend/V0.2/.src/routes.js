@@ -101,6 +101,7 @@ router.get('/transactions', transactionController.getAllTransactions);
 router.get('/transactions/list/types', transactionController.getAllTypes);
 router.get('/transactions/summary/monthly', transactionController.getMonthlySummary);
 router.get('/transactions/summary/month-expenses', transactionController.getSummaryExpenseOnSpecificMonthByType);
+router.get('/transactions/summary/year-incomes', transactionController.getYearIncomeSummary);
 router.get('/transactions/account/:account_number/:fi_code', transactionController.getTransactionsByAccount);
 router.get('/transactions/:transaction_id', transactionController.getOneTransaction);
 router.patch('/transactions/:transaction_id', transactionController.updateTransaction);
