@@ -158,11 +158,25 @@ const loadMockData = async () => {
     let expenseCount = 0;
     let transferCount = 0;
 
+    const getRandomDateInLastNYears = (numberOfYears = 1) => {
+      const now = new Date();
+      const latestYear = now.getFullYear();
+      const oldestYear = latestYear - numberOfYears;
+
+      // Create date range
+      const startDate = new Date(oldestYear, 0, 1).getTime();
+      const endDate = now.getTime();
+
+      // Generate random timestamp between start and end dates
+      const randomTimestamp = startDate + Math.random() * (endDate - startDate);
+      return new Date(randomTimestamp);
+    };
+
     const createRandomTransactions = async (user, accounts, count = 100, ratios = {
       Income: 0.6,
       Expense: 0.3,
       Transfer: 0.1
-    }) => {
+    }, yearOfHistory = 5) => {
 
       // Validate ratios
       const totalRatio = Object.values(ratios).reduce((sum, ratio) => sum + ratio, 0);
@@ -209,7 +223,7 @@ const loadMockData = async () => {
 
         const transaction = {
           transaction_id: uuidv4(),
-          transaction_datetime: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+          transaction_datetime: getRandomDateInLastNYears(yearOfHistory),
           category,
           type,
           amount,
