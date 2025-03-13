@@ -108,6 +108,9 @@ class Middlewares {
   constructor() {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
+    this.blacklist = new Set();
+    this.blacklistLastLoad = 0;
+    this.blacklistRefreshInterval = 5 * 60 * 1000; // 5 minutes
 
     // CORS configuration
     this.corsOptions = {
@@ -134,6 +137,7 @@ class Middlewares {
 
     // Create CORS middleware
     this.corsMiddleware = cors(this.corsOptions);
+
     // Bind all methods to the class
     Object.getOwnPropertyNames(Middlewares.prototype).forEach(key => {
       if (typeof this[key] === 'function') {
@@ -579,6 +583,18 @@ class Middlewares {
       }
     };
 
+    const loadBlacklistIfNeeded = () => {
+      logger.info('Loading blacklist if needed');
+      const now = Date.now();
+      if (now - this.blacklistLastLoad > this.blacklistRefreshInterval) {
+        logger.debug('Refreshing blacklist');
+        this.blacklist = loadBlacklist();
+        this.blacklistLastLoad = now;
+      }
+      logger.debug(`Blacklist: ${JSON.stringify([...this.blacklist])}`);
+      return this.blacklist;
+    };
+
     // Function to check all possible input sources
     const checkSuspiciousPatterns = (input, source) => {
       logger.info(`Checking for suspicious patterns in ${source}`);
@@ -610,11 +626,11 @@ class Middlewares {
       return next();
     }
 
-    let blacklist = loadBlacklist();
-    logger.debug(`blacklist: ${JSON.stringify([...blacklist])}::${typeof blacklist}`);
+    loadBlacklistIfNeeded();
+    logger.debug(`blacklist: ${JSON.stringify([...this.blacklist])}::${typeof this.blacklist}`);
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    if (blacklist.has(clientIp)) {
+    if (this.blacklist.has(clientIp)) {
       logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
       return next(MyAppErrors.forbidden());
     }
@@ -639,10 +655,10 @@ class Middlewares {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
-      if (this._isValidHost(req) && !blacklist.has(clientIp)) {
+      if (this._isValidHost(req) && !this.blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
-        saveBlacklist(blacklist);
+        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(this.blacklist)}`);
+        saveBlacklist(this.blacklist);
 
         return next(MyAppErrors.forbidden());
       } else logger.info(`${clientIp} is exist in the black list, not need to add again`);
@@ -990,6 +1006,22 @@ class Middlewares {
 
     try {
       logger.info("Handling response");
+
+      // Add cache headers for GET requests
+      if (req.method === 'GET') {
+        const cacheEndpoints = ['/transactions/list/types'];
+        const cachePrefix = ['/fi'];
+
+        // Check if the request path matches any cache endpoint or prefix
+        const shouldCache = cacheEndpoints.includes(req.path) || cachePrefix.some(prefix => req.path.startsWith(prefix));
+
+        if (shouldCache) {
+          logger.info('Adding cache headers max-age=1800');
+          res.set('Cache-Control', 'public, max-age=1800'); // Cache for 30 minutes
+        } else {
+          res.set('Cache-Control', 'public, max-age=120'); // No cache
+        }
+      }
 
       // Skip for Swagger UI requests
       if (req.url.startsWith('/api/v0.2/docs')) {

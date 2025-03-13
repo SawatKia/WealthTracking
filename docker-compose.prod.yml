@@ -36,7 +36,15 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-    restart: on-failure
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
     networks:
       - app_network
 

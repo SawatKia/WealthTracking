@@ -85,7 +85,6 @@ router.get('/fis/operating-banks', fiController.getOperatingThaiCommercialBanks)
 router.get('/fi/:fi_code', fiController.getFinancialInstitutionByCode);
 // Cache routes
 if (NODE_ENV !== 'production') {
-
     router.post('/cache', cacheController.set);
     router.get('/cache', cacheController.getAll);
     router.get('/cache/:key', cacheController.get);

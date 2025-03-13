@@ -3,6 +3,7 @@ const serverTime = require('./utilities/StartTime');
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const swaggerUi = require('swagger-ui-express');
+const compression = require('compression');
 const fs = require("fs")
 const YAML = require('yaml')
 const path = require('path');
@@ -70,6 +71,17 @@ app.use(cookieParser());
 // Request logger middleware
 app.use(mdw.requestLogger);
 
+app.use(compression({
+  filter: (req, res) => {
+    if (!req.headers['x-no-compression']) {
+      return compression.filter(req, res);
+    }
+
+    // not compress if 'x-no-compression' header is present
+    return false;
+  }
+}))
+
 app.use(mdw.securityMiddleware);
 
 const allowedMethods = {
@@ -131,8 +143,8 @@ app.use(async (req, res, next) => {
 
 // Apply rate limiter in production
 if (!isDev) {
-  // 3reqs per 5secs
-  app.use(mdw.rateLimiter(5 * 1000, 3));
+  // 100reqs per minute
+  app.use(mdw.rateLimiter(60 * 1000, 100));
 }
 
 // Health check endpoint (before other routes)
@@ -164,7 +176,7 @@ app.get("/api", (req, res, next) => {
 
 // Set connection timeout to 3 seconds
 app.use((req, res, next) => {
-  res.setTimeout(3000, () => {
+  res.setTimeout(10000, () => {
     req.formattedResponse = formatResponse(408, "Request timeout", null);
   });
   next();
