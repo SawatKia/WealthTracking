@@ -1,5 +1,6 @@
 // components/i18next/translations/th.ts
 export default {
+  
   profile: {
     loading: "กำลังโหลดโปรไฟล์...",
     username: "ชื่อผู้ใช้",
@@ -30,6 +31,7 @@ export default {
   },
 
     login: {
+
       title: "ยินดีต้อนรับกลับ",
       email: "อีเมล",
       password: "รหัสผ่าน",
@@ -168,101 +170,6 @@ export default {
       }
     },
 
-    addDetail: {
-      title: "เพิ่มรายการ",
-      form: {
-        type: "ประเภทรายการ",
-        amount: "จำนวนเงิน",
-        category: "หมวดหมู่",
-        date: "วันที่",
-        note: "บันทึก",
-        selectCategory: "เลือกหมวดหมู่"
-      },
-      types: {
-        income: "รายรับ",
-        expense: "รายจ่าย"
-      },
-      categories: {
-        salary: "เงินเดือน",
-        investment: "การลงทุน",
-        food: "อาหารและเครื่องดื่ม",
-        shopping: "ช้อปปิ้ง",
-        transport: "การเดินทาง",
-        utilities: "ค่าสาธารณูปโภค",
-        other: "อื่นๆ"
-      },
-      validation: {
-        required: "กรุณากรอกข้อมูล",
-        numberOnly: "กรุณากรอกตัวเลขเท่านั้น",
-        positiveNumber: "กรุณากรอกตัวเลขที่มากกว่า 0"
-      },
-      buttons: {
-        add: "เพิ่มรายการ",
-        cancel: "ยกเลิก"
-      }
-    },
-    messages: {
-      success: {
-        add: "เพิ่มบัญชีสำเร็จ",
-        update: "อัพเดทบัญชีสำเร็จ",
-        delete: "ลบบัญชีสำเร็จ",
-        transaction: "เพิ่มรายการสำเร็จ"
-      },
-      error: {
-        add: "ไม่สามารถเพิ่มบัญชีได้",
-        update: "ไม่สามารถอัพเดทบัญชีได้",
-        delete: "ไม่สามารถลบบัญชีได้",
-        transaction: "ไม่สามารถเพิ่มรายการได้"
-      },
-      confirm: {
-        delete: "คุณแน่ใจหรือไม่ที่จะลบบัญชีนี้?"
-      }
-    }
-  },
-  
-  Account: {
-    title: "จัดการบัญชี",
-    summary: {
-      totalBalance: "ยอดเงินรวม",
-      totalIncome: "รายรับรวม",
-      totalExpense: "รายจ่ายรวม"
-    },
-    details: {
-      accountName: "ชื่อบัญชี",
-      balance: "ยอดเงิน",
-      accountType: "ประเภทบัญชี",
-      bank: "ธนาคาร",
-      actions: {
-        edit: "แก้ไข",
-        delete: "ลบ"
-      }
-    },
-    addAccount: {
-      title: "เพิ่มบัญชีใหม่",
-      form: {
-        accountName: "ชื่อบัญชี",
-        initialBalance: "ยอดเงินเริ่มต้น",
-        accountType: "ประเภทบัญชี",
-        bank: "เลือกธนาคาร",
-        selectType: "เลือกประเภทบัญชี"
-      },
-      types: {
-        savings: "บัญชีออมทรัพย์",
-        checking: "บัญชีกระแสรายวัน",
-        credit: "บัตรเครดิต",
-        investment: "บัญชีลงทุน",
-        other: "อื่นๆ"
-      },
-      validation: {
-        required: "กรุณากรอกข้อมูล",
-        numberOnly: "กรุณากรอกตัวเลขเท่านั้น",
-        positiveNumber: "กรุณากรอกตัวเลขที่มากกว่า 0"
-      },
-      buttons: {
-        add: "เพิ่มบัญชี",
-        cancel: "ยกเลิก"
-      }
-    },
     addDetail: {
       title: "เพิ่มรายการ",
       form: {

@@ -1,5 +1,6 @@
 // components/i18next/translations/en.ts
 export default {
+  
   profile: {
     loading: "Loading profile...",
     username: "Username",
@@ -30,6 +31,7 @@ export default {
   },
 
   login: {
+
     title: "Welcome Back",
     email: "Email",
     password: "Password",
@@ -47,6 +49,7 @@ export default {
   },
 
   signup: {
+
     title: "Create Account",
     nationalId: "National ID",
     username: "Username",
@@ -68,6 +71,7 @@ export default {
       signupFailed: "Signup Failed: "
     }
   },
+
   debt: {
 
     summary: {
@@ -120,6 +124,7 @@ export default {
       error: "Failed to add debt. Please try again."
     }
   },
+
   account: {
     title: "Account Management",
     summary: {
@@ -216,6 +221,7 @@ export default {
       }
     }
   },
+
   budget: {
     title: "Budgets",
     category: "Category",
