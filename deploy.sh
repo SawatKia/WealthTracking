@@ -29,13 +29,11 @@ log() {
     fi
 }
 
-# Modified sleep timer with GitHub Actions friendly output
 sleepWithTimer() {
     for i in $(seq $1 -1 1); do
-        echo "::debug::Countdown: $i seconds remaining"
+        log "DEBUG" "Countdown: $i seconds remaining"
         sleep 1
     done
-    echo ""
 }
 
 # Modified script with GitHub Actions logging
@@ -54,20 +52,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 sleepWithTimer 3
+log "INFO" "Git repo pulling completed!"
 
-if [ ! -f "./installing.sh" ] || [ ! -f "./start_server.sh" ]; then
+if [ ! -f "./start_server.sh" ]; then
     log "ERROR" "Files installing.sh and start_server.sh do not exist."
     exit 1
 fi
-
-log "INFO" "Installing dependencies..."
-sh ./installing.sh
-if [ $? -ne 0 ]; then
-    log "ERROR" "Failed to install dependencies."
-    exit 1
-fi
-
-log "INFO" "Installed dependencies process complete!"
 
 log "INFO" "Starting server containers process..."
 sh ./start_server.sh $1 $2
