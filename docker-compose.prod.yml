@@ -26,7 +26,7 @@ services:
     command: >
       sh -c "npm run dev"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-prodContainer%20healthcheck"]
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${APP_PORT}/health?service=docker-compose%20${APP_DOMAIN}-prodContainer%20healthcheck%20every1hr"]
       interval: 1h # Poll every hour after the container is healthy
       timeout: 20s # Allow up to 20 seconds for each health check command
       retries: 2 # Retry up to 2 times before considering the container unhealthy
