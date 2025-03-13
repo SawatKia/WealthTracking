@@ -336,7 +336,12 @@ class Middlewares {
     return (req, res, next) => {
       try {
         const method = String(req.method || "").toUpperCase().trim();
+        // Normalize the path by removing trailing slash and ensuring leading slash
         let path = String(req.path || "").trim();
+        path = path.replace(/\/+$/, ''); // Remove trailing slashes
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
 
         logger.debug(`Validating request: Method=${method}, Path=${path}`);
 
@@ -367,9 +372,23 @@ class Middlewares {
 
         // Helper function to match dynamic paths
         const matchPath = (incomingPath) => {
+          // Remove trailing slashes from incoming path
+          incomingPath = incomingPath.replace(/\/+$/, '');
+
           for (const allowedPath in allowedMethods) {
+            // Normalize allowed path as well
+            const normalizedAllowedPath = allowedPath
+              .replace(/\/+$/, '')  // Remove trailing slashes
+              .startsWith('/') ? allowedPath : '/' + allowedPath; // Add leading slash  
+
+            // For exact matches (non-parameterized routes)
+            if (incomingPath === normalizedAllowedPath) {
+              return allowedPath;
+            }
+
+            // For parameterized routes
             const pathRegex = new RegExp(
-              `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
+              `^${normalizedAllowedPath.replace(/:[^/]+/g, "[^/]+")}$`
             );
             if (pathRegex.test(incomingPath)) {
               return allowedPath;
@@ -668,6 +687,31 @@ class Middlewares {
     }
   }
 
+  /**
+     * Checks if the given path is a Swagger UI related request
+     * @param {string} path - The request path to check
+     * @returns {boolean} - True if the path is Swagger related, false otherwise
+     */
+  isSwaggerRequest(path) {
+    logger.info(`Checking if path ${path} is a Swagger request`);
+    const isSwagger = path.startsWith('/api/v0.2/docs') ||
+      path.includes('swagger-ui') ||
+      path.includes('api-docs');
+    logger.debug(`Is Swagger request: ${isSwagger}`);
+    return isSwagger;
+  }
+
+  /**
+   * Bypasses the middleware for swagger requests
+   */
+  swaggerBypass = (req, res, next) => {
+    if (this.isSwaggerRequest(req.path)) {
+      logger.debug(`Bypassing middleware for Swagger request: ${req.path}`);
+      return next();
+    }
+    return next();
+  };
+
   healthCheck(req, res, next) {
     const currentTime = new Date().getTime();
     const currentBkkTime = formatBkkTime(currentTime);
@@ -688,6 +732,14 @@ class Middlewares {
 
   requestLogger(req, res, next) {
     logger.info(`\u2193 \u2193 \u2193 ---entering the routing for ${req.method} ${req.url}`);
+    // Add debug log for all requests, including Swagger
+    logger.debug(`Incoming request: ${req.method} ${req.url}`);
+
+    // Special handling for Swagger requests
+    if (this.isSwaggerRequest(req.path)) {
+      logger.info(`Swagger UI request detected: ${req.method} ${req.url}`);
+      return next();
+    }
 
     const getIP = (req) => {
       const conRemoteAddress = req.connection?.remoteAddress;
