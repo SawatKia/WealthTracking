@@ -481,7 +481,7 @@ class Middlewares {
       "/user_area/\\.git/config", "/test_configs/\\.git/config",
       "/images/\\.git/config", "/core/config/\\.git/config",
       "/data/private/\\.git/config", "/static/content/\\.git/config",
-      "/libs/js/iframe\\.js"
+      "/libs/js/iframe\\.js",
     ];
 
     // Define whitelisted paths from allowedMethods
@@ -543,7 +543,7 @@ class Middlewares {
           .replace(/\//g, '\\/') // Escape forward slashes
           .replace(/\//g, '\\/?'); // Make trailing slash optional
         const regex = new RegExp(`^${regexPattern}$`);
-        logger.debug(`testing path ${requestPath} against regex: ${regex}`);
+        logger.silly(`testing path ${requestPath} against regex: ${regex}`);
         const result = regex.test(requestPath);
         return result;
       });
@@ -586,12 +586,44 @@ class Middlewares {
     const loadBlacklistIfNeeded = () => {
       logger.info('Loading blacklist if needed');
       const now = Date.now();
-      if (now - this.blacklistLastLoad > this.blacklistRefreshInterval) {
-        logger.debug('Refreshing blacklist');
-        this.blacklist = loadBlacklist();
+
+      // Initialize lastLoad if it's 0 (first run)
+      if (this.blacklistLastLoad === 0) {
+        logger.debug('First run, initializing lastLoad time and loading blacklist');
+        this.blacklist = loadBlacklist(); // Load blacklist on first run
         this.blacklistLastLoad = now;
+        logger.debug(`Initial blacklist loaded with ${this.blacklist.size} entries`);
+      } else {
+        // For subsequent runs, check if refresh is needed
+        const timeSinceLastLoad = Math.max(0, (now - this.blacklistLastLoad) / 1000); // Convert to seconds
+        const timeUntilNextLoad = Math.max(0, (this.blacklistRefreshInterval - (now - this.blacklistLastLoad)) / 1000); // Convert to seconds
+
+        // Format times for logging
+        const formatDuration = (seconds) => {
+          if (seconds < 60) return `${Math.round(seconds)}s`;
+          if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+          return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m ${Math.round(seconds % 60)}s`;
+        };
+
+        logger.debug(`considering blacklist reloading:\n` +
+          `Current time: ${formatBkkTime(now)}\n` +
+          `Last load: ${formatBkkTime(this.blacklistLastLoad)}\n` +
+          `Refresh interval: ${formatDuration(this.blacklistRefreshInterval / 1000)}\n` +
+          `Time since last load: ${formatDuration(timeSinceLastLoad)}\n` +
+          `Time until next load: ${timeUntilNextLoad <= 0 ? 'now' : formatDuration(timeUntilNextLoad) + " which is " + formatBkkTime(now + timeUntilNextLoad * 1000)}`
+        );
+
+        // Check if refresh is needed
+        if (now - this.blacklistLastLoad > this.blacklistRefreshInterval) {
+          logger.warn(' \u21BB \u21BB Refreshing blacklist after ' + formatDuration(timeSinceLastLoad));
+          this.blacklist = loadBlacklist();
+          this.blacklistLastLoad = now;
+        } else {
+          logger.info("Skipping blacklist refresh");
+        }
       }
-      logger.debug(`Blacklist: ${JSON.stringify([...this.blacklist])}`);
+
+      logger.debug(`Cached blacklist: ${this.blacklist.size} entries [${[...this.blacklist].join(', ')}]`);
       return this.blacklist;
     };
 
@@ -602,15 +634,14 @@ class Middlewares {
 
       return SUSPICIOUS_PATTERNS.some(pattern => {
         const regex = new RegExp(pattern, 'i');
+        logger.silly(`testing input ${typeof input === 'object' ? JSON.stringify(input) : input}::${typeof input} against regex: ${regex}`);
         if (typeof input === 'string') {
-          logger.debug(`testing input ${input} against regex: ${regex}`);
           if (regex.test(input)) {
             logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${input}`);
             return true;
           }
         } else if (typeof input === 'object') {
           const stringified = JSON.stringify(input);
-          logger.debug(`testing input ${stringified} against regex: ${regex}`);
           if (regex.test(stringified)) {
             logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${stringified}`);
             return true;
@@ -636,16 +667,17 @@ class Middlewares {
     }
     logger.info(`${clientIp} is not in the black list`);
 
+    logger.info('Checking for suspicious patterns');
     // Check all possible input sources
     const isSuspicious = (
-      checkSuspiciousPatterns(req.url, 'URL') ||
-      checkSuspiciousPatterns(req.path, 'Path') ||
-      checkSuspiciousPatterns(req.query, 'Query Parameters') ||
-      checkSuspiciousPatterns(req.params, 'URL Parameters') ||
-      checkSuspiciousPatterns(req.body, 'Request Body') ||
-      checkSuspiciousPatterns(req.headers, 'Headers') ||
-      checkSuspiciousPatterns(req.cookies, 'Cookies') ||
-      (req.files && checkSuspiciousPatterns(
+      (req.url && checkSuspiciousPatterns(req.url, 'URL')) ||
+      (req.path && checkSuspiciousPatterns(req.path, 'Path')) ||
+      (req.query && typeof req.query === 'object' && checkSuspiciousPatterns(req.query, 'Query Parameters')) ||
+      (req.params && typeof req.params === 'object' && checkSuspiciousPatterns(req.params, 'URL Parameters')) ||
+      (req.body && typeof req.body === 'object' && checkSuspiciousPatterns(req.body, 'Request Body')) ||
+      (req.headers && typeof req.headers === 'object' && checkSuspiciousPatterns(req.headers, 'Headers')) ||
+      (req.cookies && typeof req.cookies === 'object' && checkSuspiciousPatterns(req.cookies, 'Cookies')) ||
+      (req.files && Array.isArray(req.files) && checkSuspiciousPatterns(
         req.files.map(f => f.originalname).join(','),
         'File Names'
       ))
@@ -782,10 +814,9 @@ class Middlewares {
     const query = req.query;
     try {
       // Store the request log on the request object
-      if (GoogleSheetService.isConnected()) {
-        const requestLog = GoogleSheetService.prepareRequestLog(req);
-        req.requestLog = requestLog; // Store for later use in response handler
-      } else logger.warn('Google Sheet service is not connected');
+      logger.info('Preparing request log entry...');
+      const requestLog = GoogleSheetService.prepareRequestLog(req);
+      req.requestLog = requestLog; // Store for later use in response handler
 
       const ip = getIP(req);
       Object.defineProperty(req, 'ip', {
@@ -1007,6 +1038,15 @@ class Middlewares {
     try {
       logger.info("Handling response");
 
+      // Calculate response time for all environments
+      const responseTimeMs = Date.now();
+      const processingTime = responseTimeMs - (req.requestTimeMs || responseTimeMs);
+
+      // Add response time header
+      res.set('X-Response-Time', `${processingTime}ms`);
+
+      logger.info(`Request processed in ${processingTime}ms`);
+
       // Add cache headers for GET requests
       if (req.method === 'GET') {
         const cacheEndpoints = ['/transactions/list/types'];
@@ -1058,13 +1098,26 @@ class Middlewares {
       if (GoogleSheetService.isConnected() && req.requestLog) {
         logger.info('Google Sheet service is connected');
         const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-        logger.info('Log preparation completed, ready to append');
         const appendingResult = await GoogleSheetService.appendLog(completeLog);
         if (!appendingResult) {
           logger.warn('Failed to append log to Google Sheet');
         }
       } else {
         logger.warn('Google Sheet service is not connected');
+
+        // Log response time for non-production environments
+        const responseLog = {
+          path: req.path,
+          method: req.method,
+          requestTimestamp: req.requestTimeMs ? formatBkkTime(new Date(req.requestTimeMs)) : formatBkkTime(new Date()),
+          responseTimestamp: formatBkkTime(new Date(responseTimeMs)),
+          processingTimeMs: processingTime,
+          statusCode: req.formattedResponse?.status_code || 200,
+          clientIP: req.ip
+        };
+
+        // Ensure proper JSON stringification with formatting
+        logger.info(`Response metrics: ${JSON.stringify(responseLog, null, 2)}::${typeof responseLog}`);
       }
 
       // Only send response if headers haven't been sent
