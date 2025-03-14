@@ -948,6 +948,15 @@ class Middlewares {
       }).join('\n          ');
     };
 
+    // Calculate performance metrics
+    const responseTimeMs = Date.now();
+    const processingTime = responseTimeMs - (req.requestTimeMs || responseTimeMs);
+    const performanceMetrics = {
+      requestTime: req.requestTimeMs ? formatBkkTime(new Date(req.requestTimeMs)) : 'N/A',
+      responseTime: formatBkkTime(new Date(responseTimeMs)),
+      processingTimeMs: processingTime
+    };
+
     const responseLogMessage = `
       \u2191 \u2191 \u2191  Outgoing Response \u2191 \u2191 \u2191  :
       Headers:
@@ -959,6 +968,8 @@ class Middlewares {
       Message: ${message ? message : 'Not specified'}
       Data:
           ${Array.isArray(data) ? JSON.stringify(data) : formatObjectEntries(data || { "None": "None" })}
+      Performance:
+          ${formatObjectEntries(performanceMetrics)}
     `;
 
     const endingMessage = "=".repeat(5) + ` End of response: ${req.method} ${req.path} => ${status_code} => ${req.ip} ` + "=".repeat(5);
@@ -1112,20 +1123,7 @@ class Middlewares {
           .catch(error => {
             logger.error(`Failed to append log to Google Sheet: ${error.message}`);
           });
-      } else {
-        logger.warn('Google Sheet service is not connected');
-        // Log response metrics for non-production environments
-        const responseLog = {
-          path: req.path,
-          method: req.method,
-          requestTimestamp: req.requestTimeMs ? formatBkkTime(new Date(req.requestTimeMs)) : formatBkkTime(new Date()),
-          responseTimestamp: formatBkkTime(new Date(responseTimeMs)),
-          processingTimeMs: processingTime,
-          statusCode: req.formattedResponse?.status_code || 200,
-          clientIP: req.ip
-        };
-        logger.info(`Response metrics: ${JSON.stringify(responseLog, null, 2)}`);
-      }
+      } else logger.warn('Google Sheet service is not connected');
 
     } catch (error) {
       logger.error(`Error in response handler: ${error.message}`);
