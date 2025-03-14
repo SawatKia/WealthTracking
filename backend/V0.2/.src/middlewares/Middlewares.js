@@ -439,6 +439,7 @@ class Middlewares {
   }
 
   rateLimiter(windowMs = 15 * 60 * 1000, limit = 100) {
+    logger.info('Rate limiter initialized');
     return require("express-rate-limit")({
       windowMs,
       limit,
@@ -1044,7 +1045,6 @@ class Middlewares {
 
       // Add response time header
       res.set('X-Response-Time', `${processingTime}ms`);
-
       logger.info(`Request processed in ${processingTime}ms`);
 
       // Add cache headers for GET requests
@@ -1094,18 +1094,27 @@ class Middlewares {
         headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
       }
 
-      // Handle Google Sheet logging
+      // Only send response if headers haven't been sent
+      if (!res.headersSent) {
+        const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
+        res.set({ ...securityHeaders, ...headers })
+          .status(status_code)
+          .json(formatResponse(status_code, message, data));
+      }
+
+      // Handle Google Sheet logging asynchronously after sending response
       if (GoogleSheetService.isConnected() && req.requestLog) {
-        logger.info('Google Sheet service is connected');
+        logger.info('Google Sheet service is connected, logging asynchronously');
         const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-        const appendingResult = await GoogleSheetService.appendLog(completeLog);
-        if (!appendingResult) {
-          logger.warn('Failed to append log to Google Sheet');
-        }
+
+        // Fire and forget - don't wait for the result
+        GoogleSheetService.appendLog(completeLog)
+          .catch(error => {
+            logger.error(`Failed to append log to Google Sheet: ${error.message}`);
+          });
       } else {
         logger.warn('Google Sheet service is not connected');
-
-        // Log response time for non-production environments
+        // Log response metrics for non-production environments
         const responseLog = {
           path: req.path,
           method: req.method,
@@ -1115,19 +1124,9 @@ class Middlewares {
           statusCode: req.formattedResponse?.status_code || 200,
           clientIP: req.ip
         };
-
-        // Ensure proper JSON stringification with formatting
-        logger.info(`Response metrics: ${JSON.stringify(responseLog, null, 2)}::${typeof responseLog}`);
+        logger.info(`Response metrics: ${JSON.stringify(responseLog, null, 2)}`);
       }
 
-      // Only send response if headers haven't been sent
-      if (!res.headersSent) {
-        const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
-        return res
-          .set({ ...securityHeaders, ...headers })
-          .status(status_code)
-          .json(formatResponse(status_code, message, data));
-      }
     } catch (error) {
       logger.error(`Error in response handler: ${error.message}`);
       // Only send error response if headers haven't been sent
