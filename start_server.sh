@@ -182,7 +182,7 @@ main() {
             ;;
         *)
             log "ERROR" "Unknown command: $1"
-            log "INFO" "Usage: $0 [healthStatus|restart|start]"
+            log "INFO" "Usage: $0 [health|restart|start]"
             exit 1
             ;;
     esac
