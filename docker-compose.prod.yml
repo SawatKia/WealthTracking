@@ -1,91 +1,94 @@
-version: "3"
+version: "3.8"
 services:
   node-server:
     build:
-      context: ./backend/V0.2
+      context: ./backend/V0.2/
+      dockerfile: Dockerfile.prod
       args:
-        NODE_ENV: production # Set production mode
-    container_name: node-container
+        - NODE_ENV=production
+        - APP_DOMAIN=${APP_DOMAIN}
+        - APP_PORT=${APP_PORT}
+    container_name: ${APP_DOMAIN}-prodContainer
     env_file: 
       - ./.env
     ports:
       - "${APP_PORT}:${APP_PORT}"
-      - "9229:9229"
     volumes:
-      - ./frontend/build:/usr/src/app/frontend_build
-      - /usr/src/app/node_modules
+      # no needs to oaccess from host machine, the app access inside constainer only.
+      - uploads_data:/usr/src/${APP_DOMAIN}/uploads 
+      # sometimes need to examine the logs
+      - ./backend/V0.2/logs:/usr/src/${APP_DOMAIN}/logs 
+      # need to access the black list from Nginx
+      - ./backend/V0.2/statics:/usr/src/${APP_DOMAIN}/statics/
     depends_on:
-      - postgres
-    command: npm run start # Production command
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: |
+      sh -c "echo 'Port binding: ${APP_PORT}:${APP_PORT}' && npm run start;"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${APP_PORT} || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health?service=docker-compose\ healthcheck"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "5"
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"  # Limit to half a CPU
-          memory: "512M" # Limit to 512MB of RAM
     networks:
-      - app_network
+      - prod_network
+    dns: 8.8.8.8
 
   postgres:
-    image: postgres:15
-    container_name: postgres_container
+    image: postgres:15-alpine
+    container_name: postgres-prodContainer
     env_file: 
       - ./.env
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: "512M"
     networks:
-      - app_network
+      - prod_network
 
-  pgadmin:
-    container_name: pgadmin4_container
-    image: dpage/pgadmin4
-    restart: unless-stopped
+  redis:
+    image: redis:alpine
+    container_name: redis-prodContainer
+    volumes:
+      - redis_data:/data
     env_file:
       - ./.env
     ports:
-      - "5050:80"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: "256M"
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     networks:
-      - app_network
+      - prod_network
 
 volumes:
+  uploads_data:
+    driver: local
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
-  app_network:
+  prod_network:
     driver: bridge
+    # internal: true  # Only internal communication between containers

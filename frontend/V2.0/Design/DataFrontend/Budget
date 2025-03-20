@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant User
+  participant Budget
+  participant BudgetService
+  participant PieChartBudget
+  participant BudgetCard
+  participant Router
+
+  User->>Budget: Open Budget Screen
+  Budget->>BudgetService: Fetch Budgets (getBudgets)
+  BudgetService-->>Budget: Return Budgets Data
+  Budget->>PieChartBudget: Display Pie Chart
+  Budget->>BudgetCard: Display Budget List
+  User->>Budget: Press Back Button
+  Budget->>Router: Navigate to Home Screen

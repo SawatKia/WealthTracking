@@ -1,8 +1,16 @@
 # Use an official Node.js runtime as the base image
 FROM node:20-alpine
 
+# Define the arguments
+ARG APP_DOMAIN
+ARG NODE_ENV
+ARG APP_PORT
+
+# Install curl for healthcheck only
+RUN apk update && apk add --no-cache curl
+
 # Set the working directory
-WORKDIR /usr/src/app
+WORKDIR /usr/src/${APP_DOMAIN}
 
 # Copy the package.json and package-lock.json
 COPY package*.json ./
@@ -11,11 +19,18 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application code
-COPY ./.src ./
+COPY ./.src ./.src
+COPY ./statics ./statics
+COPY ./sql ./sql
 
-# Expose the port the app runs on
-EXPOSE ${PORT}
+# Expose the port from env
+EXPOSE ${APP_PORT}
 
 # Default command for starting the app
-# CMD ["node", "index.js"]
-CMD ["npm", "run", "dev"]
+CMD if [ "$NODE_ENV" = "production" ]; then \
+    npm run start; \
+    elif [ "$NODE_ENV" = "test" ]; then \
+    npm run test; \
+    else \
+    npm run dev; \
+    fi

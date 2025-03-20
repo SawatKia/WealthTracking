@@ -4,48 +4,57 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --coverage(=true)",
-    "dev": "nodemon index.js",
+    "testfile": "cross-env NODE_ENV=test jest .src/tests/slip-verify.test.js --coverage --detectOpenHandles",
+    "test": "cross-env NODE_ENV=test jest --coverage --runInBand",
+    "build": "rm -rf dist && babel .src --out-dir dist --copy-files --source-maps",
+    "start": "node dist/index.js",
+    "dev": "node .src/index.js",
     "debug": "node --inspect=0.0.0.0:9229 .src/index.js"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "verbose": true,
-    "reporters": [
-      "default",
-      [
-        "jest-html-reporters",
-        {
-          "publicPath": "./.src/tests/report",
-          "filename": "report.html",
-          "openReport": true
-        }
-      ]
-    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/billing": "^4.5.0",
+    "@google-cloud/documentai": "^8.12.0",
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "csv-parser": "^3.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.4",
+    "jimp": "^0.22.12",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "jsqr": "^1.4.0",
+    "log-update": "^6.1.0",
+    "multer": "^1.4.5-lts.1",
     "pg": "^8.12.0",
     "pg-pool": "^3.6.2",
+    "redis": "^4.7.0",
     "request-to-curl": "^0.1.6",
+    "sanitize-html": "^2.13.0",
+    "supertest": "^7.0.0",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.0.2",
+    "validator": "^13.12.0",
     "winston": "^3.14.2",
     "winston-daily-rotate-file": "^5.0.0",
     "yaml": "^2.5.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.24.5",
+    "@babel/core": "^7.24.5",
+    "@babel/preset-env": "^7.24.5",
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "jest-html-reporters": "^3.1.7",
-    "nodemon": "^3.1.4",
-    "supertest": "^7.0.0"
+    "nodemon": "^3.1.4"
   }
 }

@@ -1,68 +1,430 @@
 openapi: 3.0.0
 info:
-  title: WealthTack API
-  description: API for user registration and check password.
-  version: "0.2"
+  title: WealthTrack API
+  description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
+  version: "0.2.3"
 servers:
   - url: "http://localhost:3000/api/v0.2"
     description: Development server
 paths:
+  # Connection/Health Check Endpoints
+  /api:
+    get:
+      tags:
+        - "Connection"
+      summary: API Root (General)
+      description: Returns a welcome message to confirm API connectivity.
+      servers:
+        - url: "http://localhost:3000"
+        - url: "http://localhost:3000/api/v0.2/"
+      responses:
+        "200":
+          description: Successful response with a welcome message in JSON format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "You are connected to the /api, running in Environment: development"
+                data: null
+
+  /health:
+    get:
+      tags:
+        - "Connection"
+      summary: Health check
+      description: Returns health status information including environment, uptime, and timestamp
+      servers:
+        - url: "http://localhost:3000"
+      responses:
+        "200":
+          description: Health check response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "you are connected to the /health, running in Environment: development"
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "healthy"
+                      timestamp:
+                        type: string
+                        description: "Bangkok timezone (en-GB format)"
+                        example: "Thu, 14/03/2024, 15:30:45"
+                      uptime:
+                        type: string
+                        description: "Server uptime in d/h/m/s format"
+                        example: "2d 5h 30m 15s"
+                      environment:
+                        type: string
+                        enum: ["development", "production", "test"]
+                        example: "development"
+
   /:
     get:
-      summary: API Root
+      tags:
+        - "Connection"
+      summary: API v0.2 Root
       description: Returns a welcome message to confirm API connectivity.
       responses:
         "200":
-          description: Successful response with a welcome message.
+          description: Successful response with a welcome message in JSON format.
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: "You are connected to the api/v0.2"
-  /users:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "You are connected to the /api/v0.2/"
+                data: null
+
+  # Authentication Endpoints
+  /login:
     post:
-      summary: Register a new user
-      description: Creates a new user with the provided information.
+      tags:
+        - "Authentication"
+      summary: Login user
+      description: |
+        Authenticates user and returns JWT tokens:
+        - Web platform: Sets tokens in HTTP-only cookies
+        - Mobile platform: Returns tokens in response body
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+      security: [] # No security for login endpoint
       requestBody:
-        description: User registration data.
         required: true
         content:
           application/json:
             schema:
               type: object
               required:
-                - national_id
-                - username
                 - email
                 - password
-                - confirm_password
               properties:
-                national_id:
-                  type: string
-                  description: National ID (13 numeric characters).
-                  example: "1234567890123"
-                username:
-                  type: string
-                  description: Username (alphanumeric, no special characters).
-                  example: "johndoe"
                 email:
                   type: string
                   format: email
-                  description: Valid email address.
                   example: "johndoe@example.com"
                 password:
                   type: string
                   format: password
-                  description: Password (minimum 8 characters).
-                  example: "securePassword123"
-                confirm_password:
-                  type: string
-                  format: password
-                  description: Password confirmation (must match password).
                   example: "securePassword123"
       responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: object # For web platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/UserBase"
+                          - type: object # For mobile platform
+                            properties:
+                              user:
+                                $ref: "#/components/schemas/UserBase"
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully"
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "john.doe@example.com"
+                        username: "john.doe"
+                        date_of_birth: "1990-01-01"
+                        profile_picture_url: "http://localhost:3000/api/v0.2/users/profile-picture"
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully, please store the tokens in secure storage"
+                    data:
+                      user:
+                        national_id: "1234567890123"
+                        email: "john.doe@example.com"
+                        username: "john.doe"
+                        date_of_birth: "1990-01-01"
+                        profile_picture_url: "http://localhost:3000/api/v0.2/users/profile-picture"
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /refresh:
+    post:
+      tags:
+        - "Authentication"
+      summary: Refresh access token
+      description: |
+        Uses refresh token to generate new access and refresh tokens:
+        - Web platform: Uses refresh_token from HTTP-only cookie
+        - Mobile platform: Uses refresh token from x-refresh-token header
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate token delivery
+        - in: header
+          name: x-refresh-token
+          schema:
+            type: string
+          description: Refresh token (required for mobile platform)
+          required: false
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - type: "null" # For web platform
+                          - type: object # For mobile platform
+                            properties:
+                              tokens:
+                                type: object
+                                properties:
+                                  access_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+                                  refresh_token:
+                                    type: string
+                                    example: "eyJhbGciOiJIUzI1NiIs..."
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Tokens refreshed successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "Tokens refreshed successfully"
+                    data:
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIs..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIs..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /logout:
+    post:
+      tags:
+        - "Authentication"
+      summary: Logout user
+      description: Invalidates the current refresh token and handles platform-specific cleanup
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Specifies the platform type for appropriate logout handling
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              examples:
+                web:
+                  value:
+                    status_code: 200
+                    message: "Logged out successfully"
+                    data: null
+                mobile:
+                  value:
+                    status_code: 200
+                    message: "on mobile, just remove both refresh and access tokens from the your storage..."
+                    data: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /google/login:
+    post:
+      tags:
+        - "Authentication"
+      summary: Initiate Google OAuth login
+      description: Generates a Google OAuth URL for login or registration
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [login, register]
+          description: Specifies whether the user wants to login or register
+        - in: query
+          name: platform
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+      responses:
+        200:
+          description: Successfully generated Google OAuth URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: redirect to this URL to login with Google
+                  data:
+                    type: string
+                    example: https://accounts.google.com/o/oauth2/v2/auth?...
+        # "302":
+        #   description: Redirect to Google OAuth consent screen
+        #   headers:
+        #     Location:
+        #       schema:
+        #         type: string
+        #         example: "https://accounts.google.com/o/oauth2/v2/auth?..."
+        400:
+          description: Missing or invalid action parameter
+        500:
+          description: Internal server error
+
+  /google/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Handle Google OAuth callback
+      description: Handles the callback from Google OAuth for both web and mobile platforms
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Google
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: State parameter containing platform and action information
+      responses:
+        "200":
+          description: Successful login
+          headers:
+            Set-Cookie:
+              $ref: "#/components/headers/SetCookieAuth"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCallbackResponse"
+              examples:
+                web_register:
+                  value:
+                    status_code: 201
+                    message: "User registered successfully with Google"
+                    data:
+                      user:
+                        national_id: "109924411411252144189"
+                        email: "john.doe@gmail.com"
+                        username: "John Doe"
+                        profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+                mobile_register:
+                  value:
+                    status_code: 201
+                    message: "User registered successfully with Google, please try to login. to get access_token and refresh_token"
+                    data:
+                      user:
+                        national_id: "109924411411252144189"
+                        email: "john.doe@gmail.com"
+                        username: "John Doe"
+                        profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+                web_login:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully with Google"
+                    data: null
+                mobile_login:
+                  value:
+                    status_code: 200
+                    message: "Logged in successfully with Google, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired."
+                    data:
+                      user:
+                        national_id: "109924411411252144189"
+                        email: "john.doe@gmail.com"
+                        username: "John Doe"
+                        profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+                      tokens:
+                        access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # User Management Endpoints
+  /users:
+    post:
+      tags:
+        - "Users"
+      summary: "Register new user"
+      description: "Create a new user account with local authentication"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistrationRequest"
+      responses:
         "201":
-          description: User created successfully.
+          description: "User created successfully"
           content:
             application/json:
               schema:
@@ -75,29 +437,138 @@ paths:
                     type: string
                     example: "User created successfully"
                   data:
+                    $ref: "#/components/schemas/UserBase"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: "User already exists"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 409
+                message: "User with this email or national ID already exists"
+    get:
+      tags:
+        - "Users"
+      summary: "Get current user profile"
+      description: "Retrieve the profile of the currently authenticated user, including profile picture data for local auth users"
+      security:
+        - cookieAuth: []
+        - BearerAuth: []
+      responses:
+        "200":
+          description: "User profile retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "User profile retrieved successfully"
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/UserBase"
+                      - type: object
+                        properties:
+                          profile_picture_data:
+                            type: string
+                            description: "Base64 encoded image data (only for local auth users)"
+                            example: "data:image/jpeg;base64,..."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - "Users"
+      summary: "Update user profile"
+      description: "Update the current user's profile information"
+      security:
+        - cookieAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/UserUpdateRequest"
+                - type: object
+                  properties:
+                    profilePicture:
+                      type: string
+                      format: binary
+                      description: "Profile picture file (jpg, jpeg, png)"
+      responses:
+        "200":
+          description: "User updated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "User updated successfully"
+                  data:
                     type: object
+                    description: "return user data"
                     properties:
                       national_id:
                         type: string
                         example: "1234567890123"
+                      username:
+                        type: string
+                        example: "new.username"
                       email:
                         type: string
-                        example: "johndoe@example.com"
+                        example: "new.email@example.com"
+                      date_of_birth:
+                        type: string
+                        format: date
+                        example: "1990-01-01"
+                      profile_picture_url:
+                        type: string
+                        example: "http://localhost:3000/api/v0.2/users/profile-picture"
         "400":
-          description: Bad request due to missing required fields, invalid email address, or password mismatch.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status_code:
-                    type: integer
-                    example: 400
-                  message:
-                    type: string
-                    example: "Missing required field: username"
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "409":
-          description: Conflict due to duplicate user.
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags:
+        - "Users"
+      summary: "Delete user account"
+      description: "Delete the current user's account (requires password confirmation)"
+      security:
+        - cookieAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  example: "currentPassword123"
+      responses:
+        "200":
+          description: "User deleted successfully"
           content:
             application/json:
               schema:
@@ -105,13 +576,19 @@ paths:
                 properties:
                   status_code:
                     type: integer
-                    example: 409
+                    example: 200
                   message:
                     type: string
-                    example: "national_id or email are already taken"
+                    example: "User deleted successfully"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /users/check:
     post:
+      tags:
+        - "Users"
       summary: Check user password (Development Mode Only)
       description: Validates user's email and password.
       requestBody:
@@ -135,6 +612,9 @@ paths:
                   format: password
                   description: User's password.
                   example: "securePassword123"
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: Password check successful.
@@ -179,177 +659,2721 @@ paths:
                     type: string
                     example: "Invalid email or password"
 
-  /users/{national_id}:
+  # Bank Account Endpoints
+  /banks:
+    post:
+      tags:
+        - "Bank Account"
+      summary: Create a new bank account
+      description: Creates a new bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountCreateInput"
+      responses:
+        "201":
+          description: Bank account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
     get:
-      summary: Get user by National ID (NOT Implemented)
-      description: Retrieves user information based on National ID.
-      parameters:
-        - in: path
-          name: national_id
-          schema:
-            type: string
-            length: 13
-          required: true
-          description: National ID of the user.
+      tags:
+        - "Bank Account"
+      summary: Get all bank accounts
+      description: Retrieves all bank accounts for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       responses:
         "200":
-          description: User retrieved successfully.
+          description: Successful retrieval of bank accounts
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
-        "400":
-          description: Bad request due to invalid National ID.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/BankAccountsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      summary: Update user by National ID (NOT Implemented)
-      description: Updates user information.
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /banks/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Bank Account"
+      summary: Get a specific bank account
+      description: Retrieves a specific bank account by account number and financial institution code.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: path
-          name: national_id
+          name: account_number
+          required: true
           schema:
             type: string
-            length: 13
+          description: The bank account number
+        - in: path
+          name: fi_code
           required: true
-          description: National ID of the user.
+          schema:
+            type: string
+          description: The financial institution code
+      responses:
+        "200":
+          description: Successful retrieval of bank account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - "Bank Account"
+      summary: Update a bank account
+      description: Updates a specific bank account's information for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: The financial institution code
       requestBody:
-        description: Fields to update.
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                username:
+                display_name:
                   type: string
-                  description: New username.
-                email:
+                  example: "My Updated Savings"
+                account_name:
                   type: string
-                  format: email
-                  description: New email address.
-                password:
-                  type: string
-                  format: password
-                  description: New password.
+                  example: "Updated Savings Account"
+                balance:
+                  type: number
+                  format: float
+                  example: 2000.75
       responses:
         "200":
-          description: User updated successfully.
+          description: Bank account updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/BankAccount"
+              example:
+                status_code: 200
+                message: "Bank account updated successfully"
         "400":
-          description: Bad request due to invalid input.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
     delete:
-      summary: Delete user by National ID (NOT Implemented)
-      description: Deletes a user from the system.
+      tags:
+        - "Bank Account"
+      summary: Delete a bank account
+      description: Deletes a specific bank account for the authenticated user.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: path
-          name: national_id
+          name: account_number
+          required: true
           schema:
             type: string
-            length: 13
+          description: The bank account number
+        - in: path
+          name: fi_code
           required: true
-          description: National ID of the user.
+          schema:
+            type: string
+          description: The financial institution code
       responses:
-        "204":
-          description: User deleted successfully. No content returned.
+        "200":
+          description: Bank account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+              example:
+                status_code: 200
+                message: "Bank account deleted successfully"
+                data: null
         "400":
-          description: Bad request due to invalid National ID.
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden - User does not own this bank account
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status_code: 403
+                message: "You are not allowed to access this resource"
         "404":
-          description: User not found.
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Financial Institution Endpoints
+  /fis:
+    get:
+      tags:
+        - "Financial Institutions"
+      summary: Get all financial institutions (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Returns a list of all financial institutions in the system.
+      responses:
+        "200":
+          description: Financial institutions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Financial institutions fetched successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FinancialInstitution"
+        "403":
+          description: Forbidden in production environment
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fis/operating-banks:
+    get:
+      tags:
+        - "Financial Institutions"
+      summary: Get operating Thai commercial banks (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Returns a list of operating Thai commercial banks.
+        Reference: KBank API Portal Bank Code Documentation
+      responses:
+        "200":
+          description: Operating banks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Operating Thai commercial banks fetched successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  reference:
+                    type: string
+                    example: "https://apiportal.kasikornbank.com/bucket/SiteCollectionDocuments/assets/page/apiproducts/corporate-fund-transfer/BankCode-CorpAPI.pdf"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FinancialInstitution"
+        "403":
+          description: Forbidden in production environment
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fi/{fi_code}:
+    get:
+      tags:
+        - "Financial Institutions"
+      summary: Get financial institution by code (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Returns details of a specific financial institution.
+      parameters:
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+          description: Financial institution code
+      responses:
+        "200":
+          description: Financial institution retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Financial institution fetched successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    $ref: "#/components/schemas/FinancialInstitution"
+        "403":
+          description: Forbidden in production environment
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Slip Management Endpoints
+  /slip/verify:
+    post:
+      summary: Verify slip data
+      tags:
+        - Slip
+      description: Verifies slip data from an image file and creates a transaction record.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - imageFile
+              properties:
+                imageFile:
+                  type: string
+                  format: binary
+                  description: Image file of the slip (jpg, jpeg, png, gif, max 5MB)
+      responses:
+        "200":
+          description: Successful verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlipDataResponse"
+        "400":
+          description: Bad request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example: "johndoe@example.com"
-            role:
-              type: string
-              description: Role assigned to the user.
-              example: "user"
-            member_since:
-              type: string
-              format: date-time
-              description: Date and time when the user was registered.
-              example: "2024-09-09T10:25:22.650Z"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /slip/quota:
+    get:
+      summary: Get quota information
+      tags:
+        - Slip
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaResponse"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Debt Management Endpoints
+  /debts:
+    post:
+      tags:
+        - "Debt"
+      summary: Create a new debt
+      description: Creates a new debt record for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fi_code
+                - debt_name
+                - start_date
+                - current_installment
+                - total_installments
+                - loan_principle
+                - loan_balance
+              properties:
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  maxLength: 20
+                  description: "Financial institution code (numeric only)"
+                  example: "004"
+                debt_name:
+                  type: string
+                  maxLength: 100
+                  description: "Name of the debt"
+                  example: "Home mortgage"
+                start_date:
+                  type: string
+                  format: date
+                  description: "Start date of the debt"
+                  example: "2024-03-15"
+                current_installment:
+                  type: integer
+                  minimum: 0
+                  description: "Current installment number"
+                  example: 1
+                total_installments:
+                  type: integer
+                  minimum: 1
+                  description: "Total number of installments"
+                  example: 60
+                loan_principle:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Initial loan amount (max 2 decimal places)"
+                  example: 1000000.00
+                loan_balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Current loan balance (max 2 decimal places)"
+                  example: 1000000.00
+      responses:
+        "201":
+          description: Debt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    get:
+      tags:
+        - "Debt"
+      summary: Get all debts
+      description: Retrieves all debts for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Debts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /debts/{debt_id}:
+    get:
+      tags:
+        - "Debt"
+      summary: Get a specific debt
+      description: Retrieves a specific debt by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Debt"
+      summary: Update a specific debt
+      description: Updates a specific debt by its ID (partial updates allowed)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fi_code:
+                  type: string
+                  pattern: "^\\d{3}$"
+                  maxLength: 20
+                  description: "Financial institution code (numeric only)"
+                  example: "004"
+                debt_name:
+                  type: string
+                  maxLength: 100
+                  description: "Name of the debt"
+                  example: "Home mortgage"
+                start_date:
+                  type: string
+                  format: date
+                  description: "Start date of the debt"
+                  example: "2024-03-15"
+                current_installment:
+                  type: integer
+                  minimum: 0
+                  description: "Current installment number"
+                  example: 1
+                total_installments:
+                  type: integer
+                  minimum: 1
+                  description: "Total number of installments"
+                  example: 60
+                loan_principle:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Initial loan amount (max 2 decimal places)"
+                  example: 1000000.00
+                loan_balance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Current loan balance (max 2 decimal places)"
+                  example: 1000000.00
+      responses:
+        "200":
+          description: Debt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Debt"
+      summary: Delete a specific debt
+      description: Deletes a specific debt by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /debts/{debt_id}/payments:
+    get:
+      tags:
+        - "Debt"
+      summary: Get all payments for a specific debt
+      description: Retrieves all payment transactions associated with a specific debt
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: debt_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the debt
+      responses:
+        "200":
+          description: Debt payments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Debt payments retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # Transaction Endpoints
+  /transactions:
+    post:
+      tags:
+        - "Transaction"
+      summary: Create a new transaction
+      description: Creates a new transaction record for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags:
+        - "Transaction"
+      summary: Get all transactions
+      description: Retrieves all transactions for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /transactions/{transaction_id}:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get a specific transaction
+      description: Retrieves a specific transaction by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: transaction_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the transaction
+      responses:
+        "200":
+          description: Transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags:
+        - "Transaction"
+      summary: Update a specific transaction
+      description: Updates a specific transaction by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: transaction_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionUpdateInput"
+      responses:
+        "200":
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Transaction"
+      summary: Delete a specific transaction
+      description: Deletes a specific transaction by its ID
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: transaction_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the transaction
+      responses:
+        "200":
+          description: Transaction deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /cache:
+    get:
+      tags:
+        - "Cache"
+      summary: Get all cache entries (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        This endpoint returns all key-value pairs stored in cache.
+      responses:
+        "200":
+          description: Cache entries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Cache entries retrieved successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          example: "user:123"
+                        value:
+                          type: object
+                          example:
+                            id: 123
+                            name: "John Doe"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags:
+        - "Cache"
+      summary: Set cache value (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Sets a value in cache with optional expiration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+                - value
+              properties:
+                key:
+                  type: string
+                  example: "user:123"
+                value:
+                  type: object
+                  example:
+                    id: 123
+                    name: "John Doe"
+                expireSeconds:
+                  type: integer
+                  description: "Time in seconds until cache expires (default: 3600)"
+                  example: 3600
+      responses:
+        "200":
+          description: Cache set successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Cache set successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        example: "user:123"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /cache/{key}:
+    parameters:
+      - in: path
+        name: key
+        required: true
+        schema:
+          type: string
+        description: Cache key to operate on
+    get:
+      tags:
+        - "Cache"
+      summary: Get cache value (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Retrieves a value from cache by key.
+      responses:
+        "200":
+          description: Cache retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Cache retrieved successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        example: "user:123"
+                      value:
+                        type: object
+                        example:
+                          id: 123
+                          name: "John Doe"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - "Cache"
+      summary: Delete cache entry (Development Only)
+      description: |
+        ⚠️ WARNING: This endpoint is for development purposes only!
+        Do not use or rely on this endpoint in production environments.
+        Removes a value from cache by key.
+      responses:
+        "200":
+          description: Cache deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "[DEV ONLY] Cache deleted successfully"
+                  warning:
+                    type: string
+                    example: "⚠️ This endpoint is for development purposes only. Do not use in production."
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        example: "user:123"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /transactions/account/{account_number}/{fi_code}:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get transactions for a specific bank account
+      description: Retrieves all transactions associated with a specific bank account (both sent and received)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: account_number
+          required: true
+          schema:
+            type: string
+          description: The bank account number
+        - in: path
+          name: fi_code
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{3}$"
+          description: The financial institution code
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Transactions retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transaction_id:
+                          type: string
+                          format: uuid
+                          example: "123e4567-e89b-12d3-a456-426614174000"
+                        transaction_datetime:
+                          type: string
+                          format: date-time
+                          example: "2024-03-15T14:30:00Z"
+                        category:
+                          type: string
+                          enum: ["Income", "Expense", "Transfer"]
+                          example: "Transfer"
+                        type:
+                          type: string
+                          example: "Bank Transfer"
+                        amount:
+                          type: number
+                          format: float
+                          example: 1000.00
+                        note:
+                          type: string
+                          example: "Monthly rent payment"
+                        national_id:
+                          type: string
+                          example: "1234567890123"
+                        sender:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "123-4-56789-0"
+                            fi_code:
+                              type: string
+                              example: "004"
+                            display_name:
+                              type: string
+                              example: "My Savings Account"
+                            account_name:
+                              type: string
+                              example: "JOHN DOE"
+                            bank_name_en:
+                              type: string
+                              example: "Kasikorn Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกสิกรไทย"
+                        receiver:
+                          type: object
+                          properties:
+                            account_number:
+                              type: string
+                              example: "098-7-65432-1"
+                            fi_code:
+                              type: string
+                              example: "002"
+                            display_name:
+                              type: string
+                              example: "Rent Account"
+                            account_name:
+                              type: string
+                              example: "JANE SMITH"
+                            bank_name_en:
+                              type: string
+                              example: "Bangkok Bank"
+                            bank_name_th:
+                              type: string
+                              example: "ธนาคารกรุงเทพ"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /transactions/summary/monthly:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get monthly transaction summary
+      description: |
+        Retrieves a monthly summary of transactions for the authenticated user.
+        Shows income, expense, and net amounts for each month.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Filter by specific transaction type, null to get all type
+          example: "Salary"
+        - in: query
+          name: monthCount
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 12
+          description: Number of months to retrieve (default is 12)
+      responses:
+        "200":
+          description: Monthly summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Monthly summary retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                          format: date
+                          example: "2024-03-01"
+                        summary:
+                          type: object
+                          properties:
+                            income:
+                              type: number
+                              format: float
+                              example: 50000.00
+                            expense:
+                              type: number
+                              format: float
+                              example: 30000.00
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /transactions/summary/month-expenses:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get current month expenses by type
+      description: Retrieves current month expenses grouped by type or total amount for a specific type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Specific transaction type to filter by. If not provided, returns summary for all types
+          example: "Food"
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month number (1-12). If not provided, uses current month
+          example: 3
+      responses:
+        "200":
+          description: Current month expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Current month expenses by type retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        oneOf:
+                          - type: array
+                            description: When no specific type is provided
+                            items:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  example: "Food"
+                                totalAmount:
+                                  type: number
+                                  format: float
+                                  example: 1500.00
+                          - type: number
+                            description: When specific type is provided
+                            format: float
+                            example: 1500.00
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /transactions/list/types:
+    get:
+      tags:
+        - "Transaction"
+      summary: Get all transaction types
+      description: Retrieves all available transaction types for categorization
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Transaction types retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Transaction types retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          enum: ["Income", "Expense", "Transfer"]
+                          example: "Income"
+                        types:
+                          type: array
+                          items:
+                            type: string
+                          example: ["Salary", "Bonus", "Investment"]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /budgets:
+    post:
+      tags:
+        - "Budget"
+      summary: Create a new budget
+      description: Creates a new budget for a specific expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - expense_type
+                - monthly_limit
+              properties:
+                expense_type:
+                  type: string
+                  description: Type of expense for this budget
+                  example: "FOOD"
+                monthly_limit:
+                  type: number
+                  description: Monthly spending limit
+                  example: 5000
+      responses:
+        "201":
+          description: Budget created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags:
+        - "Budget"
+      summary: Get all budgets
+      description: Retrieves all budgets for the current user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budgets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /budget/types:
+    get:
+      tags:
+        - "Budget"
+      summary: Get specific budget on current month
+      description: Retrieves a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: true
+          schema:
+            type: string
+          description: Type of expense to filter by
+      responses:
+        "200":
+          description: Budget retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /budget/history:
+    get:
+      tags:
+        - "Budget"
+      summary: Get budget history
+      description: Retrieves budget history for the authenticated user
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: expenseType
+          required: false
+          schema:
+            type: string
+          description: Filter by specific expense type
+        - in: query
+          name: month
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by specific month (1-12)
+      responses:
+        "200":
+          description: Budget history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetsListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /budgets/{expense_type}:
+    patch:
+      tags:
+        - "Budget"
+      summary: Update specific budget
+      description: Updates a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: expense_type
+          required: true
+          schema:
+            type: string
+          description: Type of expense to update budget for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                monthly_limit:
+                  type: number
+                  description: New monthly spending limit
+                  example: 6000
+      responses:
+        "200":
+          description: Budget updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags:
+        - "Budget"
+      summary: Delete specific budget
+      description: Deletes a specific budget by expense type
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Budget deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
+  securitySchemes:
+    bearerAuth: # For mobile platform
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth: # For web platform
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  headers:
+    SetCookieAuth:
+      description: Authentication cookies
+      schema:
+        type: object
+        properties:
+          access_token:
+            type: string
+            description: JWT access token cookie
+            example: "access_token=xyz...; HttpOnly; Secure; SameSite=Strict"
+          refresh_token:
+            type: string
+            description: JWT refresh token cookie
+            example: "refresh_token=abc...; HttpOnly; Secure; SameSite=Strict"
+
   schemas:
-    User:
+    UserBase:
       type: object
+      description: "Base user information returned from most endpoints"
       properties:
         national_id:
           type: string
-          description: National ID of the user (13 characters).
+          pattern: "^[0-9]{13}$"
+          description: "13-digit Thai national ID"
           example: "1234567890123"
         username:
           type: string
-          description: Username of the user.
-          example: "johndoe"
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          description: "Username"
+          example: "john.doe"
         email:
           type: string
           format: email
-          description: Email address of the user.
-          example: "johndoe@example.com"
-        password:
+          pattern: "^[a-zA-Z0-9@.]*$"
+          description: "Email address"
+          example: "john.doe@example.com"
+        date_of_birth:
           type: string
-          format: password
-          description: Password (this is client-side input only, hashed on the server side).
-          example: "securePassword123"
-        confirm_password:
+          format: date
+          description: "User's birth date in YYYY-MM-DD format"
+          example: "1990-01-01"
+        profile_picture_url:
           type: string
-          format: password
-          description: Password confirmation (must match the password).
-          example: "securePassword123"
-        role:
-          type: string
-          description: Role assigned to the user (auto-assigned, not client-specified).
-          example: "user"
-        member_since:
-          type: string
-          format: date-time
-          description: Date and time when the user was registered (auto-assigned).
-          example: "2024-09-09T10:25:22.650Z"
+          description: "URL to profile picture"
+          example: "http://localhost:3000/api/v0.2/users/profile-picture"
+
+    UserRegistrationRequest:
+      type: object
       required:
         - national_id
         - username
         - email
         - password
         - confirm_password
-    UserResponse:
+      properties:
+        national_id:
+          type: string
+          pattern: "^[0-9]{13}$"
+          description: "13-digit Thai national ID"
+          example: "1234567890123"
+        username:
+          type: string
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "securePassword123"
+        confirm_password:
+          type: string
+          format: password
+          example: "securePassword123"
+        date_of_birth:
+          type: string
+          format: date
+          example: "1990-01-01"
+
+    UserUpdateRequest:
+      type: object
+      description: "Fields that can be updated (all optional)"
+      properties:
+        username:
+          type: string
+          pattern: "^[a-zA-Z0-9_. -]*$"
+          example: "john.doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        date_of_birth:
+          type: string
+          format: date
+          example: "1990-01-01"
+        password:
+          type: string
+          format: password
+          description: "Required when updating user information"
+          example: "oldPass123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "newPass123"
+        newConfirmPassword:
+          type: string
+          format: password
+          example: "newPass123"
+
+    Response:
       type: object
       properties:
+        status_code:
+          type: integer
+          example: 200
         message:
           type: string
           example: "Operation successful"
         data:
-          $ref: "#/components/schemas/User"
+          type: object
+          description: Additional data returned with the response.
+
     ErrorResponse:
       type: object
       properties:
+        status_code:
+          type: integer
+          example: 401
         message:
           type: string
           description: Error message detailing the cause of the error.
           example: "Invalid input data"
+
+    QuotaResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "get quota information success"
+        data:
+          type: object
+          properties:
+            application:
+              type: string
+              example: "EasySlip Developer"
+            usedQuota:
+              type: number
+              example: 16
+            maxQuota:
+              type: number
+              example: 35000
+            remainingQuota:
+              type: number
+              example: 34984
+            expiredAt:
+              type: string
+              format: date-time
+              example: "2024-02-22T18:47:34+07:00"
+            currentCredit:
+              type: number
+              example: 1000
+
+    SlipDataResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Slip verification success"
+        data:
+          type: object
+          properties:
+            payload:
+              type: string
+              example: "00000000000000000000000000000000000000000000000000000000000"
+            transRef:
+              type: string
+              example: "68370160657749I376388B35"
+            date:
+              type: string
+              format: date-time
+              example: "2023-01-01T00:00:00+07:00"
+            countryCode:
+              type: string
+              example: "TH"
+            amount:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  example: 1000
+                local:
+                  type: object
+                  properties:
+                    amount:
+                      type: number
+                      example: 0
+                    currency:
+                      type: string
+                      example: ""
+            fee:
+              type: number
+              example: 0
+            ref1:
+              type: string
+              example: ""
+            ref2:
+              type: string
+              example: ""
+            ref3:
+              type: string
+              example: ""
+            sender:
+              type: object
+              properties:
+                bank:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "001"
+                    name:
+                      type: string
+                      example: "กสิกรไทย"
+                    short:
+                      type: string
+                      example: "KBANK"
+                account:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      properties:
+                        th:
+                          type: string
+                          example: "นาย อีซ่ สลิป"
+                        en:
+                          type: string
+                          example: "MR. EASY SLIP"
+                    bank:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - BANKAC
+                            - TOKEN
+                            - DUMMY
+                          example: "BANKAC"
+                        account:
+                          type: string
+                          example: "1234xxxx5678"
+            receiver:
+              type: object
+              properties:
+                bank:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "030"
+                    name:
+                      type: string
+                      example: "ธนาคารออมสิน"
+                    short:
+                      type: string
+                      example: "GSB"
+                account:
+                  type: object
+                  properties:
+                    name:
+                      type: object
+                      properties:
+                        th:
+                          type: string
+                          example: "นาย อีซี่ สลิป"
+                    bank:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - BANKAC
+                            - TOKEN
+                            - DUMMY
+                          example: "BANKAC"
+                        account:
+                          type: string
+                          example: "12xxxx3456"
+                    proxy:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - NATID
+                            - MSISDN
+                            - EWALLETID
+                            - EMAIL
+                            - BILLERID
+                          example: "EWALLETID"
+                        account:
+                          type: string
+                          example: "123xxxxxxxx4567"
+
+    BankAccount:
+      type: object
+      required:
+        - account_number
+        - fi_code
+        - national_id
+        - display_name
+        - account_name
+        - balance
+      properties:
+        account_number:
+          type: string
+          maxLength: 20
+          pattern: "^[0-9-]*$"
+          description: "Bank account number (format varies by bank)"
+          example: "123-4-56789-0"
+        fi_code:
+          type: string
+          pattern: "^[0-9]{3}$"
+          description: "3-digit financial institution code"
+          example: "004"
+        national_id:
+          type: string
+          maxLength: 255
+          description: "National ID (13 digits for local auth, up to 255 chars for OAuth)"
+          examples:
+            local: "1234567890123"
+            oauth: "109924411411252144189" # Example Google user ID
+        display_name:
+          type: string
+          maxLength: 100
+          description: "Display name for the account"
+          example: "My Savings Account"
+        account_name:
+          type: string
+          maxLength: 100
+          description: "Official account holder name"
+          example: "JOHN DOE"
+        balance:
+          type: string
+          description: "Account balance with 2 decimal places"
+          example: "10000.00"
+
+    BankAccountCreateInput:
+      type: object
+      required:
+        - account_number
+        - fi_code
+        - display_name
+        - account_name
+        - balance
+      properties:
+        account_number:
+          type: string
+          maxLength: 20
+          pattern: "^[0-9-]*$"
+          example: "123-4-56789-0"
+        fi_code:
+          type: string
+          pattern: "^[0-9]{3}$"
+          example: "004"
+        display_name:
+          type: string
+          maxLength: 100
+          example: "My Savings Account"
+        account_name:
+          type: string
+          maxLength: 100
+          example: "JOHN DOE"
+        balance:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+          example: "10000.00"
+
+    BankAccountResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Bank account retrieved successfully"
+        data:
+          type: object
+          properties:
+            account_number:
+              type: string
+              example: "123-4-56789-0"
+            fi_code:
+              type: string
+              example: "004"
+            national_id:
+              type: string
+              example: "1234567890123"
+            display_name:
+              type: string
+              example: "My Savings Account"
+            account_name:
+              type: string
+              example: "JOHN DOE"
+            balance:
+              type: string
+              example: "10000.00"
+
+    BankAccountsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Bank accounts retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BankAccount"
+          example:
+            - account_number: "123-4-56789-0"
+              fi_code: "004"
+              national_id: "1234567890123"
+              display_name: "My Kasikorn Savings"
+              account_name: "JOHN DOE"
+              balance: "10000.00"
+            - account_number: "123-456789-0"
+              fi_code: "014"
+              national_id: "1234567890123"
+              display_name: "My SCB Checking"
+              account_name: "JOHN DOE"
+              balance: "5000.00"
+
+    DebtInput:
+      type: object
+      required:
+        - debt_number
+        - fi_code
+        - debt_name
+        - start_date
+        - total_installments
+        - loan_principle
+        - loan_balance
+      properties:
+        debt_number:
+          type: string
+          description: "Unique debt identifier from financial institution"
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        debt_name:
+          type: string
+          maxLength: 100
+          example: "Car Loan - Toyota Camry"
+        start_date:
+          type: string
+          format: date
+          example: "2023-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 12
+        total_installments:
+          type: integer
+          minimum: 1
+          example: 60
+        loan_principle:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 800000.00
+
+    DebtUpdateInput:
+      type: object
+      properties:
+        current_installment:
+          type: integer
+          minimum: 0
+          example: 13
+        loan_balance:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 780000.00
+
+    Debt:
+      type: object
+      required:
+        - debt_id
+        - fi_code
+        - national_id
+        - debt_name
+        - start_date
+        - current_installment
+        - total_installments
+        - loan_principle
+        - loan_balance
+      properties:
+        debt_id:
+          type: string
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          description: "UUID v4 format"
+          example: "123e4567-e89b-42d3-a456-556642440000"
+        fi_code:
+          type: string
+          maxLength: 20
+          pattern: "^[0-9]*$"
+          description: "Financial institution code (numeric only)"
+          example: "004"
+        national_id:
+          type: string
+          maxLength: 255
+          description: "National ID (13 digits for local auth, up to 255 chars for OAuth)"
+          examples:
+            local: "1234567890123"
+            oauth: "109924411411252144189"
+        debt_name:
+          type: string
+          maxLength: 100
+          description: "Name of the debt"
+          example: "Home Loan"
+        start_date:
+          type: string
+          format: date
+          description: "Start date of the debt"
+          example: "2024-01-01"
+        current_installment:
+          type: integer
+          minimum: 0
+          description: "Current installment number"
+          example: 5
+        total_installments:
+          type: integer
+          minimum: 1
+          description: "Total number of installments"
+          example: 60
+        loan_principle:
+          type: number
+          format: float
+          minimum: 0
+          description: "Original loan amount (2 decimal places)"
+          example: 1000000.00
+        loan_balance:
+          type: number
+          format: float
+          minimum: 0
+          description: "Remaining loan balance (2 decimal places)"
+          example: 950000.00
+
+    DebtResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Debt retrieved successfully"
+        data:
+          $ref: "#/components/schemas/Debt"
+
+    DebtsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Debts retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Debt"
+          example:
+            - debt_id: "123e4567-e89b-42d3-a456-556642440000"
+              fi_code: "004"
+              national_id: "1234567890123"
+              debt_name: "Home Loan"
+              start_date: "2024-01-01"
+              current_installment: 5
+              total_installments: 60
+              loan_principle: 1000000.00
+              loan_balance: 950000.00
+            - debt_id: "987f6543-e21b-42d3-a456-556642440000"
+              fi_code: "014"
+              national_id: "1234567890123"
+              debt_name: "Car Loan"
+              start_date: "2024-02-01"
+              current_installment: 2
+              total_installments: 48
+              loan_principle: 500000.00
+              loan_balance: 485000.00
+
+    FinancialInstitution:
+      type: object
+      required:
+        - fi_code
+      properties:
+        fi_code:
+          type: string
+          description: "3-digit bank code"
+          example: "004"
+          pattern: "^[0-9]{3}$"
+        name_th:
+          type: string
+          description: "Thai bank name"
+          example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+        name_en:
+          type: string
+          description: "English bank name"
+          example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+
+    FinancialInstitutionResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Financial institution retrieved successfully"
+        data:
+          $ref: "#/components/schemas/FinancialInstitution"
+
+    FinancialInstitutionsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Financial institutions retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialInstitution"
+          example:
+            - fi_code: "002"
+              name_th: "ธนาคารกรุงเทพ จำกัด (มหาชน)"
+              name_en: "BANGKOK BANK PUBLIC COMPANY LTD."
+            - fi_code: "004"
+              name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+              name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+            - fi_code: "006"
+              name_th: "ธนาคารกรุงไทย จำกัด (มหาชน)"
+              name_en: "KRUNG THAI BANK PUBLIC COMPANY LTD."
+            - fi_code: "014"
+              name_th: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+              name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
+
+    GoogleCallbackResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+        data:
+          oneOf:
+            - type: object # Web platform response for register
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+              example:
+                user:
+                  national_id: "109924411411252144189" # Google user ID
+                  email: "john.doe@gmail.com"
+                  username: "John Doe"
+                  profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+            - type: object # Mobile platform response for register
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+              example:
+                user:
+                  national_id: "109924411411252144189"
+                  email: "john.doe@gmail.com"
+                  username: "John Doe"
+                  profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+            - type: object # Web platform response for login
+              example: null # Web login only sets cookies, no data in response
+            - type: object # Mobile platform response for login
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+                tokens:
+                  type: object
+                  properties:
+                    access_token:
+                      type: string
+                    refresh_token:
+                      type: string
+              example:
+                user:
+                  national_id: "109924411411252144189"
+                  email: "john.doe@gmail.com"
+                  username: "John Doe"
+                  profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+                tokens:
+                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      examples:
+        web_register:
+          value:
+            status_code: 201
+            message: "User registered successfully with Google"
+            data:
+              user:
+                national_id: "109924411411252144189"
+                email: "john.doe@gmail.com"
+                username: "John Doe"
+                profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+        mobile_register:
+          value:
+            status_code: 201
+            message: "User registered successfully with Google, please try to login. to get access_token and refresh_token"
+            data:
+              user:
+                national_id: "109924411411252144189"
+                email: "john.doe@gmail.com"
+                username: "John Doe"
+                profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+        web_login:
+          value:
+            status_code: 200
+            message: "Logged in successfully with Google"
+            data: null
+        mobile_login:
+          value:
+            status_code: 200
+            message: "Logged in successfully with Google, store the token in secure storage, send access_token along with requests in authorization header when need to access protected resources. use refresh_token to get a new access_token when the current one expired."
+            data:
+              user:
+                national_id: "109924411411252144189"
+                email: "john.doe@gmail.com"
+                username: "John Doe"
+                profile_picture_url: "https://lh3.googleusercontent.com/a/profile-picture"
+              tokens:
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    TransactionInput:
+      type: object
+      required:
+        - transaction_datetime
+        - category
+        - type
+        - amount
+      properties:
+        transaction_datetime:
+          type: string
+          format: date-time
+          example: "2024-03-15T10:30:00Z"
+        category:
+          type: string
+          enum: ["Income", "Expense", "Transfer"]
+          example: "Income"
+        type:
+          type: string
+          maxLength: 20
+          example: "Salary"
+        amount:
+          type: number
+          format: float
+          example: 50000.00
+        note:
+          type: string
+          example: "Monthly salary"
+        sender:
+          type: object
+          properties:
+            account_number:
+              type: string
+              example: "1234567890"
+            fi_code:
+              type: string
+              pattern: "^[0-9]{3}$"
+              example: "004"
+          required:
+            - account_number
+            - fi_code
+        receiver:
+          type: object
+          properties:
+            account_number:
+              type: string
+              example: "0987654321"
+            fi_code:
+              type: string
+              pattern: "^[0-9]{3}$"
+              example: "004"
+          required:
+            - account_number
+            - fi_code
+        debt_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-42d3-a456-556642440000"
+      examples:
+        income_salary:
+          summary: Income from salary
+          value:
+            transaction_datetime: "2024-03-15T10:30:00Z"
+            category: "Income"
+            type: "Salary"
+            amount: 50000.00
+            note: "Monthly salary from company"
+            receiver:
+              account_number: "1234567890"
+              fi_code: "004"
+        expense_shopping:
+          summary: Expense for shopping
+          value:
+            transaction_datetime: "2024-03-15T14:20:00Z"
+            category: "Expense"
+            type: "Shopping"
+            amount: 2500.50
+            note: "Grocery shopping at Central"
+            sender:
+              account_number: "1234567890"
+              fi_code: "004"
+        transfer_between_accounts:
+          summary: Transfer between own accounts
+          value:
+            transaction_datetime: "2024-03-15T16:45:00Z"
+            category: "Transfer"
+            type: "Transfer"
+            amount: 10000.00
+            note: "Transfer to savings account"
+            sender:
+              account_number: "1234567890"
+              fi_code: "004"
+            receiver:
+              account_number: "0987654321"
+              fi_code: "014"
+        debt_payment:
+          summary: Debt payment
+          value:
+            transaction_datetime: "2024-03-15T09:00:00Z"
+            category: "Expense"
+            type: "Debt Payment"
+            amount: 15000.00
+            note: "Monthly home loan payment"
+            sender:
+              account_number: "1234567890"
+              fi_code: "004"
+            debt_id: "123e4567-e89b-42d3-a456-556642440000"
+
+    TransactionUpdateInput:
+      type: object
+      properties:
+        transaction_datetime:
+          type: string
+          format: date-time
+          example: "2024-03-15T10:30:00Z"
+        category:
+          type: string
+          enum: ["Income", "Expense"]
+          example: "Income"
+        type:
+          type: string
+          maxLength: 20
+          example: "Salary"
+        amount:
+          type: number
+          format: float
+          example: 50000.00
+        note:
+          type: string
+          example: "Monthly salary"
+        debt_number:
+          type: string
+          maxLength: 50
+          example: "LOAN2024001"
+        fi_code:
+          type: string
+          pattern: "^[0-9]{3}$"
+          example: "004"
+
+    Transaction:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          example: "123e4567-e89b-42d3-a456-556642440000"
+        transaction_datetime:
+          type: string
+          format: date-time
+          example: "2024-03-15T10:30:00Z"
+        category:
+          type: string
+          enum: ["Income", "Expense", "Transfer"]
+          example: "Income"
+        type:
+          type: string
+          example: "Salary"
+        amount:
+          type: number
+          format: float
+          example: 50000.00
+        note:
+          type: string
+          example: "Monthly salary"
+        national_id:
+          type: string
+          example: "1234567890123"
+        sender:
+          type: object
+          properties:
+            account_number:
+              type: string
+              example: "123-4-56789-0"
+            fi_code:
+              type: string
+              example: "004"
+            display_name:
+              type: string
+              example: "My Savings Account"
+            account_name:
+              type: string
+              example: "JOHN DOE"
+            bank_name_en:
+              type: string
+              example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+            bank_name_th:
+              type: string
+              example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+        receiver:
+          type: object
+          properties:
+            account_number:
+              type: string
+              example: "987-6-54321-0"
+            fi_code:
+              type: string
+              example: "014"
+            display_name:
+              type: string
+              example: "My SCB Account"
+            account_name:
+              type: string
+              example: "JOHN DOE"
+            bank_name_en:
+              type: string
+              example: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
+            bank_name_th:
+              type: string
+              example: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+
+    TransactionResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Transaction retrieved successfully"
+        data:
+          type: object
+          properties:
+            transaction_id:
+              type: string
+              format: uuid
+              pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+              example: "123e4567-e89b-42d3-a456-556642440000"
+            transaction_datetime:
+              type: string
+              format: date-time
+              example: "2024-03-15T10:30:00Z"
+            category:
+              type: string
+              enum: ["Income", "Expense", "Transfer"]
+              example: "Income"
+            type:
+              type: string
+              example: "Salary"
+            amount:
+              type: number
+              format: float
+              example: 50000.00
+            note:
+              type: string
+              example: "Monthly salary"
+            national_id:
+              type: string
+              example: "1234567890123"
+            sender:
+              type: object
+              properties:
+                account_number:
+                  type: string
+                  example: "123-4-56789-0"
+                fi_code:
+                  type: string
+                  example: "004"
+                display_name:
+                  type: string
+                  example: "My Savings Account"
+                account_name:
+                  type: string
+                  example: "JOHN DOE"
+                bank_name_en:
+                  type: string
+                  example: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+                bank_name_th:
+                  type: string
+                  example: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+            receiver:
+              type: object
+              properties:
+                account_number:
+                  type: string
+                  example: "987-6-54321-0"
+                fi_code:
+                  type: string
+                  example: "014"
+                display_name:
+                  type: string
+                  example: "My SCB Account"
+                account_name:
+                  type: string
+                  example: "JOHN DOE"
+                bank_name_en:
+                  type: string
+                  example: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
+                bank_name_th:
+                  type: string
+                  example: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+
+    TransactionsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Transactions retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+          example:
+            - transaction_id: "123e4567-e89b-42d3-a456-556642440000"
+              transaction_datetime: "2024-03-15T10:30:00Z"
+              category: "Income"
+              type: "Salary"
+              amount: 50000.00
+              note: "Monthly salary"
+              national_id: "1234567890123"
+              receiver:
+                account_number: "123-4-56789-0"
+                fi_code: "004"
+                display_name: "My Savings Account"
+                account_name: "JOHN DOE"
+                bank_name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+                bank_name_th: "ธนาคารกสิกรไทย จำกัด (มหาชน)"
+            - transaction_id: "987f6543-e21b-42d3-a456-556642440000"
+              transaction_datetime: "2024-03-15T11:00:00Z"
+              category: "Transfer"
+              type: "Transfer"
+              amount: 10000.00
+              note: "Transfer to SCB"
+              national_id: "1234567890123"
+              sender:
+                account_number: "123-4-56789-0"
+                fi_code: "004"
+                display_name: "My Savings Account"
+                account_name: "JOHN DOE"
+                bank_name_en: "KASIKORNBANK PUBLIC COMPANY LIMITED"
+                bank_name_th: "ธ��าคารกสิกรไทย จำกัด (มหาชน)"
+              receiver:
+                account_number: "987-6-54321-0"
+                fi_code: "014"
+                display_name: "My SCB Account"
+                account_name: "JOHN DOE"
+                bank_name_en: "SIAM COMMERCIAL BANK PUBLIC COMPANY LTD."
+                bank_name_th: "ธนาคารไทยพาณิชย จำกัด (มหาชน)"
+
+    BudgetResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budget operation successful"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "123e4567-e89b-12d3-a456-426614174000"
+            national_id:
+              type: string
+              example: "1234567890123"
+            expense_type:
+              type: string
+              example: "FOOD"
+            monthly_limit:
+              type: number
+              example: 5000
+            current_spending:
+              type: number
+              example: 2500
+            month:
+              type: string
+              format: date
+              example: "2024-03-01"
+
+    BudgetsListResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Budgets retrieved successfully"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetResponse/properties/data"
+          example:
+            - id: "123e4567-e89b-12d3-a456-426614174000"
+              national_id: "1234567890123"
+              expense_type: "FOOD"
+              monthly_limit: 5000
+              current_spending: 2500
+              month: "2024-03-01"
+            - id: "987f6543-e21b-42d3-a456-556642440000"
+              national_id: "1234567890123"
+              expense_type: "ENTERTAINMENT"
+              monthly_limit: 3000
+              current_spending: 1500
+              month: "2024-03-01"
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 400
+            message: "Invalid input data"
+
+    Unauthorized:
+      description: Unauthorized
+      headers:
+        Set-Cookie:
+          $ref: "#/components/headers/SetCookieAuth"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 401
+            message: "Authentication required"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 404
+            message: "Resource not found"
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 409
+            message: "Resource already exists"
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 500
+            message: "An unexpected error occurred"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status_code: 403
+            message: "You are not allowed to access this resource"

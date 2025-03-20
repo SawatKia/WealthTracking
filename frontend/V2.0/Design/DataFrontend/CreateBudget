@@ -1,0 +1,20 @@
+sequenceDiagram
+  participant User
+  participant CreateBudget
+  participant SelectExpenseTypeModal
+  participant BudgetService
+  participant Router
+
+  User->>CreateBudget: Open Create Budget Screen
+  CreateBudget->>User: Display Category and Amount Input
+  User->>CreateBudget: Select Category
+  CreateBudget->>SelectExpenseTypeModal: Open Modal to Select Category
+  SelectExpenseTypeModal-->>CreateBudget: Return Selected Category
+
+  User->>CreateBudget: Enter Amount
+  User->>CreateBudget: Press Save Button
+  CreateBudget->>BudgetService: Create Budget with selectedCategory and amount
+  BudgetService-->>CreateBudget: Return Confirmation
+
+  CreateBudget->>Router: Navigate to Budget Screen
+  Router-->>User: Display Updated Budget List

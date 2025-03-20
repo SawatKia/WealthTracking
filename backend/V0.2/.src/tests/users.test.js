@@ -1,369 +1,581 @@
-const request = require('supertest');
-const app = require('../app');
+const request = require("supertest");
 
-const { test } = require('../configs/dbConfigs');
-const PgClient = require('../models/PgClient');
+const pgClient = require("../services/PgClient");
+const FinancialInstitutionModel = require("../models/FinancialInstitutionModel");
 
-const db = new PgClient(test);
+const { app } = require("../app");
+const { Logger } = require("../utilities/Utils");
+const logger = Logger("users.test");
 
-beforeAll(async () => {
-    await db.init();
+// Mock user for authentication
+const mockUser = {
+  national_id: "0000000000099",
+  username: "testuser",
+  email: "test@example.com",
+  password: "Password123!",
+  confirm_password: "Password123!",
+  date_of_birth: "1990-01-01"
+};
 
-    // Create tables if they don't exist
-    await db.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            national_id CHAR(13) PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            username VARCHAR(50) NOT NULL,
-            hashed_password VARCHAR(255) NOT NULL,
-            role VARCHAR(20) NOT NULL,
-            member_since TIMESTAMP NOT NULL,
-            CONSTRAINT check_national_id_length CHECK (LENGTH(national_id) = 13)
-        );
+describe("Users Endpoints", () => {
+  let accessToken;
 
-        CREATE TABLE IF NOT EXISTS financial_institutions (
-            fi_code VARCHAR(20) PRIMARY KEY,
-            name_th VARCHAR(255) NOT NULL,
-            name_en VARCHAR(255) NOT NULL
-        );
+  beforeAll(async () => {
+    await pgClient.cleanup();
+    await pgClient.init();
+    logger.debug("initialized finished")
+    logger.info(`Database connected: ${await pgClient.isConnected()}`);
 
-        CREATE TABLE IF NOT EXISTS bank_accounts (
-            account_number VARCHAR(20) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            national_id CHAR(13) NOT NULL,
-            display_name VARCHAR(100) NOT NULL,
-            account_name VARCHAR(100) NOT NULL,
-            balance DECIMAL(15, 2) NOT NULL,
-            PRIMARY KEY (account_number, fi_code),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
-                ON UPDATE CASCADE ON DELETE CASCADE
-        );
+    await pgClient.truncateTables();
+    logger.info(`All rows deleted from tables`);
 
-        CREATE TABLE IF NOT EXISTS debts (
-            debt_number VARCHAR(50) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            national_id CHAR(13) NOT NULL,
-            debt_name VARCHAR(100) NOT NULL,
-            start_date DATE NOT NULL,
-            current_installment INT NOT NULL,
-            total_installments INT NOT NULL,
-            loan_principle DECIMAL(15, 2) NOT NULL,
-            loan_balance DECIMAL(15, 2) NOT NULL,
-            PRIMARY KEY (debt_number, fi_code),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (fi_code) REFERENCES financial_institutions(fi_code) 
-                ON UPDATE CASCADE ON DELETE CASCADE
-        );
+    const fiModel = new FinancialInstitutionModel();
+    await fiModel.initializeData();
+    logger.info("FI data initialized successfully");
 
-        CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id SERIAL PRIMARY KEY,
-            transaction_datetime TIMESTAMP NOT NULL,
-            category VARCHAR(50) NOT NULL,
-            type VARCHAR(20) NOT NULL,
-            amount DECIMAL(15, 2) NOT NULL,
-            note TEXT,
-            national_id CHAR(13) NOT NULL,
-            debt_number VARCHAR(50),
-            fi_code VARCHAR(20),
-            FOREIGN KEY (national_id) REFERENCES users(national_id),
-            FOREIGN KEY (debt_number, fi_code) REFERENCES debts(debt_number, fi_code) 
-                ON UPDATE CASCADE ON DELETE CASCADE
-        );
+    // Register initial test user
+    await request(app)
+      .post("/api/v0.2/users")
+      .send(mockUser);
 
-        CREATE TABLE IF NOT EXISTS transaction_bank_account_relations (
-            transaction_id INT NOT NULL,
-            account_number VARCHAR(20) NOT NULL,
-            fi_code VARCHAR(20) NOT NULL,
-            role VARCHAR(20) NOT NULL,
-            PRIMARY KEY (account_number, fi_code, transaction_id),
-            FOREIGN KEY (account_number, fi_code) REFERENCES bank_accounts(account_number, fi_code) 
-                ON UPDATE CASCADE ON DELETE CASCADE,
-            FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) 
-                ON UPDATE CASCADE ON DELETE SET NULL
-        );
-    `);
-});
+    // Login to get access token
+    const loginResponse = await request(app)
+      .post("/api/v0.2/login?platform=mobile")
+      .send({
+        email: mockUser.email,
+        password: mockUser.password
+      });
 
-afterAll(async () => {
-    // Cleanup the database after tests by deleting all rows from all tables
-    const tables = ["users", "financial_institutions", "bank_accounts", "debts", "transactions", "transaction_bank_account_relations"];
-    for (const table of tables) {
-        await db.query(`DELETE FROM ${table};`);
-    }
-    await db.release();
-});
+    accessToken = loginResponse.body.data.tokens.access_token;
+    logger.debug(`Access token obtained: ${accessToken}`);
+  }, 30000);
 
-describe('API Endpoints', () => {
-    describe('GET /api/v0.2/', () => {
-        it('should return 200 OK formatted message', async () => {
-            const response = await request(app)
-                .get('/api/v0.2/')
-                .expect(200);
-
-            expect(response.statusCode).toBe(200)
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 200);
-            expect(response.body).toHaveProperty('message', 'you are connected to the /api/v0.2');
-        });
-    });
-
-    //TODO - test several format of input by using array of objects instead of create seperate test case
-    const newUserBody = [
-        {
-            "national_id": "32109876543",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// id < 13
-        {
-            "national_id": "3210987654321567",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// id > 13
-        {
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// missing national_id fleld
-        {
-            "national_id": "3210987654321",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// missing username field
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// missing email field
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "confirm_password": "Password123!"
-        },// missing password field
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-        },// missing confirm_password field
-        {
-            "national_id": "",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!",
-        },// missing national_id value
-        {
-            "national_id": "3210987654321",
-            "username": "",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// missing username value
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// missing email value
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "",
-            "confirm_password": "Password123!"
-        },// missing password value
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": ""
-        },// missing confirm_password value
-        {},// missing all fields
-        {
-            "national_id": "esdrfy786",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// invalid national_id
-        {
-            "national_id": "3210987654321",
-            "username": "testuser123<>?",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// invalid username
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com123",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },// invalid email
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!123"
-        },// mis match confirm_password
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        },//success
-        {
-            "national_id": "3210987654321",
-            "username": "testuser",
-            "email": "testii@example.com",
-            "password": "Password123!",
-            "confirm_password": "Password123!"
-        }//duplicate key value
+  describe("Create User Tests", () => {
+    const createUserCases = [
+      {
+        testName: "successful user creation",
+        body: {
+          national_id: "0000000000017",
+          username: "testuser2",
+          email: "test2@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01"
+        },
+        expected: {
+          status: 201,
+          message: "User created successfully"
+        }
+      },
+      {
+        testName: "id < 13 digits",
+        body: {
+          national_id: "32109876543",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01"
+        },
+        expected: {
+          status: 400,
+          message: "Local auth national ID must be 13 digit characters"
+        }
+      },
+      {
+        testName: "id > 13",
+        body: {
+          national_id: "3210987654321567",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Local auth national ID must be 13 digit characters",
+        }
+      },
+      {
+        testName: "missing national_id field",
+        body: {
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: national_id",
+        }
+      },
+      {
+        testName: "missing username field",
+        body: {
+          national_id: "0000000000000",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: username",
+        }
+      }, // missing username field
+      {
+        testName: "missing email field",
+        body: {
+          national_id: "0000000000001",
+          username: "testuser",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: email",
+        }
+      }, // missing email field
+      {
+        testName: "missing password field",
+        body: {
+          national_id: "0000000000002",
+          username: "testuser",
+          email: "testii@example.com",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: password",
+        }
+      }, // missing password field
+      {
+        testName: "missing confirm_password field",
+        body: {
+          national_id: "0000000000003",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: confirm_password",
+        }
+      }, // missing confirm_password field
+      {
+        testName: "missing all fields",
+        body: {},
+        expected: {
+          status: 400,
+          message: "Missing required field: national_id",
+        }
+      }, // missing all fields
+      {
+        testName: "empty national_id value",
+        body: {
+          national_id: "",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: national_id",
+        }
+      }, // empty national_id value
+      {
+        testName: "empty username value",
+        body: {
+          national_id: "0000000000004",
+          username: "",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: username",
+        }
+      }, // empty username value
+      {
+        testName: "empty email value",
+        body: {
+          national_id: "0000000000005",
+          username: "testuser",
+          email: "",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: email",
+        }
+      }, // empty email value
+      {
+        testName: "empty password value",
+        body: {
+          national_id: "0000000000006",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: password",
+        }
+      }, // empty password value
+      {
+        testName: "empty confirm_password value",
+        body: {
+          national_id: "0000000000007",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: confirm_password",
+        }
+      }, // empty confirm_password value
+      {
+        testName: "all field empty",
+        body: {
+          national_id: "",
+          username: "",
+          email: "",
+          password: "",
+          confirm_password: "",
+          date_of_birth: "",
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: national_id",
+        }
+      }, // all field empty
+      {
+        testName: "invalid national_id",
+        body: {
+          national_id: "esdrfy786",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Local auth national ID must be 13 digit characters",
+        }
+      }, // invalid national_id
+      {
+        testName: "invalid username",
+        body: {
+          national_id: "0000000000008",
+          username: "testuser123<>?",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Invalid username",
+        }
+      }, // invalid username
+      {
+        testName: "invalid email",
+        body: {
+          national_id: "0000000000009",
+          username: "testuser",
+          email: "testii@example.com123",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Invalid email address",
+        }
+      }, // invalid email
+      {
+        testName: "invalid password < 8",
+        body: {
+          national_id: "0000000000010",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "12345",
+          confirm_password: "12345",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Password must be at least 8 characters long",
+        }
+      }, // invalid password < 8
+      {
+        testName: "mis match confirm_password",
+        body: {
+          national_id: "0000000000011",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!123",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 400,
+          message: "Passwords do not match",
+        }
+      }, // mis match confirm_password
+      {
+        testName: "invalid date_of_birth format",
+        body: {
+          national_id: "0000000000016",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "not-a-date",
+        },
+        expected: {
+          status: 400,
+          message: "Invalid date of birth",
+        }
+      }, // invalid date_of_birth format
+      {
+        testName: "email already exists",
+        body: {
+          national_id: "0000000000017",
+          username: "testuser",
+          email: "testii@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 409,
+          message: "national_id or email are already taken",
+        }
+      },
+      {
+        testName: "national_id already exists",
+        body: {
+          national_id: "0000000000017",
+          username: "testuser",
+          email: "test2@example.com",
+          password: "Password123!",
+          confirm_password: "Password123!",
+          date_of_birth: "1990-01-01",
+        },
+        expected: {
+          status: 409,
+          message: "national_id or email are already taken",
+        }
+      },
     ];
-    const checkPassBody = [
-        { email: "testii@example.com" },// missing password field
-        { password: "Password123!" },// missing email field
-        { email: "", password: "Password123!" },// missing email value
-        { email: "testii@example.com", password: "" },// missing password value
-        { email: "testii@example.com", password: "Password123!123" },// incorrect password
-        { email: "testii@example.com", password: "Password123!" },//success
-        { email: "", password: "" },// missing both value
-        {}, // missing all fields
-        { email: "testii@example.com123", password: "Password123!" },// invalid email
+
+    createUserCases.forEach((testCase, index) => {
+      test(`${index + 1}: ${testCase.testName}`, async () => {
+        logger.info(`Running create user test ${index + 1}: ${testCase.testName}`);
+
+        const response = await request(app)
+          .post("/api/v0.2/users")
+          .send(testCase.body);
+
+        expect(response.status).toBe(testCase.expected.status);
+        expect(response.body.message).toBe(testCase.expected.message);
+
+        if (testCase.expected.status === 201) {
+          expect(response.body.data).toBeDefined();
+        }
+      });
+    });
+  });
+
+  describe("Update User Tests", () => {
+    const updateUserCases = [
+      {
+        testName: "missing password",
+        body: {
+          email: "newemail@example.com"
+        },
+        expected: {
+          status: 400,
+          message: "Missing required field: password"
+        }
+      },
+      {
+        testName: "incorrect current password",
+        body: {
+          password: "WrongPassword123!",
+          email: "newemail@example.com"
+        },
+        expected: {
+          status: 401,
+          message: "Invalid email or password"
+        }
+      },
+      {
+        testName: "invalid new email format",
+        body: {
+          password: "Password123!",
+          email: "invalid.email@com"
+        },
+        expected: {
+          status: 400,
+          message: "Invalid email"
+        }
+      },
+      {
+        testName: "empty update fields",
+        body: {
+          password: "Password123!",
+          email: "",
+          username: "",
+          date_of_birth: ""
+        },
+        expected: {
+          status: 400,
+          message: "At least one field is required to update user information"
+        }
+      },
+      {
+        testName: "success update email",
+        body: {
+          password: "Password123!",
+          email: "updated@example.com"
+        },
+        expected: {
+          status: 200,
+          message: "User updated successfully",
+          data: {
+            email: "updated@example.com"
+          }
+        }
+      },
+      {
+        testName: "success update multiple fields",
+        body: {
+          password: "Password123!",
+          username: "updateduser",
+          date_of_birth: "1995-01-01"
+        },
+        expected: {
+          status: 200,
+          message: "User updated successfully",
+          data: {
+            username: "updateduser",
+            date_of_birth: "1995-01-01"
+          }
+        }
+      },
+      {
+        testName: "mismatched new passwords",
+        body: {
+          password: "Password123!",
+          newPassword: "NewPassword123!",
+          newConfirmPassword: "DifferentPassword123!"
+        },
+        expected: {
+          status: 400,
+          message: "newPassword and newConfirmPassword do not match"
+        }
+      },
+      {
+        testName: "change password",
+        body: {
+          password: "Password123!",
+          newPassword: "NewPassword123!",
+          newConfirmPassword: "NewPassword123!"
+        },
+        expected: {
+          status: 200,
+          message: "User updated successfully"
+        }
+      },
     ];
-    describe('POST /api/v0.2/users', () => {
-        it('should create a user and return 201 Created', async () => {
-            const newUser = {
-                "national_id": "3210987654321",
-                "username": "testuser",
-                "email": "testii@example.com",
-                "password": "Password123!",
-                "confirm_password": "Password123!"
-            };
 
-            const response = await request(app)
-                .post('/api/v0.2/users')
-                .send(newUser)
-                .expect(201);
+    updateUserCases.forEach((testCase, index) => {
+      test(`${index + 1}: ${testCase.testName}`, async () => {
+        logger.info(`Running update user test ${index + 1}: ${testCase.testName}`);
 
-            expect(response.statusCode).toBe(201)
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 201);
-            expect(response.body).toHaveProperty('message', 'User created successfully');
-            expect(response.body.data).toHaveProperty('national_id', '3210987654321');
-            expect(response.body.data).toHaveProperty('email', 'testii@example.com');
-        });
+        const response = await request(app)
+          .patch("/api/v0.2/users")
+          .set("Authorization", `Bearer ${accessToken}`)
+          .send(testCase.body);
 
-        it('should return 400 Bad Request if required fields are missing', async () => {
-            const response = await request(app)
-                .post('/api/v0.2/users')
-                .send({})  // Empty object to simulate missing fields
-                .expect(400);
+        expect(response.status).toBe(testCase.expected.status);
+        expect(response.body.message).toBe(testCase.expected.message);
 
-            expect(response.statusCode).toBe(400)
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 400);
-            expect(response.body).toHaveProperty('message', 'Missing required field: national_id');
-        });
-
-        it('should return 409 Conflict if national_id already exists', async () => {
-            const response = await request(app)
-                .post('/api/v0.2/users')
-                .send({
-                    "national_id": "1234567890123",  // Simulating existing national_id
-                    "username": "newuser",
-                    "email": "existingemail@example.com",
-                    "password": "ValidPass123!",
-                    "confirm_password": "ValidPass123!"
-                })
-                .expect(409);
-
-            expect(response.statusCode).toBe(409);
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 409);
-            expect(response.body).toHaveProperty('message', 'national_id or email are already taken');
-        });
-
-        it('should fail if password and confirm_password do not match', async () => {
-            const response = await request(app)
-                .post('/api/v0.2/users')
-                .send({
-                    "national_id": "1234567890123",
-                    "username": "newuser",
-                    "email": "newuser@example.com",
-                    "password": "ValidPass123!",
-                    "confirm_password": "DifferentPass123!"
-                })
-                .expect(400);
-
-            expect(response.statusCode).toBe(400);
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 400);
-            expect(response.body).toHaveProperty('message', 'Passwords do not match');
-        });
+        if (testCase.expected.data) {
+          expect(response.body.data).toMatchObject(testCase.expected.data);
+        }
+      });
     });
+  });
 
-    describe('POST /api/v0.2/users/check', () => {
-        it('should return 200 OK for a valid password check', async () => {
-            const checkData = {
-                "email": "johndoe@example.com",
-                "password": "Password123!"
-            };
+  describe("Delete User Tests", () => {
+    const deleteUserCases = [
+      {
+        testName: "missing password",
+        body: {},
+        expected: {
+          status: 400,
+          message: "Missing required field: password"
+        }
+      },
+      {
+        testName: "incorrect password",
+        body: {
+          password: "WrongPassword123!"
+        },
+        expected: {
+          status: 401,
+          message: "Invalid email or password"
+        }
+      },
+      {
+        testName: "success delete",
+        body: {
+          password: "NewPassword123!"
+        },
+        expected: {
+          status: 200,
+          message: "User deleted successfully"
+        }
+      }
+    ];
 
-            const response = await request(app)
-                .post('/api/v0.2/users/check')
-                .send(checkData)
-                .expect(200);
+    deleteUserCases.forEach((testCase, index) => {
+      test(`${index + 1}: ${testCase.testName}`, async () => {
+        logger.info(`Running delete user test ${index + 1}: ${testCase.testName}`);
 
-            expect(response.statusCode).toBe(200);
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 200);
-            expect(response.body).toHaveProperty('message', 'Password check successful');
-            expect(response.body.data).toBe(true);
-        });
+        const response = await request(app)
+          .delete("/api/v0.2/users")
+          .set("Authorization", `Bearer ${accessToken}`)
+          .send(testCase.body);
 
-        it('should return 401 Unauthorized if password is incorrect', async () => {
-            const response = await request(app)
-                .post('/api/v0.2/users/check')
-                .send({
-                    "email": "johndoe@example.com",
-                    "password": "WrongPassword123!"
-                })
-                .expect(401);
-
-            expect(response.statusCode).toBe(401);
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 401);
-            expect(response.body).toHaveProperty('message', 'Invalid email or password');
-        });
-
-        it('should return 400 Bad Request if required fields are missing', async () => {
-            const response = await request(app)
-                .post('/api/v0.2/users/check')
-                .send({})  // Empty object to simulate missing fields
-                .expect(400);
-
-            expect(response.statusCode).toBe(400);
-            expect(response.headers['content-type']).toEqual(expect.stringContaining("json"))
-            expect(response.body).toHaveProperty('status_code', 400);
-            expect(response.body).toHaveProperty('message', 'Missing required field: email');
-        });
+        expect(response.status).toBe(testCase.expected.status);
+        expect(response.body.message).toBe(testCase.expected.message);
+      });
     });
+  });
 
-    afterAll(async () => {
-        jest.clearAllTimers();
-    });
+  afterAll(async () => {
+    await pgClient.release();
+    logger.debug(`Database disconnected: ${await !pgClient.isConnected()}`);
+  });
 });

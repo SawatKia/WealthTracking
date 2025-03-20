@@ -1,0 +1,36 @@
+# Use node:20-alpine as the base image
+FROM node:20-alpine
+
+# Set up the environment variables
+ARG APP_DOMAIN
+ARG APP_PORT
+ARG NODE_ENV
+
+# # Create a user and group to avoid running as root
+# RUN apk add --no-cache curl && addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Install curl for healthcheck only
+RUN apk update && apk add --no-cache curl
+
+# Set the working directory inside the container
+WORKDIR /usr/src/${APP_DOMAIN}
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy the required directories
+COPY statics ./statics
+COPY sql ./sql
+
+# Copy the already built dist directory (if exists)
+COPY dist ./dist
+
+# # Change to non-root user for security reasons
+# USER appuser
+
+# Expose the application port
+EXPOSE ${APP_PORT}
+
+# Start the application
+CMD ["npm", "run", "start"]

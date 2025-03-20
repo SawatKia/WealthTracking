@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import AccountCard from "../../components/AccountCard"
@@ -22,10 +23,31 @@ const transactions = [
   { id: 7, category: "Transfer", description: "Transfer", amount: 1000, type: "Transfer", date: "22 Feb 2024", time: "18:00 PM", fromAccount: "Account A", endBalance: 1000500 },
 ];
 
+=======
+import React, { useState, useEffect,useCallback } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import AccountCard from "../../components/AccountCard"
+import DropdownButton from "../../components/CategoryDropdown";
+import TransactionCard from "../../components/TransactionCard";
+import { Ionicons} from "@expo/vector-icons"; 
+import { useRouter, useFocusEffect } from 'expo-router';
+
+import { Account, useAccount } from "@/services/AccountService"; 
+
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// import TransactionDetails from '@components/';
+// const accounts = [
+//   { name: "Account A", balance: 1000000, lastUpdated: "Today, 18:00 PM" },
+//   { name: "Account B", balance: 500000, lastUpdated: "Yesterday, 15:00 PM" },
+//   { name: "Account C", balance: 2000, lastUpdated: "Yesterday, 15:00 PM" },
+// ];
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
 
 // export default function DebtScreen() {
   export default function IncomeExpenses () {
   const router = useRouter();
+<<<<<<< HEAD
   const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("Expense");
   const [currentIndex, setCurrentIndex] = useState(0);
   
@@ -45,11 +67,70 @@ const transactions = [
     console.log(filterLst)
     setFilteredTransactions(filterLst)
   }, [transactions, selectedType])
+=======
+  const { getAllAccounts } = useAccount();
+  const [selectedType, setSelectedType] = useState<"Income" | "Expense" | "Transfer" | "All">("All");
+  const [bankAccounts, setBankAccounts] = useState<Account[]>([]); 
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        const accounts = await getAllAccounts();
+        console.log("Fetched Accounts:", accounts);
+        setBankAccounts(accounts);
+      };
+  
+      fetchData();
+    }, [])
+  );
+
+  // useEffect(() => {
+  //     const fetchDataAccountInEx = async () => {
+  //       try {
+  //         // Transform API data into items format for the dropdown
+  //         const data = await getAllAccounts()
+  //         setBankAccounts(data)
+  //         console.log('account bank : ',bankAccounts)
+
+  
+  //       } catch (error) {
+  //         console.error("Error fetching data:", error);
+  //       }
+  //     };
+  
+  //     fetchDataAccountInEx();
+  //   }, []);
+
+  // const handleSwipe = (direction: 'Left' | 'Right') => {
+  //   if (direction === 'Left') {
+  //     setCurrentIndex((prevIndex) => (prevIndex + 1) % accounts.length);
+  //   } else if (direction === 'Right') {
+  //     setCurrentIndex((prevIndex) => (prevIndex - 1 + accounts.length) % accounts.length);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     try {
+  //       // const res = await getAllTransactions();
+        
+  //       setTransactions(res.data.transactions || []);
+  //     } catch (error) {
+  //       console.error('Failed to load transaction:', error);
+  //     }
+  //   };
+
+  //   fetchUsers();
+  // }, []);
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
   const [showAddPopup, setAddshowAddPopup] = useState(false);
 
   return (
     <View style={styles.container}>
 
+<<<<<<< HEAD
       <GestureHandlerRootView style={styles.accountContainer}>
         <AccountCard
           account={accounts[currentIndex]}
@@ -72,6 +153,20 @@ const transactions = [
 />
  
 
+=======
+    {bankAccounts.length > 0 ? (
+          <AccountCard account={bankAccounts} />
+        ) : (
+          <Text>Loading...</Text>
+        )}
+
+      {/* <GestureHandlerRootView style={styles.accountContainer}>
+      </GestureHandlerRootView> */}
+      <DropdownButton selectedType={selectedType} onSelect={setSelectedType} />
+      
+      <TransactionCard selected = {selectedType}/>
+ 
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
       {/* Floating Button */}
       {showAddPopup && (
         <View style={styles.popup}>
@@ -88,16 +183,25 @@ const transactions = [
           </TouchableOpacity>
           
           <TouchableOpacity
+<<<<<<< HEAD
             style={[styles.link, {backgroundColor: '#7F8CD9'}]} 
             onPress={() => {
               setAddshowAddPopup(false);
               console.log('Navigate to Page 2');
   
               // Add your navigation logic here
+=======
+            style={[styles.link, {backgroundColor: '#7F8CD9', borderBottomLeftRadius:8, 
+              borderBottomRightRadius:8 }]} 
+            onPress={() => {
+              setAddshowAddPopup(false);
+              router.push('/UploadSlip')
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
             }}
           >
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Create Transaction{"\n"}By Slip</Text>
             </TouchableOpacity>
+<<<<<<< HEAD
 
             <TouchableOpacity
             style={[styles.link, {backgroundColor: '#4957AA',  borderBottomLeftRadius:8,
@@ -110,6 +214,8 @@ const transactions = [
             <Text style={[styles.linkText, {color: '#ffffff' }]}>Dept Payment</Text>
           </TouchableOpacity>
 
+=======
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
         </View>
       )}
 
@@ -126,8 +232,18 @@ const transactions = [
 };
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   container: { flex: 1, padding: 16, backgroundColor: "#f0f4f8" },
 
+=======
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',  // Ensures children take full width
+    padding: 16,
+    backgroundColor: "#f0f4f8"
+  },
+>>>>>>> a51f311a0b38028b391ffa03f728ea2485a74edb
   accountContainer: {
     backgroundColor: '#F5F5F5',
     marginBottom: 10
