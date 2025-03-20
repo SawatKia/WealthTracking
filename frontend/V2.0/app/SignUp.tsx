@@ -13,11 +13,22 @@ import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Use Ionicons for the eye icon
 import { Link, useRouter } from "expo-router";
 import { signUp, signUpGoogle } from "../services/AuthenService";
-import { useTranslation } from "react-i18next";
-import '/i18n/LanguageSwitcher';
+//Use this import
+//import { useTranslation } from "react-i18next";
+//import '..components/i18n/i18n.ts';
+
 export default function SignUpScreen() {
   const router = useRouter();
+  //use this function
+  // const { t, i18n } = useTranslation();
+  // const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
 
+  // const toggleLanguage = () => {
+  // const newLang = currentLanguage === 'en' ? 'th' : 'en';
+  // i18n.changeLanguage(newLang);
+  // setCurrentLanguage(newLang);
+  // 
+  // Example :  <Text style={styles.googleText}>{t('Sign in With Google')}</Text>
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
   const [isconfirmPasswordVisible, setIsconfirmPasswordVisible] =
