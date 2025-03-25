@@ -23,12 +23,14 @@ const CategoryList : { [key: string]: string[] }  = {
         "Other"
     ],
     "Income": [
-        "Borrowed",
-        "Dividend",
-        "Refund",
-        "Gift",
-        "Business",
-        "Salary",
+        "40(1)Salary",
+        "40(2)Freelance",
+        "40(3)Royalties",
+        "40(4)Interest",
+        "40(5)Rent",
+        "40(6)Profession",
+        "40(7)Contract",
+        "40(8)Business",
         "Other"
     ],
     "Transfer": [
