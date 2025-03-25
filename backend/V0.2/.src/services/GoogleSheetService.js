@@ -221,18 +221,51 @@ class GoogleSheetService {
     }
 
     /**
-     * Checks if the GoogleSheetService is connected and initialized.
-     * This will also check if the service is disabled in non-production server.
-     * @returns {boolean} true if the service is connected and initialized, false otherwise.
-     */
-    isConnected() {
+ * Checks if the GoogleSheetService is connected and initialized.
+ * If disconnected, attempts to reconnect up to MAX_RECONNECT_ATTEMPTS times.
+ * @returns {Promise<boolean>} true if the service is connected and initialized, false otherwise.
+ */
+    async isConnected() {
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        let attempts = 0;
+
+        // First verify environment
         if (!this._verifyEnvironment()) {
             logger.warn("GoogleSheetService is disabled in non-production server");
             return false;
         }
 
-        logger.debug(`GoogleSheetService connection status: ${this.connected}`);
-        return this.connected;
+        // If already connected, return true
+        if (this.connected) {
+            logger.debug(`GoogleSheetService is already connected`);
+            return true;
+        }
+
+        // If disconnected, attempt to reconnect
+        while (!this.connected && attempts < MAX_RECONNECT_ATTEMPTS) {
+            attempts++;
+            logger.info(`Attempting to reconnect (attempt ${attempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+
+            try {
+                await this.init();
+                if (this.connected) {
+                    logger.info(`Successfully reconnected on attempt ${attempts}`);
+                    return true;
+                }
+            } catch (error) {
+                logger.error(`Reconnection attempt ${attempts} failed:`, error);
+            }
+
+            // Wait before next attempt if not last attempt
+            if (!this.connected && attempts < MAX_RECONNECT_ATTEMPTS) {
+                const waitTime = Math.min(Math.pow(2, attempts) * 1000, 5000);
+                logger.warn(`Waiting ${waitTime}ms before next reconnection attempt...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
+
+        logger.error(`Failed to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts`);
+        return false;
     }
 
     /**

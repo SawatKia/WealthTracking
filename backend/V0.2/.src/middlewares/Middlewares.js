@@ -108,6 +108,9 @@ class Middlewares {
   constructor() {
     this.healthCheck = this.healthCheck.bind(this);
     this.formatUptime = this.formatUptime.bind(this);
+    this.blacklist = new Set();
+    this.blacklistLastLoad = 0;
+    this.blacklistRefreshInterval = 5 * 60 * 1000; // 5 minutes
 
     // CORS configuration
     this.corsOptions = {
@@ -134,6 +137,7 @@ class Middlewares {
 
     // Create CORS middleware
     this.corsMiddleware = cors(this.corsOptions);
+
     // Bind all methods to the class
     Object.getOwnPropertyNames(Middlewares.prototype).forEach(key => {
       if (typeof this[key] === 'function') {
@@ -336,7 +340,12 @@ class Middlewares {
     return (req, res, next) => {
       try {
         const method = String(req.method || "").toUpperCase().trim();
+        // Normalize the path by removing trailing slash and ensuring leading slash
         let path = String(req.path || "").trim();
+        path = path.replace(/\/+$/, ''); // Remove trailing slashes
+        if (!path.startsWith('/')) {
+          path = '/' + path;
+        }
 
         logger.debug(`Validating request: Method=${method}, Path=${path}`);
 
@@ -367,9 +376,23 @@ class Middlewares {
 
         // Helper function to match dynamic paths
         const matchPath = (incomingPath) => {
+          // Remove trailing slashes from incoming path
+          incomingPath = incomingPath.replace(/\/+$/, '');
+
           for (const allowedPath in allowedMethods) {
+            // Normalize allowed path as well
+            const normalizedAllowedPath = allowedPath
+              .replace(/\/+$/, '')  // Remove trailing slashes
+              .startsWith('/') ? allowedPath : '/' + allowedPath; // Add leading slash  
+
+            // For exact matches (non-parameterized routes)
+            if (incomingPath === normalizedAllowedPath) {
+              return allowedPath;
+            }
+
+            // For parameterized routes
             const pathRegex = new RegExp(
-              `^${allowedPath.replace(/:[^/]+/g, "[^/]+")}$`
+              `^${normalizedAllowedPath.replace(/:[^/]+/g, "[^/]+")}$`
             );
             if (pathRegex.test(incomingPath)) {
               return allowedPath;
@@ -416,6 +439,7 @@ class Middlewares {
   }
 
   rateLimiter(windowMs = 15 * 60 * 1000, limit = 100) {
+    logger.info('Rate limiter initialized');
     return require("express-rate-limit")({
       windowMs,
       limit,
@@ -458,7 +482,7 @@ class Middlewares {
       "/user_area/\\.git/config", "/test_configs/\\.git/config",
       "/images/\\.git/config", "/core/config/\\.git/config",
       "/data/private/\\.git/config", "/static/content/\\.git/config",
-      "/libs/js/iframe\\.js"
+      "/libs/js/iframe\\.js",
     ];
 
     // Define whitelisted paths from allowedMethods
@@ -520,7 +544,7 @@ class Middlewares {
           .replace(/\//g, '\\/') // Escape forward slashes
           .replace(/\//g, '\\/?'); // Make trailing slash optional
         const regex = new RegExp(`^${regexPattern}$`);
-        logger.debug(`testing path ${requestPath} against regex: ${regex}`);
+        logger.silly(`testing path ${requestPath} against regex: ${regex}`);
         const result = regex.test(requestPath);
         return result;
       });
@@ -560,6 +584,50 @@ class Middlewares {
       }
     };
 
+    const loadBlacklistIfNeeded = () => {
+      logger.info('Loading blacklist if needed');
+      const now = Date.now();
+
+      // Initialize lastLoad if it's 0 (first run)
+      if (this.blacklistLastLoad === 0) {
+        logger.debug('First run, initializing lastLoad time and loading blacklist');
+        this.blacklist = loadBlacklist(); // Load blacklist on first run
+        this.blacklistLastLoad = now;
+        logger.debug(`Initial blacklist loaded with ${this.blacklist.size} entries`);
+      } else {
+        // For subsequent runs, check if refresh is needed
+        const timeSinceLastLoad = Math.max(0, (now - this.blacklistLastLoad) / 1000); // Convert to seconds
+        const timeUntilNextLoad = Math.max(0, (this.blacklistRefreshInterval - (now - this.blacklistLastLoad)) / 1000); // Convert to seconds
+
+        // Format times for logging
+        const formatDuration = (seconds) => {
+          if (seconds < 60) return `${Math.round(seconds)}s`;
+          if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+          return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m ${Math.round(seconds % 60)}s`;
+        };
+
+        logger.debug(`considering blacklist reloading:\n` +
+          `Current time: ${formatBkkTime(now)}\n` +
+          `Last load: ${formatBkkTime(this.blacklistLastLoad)}\n` +
+          `Refresh interval: ${formatDuration(this.blacklistRefreshInterval / 1000)}\n` +
+          `Time since last load: ${formatDuration(timeSinceLastLoad)}\n` +
+          `Time until next load: ${timeUntilNextLoad <= 0 ? 'now' : formatDuration(timeUntilNextLoad) + " which is " + formatBkkTime(now + timeUntilNextLoad * 1000)}`
+        );
+
+        // Check if refresh is needed
+        if (now - this.blacklistLastLoad > this.blacklistRefreshInterval) {
+          logger.warn(' \u21BB \u21BB Refreshing blacklist after ' + formatDuration(timeSinceLastLoad));
+          this.blacklist = loadBlacklist();
+          this.blacklistLastLoad = now;
+        } else {
+          logger.info("Skipping blacklist refresh");
+        }
+      }
+
+      logger.debug(`Cached blacklist: ${this.blacklist.size} entries [${[...this.blacklist].join(', ')}]`);
+      return this.blacklist;
+    };
+
     // Function to check all possible input sources
     const checkSuspiciousPatterns = (input, source) => {
       logger.info(`Checking for suspicious patterns in ${source}`);
@@ -567,15 +635,14 @@ class Middlewares {
 
       return SUSPICIOUS_PATTERNS.some(pattern => {
         const regex = new RegExp(pattern, 'i');
+        logger.silly(`testing input ${typeof input === 'object' ? JSON.stringify(input) : input}::${typeof input} against regex: ${regex}`);
         if (typeof input === 'string') {
-          logger.debug(`testing input ${input} against regex: ${regex}`);
           if (regex.test(input)) {
             logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${input}`);
             return true;
           }
         } else if (typeof input === 'object') {
           const stringified = JSON.stringify(input);
-          logger.debug(`testing input ${stringified} against regex: ${regex}`);
           if (regex.test(stringified)) {
             logger.warn(`Suspicious pattern "${pattern}" found in ${source}: ${stringified}`);
             return true;
@@ -591,26 +658,27 @@ class Middlewares {
       return next();
     }
 
-    let blacklist = loadBlacklist();
-    logger.debug(`blacklist: ${JSON.stringify([...blacklist])}::${typeof blacklist}`);
+    loadBlacklistIfNeeded();
+    logger.debug(`blacklist: ${JSON.stringify([...this.blacklist])}::${typeof this.blacklist}`);
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-    if (blacklist.has(clientIp)) {
+    if (this.blacklist.has(clientIp)) {
       logger.warn(`Blocked request from blacklisted IP: ${clientIp}`);
       return next(MyAppErrors.forbidden());
     }
     logger.info(`${clientIp} is not in the black list`);
 
+    logger.info('Checking for suspicious patterns');
     // Check all possible input sources
     const isSuspicious = (
-      checkSuspiciousPatterns(req.url, 'URL') ||
-      checkSuspiciousPatterns(req.path, 'Path') ||
-      checkSuspiciousPatterns(req.query, 'Query Parameters') ||
-      checkSuspiciousPatterns(req.params, 'URL Parameters') ||
-      checkSuspiciousPatterns(req.body, 'Request Body') ||
-      checkSuspiciousPatterns(req.headers, 'Headers') ||
-      checkSuspiciousPatterns(req.cookies, 'Cookies') ||
-      (req.files && checkSuspiciousPatterns(
+      (req.url && checkSuspiciousPatterns(req.url, 'URL')) ||
+      (req.path && checkSuspiciousPatterns(req.path, 'Path')) ||
+      (req.query && typeof req.query === 'object' && checkSuspiciousPatterns(req.query, 'Query Parameters')) ||
+      (req.params && typeof req.params === 'object' && checkSuspiciousPatterns(req.params, 'URL Parameters')) ||
+      (req.body && typeof req.body === 'object' && checkSuspiciousPatterns(req.body, 'Request Body')) ||
+      (req.headers && typeof req.headers === 'object' && checkSuspiciousPatterns(req.headers, 'Headers')) ||
+      (req.cookies && typeof req.cookies === 'object' && checkSuspiciousPatterns(req.cookies, 'Cookies')) ||
+      (req.files && Array.isArray(req.files) && checkSuspiciousPatterns(
         req.files.map(f => f.originalname).join(','),
         'File Names'
       ))
@@ -620,10 +688,10 @@ class Middlewares {
       logger.warn(`Suspicious request detected from ${clientIp} => ${req.method} ${req.url}`);
 
       // Only add to blacklist if the request is request to a valid host and not already in the blacklist
-      if (this._isValidHost(req) && !blacklist.has(clientIp)) {
+      if (this._isValidHost(req) && !this.blacklist.has(clientIp)) {
         blacklist.add(clientIp);
-        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(blacklist)}`);
-        saveBlacklist(blacklist);
+        logger.warn(`Added ${clientIp} to blacklist: ${JSON.stringify(this.blacklist)}`);
+        saveBlacklist(this.blacklist);
 
         return next(MyAppErrors.forbidden());
       } else logger.info(`${clientIp} is exist in the black list, not need to add again`);
@@ -668,6 +736,31 @@ class Middlewares {
     }
   }
 
+  /**
+     * Checks if the given path is a Swagger UI related request
+     * @param {string} path - The request path to check
+     * @returns {boolean} - True if the path is Swagger related, false otherwise
+     */
+  isSwaggerRequest(path) {
+    logger.info(`Checking if path ${path} is a Swagger request`);
+    const isSwagger = path.startsWith('/api/v0.2/docs') ||
+      path.includes('swagger-ui') ||
+      path.includes('api-docs');
+    logger.debug(`Is Swagger request: ${isSwagger}`);
+    return isSwagger;
+  }
+
+  /**
+   * Bypasses the middleware for swagger requests
+   */
+  swaggerBypass = (req, res, next) => {
+    if (this.isSwaggerRequest(req.path)) {
+      logger.debug(`Bypassing middleware for Swagger request: ${req.path}`);
+      return next();
+    }
+    return next();
+  };
+
   healthCheck(req, res, next) {
     const currentTime = new Date().getTime();
     const currentBkkTime = formatBkkTime(currentTime);
@@ -688,6 +781,14 @@ class Middlewares {
 
   requestLogger(req, res, next) {
     logger.info(`\u2193 \u2193 \u2193 ---entering the routing for ${req.method} ${req.url}`);
+    // Add debug log for all requests, including Swagger
+    logger.debug(`Incoming request: ${req.method} ${req.url}`);
+
+    // Special handling for Swagger requests
+    if (this.isSwaggerRequest(req.path)) {
+      logger.info(`Swagger UI request detected: ${req.method} ${req.url}`);
+      return next();
+    }
 
     const getIP = (req) => {
       const conRemoteAddress = req.connection?.remoteAddress;
@@ -714,10 +815,9 @@ class Middlewares {
     const query = req.query;
     try {
       // Store the request log on the request object
-      if (GoogleSheetService.isConnected()) {
-        const requestLog = GoogleSheetService.prepareRequestLog(req);
-        req.requestLog = requestLog; // Store for later use in response handler
-      } else logger.warn('Google Sheet service is not connected');
+      logger.info('Preparing request log entry...');
+      const requestLog = GoogleSheetService.prepareRequestLog(req);
+      req.requestLog = requestLog; // Store for later use in response handler
 
       const ip = getIP(req);
       Object.defineProperty(req, 'ip', {
@@ -848,6 +948,15 @@ class Middlewares {
       }).join('\n          ');
     };
 
+    // Calculate performance metrics
+    const responseTimeMs = Date.now();
+    const processingTime = responseTimeMs - (req.requestTimeMs || responseTimeMs);
+    const performanceMetrics = {
+      requestTime: req.requestTimeMs ? formatBkkTime(new Date(req.requestTimeMs)) : 'N/A',
+      responseTime: formatBkkTime(new Date(responseTimeMs)),
+      processingTimeMs: processingTime
+    };
+
     const responseLogMessage = `
       \u2191 \u2191 \u2191  Outgoing Response \u2191 \u2191 \u2191  :
       Headers:
@@ -859,6 +968,8 @@ class Middlewares {
       Message: ${message ? message : 'Not specified'}
       Data:
           ${Array.isArray(data) ? JSON.stringify(data) : formatObjectEntries(data || { "None": "None" })}
+      Performance:
+          ${formatObjectEntries(performanceMetrics)}
     `;
 
     const endingMessage = "=".repeat(5) + ` End of response: ${req.method} ${req.path} => ${status_code} => ${req.ip} ` + "=".repeat(5);
@@ -939,6 +1050,30 @@ class Middlewares {
     try {
       logger.info("Handling response");
 
+      // Calculate response time for all environments
+      const responseTimeMs = Date.now();
+      const processingTime = responseTimeMs - (req.requestTimeMs || responseTimeMs);
+
+      // Add response time header
+      res.set('X-Response-Time', `${processingTime}ms`);
+      logger.info(`Request processed in ${processingTime}ms`);
+
+      // Add cache headers for GET requests
+      if (req.method === 'GET') {
+        const cacheEndpoints = ['/transactions/list/types'];
+        const cachePrefix = ['/fi'];
+
+        // Check if the request path matches any cache endpoint or prefix
+        const shouldCache = cacheEndpoints.includes(req.path) || cachePrefix.some(prefix => req.path.startsWith(prefix));
+
+        if (shouldCache) {
+          logger.info('Adding cache headers max-age=1800');
+          res.set('Cache-Control', 'public, max-age=1800'); // Cache for 30 minutes
+        } else {
+          res.set('Cache-Control', 'public, max-age=120'); // No cache
+        }
+      }
+
       // Skip for Swagger UI requests
       if (req.url.startsWith('/api/v0.2/docs')) {
         logger.debug('Skipping response handler for Swagger UI request');
@@ -970,27 +1105,26 @@ class Middlewares {
         headers = { ...(req.errorHeaders || {}), ...(req.formattedResponse.headers || {}) };
       }
 
-      // Handle Google Sheet logging
-      if (GoogleSheetService.isConnected() && req.requestLog) {
-        logger.info('Google Sheet service is connected');
-        const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
-        logger.info('Log preparation completed, ready to append');
-        const appendingResult = await GoogleSheetService.appendLog(completeLog);
-        if (!appendingResult) {
-          logger.warn('Failed to append log to Google Sheet');
-        }
-      } else {
-        logger.warn('Google Sheet service is not connected');
-      }
-
       // Only send response if headers haven't been sent
       if (!res.headersSent) {
         const securityHeaders = this.logResponse(req, status_code, message, data, headers, status_code >= 400);
-        return res
-          .set({ ...securityHeaders, ...headers })
+        res.set({ ...securityHeaders, ...headers })
           .status(status_code)
           .json(formatResponse(status_code, message, data));
       }
+
+      // Handle Google Sheet logging asynchronously after sending response
+      if (GoogleSheetService.isConnected() && req.requestLog) {
+        logger.info('Google Sheet service is connected, logging asynchronously');
+        const completeLog = GoogleSheetService.prepareResponseLog(req, req.formattedResponse);
+
+        // Fire and forget - don't wait for the result
+        GoogleSheetService.appendLog(completeLog)
+          .catch(error => {
+            logger.error(`Failed to append log to Google Sheet: ${error.message}`);
+          });
+      } else logger.warn('Google Sheet service is not connected');
+
     } catch (error) {
       logger.error(`Error in response handler: ${error.message}`);
       // Only send error response if headers haven't been sent

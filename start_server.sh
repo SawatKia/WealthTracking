@@ -46,7 +46,7 @@ healthStatus() {
     fi
 
     log "INFO" "Checking server health status on http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29"
-    serverResponse=$(curl -s -m 10 "http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29")
+    serverResponse=$(curl -s -m 10 "http://${ip}:${port}/health?service=bash-script%20healthStatus%28%29%20everyMin30th")
     log "DEBUG" "health check response: ${serverResponse}"
 
     if [ -z "$serverResponse" ]; then
@@ -150,15 +150,10 @@ start_server() {
 
 setup_cronjobs() {
     # First, remove any existing entries to prevent duplicates
-    (crontab -l 2>/dev/null | grep -v "start_server.sh" \
-                           | grep -v "update-nginx-blacklist.sh" \
-                           | grep -v "internet.sh" \
-                           | grep -v "auto-authen.sh") | crontab -
+    (crontab -l 2>/dev/null | grep -v "start_server.sh") | crontab -
 
-    # Add all cron jobs with better error handling
-    (crontab -l 2>/dev/null; echo "*/30 * * * * /bin/sh -c 'cd $(pwd) && if ! /bin/sh start_server.sh health; then /bin/sh start_server.sh start; fi'
-*/5 * * * * /bin/sh $(pwd)/update-nginx-blacklist.sh
-*/20 * * * * /bin/sh $(pwd)/internet.sh") | crontab -
+    # Add the cron job for start_server.sh with better error handling
+    (crontab -l 2>/dev/null; echo "*/30 * * * * /bin/sh -c 'cd $(pwd) && if ! /bin/sh start_server.sh health; then /bin/sh start_server.sh start; fi'") | crontab -
     
     log "INFO" "\033[7;34m>>>\033[0m cronjob created."
 }
@@ -187,7 +182,7 @@ main() {
             ;;
         *)
             log "ERROR" "Unknown command: $1"
-            log "INFO" "Usage: $0 [healthStatus|restart|start]"
+            log "INFO" "Usage: $0 [health|restart|start]"
             exit 1
             ;;
     esac
