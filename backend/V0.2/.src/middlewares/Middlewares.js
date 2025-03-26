@@ -817,8 +817,6 @@ class Middlewares {
     try {
       // Store the request log on the request object
       logger.info('Preparing request log entry...');
-      const requestLog = GoogleSheetService.prepareRequestLog(req);
-      req.requestLog = requestLog; // Store for later use in response handler
 
       const ip = getIP(req);
       logger.debug(`parsed request IP: ${ip}`);
@@ -826,7 +824,10 @@ class Middlewares {
         get: () => ip,
         configurable: true // Allows the property to be redefined later if needed
       });
-      logger.debug(`req.ip: ${req.ip}`);
+      logger.info(`req.ip: ${req.ip}`);
+
+      const requestLog = GoogleSheetService.prepareRequestLog(req);
+      req.requestLog = requestLog; // Store for later use in response handler
 
       // Prepare the body for logging 
       let logBody;
