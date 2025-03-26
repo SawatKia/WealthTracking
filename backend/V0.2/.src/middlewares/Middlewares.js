@@ -336,7 +336,7 @@ class Middlewares {
     //   }
     //   return sanitized;
     // };
-
+    logger.info('request validation middleware...');
     return (req, res, next) => {
       try {
         const method = String(req.method || "").toUpperCase().trim();
