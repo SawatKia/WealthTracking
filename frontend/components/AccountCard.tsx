@@ -41,22 +41,11 @@ export default function AccountCard({
     }, 300); // 300ms delay before changing the index
   };
   return (
-    // <GestureDetector gesture={swipeGesture}>
-
-    // <View style={styles.card}>
-    // <Text style={styles.name}>{account.name}</Text>
-    // <Text style={styles.balance}>฿{account.balance.toLocaleString()}</Text>
-    // <Text style={styles.updated}>Last Updated: {account.lastUpdated}</Text>
-    // <Text style={styles.indicator}>{`${currentIndex + 1} / ${totalAccounts}`}</Text>
-    // </View>
-    // </GestureDetector>
-
     <GestureHandlerRootView style={styles.container}>
       {/* ยอดเงินรวมทั้งหมด */}
       <View style={styles.totalBalanceContainer}>
         <Text style={styles.totalBalanceText}>
-          Total Balance: ฿{totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          Baht
+          Total Balance : {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
         </Text>
       </View>
 
@@ -73,14 +62,11 @@ export default function AccountCard({
           <View style={styles.card}>
             <Text style={styles.name}>{account[currentIndex]?.display_name}</Text>
             <Text style={styles.balance}>
-              ฿{account[currentIndex]?.balance.toLocaleString()}
+              {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
             </Text>
             <Text style={styles.updated}>
               Account Number: {account[currentIndex]?.account_number}
             </Text>
-            {/* <Text style={styles.indicator}>{`${
-              currentIndex + 1
-            } / ${account.length}`}</Text> */}
           </View>
         </View>
       </PanGestureHandler>
