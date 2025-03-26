@@ -31,6 +31,7 @@
     "expo-system-ui": "~4.0.8",
     "expo-web-browser": "~14.0.2",
     "i18next": "^24.2.2",
+    "material-ui-community-icons": "^0.15.0",
     "paths-js": "^0.1.2",
     "react": "^18.3.1",
     "react-dom": "18.3.1",
