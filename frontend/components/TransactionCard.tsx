@@ -113,6 +113,10 @@ export default function TransactionCard({
               <Text style={styles.date}>
                 {new Date(transaction.transaction_datetime).toLocaleDateString()}
               </Text>
+              {/* Display the Note under Date */}
+              {transaction.note && (
+                <Text style={styles.note}>{transaction.note}</Text>
+              )}
             </View>
             <View style={styles.rightContainer}>
               <Text style={[styles.amount, { color: colorMap[transaction.category] }]}>
@@ -203,6 +207,11 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: "#666",
+  },
+  note: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 5,
   },
   amount: {
     fontSize: 16,
