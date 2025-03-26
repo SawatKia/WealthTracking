@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 13,
-    color: "#999",
+    color: "#666",
     marginTop: 5,
   },
   amount: {
