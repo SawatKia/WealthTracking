@@ -162,6 +162,7 @@ app.use("/api/v0.2", (req, res, next) => {
   if (mdw.isSwaggerRequest(req.path)) {
     return next();
   }
+  logger.debug("Routing to /api/v0.2...");
   return routes(req, res, next);
 });
 

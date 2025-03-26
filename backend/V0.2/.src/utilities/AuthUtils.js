@@ -86,15 +86,16 @@ class AuthUtils {
             const formattedExpDate = `${expDate.getDate()}/${(expDate.getMonth() + 1).toString().padStart(2, '0')}/${expDate.getFullYear()} ${expDate.getHours().toString().padStart(2, '0')}:${expDate.getMinutes().toString().padStart(2, '0')}:${expDate.getSeconds().toString().padStart(2, '0')}`;
             logger.debug(`Access token created with exp: ${formattedExpDate}`);
 
+            const expiryTime = 30 * 24 * 60 * 60;
             const refreshToken = jwt.sign({
                 sub: userId,
                 iat: now,
                 nbf: appConfigs.environment != 'production' ? now : now + (10 * 60),
-                exp: now + (30 * 24 * 60 * 60),
+                exp: now + expiryTime,
                 jti: jti,
                 iss: AuthUtils.domain,
             }, appConfigs.refreshTokenSecret, { algorithm: AuthUtils.algorithm });
-            const refreshExpDate = new Date((now + (7 * 24 * 60 * 60)) * 1000);
+            const refreshExpDate = new Date((now + expiryTime) * 1000);
             refreshExpDate.setHours(refreshExpDate.getHours() + 7); // Adjust for BKK timezone
             const formatedRefreshExpDate = `${refreshExpDate.getDate()}/${(refreshExpDate.getMonth() + 1).toString().padStart(2, '0')}/${refreshExpDate.getFullYear()} ${refreshExpDate.getHours().toString().padStart(2, '0')}:${refreshExpDate.getMinutes().toString().padStart(2, '0')}:${refreshExpDate.getSeconds().toString().padStart(2, '0')}`;
             logger.debug(`Refresh token created with exp: ${formatedRefreshExpDate}`);

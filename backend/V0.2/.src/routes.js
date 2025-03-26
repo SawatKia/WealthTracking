@@ -50,10 +50,13 @@ router.get('/google/callback', authController.googleCallback);
 // Protected routes (auth required)
 router.use(async (req, res, next) => {
     try {
+        logger.debug(`req.formattedResponse: ${JSON.stringify(req.formattedResponse) || 'undefined'}`);
         if (req.formattedResponse) {
+            logger.warn('finished processing, the response was prepared. Skipping authentication for this Endpoint');
             return next();
         } else {
             await mdw.authMiddleware(req, res, next);
+            logger.info('User is authenticated');
         }
     } catch (error) {
         next(error);
