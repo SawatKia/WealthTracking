@@ -8,20 +8,11 @@ type ExpenseSummaryProps = {
 };
 
 const ExpenseSummary = ({ text_box2, amount }: ExpenseSummaryProps) => {
- 
-  // if (loading) {
-  //   return <Text style={styles.loadingText}>Loading...</Text>;  // Loading indicator
-  // }
-
-  // if (error) {
-  //   return <Text style={styles.errorText}>{error}</Text>;  // Show error message
-  // }
-
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{text_box2}</Text>
       <Text style={styles.amount}>
-        -{amount} ฿{/* Display fetched expense */}
+        -{amount ? parseFloat(amount).toLocaleString() : '0'} ฿
       </Text>
     </View>
   );

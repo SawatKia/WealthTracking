@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTransactions } from '../services/TransactionService'; 
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useTransactions } from "../services/TransactionService";
 
 type IncomeSummaryProps = {
   text_box1: string;
@@ -8,38 +8,16 @@ type IncomeSummaryProps = {
   amount?: string; // We will overwrite this value with the fetched income
 };
 
-const SummaryBox1 = ({ text_box1, text_percent, amount }: IncomeSummaryProps) => {
-
-  // useEffect(() => {
-  //   // Fetch the income data when the component mounts
-  //   const fetchIncome = async () => {
-  //     try {
-  //       // setLoading(true);
-  //       const data = await getSummaryIncome(1); // Get the income for the latest month
-  //       setIncome(data); // Update the income state
-  //     } catch (err) {
-  //       setError('Failed to load income data');
-  //     } finally {
-  //       setLoading(false); // Set loading to false once the request is complete
-  //     }
-  //   };
-
-  //   fetchIncome(); // Call the function to fetch the income
-  // }, [getSummaryIncome]); // Re-run this effect if the getMonthlyIncome function changes (optional)
-
-  // if (loading) {
-  //   return <Text style={styles.loadingText}>Loading...</Text>; // Display a loading message if fetching
-  // }
-
-  // if (error) {
-  //   return <Text style={styles.errorText}>{error}</Text>; // Display an error message if something went wrong
-  // }
-
+const SummaryBox1 = ({
+  text_box1,
+  text_percent,
+  amount,
+}: IncomeSummaryProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{text_box1}</Text>
       <Text style={styles.amount}>
-        {amount} ฿
+        {amount ? parseFloat(amount).toLocaleString() : "0"} ฿
       </Text>
     </View>
   );
@@ -49,28 +27,28 @@ const styles = StyleSheet.create({
   container: {
     width: 170,
     height: 70,
-    backgroundColor: '#B2FBA5',
+    backgroundColor: "#B2FBA5",
     padding: 15,
     borderRadius: 10,
     margin: 5,
-    alignItems: 'center',
+    alignItems: "center",
   },
   text: {
-    color: '#333333',
+    color: "#333333",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   amount: {
-    color: '#333333',
+    color: "#333333",
     fontSize: 18,
-    fontWeight: 'semibold',
+    fontWeight: "semibold",
   },
   loadingText: {
-    color: 'gray',
+    color: "gray",
     fontSize: 16,
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 16,
   },
 });
