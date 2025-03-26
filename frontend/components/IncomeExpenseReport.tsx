@@ -19,8 +19,8 @@
 
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10 }}>
-          Income/Expenses Report
+        <Text style={{ flex: 1, justifyContent: "flex-start",alignItems: "flex-start", fontSize: 20, fontWeight: "bold", marginTop: 20, marginBottom: -90 }}>
+          Expense Summary
         </Text>
         <VictoryChart animate={{ duration: 500 }} domainPadding={{ x: 30 }} theme={customTheme}>
         <VictoryBar

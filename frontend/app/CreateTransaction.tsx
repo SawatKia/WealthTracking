@@ -38,34 +38,6 @@ type CreateTransactionRouteProp = RouteProp<
   "CreateTransaction"
 >;
 
-const options = {
-  bank_accounts: [
-    {
-      account_number: "1234567890",
-      fi_code: "001",
-      national_id: "1234567890123",
-      display_name: "Main Account",
-      account_name: "John Doe",
-      balance: 50000.0,
-    },
-    {
-      account_number: "9876543210",
-      fi_code: "002",
-      national_id: "1234567890123",
-      display_name: "Savings",
-      account_name: "John Doe",
-      balance: 100000.0,
-    },
-    {
-      account_number: "5555555555",
-      fi_code: "001",
-      national_id: "9876543210123",
-      display_name: "Personal Account",
-      account_name: "Jane Smith",
-      balance: 75000.0,
-    },
-  ],
-};
 export default function CreateTransaction({
   route,
 }: {
@@ -115,20 +87,11 @@ export default function CreateTransaction({
 
   const handleSelectCategory = (category: string, type: string) => {
     setSelectedCategory({ category, type });
+    console.log("category : ", category);
+    console.log("type : ", type);
     setCategoryPickerVisibility(false); // Close the modal
   };
-  // {
-  //   "transaction_datetime": "2024-03-15T10:30:00Z",
-  //   "category": "Expense",
-  //   "type": "Food",
-  //   "amount": 100,
-  //   "note": "Monthly salary",
-  //   "sender": {
-  //     "account_number": "1234567890",
-  //     "fi_code": "004"
-  //   }
 
-  // }
   const handleCreateTransaction = async () => {
     // let senderReceiver: { sender?: any; receiver?: any } = {};
     let sender: newSenderReceiver | null = null;
@@ -159,9 +122,6 @@ export default function CreateTransaction({
     // console.log('send data :', respond)
   };
 
-  // Extract the setCategory function passed as a prop
-  // const setCategory = params.setCategory as (category: string) => void;
-
   useEffect(() => {
     const fetchDataAccount = async () => {
       try {
@@ -179,12 +139,6 @@ export default function CreateTransaction({
         setAccountItems(items);
 
         console.log(items);
-
-        // Example: Selecting the first item from the list
-        // if (accountItems.length > 0) {
-        //   setSelectedAccountItem(accountItems[0].label); // Set the first label
-        //   setSelectedAccountValue(accountItems[0].value); // Set the first value
-        // }
 
         if (selectedCategory.type == "Transfer") {
           // setSelectedAccountTransItem(accountItems);
@@ -204,25 +158,6 @@ export default function CreateTransaction({
     // setDatePickerVisibility(false)
   };
 
-  // useEffect(() => {
-  // Check if route and route.params are available before trying to access them
-
-  // console.log(categoryParam)
-  // if (route.params?) {
-
-  // if (categoryParam) {
-  //   setSelectedCategory(categoryParam);
-  // }
-  // }
-  // }, [route.params?.category]); // Re-run the effect when route.params changes
-  // const handleInputChange = (text: string) => {
-  //   const formattedValue = parseFloat(text); // Parse input to float
-  //   if (!isNaN(formattedValue)) {
-  //     setAmount(formattedValue); // Update state with the float value
-  //   } else {
-  //     setAmount('0.0');
-  //   }
-  // };
   return (
     <KeyboardAwareScrollView style={{marginTop: 50,}}>
       {/* date & time */}
@@ -288,19 +223,6 @@ export default function CreateTransaction({
 
         <View style={styles.rowInput}>
           <View style={styles.inputsContainer}>
-            {/* <TouchableOpacity 
-            onPress={() =>
-              router.push({
-                pathname: '/CategoryExpenses',
-                params: {
-                  // params: { postData: JSON.stringify(post) },
-                  // setCategory: (category: string) => setSelectedCategory(category),
-                },
-              })}
-            >
-
-            </TouchableOpacity> */}
-
             <TouchableOpacity
               onPress={() => {
                 setCategoryPickerVisibility(true);
@@ -309,14 +231,10 @@ export default function CreateTransaction({
             >
               <Text>
                 {selectedCategory.category
-                  ? `${selectedCategory.type} : ${selectedCategory.category}`
+                  ? `${selectedCategory.type}   : ${selectedCategory.category}`
                   : "Select Catagory"}
               </Text>
             </TouchableOpacity>
-
-            {/* <TouchableOpacity onPress={()=>{}}>
-                <Text></Text>
-              </TouchableOpacity> */}
           </View>
         </View>
       </View>
