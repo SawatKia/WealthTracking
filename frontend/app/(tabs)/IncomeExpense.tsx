@@ -35,11 +35,6 @@ export default function IncomeExpenses() {
         const accounts = await getAllAccounts();
         console.log("Fetched Accounts:", accounts);
         setBankAccounts(accounts);
-
-        // Set the first account as the default selected account
-        // if (accounts.length > 0) {
-        //   setSelectedAccount(accounts[0]);
-        // }
       };
 
       fetchData();
