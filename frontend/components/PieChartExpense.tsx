@@ -46,7 +46,7 @@ const ReportByCategory = () => {
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", marginTop: 10 }}>
-      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 20 , marginBottom: -30 }}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 20 , marginBottom: -20 }}>
         Expenses Report
       </Text>
 

@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import DropdownPicker from "react-native-dropdown-picker"; // Import the dropdown picker
 import { useTransactions } from "../services/TransactionService";
 
 const IncomeTransactionList = () => {
@@ -14,6 +14,7 @@ const IncomeTransactionList = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [incomeData, setIncomeData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     loadIncomeData(year);
@@ -32,9 +33,6 @@ const IncomeTransactionList = () => {
       <Text style={styles.categoryAmount}>
         Total: {parseFloat(item.total_amount || "0").toLocaleString()}
       </Text>
-      {/* <Text style={styles.categoryTransactions}>
-        Transactions: {item.transaction_count}
-      </Text> */}
     </View>
   );
 
@@ -57,22 +55,22 @@ const IncomeTransactionList = () => {
       {/* Header with Year Selector */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Yearly Income Summary</Text>
-        <Picker
-          selectedValue={year}
-          onValueChange={(itemValue) => setYear(itemValue)}
-          style={styles.picker}
-        >
-          {[...Array(5)].map((_, index) => {
+        
+        {/* Dropdown Picker */}
+        <DropdownPicker
+          open={open}
+          setOpen={setOpen}
+          value={year}
+          items={[...Array(5)].map((_, index) => {
             const yearOption = new Date().getFullYear() - index;
-            return (
-              <Picker.Item
-                key={yearOption}
-                label={`${yearOption}`}
-                value={yearOption}
-              />
-            );
+            return { label: `${yearOption}`, value: yearOption };
           })}
-        </Picker>
+          setValue={setYear}
+          placeholder="Select Year"
+          style={styles.picker}
+          containerStyle={styles.pickerContainer}
+          dropDownContainerStyle={styles.dropDownContainerStyle}
+        />
       </View>
       {/* Display Total Income*/}
       <View style={styles.totalIncomeContainer}>
@@ -84,15 +82,13 @@ const IncomeTransactionList = () => {
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" style={styles.loader} />
       ) : (
-        <>
-          <FlatList
-            data={incomeData?.summary || []}
-            renderItem={renderCategory}
-            keyExtractor={(item) => item.type_name}
-            numColumns={2}
-            contentContainerStyle={styles.listContainer}
-          />
-        </>
+        <FlatList
+          data={incomeData?.summary || []}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item.type_name}
+          numColumns={2}
+          contentContainerStyle={styles.listContainer}
+        />
       )}
     </View>
   );
@@ -104,6 +100,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10,
   },
   header: {
     flexDirection: "row",
@@ -114,12 +111,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  pickerContainer: {
+    width: 100, 
+    height: 40,
+    marginLeft: 10,
+    zIndex: 10,
+  },
   picker: {
-    width: 120,
     backgroundColor: "#fff",
     borderRadius: 10,
     paddingVertical: 5,
     color: "#555",
+  },
+  dropDownContainerStyle: {
+    backgroundColor: "#f0f4f8", 
   },
   loader: {
     marginTop: 20,
@@ -150,11 +155,6 @@ const styles = StyleSheet.create({
     color: "#555",
     marginTop: 5,
   },
-  categoryTransactions: {
-    fontSize: 14,
-    color: "#777",
-    marginTop: 5,
-  },
   totalIncomeContainer: {
     marginTop: 10,
     padding: 10,
@@ -166,6 +166,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#2ecc71",
+    marginTop: 5,
+    marginBottom: 5,
   },
 });
 
