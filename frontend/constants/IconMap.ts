@@ -23,15 +23,14 @@ const IconMap: { [key: string]: keyof typeof MaterialCommunityIcons.glyphMap} = 
     // debtPayment: "hand-coin-outline",
     other: "dots-horizontal",
 
-    "40(1)Salary": "hand-coin-outline",
-    "40(2)Freelance": "clover",
-    "40(3)Royalties": "cash-refund",
-    "40(4)Interest": "gift",
-    "40(5)Rent": "home-city-outline",
-    "40(6)Profession": "briefcase",
-    "40(7)Contract": "file-document-outline",
-    "40(8)Business": "office-building",
-    "Other": "dots-horizontal",
+    "40(1)salary": "hand-coin-outline",
+    "40(2)freelance": "clover",
+    "40(3)royalties": "cash-refund",
+    "40(4)interest": "gift",
+    "40(5)rent": "home-city-outline",
+    "40(6)profession": "briefcase",
+    "40(7)contract": "file-document-outline",
+    "40(8)business": "office-building",
     
     transfer: "swap-horizontal",
   };

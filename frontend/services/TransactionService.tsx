@@ -209,5 +209,15 @@ export const useTransactions = () => {
       }
     };
 
-  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId, getTransactionByAccount };
+    const fetchIncomeSummary = async (year: number) => {
+      try {
+        const response = await api.get(`/transactions/summary/year-incomes?year=${year}`);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching income summary:", error);
+        return null;
+      };
+    }
+
+  return { getAllTransactions, loading, error, deleteTransaction, editTransaction, createTransaction, getMonthlyExpense, monthlyData, getMonthlySummary, getSummaryIncome, getSummaryExpense, getTransactionbyId, getTransactionByAccount, fetchIncomeSummary };
 };

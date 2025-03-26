@@ -15,11 +15,13 @@ export const login = async (email: string, password: string) => {
   try {
     const data = await api.post('/login?platform=mobile', requestData);
     console.log('login',data.data.data)
-    // const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMTExMTExIiwiaWF0IjoxNzM4NjgxNTgyLCJuYmYiOjE3Mzg2ODE1ODIsImV4cCI6MTczODc2Nzk4MiwiaXNzIjoiV2VhbHRoVHJhY2sifQ.TdvJPp2DdQeT6He1p3_F-8j2Y0djWVQAYtySouzjMo4"
     if (data.status === 200) {
-      const token = data.data.data.tokens.access_token
-      await storeToken(token); // Store the token securely
-      
+      const accessToken = data.data.data.tokens.access_token;
+      const refreshToken = data.data.data.tokens.refresh_token;
+    
+      await storeToken(accessToken); // Store access token
+      await storeRefreshToken(refreshToken); // Store refresh token
+    
       return true;
     }else {
       // If the status is not 200, show an error
@@ -111,6 +113,7 @@ export const clearCredentials = async () => {
 
 
 const TOKEN_KEY = 'authToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 export const storeToken = async (token: string) => {
   console.log('storeToken')
@@ -129,6 +132,24 @@ export const getToken = async (): Promise<string | null> => {
     return localStorage.getItem(TOKEN_KEY); // Get token from browser storage
   } else {
   return await SecureStore.getItemAsync(TOKEN_KEY);
+  }
+};
+
+export const storeRefreshToken = async (token: string) => {
+  console.log('storeRefreshToken');
+  if (Platform.OS === 'web') {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } else {
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
+  }
+};
+
+// Retrieve Refresh Token
+export const getRefreshToken = async (): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  } else {
+    return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
   }
 };
 

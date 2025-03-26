@@ -7,6 +7,7 @@ import PercentDebt from "../../components/PercentDebt";
 import CurrentInstallment from "../../components/CurrentInstallment";
 import IncomeExpenseReport from "@/components/IncomeExpenseReport";
 import ReportByCategory from "../../components/PieChartExpense";
+import IncomeTransactionList from "../../components/IncomeTransactionList";
 
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text } from "@/components/Themed";
@@ -106,6 +107,7 @@ export default function HomeScreen() {
           <SummaryBox2 text_box2="Expense" amount={getSummaryExpense()} />
         </View>
 
+        <IncomeTransactionList />
         <IncomeExpenseReport monthlyData={monthlyData} />
         <ReportByCategory />
 
