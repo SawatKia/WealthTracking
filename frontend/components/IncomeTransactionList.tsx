@@ -29,7 +29,9 @@ const IncomeTransactionList = () => {
   const renderCategory = ({ item }: { item: any }) => (
     <View style={styles.categoryContainer}>
       <Text style={styles.categoryTitle}>{item.type_name}</Text>
-      <Text style={styles.categoryAmount}>Total: {item.total_amount}</Text>
+      <Text style={styles.categoryAmount}>
+        Total: {parseFloat(item.total_amount || "0").toLocaleString()}
+      </Text>
       {/* <Text style={styles.categoryTransactions}>
         Transactions: {item.transaction_count}
       </Text> */}
@@ -40,9 +42,14 @@ const IncomeTransactionList = () => {
   const calculateTotalIncome = () => {
     if (!incomeData?.summary) return 0;
 
-    return incomeData.summary.reduce((total: number, item: any) => {
-      return total + parseFloat(item.total_amount || "0");
-    }, 0);
+    const totalIncome = incomeData.summary.reduce(
+      (total: number, item: any) => {
+        return total + parseFloat(item.total_amount || "0");
+      },
+      0
+    );
+
+    return totalIncome;
   };
 
   return (
@@ -70,7 +77,7 @@ const IncomeTransactionList = () => {
       {/* Display Total Income*/}
       <View style={styles.totalIncomeContainer}>
         <Text style={styles.totalIncomeText}>
-          Total Annual Income: {calculateTotalIncome().toFixed(2)}
+          Total Annual Income: {calculateTotalIncome().toLocaleString()}
         </Text>
       </View>
       {/* Loading Indicator */}
