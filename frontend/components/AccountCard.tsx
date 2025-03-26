@@ -62,7 +62,9 @@ export default function AccountCard({
           <View style={styles.card}>
             <Text style={styles.name}>{account[currentIndex]?.display_name}</Text>
             <Text style={styles.balance}>
-              {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} Baht
+              {account[currentIndex]?.balance
+                ? parseFloat(account[currentIndex].balance.replace(/,/g, '')).toLocaleString('en-US')
+                : '0'} Baht
             </Text>
             <Text style={styles.updated}>
               Account Number: {account[currentIndex]?.account_number}
