@@ -19,7 +19,7 @@
 
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ flex: 1, justifyContent: "flex-start",alignItems: "flex-start", fontSize: 20, fontWeight: "bold", marginTop: 20, marginBottom: -90 }}>
+        <Text style={{ flex: 1, justifyContent: "flex-start",alignItems: "flex-start", fontSize: 20, fontWeight: "bold", marginTop: 20 }}>
           Expense Summary
         </Text>
         <VictoryChart animate={{ duration: 500 }} domainPadding={{ x: 30 }} theme={customTheme}>

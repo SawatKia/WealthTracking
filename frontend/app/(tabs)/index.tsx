@@ -107,9 +107,9 @@ export default function HomeScreen() {
           <SummaryBox2 text_box2="Expense" amount={getSummaryExpense()} />
         </View>
 
-        <IncomeTransactionList />
-        <IncomeExpenseReport monthlyData={monthlyData} />
         <ReportByCategory />
+        <IncomeExpenseReport monthlyData={monthlyData} />
+        <IncomeTransactionList />
 
         <Text style={styles.header}>Debt</Text>
         <SummaryCard
@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ffd358",
     paddingHorizontal: 10,
+    paddingVertical: 10,
     borderRadius: 10,
   },
   scrollContainer: {
