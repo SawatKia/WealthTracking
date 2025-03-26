@@ -543,8 +543,8 @@ class GoogleSheetService {
             request.requestTimeMs = now.getTime();
 
             const requestLog = {
-                serverHostIp: request.headers.host || 'unknown host',      // Add this line
-                runningEnvironment: appConfigs.environment || 'default env', // Add this line
+                serverHostIp: request.headers.host || 'unknown host',
+                runningEnvironment: appConfigs.environment || 'default env',
                 requestTimestamp,
                 requestIp: request.ip,
                 requestMethod: request.method,
@@ -587,7 +587,7 @@ class GoogleSheetService {
             };
 
             logger.info('Response log entry prepared');
-            logger.silly(`Complete log entry prepared: ${JSON.stringify(logEntry)}`);
+            logger.debug(`Complete log entry prepared: ${JSON.stringify(logEntry)}`);
             return logEntry;
         } catch (error) {
             logger.error('Error preparing response log:', error);

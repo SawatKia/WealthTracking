@@ -113,13 +113,16 @@ class AuthController extends BaseController {
     async refresh(req, res, next) {
         logger.info('Token refresh requested');
         const platform = req.query.platform;
+        if (!platform) {
+            logger.warn('No platform specified, using default web platform');
+        }
         const refreshToken = platform === this.platformTypes.MOBILE
             ? req.headers['x-refresh-token']
             : req.cookies['refresh_token'];
 
         try {
             if (!refreshToken) {
-                logger.warn('Refresh token missing from request');
+                logger.error('Refresh token missing from request');
                 throw MyAppErrors.unauthorized(this.authenticationError.message, null, this.authorizationHeader);
             }
 
