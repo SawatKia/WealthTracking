@@ -24,11 +24,11 @@ class BaseModel {
         logger.error("Schema is not defined for this model.");
         throw new ValidationError("Schema is not defined for this model.");
       }
-      logger.info("Validating data against schema for operation:", operation);
+      logger.info(`Validating data against schema for operation: ${operation}`);
       const validated = await this.schema.validateAsync(data, {
         context: { operation },
       });
-      logger.debug("Validation passed for data:", validated);
+      logger.debug(`Validation passed for data: ${JSON.stringify(validated)}`);
       return validated;
     } catch (error) {
       logger.error(`Validation error: ${error.message}`);

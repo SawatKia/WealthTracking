@@ -336,7 +336,7 @@ class Middlewares {
     //   }
     //   return sanitized;
     // };
-
+    logger.info('request validation middleware...');
     return (req, res, next) => {
       try {
         const method = String(req.method || "").toUpperCase().trim();
@@ -801,6 +801,7 @@ class Middlewares {
           // The x-forwarded-for header can contain a comma-separated list of
           // IP's. Further, some are comma separated with spaces, so whitespace is trimmed.
           const ips = xForwardedFor.split(',').map((ip) => ip.trim());
+          logger.debug(`x-forwarded-for ips: ${ips}`);
           return ips[0];
         }
       })();
@@ -820,10 +821,12 @@ class Middlewares {
       req.requestLog = requestLog; // Store for later use in response handler
 
       const ip = getIP(req);
+      logger.debug(`parsed request IP: ${ip}`);
       Object.defineProperty(req, 'ip', {
         get: () => ip,
         configurable: true // Allows the property to be redefined later if needed
       });
+      logger.debug(`req.ip: ${req.ip}`);
 
       // Prepare the body for logging 
       let logBody;
@@ -935,16 +938,24 @@ class Middlewares {
       ...headers
     };
 
-    const formatObjectEntries = (obj, lengthLimit = 50) => {
+    const formatObjectEntries = (obj, lengthLimit = 50, indentLevel = 0) => {
       if (typeof obj !== 'object' || obj === null) return '';
 
-      //NOTE - improve to log nested object in the array
+      const indent = '  '.repeat(indentLevel * 2);
       return Object.entries(obj).map(([key, value]) => {
-        let displayValue = value && String(value).length > lengthLimit
-          ? `${String(value).substring(0, lengthLimit)}... [truncated]`
-          : String(value);
-        if (key.includes('password')) displayValue = '*****';
-        return `${key.padEnd(26)}: ${displayValue}`;
+        let displayValue;
+
+        if (typeof value === 'object' && value !== null) {
+          // Recursively format nested objects
+          displayValue = `\n          ${formatObjectEntries(value, lengthLimit, indentLevel + 1)}`;
+        } else {
+          displayValue = value && String(value).length > lengthLimit
+            ? `${String(value).substring(0, lengthLimit)}... [truncated]`
+            : String(value);
+          if (key.includes('password') || key.includes('token')) displayValue = '*****';
+        }
+
+        return `${indent}${key.padEnd(26)}: ${displayValue}`;
       }).join('\n          ');
     };
 
