@@ -42,6 +42,7 @@ router.get('/', (req, res, next) => {
 // all routes prefix with /api/v0.2
 // Public routes (no auth required)
 router.post('/login', authController.login);
+router.post('/refresh', authController.refresh);
 router.post('/users', userController.registerUser);  // Registration should be public
 router.post('/google/login', authController.googleLogin);
 router.get('/google/callback', authController.googleCallback);
@@ -92,7 +93,6 @@ if (NODE_ENV !== 'production') {
 }
 
 // Add login and logout routes
-router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 
 router.post('/transactions', transactionController.createTransaction);
