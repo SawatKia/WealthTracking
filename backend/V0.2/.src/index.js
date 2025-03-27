@@ -459,7 +459,7 @@ const startServer = async () => {
     // Initialize services
     await initializeServices();
 
-    if (NODE_ENV === 'development' && String(appConfigs.loadMockData).toLowerCase() === 'true') {
+    if (String(appConfigs.loadMockData).toLowerCase() === 'true') {
       try {
         logger.info('Loading mock data...');
         await pgClient.truncateTables();
