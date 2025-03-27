@@ -12,6 +12,7 @@ class LLMService {
     constructor() {
         logger.info('start LLMService');
         this.genAI = new GoogleGenerativeAI(appConfigs.gemini.key);
+        this.connection = false;
 
         // Initialize classification model with system instruction
         this.classificationModel = this.genAI.getGenerativeModel({
@@ -80,7 +81,7 @@ class LLMService {
             Object.entries(modelMapping).forEach(([modelName, modelRef]) => {
                 const tokens = modelName === 'classificationModel' ? classificationTokens :
                     modelName === 'ocrMappingModel' ? ocrMappingTokens : commonTokens;
-                logger.info(`[${modelName} (${modelRef.model})] systemInstruction tokens count: ${tokens.totalTokens}`);
+                logger.info(`[${modelName} (${modelRef.model})] systemInstruction estimated tokens count: ${tokens.totalTokens}`);
             });
             const { data: jsonResponse } = await this._generateContentWithMetrics(this.commonModel, "test");
 
@@ -90,11 +91,21 @@ class LLMService {
             }
 
             logger.info('LLM service initialized');
+            this.connection = true;
             return true;
         } catch (error) {
             logger.error(`Error initializing LLMService: ${error.message}`);
+            this.connection = false;
             throw error;
         }
+    }
+
+    /**
+     * Check if the connection to the LLM service is established.
+     * @returns {boolean} true if the connection is established, false otherwise
+     */
+    isConnected() {
+        return this.connection;
     }
 
     async classifyTransaction(text) {
