@@ -2,9 +2,7 @@ version: "3.8"
 
 services:
   node-server:
-    # image: swtl918/wealthtracking:latest
-    build:
-      context: ./backend/V0.2/
+    image: swtl918/wealthtracking:latest
     container_name: wealthtrack-app
     ports:
       - "3000:3000"  # Using default port from AppConfigs
