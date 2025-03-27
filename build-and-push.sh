@@ -18,7 +18,7 @@ TAG_NAME=$1
 cd backend/V0.2/
 
 # Build Docker image
-docker build -t swtl918/wealthtracking:$TAG_NAME .
+docker build --no-cache -t swtl918/wealthtracking:$TAG_NAME .
 
 # tagging
 docker tag swtl918/wealthtracking:$TAG_NAME swtl918/wealthtracking:latest
