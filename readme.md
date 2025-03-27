@@ -76,8 +76,10 @@ The project folder is located at this path
 
 ### 3. Backend Setup
 
+#### Method 1: Build from Source Code Manually
+
 1. Download and install `Docker Desktop`.
-2. Create a `.env` file in the root directory (same level as `~/backend`, `~/.vscode`, `~/design`, `~/frontend`, `~/project_structure.txt`) with the following keys and values(or your desired value):
+2. Create a `.env` file in the root directory (same level as `~/backend`, `~/.vscode`, `~/design`, `~/frontend`, `~/project_structure.txt`) with the following keys and values (or your desired values):
 
 ```makefile
 NODE_ENV=development
@@ -128,18 +130,36 @@ GEMINI_COMMON_MODEL=gemini-1.5-flash-8b
 GOOGLE_SHEET_ID=<logMonitoringSheetId> # only in production
 ```
 
-1. Open Docker Desktop.
-2. In the project root directory, build and start the Docker container:
+3. Open Docker Desktop.
+4. In the project root directory, build and start the Docker container:
 
 ```bash
 docker-compose up -d --build
 ```
 
+5. Check your app with Postman or Browser at `localhost:APP_PORT` or `localhost:3000/api/v0.2/docs`.
+
+#### Method 2: Use Pre-Built Image from Docker Hub
+
+1. Download the `docker-compose.prof.yml` file into your desired folder:
+
+```bash
+wget https://raw.githubusercontent.com/SawatKia/WealthTracking/refs/heads/main/docker-compose.prof.yml
+```
+
+2. Run the following command to pull the latest Docker image from Docker Hub and start the container:
+
+```bash
+docker compose -f docker-compose.prof.yml up -d
+```
+
 3. Check your app with Postman or Browser at `localhost:APP_PORT`.
+
+---
 
 ### 4. Running the Backend
 
-To watch for changes in the backend, you need to stop and restart the Docker container after making modifications:
+To watch for changes in the backend (if using Method 1), you need to stop and restart the Docker container after making modifications:
 
 1. Stop the container:
 
@@ -155,7 +175,11 @@ docker-compose up -d --build
 
 3. Check your app with Postman or Browser at `localhost:PORT`.
 
----
+If using Method 2, simply restart the container with:
+
+```bash
+docker compose -f docker-compose.prof.yml restart
+```
 
 ### 5. view data in database
   - Exec Postgres: `docker exec -it postgres_container psql -U WealthTrackApi -d WealthTrack_DB`
