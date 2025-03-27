@@ -13,13 +13,13 @@ const DB_RESET = process.env.DB_RESET === 'true';
 const RELOAD_MOCK_DATA = process.env.RELOAD_MOCK_DATA === 'true';
 
 const config = {
-    environment: NODE_ENV,
+    environment: NODE_ENV || 'development',
     appHost: String(process.env.APP_HOST) || 'localhost',
     appPort: process.env.APP_PORT || 3000,
     saltRounds: parseInt(process.env.SALT_ROUNDS, 10) || 10,
     postgres: {
         user: process.env.POSTGRES_USER || 'user',
-        host: process.env.POSTGRES_HOST,
+        host: process.env.POSTGRES_HOST || 'postgres', // service name in docker-compose
         password: process.env.POSTGRES_PASSWORD || 'password',
         port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
         databaseName: {
@@ -29,8 +29,8 @@ const config = {
         },
     },
     pgAdmin: {
-        email: process.env.PGADMIN_DEFAULT_EMAIL,
-        password: process.env.PGADMIN_DEFAULT_PASSWORD,
+        email: process.env.PGADMIN_DEFAULT_EMAIL || 'pgadmin@example.com',
+        password: process.env.PGADMIN_DEFAULT_PASSWORD || '1234567890',
     },
     redis: {
         host: process.env.REDIS_HOST || 'redis', // service name in docker-compose
@@ -40,7 +40,7 @@ const config = {
         url: process.env.EASYSLIP_URL,
         key: process.env.EASYSLIP_KEY,
     },
-    app_domain: process.env.APP_DOMAIN,
+    app_domain: process.env.APP_DOMAIN || 'WealthTrack',
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret',
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'your-refresh-token-secret',
     googleAuth: {
@@ -48,8 +48,8 @@ const config = {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         redirectUri: process.env.GOOGLE_REDIRECT_URI,
     },
-    databaseReset: DB_RESET || NODE_ENV === 'test',
-    loadMockData: RELOAD_MOCK_DATA,
+    databaseReset: DB_RESET || NODE_ENV === 'test' || 'false',
+    loadMockData: RELOAD_MOCK_DATA || 'false',
     gcp: {
         projectName: process.env.PROJECT_NAME,
         projectId: process.env.PROJECT_ID,
@@ -63,9 +63,9 @@ const config = {
     gemini: {
         key: process.env.GEMINI_KEY,
         models: {
-            classification: process.env.GEMINI_CLASSIFICATION_MODEL,
-            ocrMapping: process.env.GEMINI_MAPPING_MODEL,
-            common: process.env.GEMINI_COMMON_MODEL,
+            classification: process.env.GEMINI_CLASSIFICATION_MODEL || 'gemini-1.5-pro',
+            ocrMapping: process.env.GEMINI_MAPPING_MODEL || 'gemini-2.0-flash-exp',
+            common: process.env.GEMINI_COMMON_MODEL || 'gemini-1.5-flash-8b',
         },
     },
     googleSheet: {

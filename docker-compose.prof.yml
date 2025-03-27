@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  node-server:
+    image: swtl918/wealthtracking:latest
+    pull_policy: always
+    container_name: wealthtrack-app
+    ports:
+      - "3000:3000"  # Using default port from AppConfigs
+    volumes:
+      - ./uploads:/usr/src/WealthTrack/uploads
+      - ./statics:/usr/src/WealthTrack/statics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 5m
+      timeout: 20s
+      retries: 6
+      start_period: 30s
+    restart: no
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=app_database_name
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d app_database_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+    networks:
+      - app_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: always
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge

@@ -310,26 +310,41 @@ const initializeServices = async () => {
   try {
     logger.info("Initializing services...");
 
-    // Initialize the PgClient
+    // Initialize the PgClient (Required)
     await pgClient.init();
-
     if (!await pgClient.isConnected()) {
       logger.error("Failed to connect to the database.");
       throw new Error("Database connection failed.");
     }
     logger.info("Database connection successful");
 
-    await easySlip.init();
-    await documentAiService.init();
-    await LLMService.init();
-    await OcrMappingService.init();
-    await GoogleSheetService.init();
-
+    // Initialize Financial Institutions data (Required)
     const fi = new FiModel();
     await fi.initializeData();
+    logger.info("✓ Financial institutions data initialized");
+
+    // Initialize optional external services with fallbacks
+    const services = [
+      { name: 'EasySlip', init: easySlip.init.bind(easySlip) },
+      { name: 'DocumentAI', init: documentAiService.init.bind(documentAiService) },
+      { name: 'LLM', init: LLMService.init.bind(LLMService) },
+      { name: 'OCRMapping', init: OcrMappingService.init.bind(OcrMappingService) },
+      { name: 'GoogleSheet', init: GoogleSheetService.init.bind(GoogleSheetService) }
+    ];
+
+    // Initialize each service with error handling
+    for (const service of services) {
+      try {
+        await service.init();
+        logger.info(`✓ ${service.name} service initialized`);
+      } catch (error) {
+        logger.warn(`⚠️ ${service.name} service initialization failed: ${error.message}`);
+        logger.warn(`The application will continue without ${service.name} functionality`);
+      }
+    }
 
   } catch (error) {
-    logger.error(`Error initializing services: ${error.message}`);
+    logger.error(`Error initializing core services: ${error.message}`);
     throw error;
   }
 };

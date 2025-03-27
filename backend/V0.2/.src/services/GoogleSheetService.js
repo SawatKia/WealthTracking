@@ -115,8 +115,7 @@ class GoogleSheetService {
             // Only initialize if in production environment
             if (!this._verifyEnvironment()) {
                 logger.warn('GoogleSheetService initialization skipped in non-production environment');
-                this.connected = false;
-                return true;
+                throw new Error('GoogleSheetService initialization skipped in non-production environment');
             }
 
             this.initializeAuth();
@@ -124,16 +123,14 @@ class GoogleSheetService {
 
             if (!this.serviceAccount) {
                 logger.warn('GoogleSheet authentication not initialized');
-                this.connected = false;
-                return false;
+                throw new Error('GoogleSheet authentication not initialized');
             }
 
             await this._initializeSpreadsheet();
             await this.setActiveSheet();
             if (!this.activeSheet) {
                 logger.error('Failed to set active sheet');
-                this.connected = false;
-                return false;
+                throw new Error('Failed to set active sheet');
             }
 
             this.targetSheetid = this.activeSheet?.sheetId;
@@ -144,7 +141,7 @@ class GoogleSheetService {
         } catch (error) {
             logger.error('Failed to initialize GoogleSheetService:', error);
             this.connected = false;
-            return false;
+            throw error;
         }
     }
 

@@ -28,6 +28,15 @@ class OcrMappingService {
      */
     async init() {
         try {
+            if (!this.FiModel) {
+                logger.error('Failed to initialize FinancialInstitutionModel');
+                throw new Error('Failed to initialize FinancialInstitutionModel');
+            }
+
+            if (!LLMService.isConnected()) {
+                logger.error('LLM service is not connected');
+                throw new Error('LLM service is not connected');
+            }
             logger.info('OcrMappingService initialized');
         } catch (error) {
             logger.error(`Error initializing OcrMappingService: ${error.message}`);
