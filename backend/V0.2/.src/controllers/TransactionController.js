@@ -78,6 +78,63 @@ class TransactionController extends BaseController {
         }
     }
 
+    async updateBankAccountBalances(transaction, isReversal = false) {
+        logger.debug(`transaction: ${JSON.stringify(transaction, null, 2)}`);
+        logger.info(`${isReversal ? 'Reversing' : 'Updating'} bank account balances`);
+        const multiplier = isReversal ? -1 : 1;
+
+        try {
+            switch (transaction.category) {
+                case 'Income':
+                    logger.info('Income transaction, updating receiver account balance');
+                    if (transaction.receiver_account_number) {
+                        logger.debug(`receiver_account_number: ${transaction.receiver_account_number}, receiver_fi_code: ${transaction.receiver_fi_code}, amount: ${transaction.amount * multiplier}`);
+                        await this.bankAccountModel.updateBalance(
+                            transaction.receiver_account_number,
+                            transaction.receiver_fi_code,
+                            transaction.amount * multiplier
+                        );
+                    }
+                    break;
+
+                case 'Expense':
+                    logger.info('Expense transaction, updating sender account balance');
+                    if (transaction.sender_account_number) {
+                        logger.debug(`sender_account_number: ${transaction.sender_account_number}, sender_fi_code: ${transaction.sender_fi_code}, amount: ${transaction.amount * multiplier}`);
+                        await this.bankAccountModel.updateBalance(
+                            transaction.sender_account_number,
+                            transaction.sender_fi_code,
+                            -transaction.amount * multiplier
+                        );
+                    }
+                    break;
+
+                case 'Transfer':
+                    logger.info('Transfer transaction, updating sender and receiver account balances');
+                    if (transaction.sender_account_number) {
+                        logger.debug(`sender_account_number: ${transaction.sender_account_number}, sender_fi_code: ${transaction.sender_fi_code}, amount: ${transaction.amount * multiplier}`);
+                        await this.bankAccountModel.updateBalance(
+                            transaction.sender_account_number,
+                            transaction.sender_fi_code,
+                            -transaction.amount * multiplier
+                        );
+                    }
+                    if (transaction.receiver_account_number) {
+                        logger.debug(`receiver_account_number: ${transaction.receiver_account_number}, receiver_fi_code: ${transaction.receiver_fi_code}, amount: ${transaction.amount * multiplier}`);
+                        await this.bankAccountModel.updateBalance(
+                            transaction.receiver_account_number,
+                            transaction.receiver_fi_code,
+                            transaction.amount * multiplier
+                        );
+                    }
+                    break;
+            }
+        } catch (error) {
+            logger.error(`Error updating bank account balances: ${error.message}`);
+            throw error;
+        }
+    }
+
     /**
      * Validates whether the given account has sufficient balance to execute a transaction.
      * @param {string} accountNumber - The account number to validate.
@@ -261,6 +318,30 @@ class TransactionController extends BaseController {
                     validatedData.sender = sender;
                     validatedData.receiver = receiver;
                 }
+                logger.debug(`validated BankAccount after validation: ${JSON.stringify(validatedData, null, 2)}`);
+                switch (validatedData.category) {
+                    case 'Expense':
+                        if (!validatedData.sender) {
+                            logger.error('Sender bank account not found, for expense transaction');
+                        }
+                        break;
+                    case 'Income':
+                        if (!validatedData.receiver) {
+                            logger.error('Receiver bank account not found, for income transaction');
+                        }
+                        break;
+                    case 'Transfer':
+                        if (!validatedData.sender) {
+                            logger.error('Sender bank account not found, for transfer transaction');
+                        }
+                        if (!validatedData.receiver) {
+                            logger.error('Receiver bank account not found, for transfer transaction');
+                        }
+                        break;
+
+                }
+                const bankAccounts = await this.bankAccountModel.getAll(user.national_id);
+                logger.debug(`available bank accounts: ${JSON.stringify(bankAccounts, null, 2)}`);
             }
             logger.info('bank accounts are valid');
 
@@ -323,6 +404,7 @@ class TransactionController extends BaseController {
             logger.debug(`transactionData to be create: ${JSON.stringify(transactionData, null, 2)}`);
 
             const transaction = await this.transactionModel.create(transactionData);
+            // await this.updateBankAccountBalances(transaction);
             req.formattedResponse = formatResponse(201, 'Transaction created successfully', transaction);
             next();
         } catch (error) {
@@ -337,6 +419,8 @@ class TransactionController extends BaseController {
                 next(MyAppErrors.badRequest(error.message));
             } else if (error.message.includes('Missing required field: ')) {
                 next(MyAppErrors.badRequest(error.message));
+            } else if (error.message.includes('not found')) {
+                next(MyAppErrors.notFound(error.message));
             } else {
                 next(error);
             }
@@ -609,10 +693,16 @@ class TransactionController extends BaseController {
 
             // Update the transaction
             logger.debug(`update transaction_id: ${transaction_id} updateData: ${JSON.stringify(updateData, null, 2)}`);
+            // First reverse the old transaction
+            // await this.updateBankAccountBalances(existingTransaction, true);
             const updatedTransaction = await this.transactionModel.update(
                 { transaction_id },
                 updateData
             );
+
+            // Apply the new transaction changes
+            // await this.updateBankAccountBalances(updatedTransaction);
+
             logger.debug(`updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}`);
 
             // // Retrieve the updated transaction from the database
@@ -677,6 +767,9 @@ class TransactionController extends BaseController {
             if (!super.verifyOwnership(user, existingTransaction)) {
                 throw MyAppErrors.forbidden('You do not have permission to delete this transaction');
             }
+
+            // Reverse the transaction effects on bank accounts
+            // await this.updateBankAccountBalances(existingTransaction, true);
 
             await this.transactionModel.delete({ transaction_id });
             req.formattedResponse = formatResponse(200, 'Transaction deleted successfully');
