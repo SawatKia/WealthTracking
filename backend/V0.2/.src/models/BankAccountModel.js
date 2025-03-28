@@ -134,6 +134,37 @@ class BankAccountModel extends BaseModel {
             throw error;
         }
     }
+
+    async updateBalance(accountNumber, fiCode, amount) {
+        try {
+            logger.info('Updating bank account balance');
+            logger.debug(`Account: ${accountNumber}, FI: ${fiCode}, Amount change: ${amount}`);
+
+            const account = await this.get(accountNumber, fiCode);
+            logger.debug(`Current balance: ${account.balance}`);
+            if (!account) {
+                throw MyAppErrors.notFound('Bank account not found');
+            }
+
+            const newBalance = parseFloat(account.balance) + parseFloat(amount);
+            if (newBalance < 0) {
+                throw MyAppErrors.badRequest('Insufficient balance');
+            }
+            logger.debug(`New balance: ${newBalance.toFixed(2)}`);
+
+            const result = await this.update(
+                { account_number: accountNumber, fi_code: fiCode },
+                { balance: newBalance.toFixed(2) }
+            );
+            logger.debug(`updated Bank account: ${JSON.stringify(result)}`);
+
+            logger.debug(`Updated balance: ${newBalance.toFixed(2)}`);
+            return result;
+        } catch (error) {
+            logger.error(`Error updating bank account balance: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = BankAccountModel

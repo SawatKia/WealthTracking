@@ -1082,7 +1082,10 @@ class Middlewares {
           logger.info('Adding cache headers max-age=1800');
           res.set('Cache-Control', 'public, max-age=1800'); // Cache for 30 minutes
         } else {
-          res.set('Cache-Control', 'public, max-age=120'); // No cache
+          logger.info('Adding no-cache headers for bank account endpoints');
+          res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
         }
       }
 

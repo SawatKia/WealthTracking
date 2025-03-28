@@ -7,9 +7,19 @@ const appConfigs = require('../configs/AppConfigs');
 const NODE_ENV = appConfigs.environment;
 
 const timezoned = () => {
-    return new Date().toLocaleString('en-GB', {
-        timeZone: 'Asia/Bangkok'
+    const d = new Date();
+    const ms = d.getMilliseconds();
+    // Always pad milliseconds to 3 digits
+    const paddedMs = ms.toString().padStart(3, '0');
+
+    // Get the base datetime string without milliseconds
+    const baseDateTime = d.toLocaleString('en-GB', {
+        timeZone: 'Asia/Bangkok',
+        hour12: false,
     });
+
+    // Return the formatted datetime with 3-digit milliseconds
+    return baseDateTime.replace(/(\d{2}:\d{2}:\d{2})(?:\.\d+)?/, `$1.${paddedMs}`);
 }
 
 // Utility function to extract calling method from stack trace
