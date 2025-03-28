@@ -323,7 +323,7 @@ class BaseModel {
         logger.debug("Delete params:", values);
 
         const result = await this.pgClient.query(sql, values);
-        logger.debug("Delete result:", result.rows[0]);
+        logger.debug(`Delete result: ${JSON.stringify(result.rows[0])}`);
         return result.rows[0];
       });
     } catch (error) {
