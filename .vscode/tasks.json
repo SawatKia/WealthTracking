@@ -10,7 +10,7 @@
         {
             "label": "docker-compose up backend",
             "type": "shell",
-            "command": "docker compose up -d node-server postgres redis",
+            "command": "docker compose up -d",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down"
@@ -19,7 +19,7 @@
         {
             "label": "docker-compose rebuild backend",
             "type": "shell",
-            "command": "docker compose up -d --build node-server postgres redis",
+            "command": "docker compose up -d --build",
             "problemMatcher": [],
             "dependsOn": [
                 "docker-compose down"
