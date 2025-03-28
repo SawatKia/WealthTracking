@@ -461,10 +461,11 @@ class ApiController {
       logger.debug(`Image buffer size: ${imageBuffer.byteLength} bytes`);
       logger.debug(`imageBuffer: ${JSON.stringify(imageBuffer).substring(0, 500)}${JSON.stringify(imageBuffer).length > 500 ? "...[truncated]..." : ""}`);
 
-      payload = await QRCodeReader.extractPayloadFromBuffer(req.file.buffer);
+      // Ensure this call is awaited
+      payload = await QRCodeReader.extractPayloadFromBuffer(imageBuffer);
       if (!payload) {
         logger.error("Invalid QR code payload extracted");
-        throw MyAppErrors.badRequest("cannot extract payload from QR code");
+        throw MyAppErrors.badRequest("Cannot extract payload from QR code");
       }
       logger.info(`Extracted QR code payload: ${payload}`);
 
