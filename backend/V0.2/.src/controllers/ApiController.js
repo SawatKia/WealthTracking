@@ -512,7 +512,7 @@ class ApiController {
       // }
 
       // Get transaction type from LLM
-      const { category: transactionCategory, type: transactionType } = await LLMService.classifyTransaction(ocrText);
+      const { category: transactionCategory, type: transactionType, note: transactionNote } = await LLMService.classifyTransaction(ocrText);
       logger.debug(`Classified transaction type: ${transactionType}`);
 
       let result;
@@ -535,7 +535,8 @@ class ApiController {
         result.data,
         transactionCategory,
         transactionType,
-        req
+        req,
+        transactionNote
       );
 
       // Clean up unnecessary fields based on category
@@ -631,11 +632,11 @@ class ApiController {
    * @param {Object} req - Request object containing user information
    * @returns {Object} Formatted transaction data matching TransactionModel schema
    */
-  async _prepareTransactionData(slipData, category, type = null, req) {
+  async _prepareTransactionData(slipData, category, type = null, req, note) {
     logger.info('Preparing transaction data from the easySlipResponse');
 
     try {
-      logger.debug(`category: ${category}, type: ${type}`);
+      logger.debug(`category: ${category}, type: ${type}, note: ${note}`);
 
       // Get masked account numbers from slip
       logger.info("Get masked account numbers from slip");
@@ -691,9 +692,9 @@ class ApiController {
         category: category,
         type: type || slipData.type || 'Other',
         amount: parseFloat(slipData.amount.amount),
-        note: [slipData.ref1, slipData.ref2, slipData.ref3]
+        note: note || [slipData.ref1, slipData.ref2, slipData.ref3]
           .filter(ref => ref)
-          .join(' ') || '',
+          .join(' ') || "No note provided",
         slip_uri: req.file.path,
         national_id: req.user?.sub,
         debt_id: null,
