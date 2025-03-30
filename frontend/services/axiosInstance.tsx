@@ -2,7 +2,7 @@ import axios from "axios";
 import { storeToken, getToken, getRefreshToken, deleteToken } from "./AuthenService"; 
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  baseURL: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2",
   headers: {
     "Content-Type": "application/json",
   },
