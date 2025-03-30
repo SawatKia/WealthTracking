@@ -17,8 +17,7 @@ import CategoryCard from "@/components/CategoryCard";
 
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../constants/NavigateType"; // Import the type definition
-// import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
+import { RootStackParamList } from "../constants/NavigateType"; 
 
 type CategoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -40,8 +39,6 @@ export default function SelectCategoryModal({
 
   const handleSelect = (category: string, type: string) => {
     setSelectedCategory(category); // Update the selected category
-    // console.log(selectedCategory,category)
-    // console.log(selectedCategory == category)
     onSelect(category, type); // Call the parent callback
   };
 

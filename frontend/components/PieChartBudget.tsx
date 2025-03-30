@@ -26,10 +26,7 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
 
   return (
     <View style={styles.container}>
-      {/* <svg viewBox="0 0 400 230"> */}
-      {/* <View style={{ width: 400, height: 400, position: 'relative' }}> */}
       <VictoryPie
-        // standalone={false}
         style={{ parent: { marginBottom: -200 } }}
         width={400}
         height={400}
@@ -45,16 +42,6 @@ const PieChartBudget: React.FC<PieChartProps> = ({ budgets }) => {
         colorScale={["#E5E5E5", "#4957AA"]}
         labels={[]} 
       />
-      {/* <VictoryLabel
-        textAnchor="middle"
-        style={{ fontSize: 20 }}
-        x={200}
-        y={200}
-        // text={`Total Balance\n${totalLimit}฿`}
-        text={`Total Spent\n${totalSpent}฿`}
-      /> */}
-      {/* </View> */}
-      {/* </svg> */}
       <Text style={styles.totalspentLabel}>Total Spent</Text>
       <Text style={styles.totalspentValue}>{totalSpent}฿</Text>
       <TouchableOpacity

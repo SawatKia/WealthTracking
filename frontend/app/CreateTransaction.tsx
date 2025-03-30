@@ -407,16 +407,16 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f9f9f9",
     borderRadius: 8,
-    elevation: 2, // Adds shadow on Android
-    shadowColor: "#000", // Adds shadow on iOS
+    elevation: 2,  
+    shadowColor: "#000",  
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   rowTile: {
-    flexDirection: "row", // Aligns icon and title horizontally
+    flexDirection: "row",  
     alignItems: "center",
-    marginBottom: 8, // Spacing between rows
+    marginBottom: 8, 
   },
   iconTitle: {
     backgroundColor: "#4957AA",
@@ -430,38 +430,30 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   rowInput: {
-    flexDirection: "row", // Aligns blank space and inputs horizontally
+    flexDirection: "row",
     alignItems: "center",
   },
 
   inputsContainer: {
-    flexDirection: "row", // Arrange items in a row
+    flexDirection: "row", 
     flexWrap: "wrap",
-    width: "90%", // Allow items to wrap to the next row
+    width: "90%", 
     marginLeft: 40,
   },
   inputButton: {
     flexDirection: "row",
     backgroundColor: "#4957AA40",
     borderRadius: 8,
-    // padding:3,
     minHeight: 35,
     justifyContent: "center",
     alignItems: "center",
     textAlign: "center",
-
     width: "100%",
-
     borderWidth: 0,
-    // zIndex:100
-    // zIndex: 9999,
-
-    // textAlign:'center'
   },
   textInput: {
     backgroundColor: "#4957AA40",
     borderRadius: 8,
-    // paddingHorizontal:15,
     width: "25%",
     textAlign: "center",
     paddingVertical: 8,
@@ -470,7 +462,6 @@ const styles = StyleSheet.create({
   iconInput: {
     marginHorizontal: 10,
     backgroundColor: "white",
-    // fontWeight:'bold
     borderRadius: 5,
     padding: 3,
   },
@@ -478,8 +469,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#BEC2E0",
     borderWidth: 0,
-    // marginTop:5,
-    // position: "relative", // Positioning dropdown above other components
     zIndex: 1,
   },
 
@@ -506,37 +495,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-// export default function App() {
-//     const [date, setDate] = useState<Dayjs>(dayjs()); // Initialize state as Dayjs object
-//     const onChange = (params:any) => {
-//         setDate(params.date);
-//       };
-//     // const onChange = (
-//     //     (params:any) => {
-//     //       if (mode === 'single') {
-//     //         setDate(params.date);
-//     //       }
-//     //     },
-//     //     [mode]
-//     //   );
-
-//     return (
-//       <View style={styles.container}>
-//         <Text>Selected Date: {date.format('YYYY-MM-DD')}</Text>
-//         <DateTimePicker
-//           mode="single"
-//           date={date.format('YYYY-MM-DD')}  // Pass formatted string date to the picker
-//           onChange={(onChange)}// Update state on change
-//             // onChange={(params) => setDate(params.date)}
-//         />
-//       </View>
-//     );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#F5FCFF',
-//   },
-// });

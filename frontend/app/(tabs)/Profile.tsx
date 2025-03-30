@@ -17,7 +17,11 @@ interface UpdateProfileData {
   newPassword?: string;
   newConfirmPassword?: string; // เปลี่ยนจาก confirmNewPassword เป็น newConfirmPassword
   password?: string;
-  profilePicture?: File;
+  profilePicture?: {  // Profile picture is optional
+    uri: string;
+    name: string;
+    type: string;
+  };
 }
 
 export default function Profile() {
@@ -99,16 +103,23 @@ export default function Profile() {
       Alert.alert('Uploading', 'Uploading your profile picture...');
 
       // Create file object for upload
-      const response = await fetch(result.assets[0].uri);
-      const blob = await response.blob();
-      const fileToUpload = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
+
+      // const response = await fetch(result.assets[0].uri);
+      // const blob = await response.blob();
+      // const fileToUpload = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
+      const fileToUpload = {
+        uri: result.assets[0].uri,
+        name: `slip${Date.now()}.jpg`,
+        type: "image/jpeg",
+      };
+      
 
       try {
         const updateData: UpdateProfileData = {
           password: currentPassword,
           profilePicture: fileToUpload,
         };
-
+        console.log('update',updateData)
         const updatedProfile = await updateUserProfile(updateData);
 
         if (updatedProfile && updatedProfile.profile_picture_url) {

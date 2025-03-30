@@ -17,8 +17,7 @@ import CategoryCard from "@/components/CategoryCard";
 
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../constants/NavigateType"; // Import the type definition
-// import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
+import { RootStackParamList } from "../constants/NavigateType"; 
 
 type CategoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -39,7 +38,6 @@ export default function CategoryExpenses({
     // Set the selected category and navigate to the next screen
     console.log(item);
     setSelectedCategory(item);
-    // navigation.popTo('CreateTransaction', { category: item });
   };
 
   return (
@@ -142,11 +140,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleText: {
-    color: "#7F8CD9", // Grey for unselected text
+    color: "#7F8CD9", 
     fontWeight: "bold",
   },
   selectedText: {
-    color: "#FFFFFF", // White color for selected text
+    color: "#FFFFFF", 
   },
 
   categoryContainer: {
@@ -154,53 +152,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
 
-    flexDirection: "row", // Arrange buttons in a row
-    flexWrap: "wrap", // Allow wrapping to the next line
+    flexDirection: "row",
+    flexWrap: "wrap", 
     marginHorizontal: 10,
     backgroundColor: "#F0F6FF",
   },
 });
-// import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function CategoryExpenses() {
-//   const router = useRouter();
-//   const params = useLocalSearchParams();
-
-//   // Handle the name parameter
-// const name =
-//   typeof params.name === 'string' // If it's a string, use it directly
-//     ? params.name
-//     : Array.isArray(params.name) // If it's an array, join its elements
-//     ? params.name.join(', ') // Converts array to a comma-separated string
-//     : 'Default Title'; // Fallback if params.name is undefined or not valid
-
-//   return (
-//     <View style={styles.container}>
-//       <Stack.Screen
-//         options={{
-//           title: name, // Dynamically sets the title
-//         }}
-//       />
-//       <Text
-//         style={styles.text}
-//         onPress={() => {
-//           router.setParams({ name: 'Updated' }); // Updates the query parameter
-//         }}>
-//         Update the title
-//       </Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   text: {
-//     fontSize: 18,
-//     color: 'blue',
-//   },
-// });

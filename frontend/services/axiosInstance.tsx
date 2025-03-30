@@ -2,7 +2,7 @@ import axios from "axios";
 import { storeToken, getToken, getRefreshToken, deleteToken } from "./AuthenService"; 
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  baseURL: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2",
   headers: {
     "Content-Type": "application/json",
   },
@@ -22,45 +22,5 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-// Response interceptor to handle 401 and refresh token
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     if (error.response?.status === 401) {
-//       console.warn("Token expired. Attempting refresh...");
-//       try {
-//         const refreshToken = await getRefreshToken(); // Retrieve refresh token
-//         if (!refreshToken) {
-//           console.error("No refresh token available.");
-//           await deleteToken();
-//           return Promise.reject(error);
-//         }
-
-//         const refreshResponse = await api.post(
-//           "/refresh?platform=mobile",
-//           {},
-//           {
-//             headers: {
-//               "x-refresh-token": refreshToken, // Include refresh token in header
-//             },
-//           }
-//         );
-
-//         const newToken = refreshResponse.data.token;
-
-//         if (newToken) {
-//           await storeToken(newToken); // Store the new token
-//           error.config.headers.Authorization = `Bearer ${newToken}`;
-//           return api(error.config); // Retry the failed request
-//         }
-//       } catch (refreshError) {
-//         console.error("Token refresh failed:", refreshError);
-//         await deleteToken(); // Clear the invalid token
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
 
 export default api;
