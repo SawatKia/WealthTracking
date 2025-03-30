@@ -16,7 +16,6 @@ Before starting, ensure you have the following installed on your machine:
 ### Backend Prerequisites
 
 - **Docker Desktop**: [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- **PostMan**: [download Postman](https://www.postman.com/downloads/)
 
 ## Getting Started
 
@@ -76,7 +75,27 @@ The project folder is located at this path
 
 ### 3. Backend Setup
 
-#### Method 1: Build from Source Code Manually
+#### Method 1: Quick Start Backend using Pre-Built Image from Docker Hub
+
+1. Download the `docker-compose.prof.yml` file into your desired folder:
+
+```bash
+wget https://raw.githubusercontent.com/SawatKia/WealthTracking/refs/heads/main/docker-compose.prof.yml
+```
+
+2. Run the following command to pull the latest Docker image from Docker Hub and start the container:
+
+```bash
+docker compose -f docker-compose.prof.yml up -d
+```
+
+This method uses pre-built images from Docker Hub and is the fastest way to get the backend running. After completion, you can access the API documentation at `localhost:3000/api/v0.2/docs`.
+
+Note: Make sure you have Docker Desktop running before executing these commands.
+
+---
+
+#### Method 2: Build from Source Code Manually
 
 1. Download and install `Docker Desktop`.
 2. Create a `.env` file in the root directory (same level as `~/backend`, `~/.vscode`, `~/design`, `~/frontend`, `~/project_structure.txt`) with the following keys and values (or your desired values):
@@ -139,23 +158,6 @@ docker-compose up -d --build
 
 5. Check your app with Postman or Browser at `localhost:APP_PORT` or `localhost:3000/api/v0.2/docs`.
 
-#### Method 2: Use Pre-Built Image from Docker Hub
-
-1. Download the `docker-compose.prof.yml` file into your desired folder:
-
-```bash
-wget https://raw.githubusercontent.com/SawatKia/WealthTracking/refs/heads/main/docker-compose.prof.yml
-```
-
-2. Run the following command to pull the latest Docker image from Docker Hub and start the container:
-
-```bash
-docker compose -f docker-compose.prof.yml up -d
-```
-
-3. Check your app with Postman or Browser at `localhost:APP_PORT`.
-
----
 
 ### 4. Running the Backend
 
