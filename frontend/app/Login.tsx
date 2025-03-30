@@ -37,31 +37,6 @@ export default function LoginScreen() {
     checkLogin: "",
   }); //(nationalId, username, email, password, confirmPassword)
 
-  // const [error, setError] = useState({ email: '', password: '' });
-
-  // const validateInput = (): boolean => {
-  //   let isValid = true;
-  //   const newError = { email: '', password: '' };
-
-  //   if (!email.trim()) {
-  //     newError.email = 'Email is required';
-  //     isValid = false;
-  //   } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-  //     newError.email = 'Invalid email format';
-  //     isValid = false;
-  //   }
-
-  //   if (!password.trim()) {
-  //     newError.password = 'Password is required';
-  //     isValid = false;
-  //   } else if (password.length < 6) {
-  //     newError.password = 'Password must be at least 6 characters';
-  //     isValid = false;
-  //   }
-
-  //   setError(newError);
-  //   return isValid;
-  // };
   useEffect(() => {
     // Retrieve saved credentials when the screen loads
     const loadSavedCredentials = async () => {
@@ -94,9 +69,6 @@ export default function LoginScreen() {
         } else {
           await clearCredentials(); // Clear credentials if "Remember Me" is not selected
         }
-  
-        // Navigate to the next screen after login success (uncomment when using a router)
-        // router.push('/(tabs)');
   
       } else {
         // Handle failure response (display error message)
@@ -214,11 +186,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
             <Text style={styles.rememberMe}>Remember me</Text>
           </View>
-
-          {/* Forgot password */}
-          {/* <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot password?</Text>
-          </TouchableOpacity> */}
         </View>
           {
                   err.email ||

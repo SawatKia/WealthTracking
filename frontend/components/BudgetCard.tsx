@@ -46,22 +46,6 @@ const BudgetCard: React.FC<BudgetCardProps> = ({ budgets, getBudgets }) => {
     } catch (error) {
       console.error(error, "Failed to delete budget. Please try again.");
     }
-    // Alert.alert("Delete Budget", "Are you sure you want to delete this budget?", [
-    //   { text: "Cancel", style: "cancel" },
-    //   {
-    //     text: "Delete",
-    //     onPress: async () => {
-    //       const success = await deleteBudget(id);
-    //       if (success) {
-    //         console.log("Budget deleted:", id);
-    //         setSelectedBudget(null);
-    //         getBudgets(); // Refresh the budget list
-    //       } else {
-    //         Alert.alert("Error", "Failed to delete budget. Please try again.");
-    //       }
-    //     },
-    //   },
-    // ]);
   };
 
   const handleUpdate = async () => {

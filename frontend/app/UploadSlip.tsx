@@ -224,37 +224,3 @@ const styles = StyleSheet.create({
 });
 
 export default ImageUploadScreen;
-// import { launchCamera, launchImageLibrary, ImagePickerResponse, ImageLibraryOptions } from 'react-native-image-picker';
-
-// // Correcting the options structure
-// const options: ImageLibraryOptions = {
-//   selectionLimit: 0,
-//   mediaType: 'photo',
-//   includeBase64: false,
-// };
-
-// const uploadSlip = (): JSX.Element => {
-//   const openGallery = async (): Promise<void> => {
-//     try {
-//       const result: ImagePickerResponse = await launchImageLibrary(options);
-      
-//       if (result.didCancel) {
-//         console.log('User cancelled image picker');
-//       } else if (result.errorCode) {
-//         console.error('Error: ', result.errorMessage);
-//       } else {
-//         console.log('Image selected: ', result.assets?.[0].uri);
-//       }
-//     } catch (error) {
-//       console.error('Failed to open gallery: ', error);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <button onClick={openGallery}>Upload Slip</button>
-//     </div>
-//   );
-// };
-
-// export default uploadSlip;
