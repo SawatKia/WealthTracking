@@ -8,8 +8,12 @@ export interface UserProfile {
     username: string;
     email: string;
     date_of_birth: string;
-    profile_picture_url: string;
-    profile_picture_data?: string;
+    profile_picture? : {
+        name: string;
+        data: string;
+    }
+    // profile_picture_uri: string;
+    // profile_picture_data?: string;
 }
 
 export interface UpdateProfileData {
@@ -54,7 +58,7 @@ export const useProfile = () => {
         }
     };
 
-    const updateUserProfile = async (updateData: UpdateProfileData): Promise<UserProfile | null> => {
+    const updateUserProfile = async (updateData: UpdateProfileData) => {
         try {
             setLoading(true);
     
@@ -116,6 +120,7 @@ export const useProfile = () => {
             if (response.status === 200) {
                 const updatedProfile = response.data.data;
                 setProfile(updatedProfile);
+                console.log('Updated Profile:', updatedProfile);
                 return updatedProfile;
             } else {
                 setError(response.data.message || 'Failed to update user profile.');
@@ -156,9 +161,10 @@ export const useProfile = () => {
         }
     };
 
-    const getProfilePicture = (): string => {
-        return profile?.profile_picture_url || '';
-    };
+    // const getProfilePicture = (): string => {
+    //     console.log('Profile Picture URI:', profile?.profile_picture_uri);
+    //     return profile?.profile_picture_uri || '';
+    // };
 
     return {
         profile,
@@ -167,6 +173,6 @@ export const useProfile = () => {
         getUserProfile,
         updateUserProfile,
         deleteUserAccount,
-        getProfilePicture
+        // getProfilePicture
     };
 };

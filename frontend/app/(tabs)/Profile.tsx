@@ -70,9 +70,10 @@ export default function Profile() {
         }
 
         // จัดการ URL รูปโปรไฟล์ที่ได้จาก API
-        if (userData.profile_picture_url) {
-          setProfilePictureUrl(userData.profile_picture_url);
+        if (userData.profile_picture) {
+          setProfilePictureUrl(userData.profile_picture.data);
         }
+        // console.log('Profile picture URL:', profilePictureUrl); // Log the profile picture URL for debugging
       }
     } catch (err) {
       console.error('Error loading profile:', err);
@@ -121,10 +122,11 @@ export default function Profile() {
         };
         console.log('update',updateData)
         const updatedProfile = await updateUserProfile(updateData);
+        console.log('Updated profile:', updatedProfile.profile_picture_uri);
 
-        if (updatedProfile && updatedProfile.profile_picture_url) {
+        if (updatedProfile && updatedProfile.profile_picture_uri) {
           // อัปเดต URL ของรูปภาพจาก response
-          setProfilePictureUrl(updatedProfile.profile_picture_url);
+          setProfilePictureUrl(updatedProfile.profile_picture_uri);
 
           // แจ้งเตือนผู้ใช้
           Alert.alert('Success', t('profile.success.update'));
