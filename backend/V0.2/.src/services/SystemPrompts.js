@@ -11,11 +11,12 @@ Respond only with a JSON object in this format:
   "category": "one of: Expense, Income, or Transfer",
   "type": "specify type from available transaction types only based on category", 
   "confidence": "number between 0 and 1",
-  "reasoning": "brief explanation of why this type was chosen"
+  "reasoning": "brief explanation of why this type was chosen",
+  "note": "any additional user's notes or memo from the slip ocr text or extract from the image directly if therei s no user's notes or memo"
 }
 
 Rules:
-1. Always check for user notes or memos (e.g., "บันทึกช่วยจำ: "). Use this information to determine the transaction type.
+1. Always check for user notes or memos (e.g., "บันทึกช่วยจำ: "). Use this information to determine the transaction type and the note as it is from ocr text.
 2. Classify as "Transfer" only if the sender and receiver names are the same or very similar (e.g., matching names, organizations, or entities). If the sender and receiver are clearly different, classify the transaction based on its purpose.
 3. For transfers where the sender and receiver are the same, classify as "Transfer" even if the memo mentions a purpose, since the actual expense has not yet occurred.
 4. the type can classify from memo if its was mentioned. if the memo was not mentioned or unclear, the type must be "other".
