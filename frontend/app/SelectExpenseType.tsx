@@ -17,8 +17,7 @@ import CategoryCard from "@/components/CategoryCard";
 
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../constants/NavigateType"; // Import the type definition
-// import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
+import { RootStackParamList } from "../constants/NavigateType"; 
 
 type CategoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
