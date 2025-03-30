@@ -24,7 +24,7 @@ export default {
       delete: "Your account has been deleted successfully."
     },
     error: {
-      update: "Failed to update profile. Please try again.",
+      // update: "Failed to update profile. Please try again.",
       delete: "Failed to delete account. Please check your password and try again.",
       password: "New passwords do not match."
     }
