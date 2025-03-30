@@ -17,6 +17,8 @@ TAG_NAME=$1
 # Change directory
 cd backend/V0.2/
 
+docker login
+
 # Build Docker image
 docker build --no-cache -t swtl918/wealthtracking:$TAG_NAME .
 
@@ -27,5 +29,5 @@ docker tag swtl918/wealthtracking:$TAG_NAME swtl918/wealthtracking:latest
 docker push swtl918/wealthtracking:$TAG_NAME 
 docker push swtl918/wealthtracking:latest
 
-echo "Successfully built and pushed \033[1;32mswtl918/wealthtracking:$TAG_NAME\033[0m and \033[1;32mswtl918/wealthtracking:latest\033[0m to Docker Hub"
+echo -e "Successfully built and pushed \033[1;32mswtl918/wealthtracking:$TAG_NAME\033[0m and \033[1;32mswtl918/wealthtracking:latest\033[0m to Docker Hub"
  

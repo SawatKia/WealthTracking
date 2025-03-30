@@ -224,9 +224,23 @@ class BaseController {
         return true;
     }
 
-    filterUserData(user) {
+    filterUserData(user, includeAllFields = false) {
         logger.info('Filtering user data for client');
+        logger.debug(`retrieved user: ${JSON.stringify(user, null, 2).substring(0, 100)}`);
         if (!user) return null;
+
+        const sensitiveFields = ['password', 'access_token', 'refresh_token'];
+
+        if (includeAllFields) {
+            logger.info('Returning full user data excluding sensitive fields');
+            const sanitizedUser = Object.keys(user)
+                .filter(key => !sensitiveFields.includes(key))
+                .reduce((obj, key) => {
+                    obj[key] = user[key];
+                    return obj;
+                }, {});
+            return sanitizedUser;
+        }
 
         const allowedFields = ['national_id', 'email', 'username', 'date_of_birth', 'profile_picture_url'];
         const filteredUser = Object.keys(user)

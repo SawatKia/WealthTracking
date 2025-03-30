@@ -162,53 +162,50 @@ class UserController extends BaseController {
             const user = await super.getCurrentUser(req);
 
             // Handle profile picture if it exists
-            logger.debug(`Processing profile picture: ${user.profile_picture_uri}`);
             if (user.profile_picture_uri?.startsWith('http')) {
-                logger.debug('External profile picture URL detected');
+                // External URL handling remains the same
                 user.profile_picture_url = user.profile_picture_uri;
-                logger.info('profile_picture_url set to external URL');
                 delete user.profile_picture_uri;
             } else if (user.profile_picture_uri?.includes('uploads/')) {
-                logger.debug(`Processing internal profile picture: ${user.profile_picture_uri}`);
-                // Extract the original filename from the stored path
+                // Internal file handling with improved base64 encoding
                 const pathParts = user.profile_picture_uri.split('/');
-                logger.debug(`pathParts: ${pathParts.join(', ')}`);
+                logger.debug(`pathParts: ${JSON.stringify(pathParts)}`);
                 const filename = pathParts[pathParts.length - 1];
                 logger.debug(`filename: ${filename}`);
 
-                // Split by first two dashes to get the original filename
                 const matches = filename.match(/^(\d+)-([^-]+)-(.+)$/);
                 logger.debug(`matches: ${JSON.stringify(matches)}`);
                 if (matches && matches[2] === user.national_id) {
                     const originalFilename = matches[3];
-                    logger.debug(`originalFilename: ${originalFilename}`);
-                    // Check if file exists
-                    logger.debug(`Checking if file exists: ${user.profile_picture_uri}`);
+
                     if (fs.existsSync(user.profile_picture_uri)) {
-                        // Read and encode the image file
                         const imageBuffer = fs.readFileSync(user.profile_picture_uri);
+                        const mimeType = path.extname(originalFilename).toLowerCase() === '.png'
+                            ? 'image/png'
+                            : 'image/jpeg';
                         const imageBase64 = imageBuffer.toString('base64');
-                        user.profile_picture_data = `data:image/jpeg;base64,${imageBase64}`;
-                        user.profile_picture_name = originalFilename;
-                        logger.debug(`profile_picture_name: ${user.profile_picture_name}`);
-                    } else {
-                        logger.warn(`Profile picture file not found: ${user.profile_picture_uri}`);
-                        user.profile_picture_uri = null;
+
+                        // Store these properties to be included in filtered response
+                        user.profile_picture = {
+                            name: originalFilename,
+                            data: `data:${mimeType};base64,${imageBase64}`,
+                            type: mimeType
+                        };
                     }
-                } else {
-                    logger.error('Invalid profile picture filename format or unauthorized access');
-                    user.profile_picture_uri = null;
+                    delete user.profile_picture_uri;
                 }
-            } else {
-                logger.warn('No profile picture to process');
             }
+
             const filteredUser = this.filterUserData(user);
-            logger.debug(`user after profile picture processing: ${JSON.stringify(filteredUser)}`);
+            // Ensure profile picture data is included in filtered response
+            if (user.profile_picture) {
+                filteredUser.profile_picture = user.profile_picture;
+            }
+            logger.debug(`filteredUser: ${JSON.stringify(filteredUser).substring(0, 500)}${filteredUser.length > 500 ? " ...[truncated]..." : ""}`);
 
             req.formattedResponse = formatResponse(200, 'User retrieved successfully', filteredUser);
             next();
-        }
-        catch (error) {
+        } catch (error) {
             logger.error(`Error in getUser: ${error.message}`);
             if (error instanceof MyAppErrors) {
                 next(error);
@@ -226,17 +223,6 @@ class UserController extends BaseController {
             if (!user) {
                 throw MyAppErrors.notFound('User not found');
             }
-            // Verify required password field
-            await super.verifyField(req.body, ['password'], this.userModel);
-
-            // Check current password
-            const { result } = await this.userModel.checkPassword(user.email, req.body.password);
-            if (!result) {
-                logger.error('Password check failed');
-                throw MyAppErrors.passwordError();
-            }
-            logger.info('Password check successful');
-
             // Check if there are any fields to update
             const updateFields = { ...req.body };
             delete updateFields.password;  // Remove current password from update fields
@@ -305,7 +291,9 @@ class UserController extends BaseController {
             const updatedUser = await this.userModel.updateUser(user.national_id, finalUpdateFields);
             logger.debug(`updatedUser: ${JSON.stringify(updatedUser)}`);
 
-            const filteredUpdatedUser = this.filterUserData(updatedUser);
+            const filteredUpdatedUser = this.filterUserData(updatedUser, true);
+            logger.debug(`filteredUpdatedUser: ${JSON.stringify(filteredUpdatedUser).substring(0, 500)}${filteredUpdatedUser.length > 500 ? " ...[truncated]..." : ""}`);
+            // Handle profile picture if it exists
             req.formattedResponse = formatResponse(200, 'User updated successfully', filteredUpdatedUser);
             return next();
         } catch (error) {
