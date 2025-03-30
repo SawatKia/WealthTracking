@@ -20,7 +20,7 @@ const appConfigs = require('../configs/AppConfigs');
 const { Logger, formatResponse, formatBkkTime } = require("../utilities/Utils");
 const MyAppErrors = require("../utilities/MyAppErrors");
 const { BankAccountUtils } = require("../utilities/BankAccountUtils")
-
+const sharp = require('sharp');
 
 const logger = Logger("ApiController");
 
@@ -164,35 +164,126 @@ class ApiController {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
+
   /**
-   * Extracts text from an image buffer using DocumentAi
-   * @param {Buffer} imageBuffer - The image buffer to extract text from.
-   * @returns {Promise<string>} The extracted text.
-   */
-  async _extractTextFromImage(imageBuffer) {
+ * Extracts text from an image buffer using Document AI service.
+ * 
+ * @param {Buffer} imageBuffer - The image buffer to process.
+ * @param {number} [scale=1] - The scaling factor for the image (1 means original size).
+ * @returns {Promise<string>} The extracted text.
+ * @throws {Error} If processing fails.
+ */
+  async _extractTextFromImage(imageBuffer, scale = 1) {
     logger.info("Extracting text from image...");
     logger.debug(`imageBuffer: ${JSON.stringify(imageBuffer).substring(0, 100)}${JSON.stringify(imageBuffer).length > 100 ? "...[truncated]..." : ""}`);
     try {
       if (!imageBuffer || !Buffer.isBuffer(imageBuffer)) {
+        logger.error("Invalid image buffer provided");
         throw new Error('Invalid image buffer provided');
       }
-      const result = await DocumentAiService.recognize(imageBuffer);
+      logger.debug(`original size: ${imageBuffer.length}`);
 
+      // // Scale down the image if scale is not 1
+      // // Convert negative scale to percentage (e.g., -2 becomes 50%, -4 becomes 25%)
+      // // Scale down the image if scale is not 1
+      // if (scale !== 1) {
+      //   // Get original image dimensions
+      //   const metadata = await sharp(imageBuffer).metadata();
+      //   logger.debug(`Image metadata: ${JSON.stringify(metadata)}`);
+      //   const scalePercentage = scale < 0 ? (1 / Math.abs(scale)) : scale;
+
+      //   logger.info(`Scaling image by factor: ${scalePercentage}`);
+
+      //   // Calculate new dimensions
+      //   const newWidth = Math.round(metadata.width * scalePercentage);
+      //   const newHeight = Math.round(metadata.height * scalePercentage);
+
+      //   logger.debug(`Resizing from ${metadata.width}x${metadata.height} to ${newWidth}x${newHeight}`);
+
+      //   imageBuffer = await sharp(imageBuffer)
+      //     .resize(newWidth, newHeight, {
+      //       fit: 'contain'
+      //     })
+      //     .toBuffer();
+      //   const scaledMetadata = await sharp(imageBuffer).metadata();
+      //   logger.debug(`scaled metadata: ${JSON.stringify(scaledMetadata).substring(0, 500)}${JSON.stringify(scaledMetadata).length > 500 ? "...[truncated]..." : ""}`);
+
+      //   logger.debug(`Image scaled successfully`);
+      // }
+
+      logger.debug(`scaled size: ${imageBuffer.length}`);
+
+      const result = await DocumentAiService.recognize(imageBuffer);
       // Validate result
       if (!result) {
         throw new Error('No result returned from DocumentAI service');
       }
 
-      // Process result
-      const processedResult = result.replace("โอนเงิน", "ทำรายการ");
+      // Filter out lines containing "สแกน" or "สำเร็จ" and process the text
+      const processedResult = result
+        .split('\n')
+        .filter(line => !line.includes('สแกน') && !line.includes('สำเร็จ'))
+        .join('\n')
+        .replace("โอนเงิน", "ทำรายการ");
 
       // Log the processed result
-      logger.debug(`Processed โอนเงิน -> ทำรายการ OCR result: ${processedResult}`);
+      logger.debug(`Processed โอนเงิน -> ทำรายการ and remove line that included "สแกน", "สำเร็จ" from OCR result: ${processedResult}`);
       logger.info('returning processed result');
       return processedResult;
     } catch (error) {
       logger.error(`Error extracting text from image: ${error.message}`);
       throw error;
+    }
+  }
+
+  async scaleImage(imageBuffer, scale = 1) {
+    logger.info("Scaling image...");
+    logger.debug(`imageBuffer: ${JSON.stringify(imageBuffer).substring(0, 100)}${JSON.stringify(imageBuffer).length > 100 ? "...[truncated]..." : ""}`);
+    logger.debug(`scale: ${scale}:: ${typeof scale}`);
+    try {
+      if (!imageBuffer || !Buffer.isBuffer(imageBuffer)) {
+        logger.error("Invalid image buffer provided");
+        throw new Error('Invalid image buffer provided');
+      }
+      if (isNaN(scale)) {
+        logger.error("Invalid scale provided");
+        throw new Error('Invalid scale provided');
+      }
+      logger.debug(`original size: ${imageBuffer.length}`);
+
+      // Scale down the image if scale is not 1
+      // Convert negative scale to percentage (e.g., -2 becomes 50%, -4 becomes 25%)
+      // Scale down the image if scale is not 1
+      if (scale !== 1) {
+        // Get original image dimensions
+        const metadata = await sharp(imageBuffer).metadata();
+        logger.debug(`Image metadata: ${JSON.stringify(metadata)}`);
+        const scalePercentage = scale < 0 ? (1 / Math.abs(scale)) : scale;
+
+        logger.info(`Scaling image by factor: ${scalePercentage}`);
+
+        // Calculate new dimensions
+        const newWidth = Math.round(metadata.width * scalePercentage);
+        const newHeight = Math.round(metadata.height * scalePercentage);
+
+        logger.debug(`Resizing from ${metadata.width}x${metadata.height} to ${newWidth}x${newHeight}`);
+
+        imageBuffer = await sharp(imageBuffer)
+          .resize(newWidth, newHeight, {
+            fit: 'contain'
+          })
+          .toBuffer();
+        const scaledMetadata = await sharp(imageBuffer).metadata();
+        logger.debug(`scaled metadata: ${JSON.stringify(scaledMetadata).substring(0, 500)}${JSON.stringify(scaledMetadata).length > 500 ? "...[truncated]..." : ""}`);
+
+        logger.debug(`Image scaled successfully`);
+      }
+
+      logger.debug(`scaled size: ${imageBuffer.length}`);
+
+      return imageBuffer;
+    } catch (error) {
+
     }
   }
 
@@ -482,7 +573,9 @@ class ApiController {
       logger.info(`EasySlip quota available: ${isQuotaAvailable}`);
 
       // Extract text using OCR for type classification
-      let ocrText = await this._extractTextFromImage(imageBuffer);
+      imageBuffer = await this.scaleImage(imageBuffer, -2);
+      logger.debug(`Scaled image buffer size: ${imageBuffer.byteLength} bytes`);
+      let ocrText = await this._extractTextFromImage(imageBuffer, -2);
       logger.debug(`OCR text result: ${ocrText}`); // Add detailed logging
       if (!ocrText || typeof ocrText !== 'string' || ocrText.trim().length === 0) {
         logger.error("Invalid OCR result received");
@@ -512,6 +605,7 @@ class ApiController {
       // }
 
       // Get transaction type from LLM
+
       const { category: transactionCategory, type: transactionType, note: transactionNote } = await LLMService.classifyTransaction(ocrText);
       logger.debug(`Classified transaction type: ${transactionType}`);
 
