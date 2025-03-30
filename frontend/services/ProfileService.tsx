@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from "expo-router";
 import api from "./axiosInstance";
+import { Platform } from 'react-native';
 
 export interface UserProfile {
     national_id: string;
@@ -18,7 +19,11 @@ export interface UpdateProfileData {
     password?: string; // Required when updating user information
     newPassword?: string;
     newConfirmPassword?: string;
-    profilePicture?: File | null; // For handling file uploads
+    profilePicture?: {
+        uri: string;
+        name: string;
+        type: string;
+    } | null; // For handling file uploads (null allows no upload)
 }
 
 export const useProfile = () => {
@@ -52,27 +57,57 @@ export const useProfile = () => {
     const updateUserProfile = async (updateData: UpdateProfileData): Promise<UserProfile | null> => {
         try {
             setLoading(true);
+    
+            const formData = new FormData();
+    
+            // Loop through all fields in updateData (excluding 'profilePicture')
+            Object.keys(updateData).forEach((key) => {
+                console.log( 'Form Data:', formData,key, updateData[key as keyof UpdateProfileData]);
+                if (key === 'profilePicture') {
+                    // Handle the profile picture separately
+                    const profilePicture = updateData[key];
+                    if (profilePicture) {
+                        const file = {
+                            uri: Platform.OS === 'android' ? profilePicture.uri : profilePicture.uri.replace('file://', ''),
+                            name: profilePicture.name || `slip${Date.now()}.jpg`,
+                            type: profilePicture.type || 'image/jpeg',
+                        };
+                        console.log('File:', file);
+                        formData.append('profilePicture', file as any);  // Append image as a file
+                    }
+                } else {
+                    // Append normal fields (like password, name, etc.)
+                    const value = updateData[key as keyof UpdateProfileData];  // Fixed the issue: should be updateData[key] not requestData[key]
+                    if (value) {
+                        formData.append(key, value.toString());
+                    }
+                }
+            });
 
             // Create FormData if there's a profile picture to upload
-            let requestData: UpdateProfileData | FormData = updateData;
+            // let requestData: UpdateProfileData | FormData = updateData;
+            // console.log(requestData)
 
-            if (updateData.profilePicture) {
-                const formData = new FormData();
 
-                // Add all text fields to FormData
-                Object.keys(updateData).forEach(key => {
-                    if (key !== 'profilePicture' && updateData[key as keyof UpdateProfileData] !== undefined) {
-                        formData.append(key, updateData[key as keyof UpdateProfileData] as string);
-                    }
-                });
+            // if (updateData.profilePicture) {
+            //     const formData = new FormData();
+            //     console.log('Form Data:', requestData);
 
-                // Add the profile picture file
-                formData.append('profilePicture', updateData.profilePicture);
+            //     // Add all text fields to FormData
+            //     formData.append('profilePicture', updateData.profilePicture as any);
+            //     Object.keys(updateData).forEach(key => {
+            //         if (key !== 'profilePicture' && updateData[key as keyof UpdateProfileData] !== undefined) {
+            //             console.log('Key:', key, 'Value:', updateData[key as keyof UpdateProfileData]);
+            //             formData.append(key, updateData[key as keyof UpdateProfileData] as string);
+            //         }
+            //     });
+            //     // Add the profile picture file
+            //     // formData.append('profilePicture', updateData.profilePicture);
 
-                requestData = formData;
-            }
-
-            const response = await api.patch('/users', requestData, {
+            //     requestData = formData;
+            // }
+            console.log('Request Data:', formData);
+            const response = await api.patch('/users', formData, {
                 headers: updateData.profilePicture ? {
                     'Content-Type': 'multipart/form-data',
                 } : undefined
