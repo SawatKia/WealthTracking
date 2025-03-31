@@ -29,7 +29,7 @@ app.disable("x-powered-by");
 // Health check endpoint (before other routes)
 app.get("/health", mdw.healthCheck);
 
-if (NODE_ENV === 'development' || NODE_ENV === 'test') {
+if (NODE_ENV) {
   logger.info('Starting Swagger documentation setup...');
   try {
     // 1. First serve the Swagger UI assets
