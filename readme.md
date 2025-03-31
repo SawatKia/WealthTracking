@@ -73,6 +73,11 @@ The project folder is located at this path
    Open the camera on your phone and scan the QR code that appears in the terminal.
    - Once scanned, Expo Go will automatically open and load the app you’re developing.
 
+4. Mode
+  press S in your keyboard to switch between development build and Expo go mode
+  - Development build mode: To open app ypu should open your downloaded apk app
+  - Expo go mode: To open app you should have Expo go app
+
 ### 3. Backend Setup
 
 #### Method 1: Quick Start Backend using Pre-Built Image from Docker Hub
