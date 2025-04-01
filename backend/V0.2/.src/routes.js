@@ -33,7 +33,6 @@ router.use((req, res, next) => {
     next();
 })
 
-
 router.get('/', (req, res, next) => {
     req.formattedResponse = formatResponse(200, 'you are connected to the /api/v0.2/', null);
     next();
