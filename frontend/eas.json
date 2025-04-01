@@ -1,21 +1,34 @@
 {
-  "cli": {
-    "version": ">= 15.0.14",
-    "appVersionSource": "remote"
-  },
   "build": {
     "development": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
       "developmentClient": true,
-      "distribution": "internal"
+      "env": {
+        "API_URL": "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2"
+      }
     },
-    "preview": {
-      "distribution": "internal"
+    "staging": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "distribution": "internal",
+      "env": {
+        "API_URL": "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "distribution": "store",
+      "env": {
+        "API_URL": "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2"
+      }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }
