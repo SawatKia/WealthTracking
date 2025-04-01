@@ -120,7 +120,7 @@ class Middlewares {
           return callback(null, true);
         }
         // For any origin provided, allow it
-        callback(null, true);
+        return callback(null, true);
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: [
@@ -136,7 +136,11 @@ class Middlewares {
     };
 
     // Create CORS middleware
-    this.corsMiddleware = cors(this.corsOptions);
+    this.corsMiddleware = (req, res, next) => {
+      logger.info(`Handling CORS for ${req.method} ${req.url}`);
+      logger.debug(`Origin: ${req.headers.origin || 'No origin'}`);
+      return cors(this.corsOptions)(req, res, next);
+    };
 
     // Bind all methods to the class
     Object.getOwnPropertyNames(Middlewares.prototype).forEach(key => {
@@ -801,10 +805,14 @@ class Middlewares {
           // The x-forwarded-for header can contain a comma-separated list of
           // IP's. Further, some are comma separated with spaces, so whitespace is trimmed.
           const ips = xForwardedFor.split(',').map((ip) => ip.trim());
-          logger.debug(`x-forwarded-for ips: ${ips}`);
+          logger.debug(`x-forwarded-for ips: ${ips.join(' ')}`);
           return ips[0];
         }
       })();
+      logger.debug(`x-forwarded-for: ${xForwardedForIP}`);
+      logger.debug(`x-real-ip: ${xRealIP}`);
+      logger.debug(`socket remote address: ${sockRemoteAddress}`);
+      logger.debug(`connection remote address: ${conRemoteAddress}`);
       // prefer x-forwarded-for and fallback to the others
       return xForwardedForIP || xRealIP || sockRemoteAddress || conRemoteAddress;
     };

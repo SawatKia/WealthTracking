@@ -90,7 +90,7 @@ const allowedMethods = {
   '/favicon.ico': ['GET'],
   '/api': ['GET'],
   //routes.js
-  '/api/v0.2/': ['GET'],
+  '/api/v0.2': ['GET'],
   '/api/v0.2/docs': ['GET'],
   '/api/v0.2/users': ['GET', 'POST', 'PATCH', 'DELETE'],
   '/api/v0.2/banks': ['POST', 'GET'],
