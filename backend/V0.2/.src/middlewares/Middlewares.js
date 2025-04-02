@@ -748,6 +748,7 @@ class Middlewares {
   isSwaggerRequest(path) {
     logger.info(`Checking if path ${path} is a Swagger request`);
     const isSwagger = path.startsWith('/api/v0.2/docs') ||
+      path.includes('docs') ||
       path.includes('swagger-ui') ||
       path.includes('api-docs');
     logger.debug(`Is Swagger request: ${isSwagger}`);
@@ -999,17 +1000,29 @@ class Middlewares {
   };
 
   unknownRouteHandler(req, res, next) {
-    logger.info('Checking if the route is unknown...');
+    logger.info('Checking route handling status...');
 
-    if (!req.formattedResponse) {
-      if (!req.url.includes('favicon.ico')) {
-        logger.error(`Unknown route: ${req.method} ${req.url}`);
-        return next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
-      }
+    // First check: If it's a Swagger request, let it through
+    if (this.isSwaggerRequest(req.path)) {
+      logger.info(`Allowing Swagger UI request: ${req.method} ${req.url}`);
+      return next();
     }
 
-    logger.info('Route was handled eariler and returned a response.');
-    next(); // Only called if req.formattedResponse is set
+    // Second check: If response is already formatted, let it through
+    if (req.formattedResponse) {
+      logger.info('Route was handled earlier and has a formatted response');
+      return next();
+    }
+
+    // Third check: Ignore favicon requests
+    if (req.url.includes('favicon.ico')) {
+      logger.debug('Ignoring favicon request');
+      return next();
+    }
+
+    // If none of the above conditions are met, it's an unknown route
+    logger.error(`Unknown route detected: ${req.method} ${req.url}`);
+    return next(MyAppErrors.notFound(`${req.method} ${req.url} not found`));
   }
 
   errorHandler = (err, req, res, next) => {

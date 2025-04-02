@@ -2,10 +2,12 @@ openapi: 3.0.0
 info:
   title: WealthTrack API
   description: This API provides an interface for user registration and password verification processes, ensuring secure and efficient user authentication.
-  version: "0.2.3"
+  version: "1.0.4"
 servers:
+  - url: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2"
+    description: Production Server
   - url: "http://localhost:3000/api/v0.2"
-    description: Development server
+    description: Local Development Server
 paths:
   # Connection/Health Check Endpoints
   /api:
@@ -15,8 +17,8 @@ paths:
       summary: API Root (General)
       description: Returns a welcome message to confirm API connectivity.
       servers:
+        - url: "http://ce67-25.cloud.ce.kmitl.ac.th"
         - url: "http://localhost:3000"
-        - url: "http://localhost:3000/api/v0.2/"
       responses:
         "200":
           description: Successful response with a welcome message in JSON format.
@@ -36,6 +38,7 @@ paths:
       summary: Health check
       description: Returns health status information including environment, uptime, and timestamp
       servers:
+        - url: "http://ce67-25.cloud.ce.kmitl.ac.th"
         - url: "http://localhost:3000"
       responses:
         "200":
@@ -165,7 +168,7 @@ paths:
                         email: "john.doe@example.com"
                         username: "john.doe"
                         date_of_birth: "1990-01-01"
-                        profile_picture_url: "http://localhost:3000/api/v0.2/users/profile-picture"
+                        profile_picture_url: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2/users/profile-picture"
                 mobile:
                   value:
                     status_code: 200
@@ -176,7 +179,7 @@ paths:
                         email: "john.doe@example.com"
                         username: "john.doe"
                         date_of_birth: "1990-01-01"
-                        profile_picture_url: "http://localhost:3000/api/v0.2/users/profile-picture"
+                        profile_picture_url: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2/users/profile-picture"
                       tokens:
                         access_token: "eyJhbGciOiJIUzI1NiIs..."
                         refresh_token: "eyJhbGciOiJIUzI1NiIs..."
@@ -538,7 +541,7 @@ paths:
                         example: "1990-01-01"
                       profile_picture_url:
                         type: string
-                        example: "http://localhost:3000/api/v0.2/users/profile-picture"
+                        example: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2/users/profile-picture"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2323,7 +2326,7 @@ components:
         profile_picture_url:
           type: string
           description: "URL to profile picture"
-          example: "http://localhost:3000/api/v0.2/users/profile-picture"
+          example: "http://ce67-25.cloud.ce.kmitl.ac.th/api/v0.2/users/profile-picture"
 
     UserRegistrationRequest:
       type: object
