@@ -5,14 +5,19 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { storeToken, getToken, deleteToken } from "@/services/AuthenService";
+import {
+  storeToken,
+  getToken,
+  deleteToken,
+  LoginResponse,
+} from "@/services/AuthenService";
 import { login as apiLogin, loginGoogle } from "@/services/AuthenService";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
 }
@@ -29,11 +34,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(!!token);
     };
     checkAuth();
-  
+
     // Listen for OAuth redirect
     const handleDeepLink = ({ url }: { url: string }) => {
       const { queryParams } = Linking.parse(url);
-      console.log(queryParams)
+      console.log(queryParams);
       if (queryParams && queryParams.access_token) {
         const accessToken = queryParams.access_token as string;
         storeToken(accessToken);
@@ -41,22 +46,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push("/(tabs)"); // Navigate to home page
       }
     };
-  
+
     const subscription = Linking.addEventListener("url", handleDeepLink);
-  
+
     // Cleanup with the 'remove' method
     return () => {
       subscription.remove();
     };
   }, []);
-  
 
-  const login = async (email: string, password: string) => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<LoginResponse> => {
     const response = await apiLogin(email, password);
-    if (response === true) {
+    if (response.success) {
       setIsAuthenticated(true);
       router.push("/(tabs)");
-      return true;
     }
     return response;
   };
@@ -64,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithGoogle = async () => {
     try {
       const response = await loginGoogle();
-      console.log(response)
+      console.log(response);
       const loginUrl = response.data;
 
       if (loginUrl) {
@@ -84,7 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
