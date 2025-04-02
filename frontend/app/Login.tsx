@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Pressable,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,7 @@ import {
 } from "@/services/AuthenService";
 
 export default function LoginScreen() {
+  const [logs, setLogs] = useState<string[]>([]);
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // Default is hidden
@@ -50,74 +52,143 @@ export default function LoginScreen() {
     loadSavedCredentials();
   }, []);
 
+  const getTimestamp = () => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    };
+    const formattedDate = new Intl.DateTimeFormat("en-GB", options).format(now);
+    const milliseconds = now.getMilliseconds().toString().padStart(3, "0");
+    return `${formattedDate.replace(",", "")}.${milliseconds}`;
+  };
+
+  // Modify handleLogin to include logging
   const handleLogin = async () => {
-    if (!validateInput()) return; // Ensure input validation passes before proceeding
-  
+    if (!validateInput()) return;
+
     try {
-      // Reset previous errors
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Starting login process...`,
+      ]);
       setErr({ email: "", password: "", checkLogin: "" });
-  
-      // Call the login function and handle response
+
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Attempting to connect to server...`,
+      ]);
       const response = await login(email, password);
-  
-      if (response === true) {
-        console.log('Login Success', `Welcome, ${email}`);
-  
-        // Handle "Remember Me" functionality
+
+      // Log detailed server response
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Server response:`,
+        `Status: ${response.details?.status || "N/A"}`,
+        `Status Text: ${response.details?.statusText || "N/A"}`,
+        `Headers: ${response.details?.headers || "N/A"}`,
+        `Data: ${response.details?.data || "N/A"}`,
+      ]);
+
+      if (response.success) {
+        setLogs((prev) => [...prev, `[${getTimestamp()}] Login successful`]);
+
         if (rememberMe) {
-          await saveCredentials(email, password); // Save credentials if "Remember Me" is checked
+          setLogs((prev) => [
+            ...prev,
+            `[${getTimestamp()}] Saving credentials...`,
+          ]);
+          await saveCredentials(email, password);
         } else {
-          await clearCredentials(); // Clear credentials if "Remember Me" is not selected
+          setLogs((prev) => [
+            ...prev,
+            `[${getTimestamp()}] Clearing saved credentials...`,
+          ]);
+          await clearCredentials();
         }
-  
+
+        setLogs((prev) => [
+          ...prev,
+          `[${getTimestamp()}] Navigating to main screen in 10 seconds...`,
+        ]);
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        router.push("/(tabs)");
       } else {
-        // Handle failure response (display error message)
+        setLogs((prev) => [
+          ...prev,
+          `[${getTimestamp()}] Login failed: ${response.message}`,
+        ]);
         setErr({
           email: "",
           password: "",
-          checkLogin: `Login Failed: ${response}`, // Using template literal here
+          checkLogin: `Login Failed: ${response.message}`,
         });
       }
-  
     } catch (error) {
-      console.error('Error during login:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Error during login: ${errorMessage}`,
+      ]);
+      console.error("Error during login:", error);
       setErr({
         email: "",
         password: "",
-        checkLogin: `Error during login: ${error}`, // Using template literal and checking error message
+        checkLogin: `Error during login: ${errorMessage}`,
       });
     }
   };
-  
-  
-   const validateInput = (): boolean => {
-     let isValid = true;
-     const newError = {
-       email: "",
-       password: "",
-       checkLogin: "",
-     };
- 
-     if (!email.trim()) {
-       newError.email = "Email is required";
-       isValid = false;
-     } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-       newError.email = "Invalid email format";
-       isValid = false;
-     }
- 
- 
-     if (!password.trim()) {
-       newError.password = "Password is required";
-       isValid = false;
-     }
- 
- 
-     setErr(newError);
-     return isValid;
-   };
- 
-  
+
+  const validateInput = (): boolean => {
+    setLogs((prev) => [...prev, `[${getTimestamp()}] Validating input...`]);
+    let isValid = true;
+    const newError = {
+      email: "",
+      password: "",
+      checkLogin: "",
+    };
+
+    if (!email.trim()) {
+      newError.email = "Email is required";
+      isValid = false;
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Validation failed: Email is required`,
+      ]);
+    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+      newError.email = "Invalid email format";
+      isValid = false;
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Validation failed: Invalid email format`,
+      ]);
+    }
+
+    if (!password.trim()) {
+      newError.password = "Password is required";
+      isValid = false;
+      setLogs((prev) => [
+        ...prev,
+        `[${getTimestamp()}] Validation failed: Password is required`,
+      ]);
+    }
+
+    setErr(newError);
+    setLogs((prev) => [
+      ...prev,
+      `[${getTimestamp()}] Input validation ${
+        isValid ? "successful" : "failed"
+      }`,
+    ]);
+    return isValid;
+  };
 
   const handleGoogleLogin = async () => {
     await loginWithGoogle();
@@ -187,19 +258,32 @@ export default function LoginScreen() {
             <Text style={styles.rememberMe}>Remember me</Text>
           </View>
         </View>
-          {
-                  err.email ||
-                  err.password ||
-                  err.checkLogin  ? (
-                    <View style={styles.errorInput}>
-                      <Ionicons name="alert-circle" size={24} color="red" />
-                      <View style={styles.errorTextContainer}>
-                        <Text style={styles.errorText}>{err.email}</Text>
-                        <Text style={styles.errorText}>{err.password}</Text>
-                        <Text style={styles.errorText}>{err.checkLogin}</Text>
-                      </View>
-                    </View>
-                  ) : null}
+        {err.email || err.password || err.checkLogin ? (
+          <View style={styles.errorInput}>
+            <Ionicons name="alert-circle" size={24} color="red" />
+            <View style={styles.errorTextContainer}>
+              <Text style={styles.errorText}>{err.email}</Text>
+              <Text style={styles.errorText}>{err.password}</Text>
+              <Text style={styles.errorText}>{err.checkLogin}</Text>
+            </View>
+          </View>
+        ) : null}
+        {/* logs */}
+        {logs.length > 0 && (
+          <View style={styles.logsContainer}>
+            <Text style={styles.logsTitle}>Debug Logs:</Text>
+            <ScrollView
+              style={styles.logsScrollView}
+              nestedScrollEnabled={true}
+            >
+              {logs.map((log, index) => (
+                <Text key={`log-${index}`} style={styles.logText}>
+                  {log}
+                </Text>
+              ))}
+            </ScrollView>
+          </View>
+        )}
         {/* Login Button */}
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Log In</Text>
@@ -392,4 +476,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   errorText: { color: "red", marginLeft: 14 },
+  logsContainer: {
+    width: "90%",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: "#4a4a8e",
+  },
+  logsTitle: {
+    color: "#4a4a8e",
+    fontWeight: "bold",
+    marginBottom: 5,
+    fontSize: 14,
+  },
+  logText: {
+    color: "#4a4a8e",
+    fontSize: 12,
+    marginBottom: 2,
+    fontFamily: "monospace",
+  },
+  logsScrollView: {
+    maxHeight: 150,
+    paddingHorizontal: 10,
+  },
 });
